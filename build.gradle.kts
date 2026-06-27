@@ -7,5 +7,5 @@ subprojects {
     apply(plugin = "detekt")
     apply(plugin = "testlogger")
 
-    this.group = "${rootProject.group}${this.parent!!.path.replace(":", ".").removeSuffix(".")}"
+    this.group = "${rootProject.group}${this.path.replace(":", ".").removeSuffix(".")}"
 }

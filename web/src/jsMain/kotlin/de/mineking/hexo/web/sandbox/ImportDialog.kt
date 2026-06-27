@@ -1,4 +1,4 @@
-package de.mineking.hexo.web
+package de.mineking.hexo.web.sandbox
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.derivedStateOf

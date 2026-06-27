@@ -17,10 +17,28 @@ services:
         http:// {
           rewrite / /app
           handle_path /app* {
-            reverse_proxy web:80
+            route {
+              @root path /
+              rewrite @root /index.html
+
+              @page {
+                not path *.*
+              }
+              rewrite @page {path}.html
+
+              reverse_proxy web:80 {
+                @notFound status 404
+                handle_response @notFound {
+                  rewrite * /not-found.html
+                  reverse_proxy web:80
+                }
+              }
+            }
           }
-        
-          reverse_proxy backend:80
+
+          handle {
+            reverse_proxy backend:80
+          }
         }
         EOF
 
@@ -55,21 +73,20 @@ services:
     expose:
       - "80"
     environment:
-      bot.token: # Get from discord dashboard
-      oauth2.clientId: # Get from discord dashboard
-      oauth2.clientSecret: # Get from discord dashboard
-      oauth2.encryptionKey: # Generate with `openssl rand -base64 32`
+      bot.token: ${BOT_TOKEN:?}
+      oauth2.clientId: ${OAUTH2_CLIENT_ID:?}
+      oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:?}
+      oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:?}
       database.url: jdbc:postgresql://database:5432/hexo?user=hexo&password=hexo
       server.port: 80
-      server.url: https://example.com # The public domain under which this service will be available
+      server.url: ${SERVER_URL:?}
 
   web:
     build:
       context: .
       dockerfile: web/Dockerfile
       args:
-        WEB_BASE_PATH: /app
-        WEB_API_PROXY: https://hexo.mineking.dev/proxy
+        WEB_API_PROXY: ${WEB_API_PROXY:?}
     restart: unless-stopped
     expose:
       - "80"

@@ -15,6 +15,6 @@ dependencies {
 }
 
 tailwindcss {
-    resourceTask = tasks.processResources
+    sourceSetName = "main"
     resourcePath = "static"
 }

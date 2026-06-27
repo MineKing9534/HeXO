@@ -1,33 +1,39 @@
+@file:OptIn(ExperimentalDistributionDsl::class)
+
 import com.github.gmazzo.buildconfig.BuildConfigValue.Expression
-import org.apache.tools.ant.filters.ReplaceTokens
+import com.varabyte.kobweb.gradle.application.util.configAsKobwebApplication
+import kotlinx.html.link
+import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalDistributionDsl
 
 plugins {
     id("kotlin-common")
     kotlin("multiplatform")
 
     alias(libs.plugins.buildconfig)
-    alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.kotlin.compose.compiler)
+    alias(libs.plugins.kobweb.application)
 
     id("tailwindcss")
 }
 
 repositories {
     google()
+    mavenCentral()
 }
 
-kotlin {
-    js {
-        browser {
-            binaries.executable()
-            commonWebpackConfig {
-                cssSupport {
-                    enabled.set(true)
-                }
+kobweb {
+    app {
+        index {
+            faviconPath = "/favicon.png"
+            head.add {
+                link(rel = "stylesheet", type = "text/css", href = basePath.prependTo("/styles.css"))
             }
         }
     }
+}
 
+kotlin {
+    configAsKobwebApplication(includeServer = false)
 
     sourceSets.jsMain {
         dependencies {
@@ -38,33 +44,18 @@ kotlin {
             implementation(projects.board.parse)
             implementation(projects.hds)
 
-            implementation(compose.html.core)
-            implementation(compose.html.svg)
-            implementation(compose.runtime)
+            implementation(libs.kobweb.core)
+            implementation(libs.bundles.compose.html)
+            implementation(libs.compose.html.svg)
         }
+
+        resources.srcDir(layout.buildDirectory.dir("generated/resources"))
     }
 }
 
 tailwindcss {
-    resourceTask = tasks.named<Copy>("jsProcessResources")
-    resourcePath = "/"
-}
-
-val webBasePath = providers.gradleProperty("web.basePath")
-    .orElse("/")
-    .map { path ->
-        val prefixed = if (path.startsWith("/")) path else "/$path"
-        prefixed.removeSuffix("/")
-    }
-
-tasks.named<Copy>("jsProcessResources") {
-    inputs.property("webBasePath", webBasePath)
-
-    filesMatching("index.html") {
-        filter<ReplaceTokens>(
-            "tokens" to mapOf("WEB_BASE_PATH" to webBasePath.get()),
-        )
-    }
+    sourceSetName = "jsMain"
+    resourcePath = "public"
 }
 
 val webApiProxy = providers.gradleProperty("web.apiProxy")
@@ -78,6 +69,4 @@ val webApiProxy = providers.gradleProperty("web.apiProxy")
 
 buildConfig {
     buildConfigField<String?>("API_PROXY", webApiProxy)
-
-    packageName("$group.web")
 }

@@ -1,4 +1,4 @@
-package de.mineking.hexo.web
+package de.mineking.hexo.web.sandbox
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -21,6 +21,7 @@ import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotat
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.Select
+import de.mineking.hexo.web.pages.CellPlacementMode
 import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
@@ -82,8 +83,8 @@ fun Sidebar(
     Div({
         classes(
             "relative", "flex", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5", "overflow-y-auto", "border-t", "border-slate-800",
-            "bg-slate-900/80", "p-4", "shadow-2xl", "md:max-h-none", "md:w-[var(--sidebar-width)]", "md:gap-8", "md:border-l", "md:border-t-0",
-            "md:p-6",
+            "bg-slate-900/80", "p-4", "shadow-2xl", "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0",
+            "md:p-6", "select-none",
         )
         attr("style", "--sidebar-width: ${width}px")
     }) {
@@ -225,8 +226,6 @@ private fun NotationField(
     parseError: String?,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
-    var focused by remember { mutableStateOf(false) }
-
     Div({ classes("space-y-2") }) {
         Div({ classes("relative", "min-h-8", "overflow-hidden") }) {
             Div({ classes("pt-1.5", "text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
@@ -247,17 +246,11 @@ private fun NotationField(
             value(notation)
             placeholder("Board notation")
             onInput { onChange(BoardUpdateCause.NotationInput, it.value) }
-            onFocus { focused = true }
-            onBlur { focused = false }
             classes(
                 "min-h-32", "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100", "placeholder-slate-500",
-                "outline-none", "transition", "font-mono",
+                "outline-none", "transition", "font-mono", "border-slate-700", "bg-slate-950", "focus:border-emerald-400", "focus:bg-slate-800",
             )
-            when {
-                parseError != null -> classes("border-rose-400", "bg-slate-950")
-                focused -> classes("border-emerald-400", "bg-slate-800")
-                else -> classes("border-slate-700", "bg-slate-950")
-            }
+            if (parseError != null) classes("border-rose-400!")
         }
     }
 }
