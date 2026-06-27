@@ -1,12 +1,12 @@
-package de.mineking.hexo.server.services
+package de.mineking.hexo.launcher.web
 
 import com.github.benmanes.caffeine.cache.Caffeine
 import com.sksamuel.aedile.core.expireAfterWrite
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.link.oauth2.OAuth2Tokens
-import de.mineking.hexo.server.WebService
 import de.mineking.hexo.server.html.CardColorScheme
 import de.mineking.hexo.server.html.statusPage
+import de.mineking.hexo.sever.service.WebService
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.html.respondHtml
 import io.ktor.server.routing.Route
@@ -20,7 +20,7 @@ import kotlin.time.Duration.Companion.minutes
 class OAUth2CallbackWebService(
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository,
     private val callback: (OAuth2Tokens) -> Unit,
-) : WebService {
+) : WebService() {
     private val random = SecureRandom()
     private val cache = Caffeine.newBuilder()
         .expireAfterWrite(5.minutes)

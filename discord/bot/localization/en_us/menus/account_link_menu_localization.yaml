@@ -50,7 +50,7 @@ menu.link:
       This discord bot allows server administrators to configure linked roles based on your **[HeXO](https://hexo.did.science)** profile.
       To be able to update your accounts meta data, you have to authenticate the bot. To do so, use the following link:
       
-      **$url**
+      **$url/linked-roles**
       
       You can unauthorize the bot at any time using the button in `/link` menu.
 

@@ -2,6 +2,7 @@ package de.mineking.hexo.server
 
 import de.mineking.hexo.server.html.CardColorScheme
 import de.mineking.hexo.server.html.statusPage
+import de.mineking.hexo.sever.service.WebService
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.install
@@ -36,6 +37,12 @@ class HttpServer(services: List<WebService>, port: Int) {
                         +"There is no HeXO page or service at this address. Check the link and try again."
                     }
                 }
+            }
+        }
+
+        services.forEach {
+            it.run {
+                setup()
             }
         }
 

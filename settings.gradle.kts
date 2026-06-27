@@ -28,4 +28,9 @@ include(":discord:link")
 include(":discord:bot")
 
 include(":server")
+include(":server:service")
 include(":launcher")
+
+include(":sync:service")
+include(":sync:common")
+include(":sync:client")

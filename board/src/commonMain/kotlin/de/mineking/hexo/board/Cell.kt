@@ -38,6 +38,7 @@ data class MutableCell(
 
 fun Cell.isEmpty() = this == Cell.EMPTY
 
+@Serializable
 data class CellHighlight(val color: CellOwner?)
 
 @Serializable
@@ -58,6 +59,7 @@ operator fun CellCoordinate.plus(other: CellCoordinate) = CellCoordinate(q + oth
 operator fun CellCoordinate.minus(other: CellCoordinate) = CellCoordinate(q - other.q, r - other.r)
 operator fun CellCoordinate.times(scalar: Int) = CellCoordinate(q * scalar, r * scalar)
 
+@Serializable
 data class LineHighlight(val start: CellCoordinate, val direction: Direction, val length: Int, val color: CellOwner?) {
     init {
         requireHexo(length in 1..MAX_LENGTH) { "Length must be between 1 and $MAX_LENGTH" }

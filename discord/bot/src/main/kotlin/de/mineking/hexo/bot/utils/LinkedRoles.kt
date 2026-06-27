@@ -110,9 +110,12 @@ class LinkedRolesUpdateService(
     }
 }
 
-suspend fun DiscordToolKit<*>.updateLinkedRoleMetadata() = updateLinkedRoleMetadata<LinkedRolesMetadataLocalization>(
-    RankKey,
-    EloKey,
-)
+suspend fun DiscordToolKit<*>.updateLinkedRoleMetadata() {
+    logger.info { "Updating linked roles metadata..." }
+    updateLinkedRoleMetadata<LinkedRolesMetadataLocalization>(
+        RankKey,
+        EloKey,
+    )
+}
 
 interface LinkedRolesMetadataLocalization : LocalizationFile

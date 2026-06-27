@@ -152,7 +152,7 @@ private fun MessageMenuConfig<out Interaction, *>.authModalButton() = modalButto
     color = ButtonColor.GREEN,
     emoji = Emojis.LOCK,
     component = createModalComponent {
-        bindLocalizationParameter("url") { this@authModalButton.menu.manager.main.linkedRolesUrl }
+        bindLocalizationParameter("url") { this@authModalButton.menu.manager.main.publicUrl }
         +localizedTextDisplay("description")
 
         produce {}

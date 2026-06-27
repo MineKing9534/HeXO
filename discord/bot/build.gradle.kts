@@ -14,7 +14,8 @@ dependencies {
 
     implementation(projects.hds)
     implementation(projects.discord.link)
-    runtimeOnly(libs.postgres)
+
+    implementation(projects.server.service)
 
     implementation(libs.kotlin.coroutines.core)
 

@@ -1,9 +1,6 @@
 import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
 import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
-group = rootProject.group
-version = rootProject.version
-
 repositories {
     mavenCentral()
     mavenLocal()
@@ -24,4 +21,8 @@ pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
         jvmToolchain(CommonConfig.JAVA_VERSION)
         compilerOptions.freeCompilerArgs.addAll(CommonConfig.COMMON_COMPILER_ARGS)
     }
+}
+
+tasks.withType<Jar> {
+    archiveBaseName = project.path.removePrefix(":").replace(":", "-")
 }
