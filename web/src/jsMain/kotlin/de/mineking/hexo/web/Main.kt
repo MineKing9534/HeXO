@@ -7,8 +7,10 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.App
+import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.init.InitKobweb
 import com.varabyte.kobweb.core.init.InitKobwebContext
+import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.hds.socket.SocketIOClient
 import de.mineking.hexo.hds.socket.SocketIOOptions
@@ -19,6 +21,7 @@ import org.jetbrains.compose.web.dom.Main
 
 @Composable
 fun rememberHdsApiClient(withSocket: Boolean): HdsApiClient? {
+    if (AppGlobals.isExporting) return null
     val host = BuildConfig.API_PROXY ?: return null
 
     fun createClient(socketClient: SocketIOClient?) = HdsApiClient(host = host, socketClient = socketClient)

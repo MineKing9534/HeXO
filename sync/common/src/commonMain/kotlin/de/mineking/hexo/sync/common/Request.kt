@@ -9,6 +9,12 @@ import kotlinx.serialization.Serializable
 sealed interface SessionSyncRequest
 
 @Serializable
+data class SessionSyncUpdateRequest(
+    val cellHighlights: Map<CellCoordinate, CellHighlight>,
+    val lineHighlights: List<LineHighlight>,
+) : SessionSyncRequest
+
+@Serializable
 data class SessionSyncCellHighlightRequest(
     val coordinate: CellCoordinate,
     val highlight: CellHighlight?,
@@ -17,4 +23,5 @@ data class SessionSyncCellHighlightRequest(
 @Serializable
 data class SessionSyncLineHighlightRequest(
     val line: LineHighlight,
+    val remove: Boolean,
 ) : SessionSyncRequest

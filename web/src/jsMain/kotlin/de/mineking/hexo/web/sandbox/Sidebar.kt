@@ -22,16 +22,12 @@ import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.Select
 import de.mineking.hexo.web.pages.CellPlacementMode
-import kotlinx.browser.document
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
-import kotlinx.dom.addClass
-import kotlinx.dom.removeClass
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.attributes.readOnly
-import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Input
@@ -45,7 +41,6 @@ import org.w3c.dom.url.URL
 private const val DEFAULT_SIDEBAR_WIDTH = 380
 private const val MIN_SIDEBAR_WIDTH = 330
 private const val MAX_SIDEBAR_WIDTH = 560
-private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
 private val boardParser = BoardParser.Default.focusWinningRows()
 
@@ -68,23 +63,18 @@ fun Sidebar(
     SidebarResizeEffect(
         resizing = resizing,
         onResize = { width = it },
-        onResizeEnd = {
-            resizing = false
-            document.body?.removeClass("select-none", "!cursor-col-resize", "[&_*]:!cursor-col-resize")
-        },
+        onResizeEnd = { resizing = false },
     )
 
     fun startSidebarResize(event: SyntheticMouseEvent) {
         event.preventDefault()
         resizing = true
-        document.body?.addClass("select-none", "!cursor-col-resize", "[&_*]:!cursor-col-resize")
     }
 
     Div({
         classes(
             "relative", "flex", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5", "overflow-y-auto", "border-t", "border-slate-800",
-            "bg-slate-900/80", "p-4", "shadow-2xl", "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0",
-            "md:p-6", "select-none",
+            "bg-slate-900/80", "p-4", "shadow-2xl", "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0", "md:p-6",
         )
         attr("style", "--sidebar-width: ${width}px")
     }) {
@@ -126,8 +116,6 @@ fun Sidebar(
         }
 
         PlacementMode(placementMode)
-
-        SidebarFooter()
     }
 }
 
@@ -340,27 +328,6 @@ private fun SidebarNotationInfo(board: Board, onBoardChange: (BoardUpdateCause, 
                     cells.values.forEach { it.turn = null }
                 })
             }
-        }
-    }
-}
-
-@Composable
-private fun SidebarFooter() {
-    Div({
-        classes(
-            "mt-auto", "flex", "items-center", "gap-2", "justify-between", "border-t", "border-slate-800", "pt-4", "px-2",
-            "text-xs", "text-slate-500",
-        )
-    }) {
-        Span {
-            Text("Copyright © 2026 MineKing")
-        }
-        A(GITHUB_URL, {
-            attr("target", "_blank")
-            attr("rel", "noreferrer noopener")
-            classes("text-slate-400", "transition", "hover:text-slate-200")
-        }) {
-            Text("GitHub")
         }
     }
 }

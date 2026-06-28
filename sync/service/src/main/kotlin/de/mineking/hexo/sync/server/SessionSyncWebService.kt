@@ -6,6 +6,7 @@ import de.mineking.hexo.sync.common.SessionSyncData
 import de.mineking.hexo.sync.common.SessionSyncId
 import de.mineking.hexo.sync.common.SessionSyncLineHighlightRequest
 import de.mineking.hexo.sync.common.SessionSyncRequest
+import de.mineking.hexo.sync.common.SessionSyncUpdateRequest
 import de.mineking.hexo.sync.common.SessionSyncWebsocketCodes
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.deserialize
@@ -96,6 +97,7 @@ class SessionSyncWebService : ApiWebService() {
 
     private suspend fun Session.applyRequest(request: SessionSyncRequest) = lock.withLock {
         when (request) {
+            is SessionSyncUpdateRequest -> data.update { it.copy(cellHighlights = request.cellHighlights, lineHighlights = request.lineHighlights) }
             is SessionSyncCellHighlightRequest -> data.update {
                 val highlights = it.cellHighlights.toMutableMap()
                 val highlight = request.highlight
@@ -110,9 +112,10 @@ class SessionSyncWebService : ApiWebService() {
             }
             is SessionSyncLineHighlightRequest -> data.update {
                 val highlights = it.lineHighlights.toMutableList()
-                val highlight = request.line
 
-                if (!highlights.remove(highlight)) {
+                if (request.remove) {
+                    highlights -= request.line
+                } else {
                     highlights += request.line
                 }
 

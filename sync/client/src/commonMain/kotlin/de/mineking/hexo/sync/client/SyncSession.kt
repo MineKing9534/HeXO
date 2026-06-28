@@ -8,6 +8,7 @@ import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.sync.common.SessionSyncCellHighlightRequest
 import de.mineking.hexo.sync.common.SessionSyncData
 import de.mineking.hexo.sync.common.SessionSyncLineHighlightRequest
+import de.mineking.hexo.sync.common.SessionSyncUpdateRequest
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.sendSerialized
 import kotlinx.coroutines.flow.StateFlow
@@ -20,10 +21,20 @@ class SyncSession(
         wsSession.sendSerialized(SessionSyncCellHighlightRequest(coordinate, highlight))
     }
 
-    suspend fun toggleLine(line: LineHighlight) {
-        wsSession.sendSerialized(SessionSyncLineHighlightRequest(line))
+    suspend fun addLine(line: LineHighlight) {
+        wsSession.sendSerialized(SessionSyncLineHighlightRequest(line, remove = false))
+    }
+
+    suspend fun removeLine(line: LineHighlight) {
+        wsSession.sendSerialized(SessionSyncLineHighlightRequest(line, remove = true))
+    }
+
+    suspend fun update(celHighlights: Map<CellCoordinate, CellHighlight>, lineHighlights: List<LineHighlight>) {
+        wsSession.sendSerialized(SessionSyncUpdateRequest(celHighlights, lineHighlights))
     }
 }
+
+suspend fun SyncSession.reset() = update(emptyMap(), emptyList())
 
 fun SyncSession.asBoard(): Board = MutableBoard().apply {
     lineHighlights += data.value.lineHighlights

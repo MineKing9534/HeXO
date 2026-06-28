@@ -44,6 +44,8 @@ kotlin {
             implementation(projects.board.parse)
             implementation(projects.hds)
 
+            implementation(projects.sync.client)
+
             implementation(libs.kobweb.core)
             implementation(libs.bundles.compose.html)
             implementation(libs.compose.html.svg)

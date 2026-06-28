@@ -24,6 +24,8 @@ import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.web.components.AppLayout
+import de.mineking.hexo.web.components.AppPage
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.sandbox.BoardUpdateCause
@@ -43,7 +45,7 @@ fun SandboxPage(ctx: PageContext) {
     val client = rememberHdsApiClient(withSocket = false)
     val (initialBoard, initialError) = remember {
         val initial = ctx.route.queryParams["position"]?.replace("_", "/") ?: ""
-        if (!AppGlobals.isExporting) window.history.pushState(null, "", window.location.pathname)
+        if (!AppGlobals.isExporting) window.history.replaceState(null, "", window.location.pathname)
 
         try {
             val board = when {
@@ -59,7 +61,9 @@ fun SandboxPage(ctx: PageContext) {
 
     var error by remember { mutableStateOf(initialError) }
 
-    MainLayout(client, initialBoard)
+    AppLayout(activePage = AppPage.Sandbox, scrollContent = false, constrainContent = false) {
+        MainLayout(client, initialBoard)
+    }
 
     if (error != null) {
         Dialog(title = "Invalid Position", onClose = { error = null }) {
@@ -98,7 +102,7 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
         board.copy().focusWinningRows()
     }
 
-    Div({ classes("w-full", "h-full", "flex", "flex-col", "md:flex-row") }) {
+    Div({ classes("flex-1", "flex", "flex-col", "md:flex-row") }) {
         BoardPane(
             board = transformedBoard,
             theme = theme.value.theme,

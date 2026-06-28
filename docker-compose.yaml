@@ -15,7 +15,7 @@ services:
       - |
         cat >/etc/caddy/Caddyfile <<'EOF'
         http:// {
-          rewrite / /app
+          redir / /app
           handle_path /app* {
             route {
               @root path /
