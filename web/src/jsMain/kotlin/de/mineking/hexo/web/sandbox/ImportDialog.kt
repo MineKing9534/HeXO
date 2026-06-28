@@ -13,16 +13,17 @@ import de.mineking.hexo.hds.formation.FormationId
 import de.mineking.hexo.hds.formation.FormationRepository
 import de.mineking.hexo.hds.game.FinishedGameRepository
 import de.mineking.hexo.hds.game.GameId
+import de.mineking.hexo.web.components.Badge
+import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.TextInput
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.attributes.placeholder
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.svg.Path
@@ -83,32 +84,21 @@ fun ImportDialog(
 
 @Composable
 private fun UrlInput(url: String, onUrlUpdate: (String) -> Unit, valid: Boolean) {
-    Input(InputType.Url) {
-        value(url)
-        placeholder("https://hexo.did.science/sandbox/2mdyn02")
-        onInput {
-            onUrlUpdate(it.value)
-        }
-        classes(
-            "w-full", "rounded-lg", "border-3", "border-slate-700", "bg-slate-950", "p-3",
-            "text-sm", "text-slate-100", "placeholder-slate-500", "outline-none", "transition", "focus:bg-slate-800", "text-ellipsis",
-        )
-        if (!valid) {
-            classes("focus:border-rose-400")
-        } else {
-            classes("focus:border-emerald-400")
-        }
-    }
+    TextInput(
+        value = url,
+        type = InputType.Url,
+        placeholder = "https://hexo.did.science/sandbox/2mdyn02",
+        valid = valid,
+        attrs = { classes("text-ellipsis") },
+        onValueInput = onUrlUpdate,
+    )
     Div({ classes("text-xs", "text-slate-500") }) {
         Span({ classes("font-bold", "uppercase") }) {
             Text("Hint: ")
         }
         Text("You can add ")
-        Span({
-            classes(
-                "mx-1", "inline-flex", "items-center", "rounded-md", "border", "px-1.5", "py-0.5", "font-mono", "text-xs", "font-semibold",
-                "border-indigo-300/30", "bg-slate-950/60", "text-indigo-300",
-            )
+        Badge(Color.Sky, {
+            classes("mx-1", "rounded-md", "px-1", "py-0.5", "font-mono", "font-semibold")
         }) {
             Text("?move=...")
         }
@@ -140,7 +130,10 @@ private fun ConfirmButton(
         if (loading || !valid) {
             classes("border-slate-500/40", "bg-slate-500/15", "text-slate-300")
         } else {
-            classes("border-emerald-500/40", "bg-emerald-500/15", "text-emerald-300", "hover:bg-emerald-500/25", "hover:text-emerald-100")
+            classes(
+                "border-emerald-500/40", "bg-emerald-500/15", "text-emerald-300",
+                "hover:bg-emerald-500/25", "hover:text-emerald-100", "cursor-pointer",
+            )
         }
 
         onClick {

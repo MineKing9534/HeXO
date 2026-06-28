@@ -13,6 +13,10 @@ import de.mineking.hexo.hds.session.hasStarted
 import de.mineking.hexo.hds.utils.TimeControl
 import de.mineking.hexo.web.components.AppLayout
 import de.mineking.hexo.web.components.AppPage
+import de.mineking.hexo.web.components.Badge
+import de.mineking.hexo.web.components.Card
+import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.rememberHdsApiClient
 import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
 import org.jetbrains.compose.web.dom.Div
@@ -41,11 +45,8 @@ fun Index() {
 
 @Composable
 private fun LoadingState() {
-    Div({
-        classes(
-            "grid", "min-h-64", "place-items-center", "rounded-xl", "border", "border-slate-800",
-            "bg-slate-800/40", "p-6",
-        )
+    Card({
+        classes("grid", "min-h-64", "place-items-center", "p-6")
     }) {
         Text("Connecting to lobby service...")
     }
@@ -59,11 +60,8 @@ private fun LobbyList(sessionRepository: SessionRepository) {
             .thenByDescending { it.createdAt },
     )
 
-    Div({
-        classes(
-            "flex", "flex-col", "gap-4", "rounded-2xl", "border", "border-slate-800", "bg-slate-800/40",
-            "p-4", "shadow-xl", "shadow-black/10",
-        )
+    Card({
+        classes("flex", "flex-col", "gap-4", "p-4")
     }) {
         Div({ classes("flex", "items-center", "justify-between", "gap-3") }) {
             H2({ classes("text-lg", "font-bold", "text-slate-100") }) {
@@ -93,11 +91,8 @@ private fun LobbyList(sessionRepository: SessionRepository) {
 
 @Composable
 private fun EmptyLobbyState() {
-    Div({
-        classes(
-            "grid", "min-h-64", "place-items-center", "rounded-xl", "bg-slate-950/40", "p-6", "text-center",
-            "border", "border-slate-600/50", "border-dashed",
-        )
+    SubCard({
+        classes("grid", "min-h-64", "place-items-center", "border-dashed", "bg-slate-950/40", "p-6", "text-center")
     }) {
         Div({ classes("flex", "flex-col", "items-center", "gap-2") }) {
             H2({ classes("text-base", "font-semibold", "text-slate-200") }) {
@@ -113,25 +108,28 @@ private fun EmptyLobbyState() {
 @Composable
 private fun LobbyCard(lobby: LobbySession) {
     Anchor("/sessions/${lobby.id.value}", {
-        classes(
-            "group", "grid", "gap-4", "rounded-xl", "border", "border-slate-600/40", "bg-slate-700/40", "p-3",
-            "shadow-md", "shadow-slate-700/10", "transition", "hover:border-slate-600/80", "hover:bg-slate-700/80",
-            "md:grid-cols-[1fr_auto]", "md:items-center",
-        )
+        classes("block")
     }) {
-        Div({ classes("flex", "min-w-0", "flex-col", "gap-3") }) {
-            Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
-                StatusBadge(lobby)
-                GameTypeBadge(lobby.gameOptions.rated)
-                TimeControlBadge(lobby.gameOptions.timeControl)
-            }
-
-            Div({ classes("min-w-0") }) {
-                H2({ classes("truncate", "text-xl", "text-base", "font-semibold", "text-slate-100") }) {
-                    Text(lobby.players.formatPlayers())
+        SubCard({
+            classes(
+                "group", "grid", "gap-4", "p-3", "transition", "hover:border-slate-600/80",
+                "hover:bg-slate-700/80", "md:grid-cols-[1fr_auto]", "md:items-center",
+            )
+        }) {
+            Div({ classes("flex", "min-w-0", "flex-col", "gap-3") }) {
+                Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
+                    StatusBadge(lobby)
+                    GameTypeBadge(lobby.gameOptions.rated)
+                    TimeControlBadge(lobby.gameOptions.timeControl)
                 }
-                P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-500") }) {
-                    Text(lobby.id.value)
+
+                Div({ classes("min-w-0") }) {
+                    H2({ classes("truncate", "text-xl", "text-base", "font-semibold", "text-slate-100") }) {
+                        Text(lobby.players.formatPlayers())
+                    }
+                    P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-500") }) {
+                        Text(lobby.id.value)
+                    }
                 }
             }
         }
@@ -142,13 +140,8 @@ private fun LobbyCard(lobby: LobbySession) {
 private fun StatusBadge(lobby: LobbySession) {
     val status = if (lobby.hasStarted()) "In game" else "Waiting"
 
-    Span({
-        classes("rounded-full", "border", "px-2.5", "py-1", "text-xs", "font-semibold")
-        if (lobby.hasStarted()) {
-            classes("border-sky-500/40", "bg-sky-500/15", "text-sky-300")
-        } else {
-            classes("border-emerald-500/40", "bg-emerald-500/15", "text-emerald-300")
-        }
+    Badge(if (lobby.hasStarted()) Color.Sky else Color.Emerald, {
+        classes("font-semibold")
     }) {
         Text(status)
     }
@@ -156,14 +149,7 @@ private fun StatusBadge(lobby: LobbySession) {
 
 @Composable
 private fun GameTypeBadge(rated: Boolean) {
-    Span({
-        classes("inline-flex", "items-center", "gap-1.5", "rounded-full", "border", "px-2.5", "py-1", "text-xs", "font-medium")
-        if (rated) {
-            classes("border-yellow-400/40", "bg-yellow-400/15", "text-yellow-200")
-        } else {
-            classes("border-slate-700", "bg-slate-950/60", "text-slate-300")
-        }
-    }) {
+    Badge(if (rated) Color.Yellow else Color.Neutral) {
         GameTypeIcon(rated)
         Text(if (rated) "Rated" else "Casual")
     }
@@ -204,12 +190,7 @@ private fun GameTypeIcon(rated: Boolean) {
 @OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 private fun TimeControlBadge(timeControl: TimeControl) {
-    Span({
-        classes(
-            "inline-flex", "items-center", "gap-1.5", "rounded-full", "border", "border-slate-700",
-            "bg-slate-950/60", "px-2.5", "py-1", "text-xs", "font-medium", "text-slate-300",
-        )
-    }) {
+    Badge {
         Svg("0 0 16 16", {
             attr("aria-hidden", "true")
             attr("fill", "none")

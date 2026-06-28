@@ -1,7 +1,6 @@
 package de.mineking.hexo.web.sandbox
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
@@ -9,7 +8,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
-import androidx.compose.web.events.SyntheticMouseEvent
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
@@ -19,23 +17,20 @@ import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
 import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.web.components.ActionButton
+import de.mineking.hexo.web.components.Badge
+import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.ResizableTrailingPanel
 import de.mineking.hexo.web.components.Select
+import de.mineking.hexo.web.components.TextAreaInput
+import de.mineking.hexo.web.components.TextInput
 import de.mineking.hexo.web.pages.CellPlacementMode
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.attributes.placeholder
-import org.jetbrains.compose.web.attributes.readOnly
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Input
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
-import org.w3c.dom.events.EventListener
-import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.url.URL
 
 private const val DEFAULT_SIDEBAR_WIDTH = 380
@@ -57,27 +52,18 @@ fun Sidebar(
     board: Board,
     onBoardChange: (BoardUpdateCause, Board) -> Unit,
 ) {
-    var width by remember { mutableStateOf(DEFAULT_SIDEBAR_WIDTH) }
-    var resizing by remember { mutableStateOf(false) }
-
-    SidebarResizeEffect(
-        resizing = resizing,
-        onResize = { width = it },
-        onResizeEnd = { resizing = false },
-    )
-
-    fun startSidebarResize(event: SyntheticMouseEvent) {
-        event.preventDefault()
-        resizing = true
-    }
-
-    Div({
-        classes(
-            "relative", "flex", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5", "overflow-y-auto", "border-t", "border-slate-800",
-            "bg-slate-900/80", "p-4", "shadow-2xl", "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0", "md:p-6",
-        )
-        attr("style", "--sidebar-width: ${width}px")
-    }) {
+    ResizableTrailingPanel(
+        defaultWidth = DEFAULT_SIDEBAR_WIDTH,
+        minWidth = MIN_SIDEBAR_WIDTH,
+        maxWidth = MAX_SIDEBAR_WIDTH,
+        attrs = {
+            classes(
+                "relative", "flex", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5",
+                "overflow-y-auto", "border-t", "border-slate-800", "bg-slate-900/80", "p-4", "shadow-2xl",
+                "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0", "md:p-6",
+            )
+        },
+    ) {
         var parseError by remember { mutableStateOf<String?>(null) }
         var notation by remember { mutableStateOf("") }
 
@@ -86,7 +72,6 @@ fun Sidebar(
             parseError = null
         }
 
-        SidebarResizeHandle(resizing, ::startSidebarResize)
         SidebarHeader(parseError)
 
         Div({ classes("flex", "flex-col", "gap-2") }) {
@@ -132,58 +117,6 @@ private fun PlacementMode(placementMode: MutableState<CellPlacementMode>) {
 }
 
 @Composable
-private fun SidebarResizeEffect(
-    resizing: Boolean,
-    onResize: (Int) -> Unit,
-    onResizeEnd: () -> Unit,
-) {
-    DisposableEffect(resizing) {
-        if (!resizing) return@DisposableEffect onDispose {}
-
-        val mouseMove = EventListener { event ->
-            event.preventDefault()
-            val mouseEvent = event as MouseEvent
-            onResize(
-                (window.innerWidth - mouseEvent.clientX).coerceIn(
-                    MIN_SIDEBAR_WIDTH,
-                    MAX_SIDEBAR_WIDTH,
-                ),
-            )
-        }
-        val mouseUp = EventListener {
-            onResizeEnd()
-        }
-
-        window.addEventListener("mousemove", mouseMove)
-        window.addEventListener("mouseup", mouseUp)
-        onDispose {
-            window.removeEventListener("mousemove", mouseMove)
-            window.removeEventListener("mouseup", mouseUp)
-        }
-    }
-}
-
-@Composable
-private fun SidebarResizeHandle(
-    resizing: Boolean,
-    onResizeStart: (SyntheticMouseEvent) -> Unit,
-) {
-    Div({
-        onMouseDown(onResizeStart)
-        classes("group", "absolute", "-left-1", "top-0", "hidden", "h-full", "w-2", "cursor-col-resize", "place-items-center", "md:grid")
-        if (resizing) {
-            classes("bg-slate-700/30")
-        } else {
-            classes("hover:bg-slate-700/20")
-        }
-    }) {
-        Div({
-            classes("h-10", "w-1", "rounded-full", "bg-slate-600", "opacity-60", "transition", "group-hover:opacity-100")
-        })
-    }
-}
-
-@Composable
 private fun SidebarHeader(parseError: String?) {
     Div({ classes("flex", "items-center", "justify-between") }) {
         Div({ classes("text-lg", "font-semibold") }) {
@@ -195,13 +128,8 @@ private fun SidebarHeader(parseError: String?) {
 
 @Composable
 private fun ParseStatus(valid: Boolean) {
-    Span({
-        classes("rounded-full", "px-3", "py-1", "m-px", "text-xs", "font-medium", "ring-1")
-        if (valid) {
-            classes("bg-emerald-500/15", "ring-emerald-400/30", "text-emerald-400")
-        } else {
-            classes("bg-rose-500/15", "ring-rose-400/30", "text-rose-400")
-        }
+    Badge(if (valid) Color.Emerald else Color.Rose, {
+        classes("m-px", "px-3")
     }) {
         Text(if (valid) "Parsed" else "Invalid")
     }
@@ -230,31 +158,17 @@ private fun NotationField(
             }
         }
 
-        TextArea {
-            value(notation)
-            placeholder("Board notation")
-            onInput { onChange(BoardUpdateCause.NotationInput, it.value) }
-            classes(
-                "min-h-32", "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100", "placeholder-slate-500",
-                "outline-none", "transition", "font-mono", "border-slate-700", "bg-slate-950", "focus:border-emerald-400", "focus:bg-slate-800",
-            )
-            if (parseError != null) classes("border-rose-400!")
-        }
-    }
-}
-
-@Composable
-fun ActionButton(label: String, enabled: Boolean = true, onClick: () -> Unit) {
-    Button({
-        if (!enabled) disabled()
-        classes(
-            "rounded-md", "border", "border-slate-700", "bg-slate-950", "px-2.5", "py-1", "text-nowrap",
-            "text-xs", "font-medium", "text-slate-300", "disabled:text-slate-400", "transition",
-            "not-disabled:hover:bg-slate-800", "not-disabled:hover:text-slate-100",
+        TextAreaInput(
+            value = notation,
+            placeholder = "Board notation",
+            valid = parseError == null,
+            monospace = true,
+            attrs = {
+                classes("min-h-32", "resize-y")
+                if (parseError != null) classes("border-rose-400!")
+            },
+            onValueInput = { onChange(BoardUpdateCause.NotationInput, it) },
         )
-        onClick { onClick() }
-    }) {
-        Text(label)
     }
 }
 
@@ -278,15 +192,13 @@ private fun NotationActions(
                 title = "Position Link",
                 onClose = { link = null },
             ) {
-                Input(InputType.Url) {
-                    value(link ?: "")
-                    classes(
-                        "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-slate-100",
-                        "outline-none", "transition", "font-mono", "border-slate-700", "bg-slate-950",
-                        "focus:border-emerald-400", "focus:bg-slate-800", "text-ellipsis",
-                    )
-                    readOnly()
-                }
+                TextInput(
+                    value = link ?: "",
+                    type = InputType.Url,
+                    readOnly = true,
+                    monospace = true,
+                    attrs = { classes("resize-y", "text-ellipsis") },
+                )
             }
         }
 

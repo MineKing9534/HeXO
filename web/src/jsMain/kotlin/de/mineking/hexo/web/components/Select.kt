@@ -12,7 +12,7 @@ fun <T> Select(entries: List<T>, current: T, onChange: (T) -> Unit) {
             Button({
                 classes(
                     "rounded-full", "px-8", "py-1.25", "m-px", "text-xs", "font-medium", "ring-1", "backdrop-blur-sm", "transition-all",
-                    "duration-200", "hover:shadow-lg",
+                    "duration-200", "hover:shadow-lg", "cursor-pointer",
                 )
 
                 if (entry == current) {

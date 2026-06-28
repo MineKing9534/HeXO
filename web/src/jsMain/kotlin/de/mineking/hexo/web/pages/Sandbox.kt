@@ -24,19 +24,18 @@ import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.AppLayout
 import de.mineking.hexo.web.components.AppPage
+import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.sandbox.BoardUpdateCause
 import de.mineking.hexo.web.sandbox.Sidebar
 import kotlinx.browser.window
-import org.jetbrains.compose.web.attributes.readOnly
 import org.jetbrains.compose.web.dom.AttrBuilderContext
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.dom.TextArea
 import org.w3c.dom.HTMLDivElement
 
 @Page
@@ -67,14 +66,13 @@ fun SandboxPage(ctx: PageContext) {
 
     if (error != null) {
         Dialog(title = "Invalid Position", onClose = { error = null }) {
-            TextArea {
-                value(error ?: "")
-                classes(
-                    "w-full", "resize-y", "rounded-lg", "border-3", "p-3", "text-sm", "text-rose-100",
-                    "outline-none", "transition", "font-mono", "bg-slate-950", "border-rose-400",
-                )
-                readOnly()
-            }
+            TextAreaInput(
+                value = error ?: "",
+                valid = false,
+                readOnly = true,
+                monospace = true,
+                attrs = { classes("resize-y", "border-rose-400", "text-rose-100") },
+            )
         }
     }
 }
@@ -249,17 +247,12 @@ private fun BoardPane(
             Edge { classes("inset-y-0", "left-0", "w-4", "bg-linear-to-r") }
             Edge { classes("inset-y-0", "right-0", "w-4", "bg-linear-to-l") }
 
-            Button({
-                classes(
-                    "absolute", "bottom-3", "right-3", "z-20", "grid", "place-items-center", "rounded-lg", "py-1", "px-4", "border",
-                    "border-slate-700", "bg-slate-950", "text-slate-300", "shadow-lg", "transition", "hover:bg-slate-800", "hover:text-slate-100",
-                )
-                onClick {
-                    viewport = null
-                }
-            }) {
-                Text("Reset View")
-            }
+            ActionButton(
+                label = "Reset View",
+                size = ButtonSize.Medium,
+                attrs = { classes("absolute", "bottom-3", "right-3", "z-20", "shadow-lg") },
+                onClick = { viewport = null },
+            )
         }
     }
 }
