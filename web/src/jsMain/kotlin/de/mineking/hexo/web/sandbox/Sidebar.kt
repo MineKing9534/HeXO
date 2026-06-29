@@ -58,7 +58,7 @@ fun Sidebar(
         maxWidth = MAX_SIDEBAR_WIDTH,
         attrs = {
             classes(
-                "relative", "flex", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5",
+                "relative", "flex", "min-h-0", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5",
                 "overflow-y-auto", "border-t", "border-slate-800", "bg-slate-900/80", "p-4", "shadow-2xl",
                 "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0", "md:p-6",
             )

@@ -1,7 +1,6 @@
 package de.mineking.hexo.web.pages
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,14 +18,12 @@ import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
-import de.mineking.hexo.board.render.compose.InteractiveBoard
-import de.mineking.hexo.board.render.image.theme.DefaultTheme
-import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.AppLayout
 import de.mineking.hexo.web.components.AppPage
+import de.mineking.hexo.web.components.BoardPane
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.TextAreaInput
@@ -34,14 +31,12 @@ import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.sandbox.BoardUpdateCause
 import de.mineking.hexo.web.sandbox.Sidebar
 import kotlinx.browser.window
-import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
-import org.w3c.dom.HTMLDivElement
 
 @Page
 @Composable
 fun SandboxPage(ctx: PageContext) {
-    val client = rememberHdsApiClient(withSocket = false)
+    val client = rememberHdsApiClient()
     val (initialBoard, initialError) = remember {
         val initial = ctx.route.queryParams["position"]?.replace("_", "/") ?: ""
         if (!AppGlobals.isExporting) window.history.replaceState(null, "", window.location.pathname)
@@ -60,7 +55,7 @@ fun SandboxPage(ctx: PageContext) {
 
     var error by remember { mutableStateOf(initialError) }
 
-    AppLayout(activePage = AppPage.Sandbox, scrollContent = false, constrainContent = false) {
+    AppLayout(activePage = AppPage.Sandbox, padding = false) {
         MainLayout(client, initialBoard)
     }
 
@@ -84,8 +79,6 @@ enum class CellPlacementMode {
 
 @Composable
 private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
-    val viewport = remember { mutableStateOf<BoardViewport?>(null) }
-    val theme = remember { mutableStateOf(DefaultTheme.HDS) }
     val placementMode = remember {
         mutableStateOf(
             when {
@@ -96,24 +89,34 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
     }
 
     var board by remember { mutableStateOf(initialBoard) }
+    var viewport by remember { mutableStateOf<BoardViewport?>(null) }
     val transformedBoard = remember(board) {
         board.copy().focusWinningRows()
     }
 
-    Div({ classes("flex-1", "flex", "flex-col", "md:flex-row") }) {
-        BoardPane(
-            board = transformedBoard,
-            theme = theme.value.theme,
-            viewport = viewport,
-            onBoardInteraction = { interaction ->
-                board = board.copy().also {
-                    when (interaction) {
-                        is BoardInteraction.PlaceCell -> it.placeCell(interaction.coordinate, placementMode.value)
-                        is BoardInteraction.HighlightBoardInteraction -> interaction.apply(it)
+    Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "flex-col", "md:flex-row") }) {
+        Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "p-3", "md:p-6") }) {
+            BoardPane(
+                board = transformedBoard,
+                viewport = viewport,
+                onViewportChange = { viewport = it },
+                onBoardInteraction = { interaction ->
+                    board = board.copy().also {
+                        when (interaction) {
+                            is BoardInteraction.PlaceCell -> it.placeCell(interaction.coordinate, placementMode.value)
+                            is BoardInteraction.HighlightBoardInteraction -> interaction.apply(it)
+                        }
                     }
-                }
-            },
-        )
+                },
+            ) {
+                ActionButton(
+                    label = "Reset View",
+                    size = ButtonSize.Medium,
+                    attrs = { classes("absolute", "bottom-3", "right-3", "z-20", "shadow-lg") },
+                    onClick = { viewport = null },
+                )
+            }
+        }
         Sidebar(
             client = client,
             placementMode = placementMode,
@@ -121,7 +124,7 @@ private fun MainLayout(client: HdsApiClient?, initialBoard: Board) {
             onBoardChange = { cause, updated ->
                 board = updated
                 if (cause == BoardUpdateCause.Import) {
-                    viewport.value = null
+                    viewport = null
                 }
             },
         )
@@ -194,65 +197,4 @@ private fun Board.findNextTurn(): Pair<CellOwner, Int> {
     }
 
     return player to turn
-}
-
-@Composable
-private fun BoardPane(
-    board: Board,
-    theme: Theme,
-    viewport: MutableState<BoardViewport?>,
-    onBoardInteraction: (BoardInteraction) -> Unit,
-) {
-    var viewport by viewport
-    Div({ classes("flex-1", "p-3", "md:p-6") }) {
-        if (AppGlobals.isExporting) {
-            Div({
-                classes(
-                    "grid", "grow", "place-items-center", "rounded-2xl", "border", "border-slate-800",
-                    "bg-linear-to-br", "from-slate-900", "to-slate-900/30", "shadow-2xl", "shadow-black/30", "h-full",
-                )
-            }) {
-                Div({ classes("size-9", "animate-spin", "rounded-full", "border-5", "border-slate-400/30", "border-t-emerald-400") })
-            }
-            return@Div
-        }
-
-        Div({ classes("relative", "h-full", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-900", "shadow-2xl") }) {
-            InteractiveBoard(
-                board = board,
-                theme = theme,
-                viewport = viewport,
-                onViewportChange = { viewport = it },
-                onBoardInteraction = onBoardInteraction,
-                attrs = {
-                    attr("width", "1200")
-                    attr("height", "900")
-                    classes("block", "h-full", "w-full", "touch-none")
-                },
-            )
-
-            @Composable
-            fun Edge(attrs: AttrBuilderContext<HTMLDivElement>? = null) {
-                Div({
-                    style {
-                        variable("--hexo-background", theme.backgroundColor.toString())
-                    }
-                    classes("pointer-events-none", "absolute", "z-10", "from-(--hexo-background)", "to-transparent")
-                    attrs?.invoke(this)
-                })
-            }
-
-            Edge { classes("inset-x-0", "top-0", "h-4", "bg-linear-to-b") }
-            Edge { classes("inset-x-0", "bottom-0", "h-4", "bg-linear-to-t") }
-            Edge { classes("inset-y-0", "left-0", "w-4", "bg-linear-to-r") }
-            Edge { classes("inset-y-0", "right-0", "w-4", "bg-linear-to-l") }
-
-            ActionButton(
-                label = "Reset View",
-                size = ButtonSize.Medium,
-                attrs = { classes("absolute", "bottom-3", "right-3", "z-20", "shadow-lg") },
-                onClick = { viewport = null },
-            )
-        }
-    }
 }

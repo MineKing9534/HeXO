@@ -22,13 +22,13 @@ internal fun AttrsScope<*>.colorClasses(color: Color) {
 
 internal fun AttrsScope<*>.colorButtonClasses(color: Color, enabled: Boolean) {
     if (!enabled) {
-        classes("border-slate-500/40", "bg-slate-500/15", "text-slate-300")
+        classes("border-slate-700", "bg-slate-800", "text-slate-300")
         return
     }
 
     when (color) {
         Color.Neutral -> classes(
-            "border-slate-700", "bg-slate-950", "text-slate-300", "disabled:text-slate-400",
+            "border-slate-700/80", "bg-slate-950", "text-slate-300", "disabled:text-slate-400",
             "not-disabled:hover:bg-slate-800", "not-disabled:hover:text-slate-100",
         )
 

@@ -14,8 +14,10 @@ import de.mineking.hexo.hds.utils.TimeControl
 import de.mineking.hexo.web.components.AppLayout
 import de.mineking.hexo.web.components.AppPage
 import de.mineking.hexo.web.components.Badge
-import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.ContentCard
+import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.rememberHdsApiClient
 import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
@@ -30,11 +32,9 @@ import org.jetbrains.compose.web.svg.Svg
 @Page
 @Composable
 fun Index() {
-    val client = rememberHdsApiClient(withSocket = true)
+    val client = rememberHdsApiClient()
 
     AppLayout(activePage = AppPage.Home) {
-        Div({ classes("lg:h-12") })
-
         if (client == null) {
             LoadingState()
         } else {
@@ -45,10 +45,11 @@ fun Index() {
 
 @Composable
 private fun LoadingState() {
-    Card({
-        classes("grid", "min-h-64", "place-items-center", "p-6")
-    }) {
-        Text("Connecting to lobby service...")
+    StatusCard {
+        LoadingIndicator { classes("size-9") }
+        P({ classes("font-semibold", "text-slate-200") }) {
+            Text("Connecting to lobby service...")
+        }
     }
 }
 
@@ -60,7 +61,7 @@ private fun LobbyList(sessionRepository: SessionRepository) {
             .thenByDescending { it.createdAt },
     )
 
-    Card({
+    ContentCard({
         classes("flex", "flex-col", "gap-4", "p-4")
     }) {
         Div({ classes("flex", "items-center", "justify-between", "gap-3") }) {

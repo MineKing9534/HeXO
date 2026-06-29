@@ -27,14 +27,14 @@ fun ActionButton(
 ) {
     val onClick by rememberUpdatedState(onClick)
     Button({
-        classes("rounded-md", "border", "text-nowrap", "font-medium", "transition")
+        classes("rounded-lg", "border", "text-nowrap", "font-medium", "transition")
 
         if (!enabled) disabled()
         if (enabled) classes("cursor-pointer")
 
         when (size) {
             ButtonSize.Small -> classes("px-2.5", "py-1", "text-xs")
-            ButtonSize.Medium -> classes("px-4", "py-2", "text-sm")
+            ButtonSize.Medium -> classes("px-4", "py-1.5", "text-sm")
         }
 
         colorButtonClasses(color, enabled)

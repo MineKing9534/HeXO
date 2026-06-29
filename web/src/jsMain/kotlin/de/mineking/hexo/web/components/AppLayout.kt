@@ -27,70 +27,69 @@ private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 @Composable
 fun AppLayout(
     activePage: AppPage?,
-    scrollContent: Boolean = true,
-    constrainContent: Boolean = true,
+    padding: Boolean = true,
     content: @Composable () -> Unit,
 ) {
     Div({ classes("flex", "h-full", "w-full", "flex-col", "overflow-hidden", "select-none") }) {
-        Header({
-            classes(
-                "shrink-0", "border-b", "border-slate-800/80", "bg-slate-950/95", "px-3", "py-2.5",
-                "shadow-lg", "shadow-black/10", "md:px-6", "lg:px-8",
-            )
-        }) {
-            Div({
-                classes("mx-auto", "flex", "w-full", "items-center", "justify-between", "gap-3")
-            }) {
-                Anchor("/", {
-                    classes(
-                        "group", "flex", "min-w-0", "items-center", "gap-2.5", "rounded-md", "px-1", "py-1",
-                        "transition", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
-                    )
-                }) {
-                    Span({
-                        classes(
-                            "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
-                            "border-emerald-500/40", "bg-emerald-500/15", "group-hover:border-emerald-400/50", "transition",
-                        )
-                    }) {
-                        Img(BasePath.prependTo("/favicon.png"), "HeXO", {
-                            classes("size-full", "object-contain")
-                        })
-                    }
-                    Span({ classes("truncate", "text-base", "font-bold", "text-xl", "text-slate-100") }) {
-                        Text("MineKing's HeXO Tools")
-                    }
-                }
-
-                Nav({
-                    classes(
-                        "flex", "items-center", "gap-2", "rounded-xl", "border", "border-slate-800",
-                        "bg-slate-900/70", "p-1", "shadow-inner", "shadow-black/20",
-                    )
-                }) {
-                    NavLink("Lobbies", "/", activePage == AppPage.Home)
-                    NavLink("Sandbox", "/sandbox", activePage == AppPage.Sandbox)
-                }
-            }
-        }
+        NavBar(activePage)
 
         Main({
-            classes("min-h-0", "flex-1")
-            if (scrollContent) {
-                classes("overflow-y-auto", "p-3", "md:p-6")
-            } else {
-                classes("overflow-hidden")
-            }
+            classes("min-h-0", "flex-1", "overflow-hidden")
+            if (padding) classes("p-3", "md:p-6")
         }) {
             Div({
-                classes("mx-auto", "flex", "min-h-full", "w-full", "flex-col")
-                if (constrainContent) classes("max-w-5xl", "gap-6")
+                classes("mx-auto", "flex", "w-full", "flex-col", "h-full", "min-h-0", "overflow-hidden")
             }) {
                 content()
             }
         }
 
         AppFooter()
+    }
+}
+
+@Composable
+private fun NavBar(activePage: AppPage?) {
+    Header({
+        classes(
+            "shrink-0", "border-b", "border-slate-800/80", "bg-slate-950/95", "px-3", "py-2.5",
+            "shadow-lg", "shadow-black/10", "md:px-6", "lg:px-8",
+        )
+    }) {
+        Div({
+            classes("mx-auto", "flex", "w-full", "items-center", "justify-between", "gap-3")
+        }) {
+            Anchor("/", {
+                classes(
+                    "group", "flex", "min-w-0", "items-center", "gap-2.5", "rounded-md", "px-1", "py-1",
+                    "transition", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
+                )
+            }) {
+                Span({
+                    classes(
+                        "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
+                        "border-emerald-500/40", "bg-emerald-500/15", "group-hover:border-emerald-400/50", "transition",
+                    )
+                }) {
+                    Img(BasePath.prependTo("/favicon.png"), "HeXO", {
+                        classes("size-full", "object-contain")
+                    })
+                }
+                Span({ classes("truncate", "text-base", "font-bold", "text-xl", "text-slate-100") }) {
+                    Text("MineKing's HeXO Tools")
+                }
+            }
+
+            Nav({
+                classes(
+                    "flex", "items-center", "gap-2", "rounded-xl", "border", "border-slate-800",
+                    "bg-slate-900/70", "p-1", "shadow-inner", "shadow-black/20",
+                )
+            }) {
+                NavLink("Lobbies", "/", activePage == AppPage.Home)
+                NavLink("Sandbox", "/sandbox", activePage == AppPage.Sandbox)
+            }
+        }
     }
 }
 

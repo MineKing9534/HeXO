@@ -10,13 +10,7 @@ import org.w3c.dom.HTMLDivElement
 @Composable
 fun LoadingIndicator(attrs: AttrBuilderContext<HTMLDivElement>? = null) {
     Div({
-        classes(
-            "animate-spin",
-            "rounded-full",
-            "border-4",
-            "border-emerald-600",
-            "border-t-slate-600",
-        )
+        classes("animate-spin", "rounded-full", "border-5", "border-slate-400/30", "border-t-emerald-400")
         attrs?.invoke(this)
     })
 }
