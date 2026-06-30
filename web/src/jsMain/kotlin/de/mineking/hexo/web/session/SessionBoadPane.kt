@@ -179,9 +179,47 @@ private fun TurnIndicator(session: LiveSession, state: SessionState.InGame) {
     Div({ classes("absolute", "top-3", "left-3", "right-3", "flex", "justify-center") }) {
         Div({ classes("shadow-xl", "bg-slate-800", "rounded-lg", "p-3", "max-w-xl", "w-full") }) {
             if (session.tournamentInfo != null) TournamentInfoCard(session)
+            if (session.gameOptions.rated) RatedInfoCard(session)
+
             Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
                 session.players.forEach {
                     PlayerIndicator(it)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RatedInfoCard(session: LiveSession) {
+    Div({
+        classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
+    }) {
+        Div({ classes("mb-1.5", "flex", "items-center", "justify-center", "text-xs") }) {
+            Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-400", "uppercase") }) {
+                Text("Rated Match")
+            }
+        }
+
+        Div({ classes("grid", "grid-cols-2", "gap-2") }) {
+            session.players.forEach { player ->
+                Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
+                    Div({
+                        classes("rounded-full", "size-2", "shrink-0")
+                        style { backgroundColor(player.color.cssColor) }
+                    })
+                    Span({ classes("min-w-0", "flex-1", "truncate", "text-slate-300") }) {
+                        Text(player.displayName)
+                    }
+                    Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
+                        Text("Elo ${player.elo}")
+
+                        Span({ classes("ml-1", "text-xs") }) {
+                            Span({ classes("text-emerald-300") }) { Text("+${player.eloAdjustment?.eloGain}") }
+                            Text("/")
+                            Span({ classes("text-rose-300") }) { Text("${player.eloAdjustment?.eloLoss}") }
+                        }
+                    }
                 }
             }
         }
