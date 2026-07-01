@@ -6,43 +6,43 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.hds.session.SessionId
-import de.mineking.hexo.sync.common.SessionSyncCellHighlightRequest
-import de.mineking.hexo.sync.common.SessionSyncData
-import de.mineking.hexo.sync.common.SessionSyncLineHighlightRequest
-import de.mineking.hexo.sync.common.SessionSyncNavigateRequest
-import de.mineking.hexo.sync.common.SessionSyncRequest
-import de.mineking.hexo.sync.common.SessionSyncUpdateRequest
+import de.mineking.hexo.sync.common.WatchPartyCellHighlightRequest
+import de.mineking.hexo.sync.common.WatchPartyData
+import de.mineking.hexo.sync.common.WatchPartyLineHighlightRequest
+import de.mineking.hexo.sync.common.WatchPartyNavigateRequest
+import de.mineking.hexo.sync.common.WatchPartyRequest
+import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.websocket.close
 import kotlinx.coroutines.flow.StateFlow
 
-class SyncSession(
-    val data: StateFlow<SessionSyncData>,
+class WatchParty(
+    val data: StateFlow<WatchPartyData>,
     private val wsSession: DefaultClientWebSocketSession,
 ) {
-    private suspend fun request(request: SessionSyncRequest) {
+    private suspend fun request(request: WatchPartyRequest) {
         wsSession.sendSerialized(request)
     }
 
     suspend fun highlightCell(coordinate: CellCoordinate, highlight: CellHighlight?) {
-        request(SessionSyncCellHighlightRequest(coordinate, highlight))
+        request(WatchPartyCellHighlightRequest(coordinate, highlight))
     }
 
     suspend fun addLine(line: LineHighlight) {
-        request(SessionSyncLineHighlightRequest(line, remove = false))
+        request(WatchPartyLineHighlightRequest(line, remove = false))
     }
 
     suspend fun removeLine(line: LineHighlight) {
-        request(SessionSyncLineHighlightRequest(line, remove = true))
+        request(WatchPartyLineHighlightRequest(line, remove = true))
     }
 
     suspend fun update(celHighlights: Map<CellCoordinate, CellHighlight>, lineHighlights: List<LineHighlight>) {
-        request(SessionSyncUpdateRequest(celHighlights, lineHighlights))
+        request(WatchPartyUpdateRequest(celHighlights, lineHighlights))
     }
 
     suspend fun navigate(sessionId: SessionId?) {
-        request(SessionSyncNavigateRequest(sessionId))
+        request(WatchPartyNavigateRequest(sessionId))
     }
 
     suspend fun close() {
@@ -50,9 +50,9 @@ class SyncSession(
     }
 }
 
-suspend fun SyncSession.reset() = update(emptyMap(), emptyList())
+suspend fun WatchParty.reset() = update(emptyMap(), emptyList())
 
-fun SessionSyncData.asBoard(): Board = MutableBoard().apply {
+fun WatchPartyData.asBoard(): Board = MutableBoard().apply {
     this.lineHighlights += this@asBoard.lineHighlights
     this@asBoard.cellHighlights.forEach { (coordinate, highlight) ->
         this[coordinate].highlight = highlight

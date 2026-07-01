@@ -1,15 +1,12 @@
 package de.mineking.hexo.web.components
 
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
+import de.mineking.hexo.web.icons.CloseIcon
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.svg.Path
-import org.jetbrains.compose.web.svg.Svg
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 fun Dialog(
     title: String,
@@ -40,16 +37,7 @@ fun Dialog(
                     )
                     onClick { onClose() }
                 }) {
-                    Svg("0 0 24 24", {
-                        attr("fill", "none")
-                        attr("stroke", "currentColor")
-                        attr("stroke-width", "2")
-                        attr("stroke-linecap", "round")
-                        attr("stroke-linejoin", "round")
-                    }) {
-                        Path("m9 9 6 6")
-                        Path("m15 9-6 6")
-                    }
+                    CloseIcon()
                 }
 
                 Div({ classes("flex", "flex-col", "space-y-2") }) {

@@ -1,8 +1,8 @@
 package de.mineking.hexo.sync.client
 
-import de.mineking.hexo.sync.common.SessionSyncData
-import de.mineking.hexo.sync.common.SessionSyncId
-import de.mineking.hexo.sync.common.SessionSyncWebsocketCodes
+import de.mineking.hexo.sync.common.WatchPartyData
+import de.mineking.hexo.sync.common.WatchPartyId
+import de.mineking.hexo.sync.common.WatchPartyWebsocketCodes
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.HttpClientConfig
@@ -36,11 +36,11 @@ fun createDefaultHttpClient(
     config()
 }
 
-class SessionSyncClient(
+class WatchPartyClient(
     private val host: String,
     private val httpClient: HttpClient = createDefaultHttpClient(),
 ) {
-    suspend fun connectSession(id: SessionSyncId?): SyncSession? {
+    suspend fun connectSession(id: WatchPartyId?): WatchParty? {
         val wsSession = httpClient.webSocketSession("${host.replace("http", "ws")}/api/sessions/sync/gateway") {
             parameter("id", id?.value)
         }
@@ -48,22 +48,22 @@ class SessionSyncClient(
         val frame = wsSession.incoming.receive()
         if (frame is Frame.Close) {
             val reason = frame.readReason()
-            if (reason?.code != SessionSyncWebsocketCodes.NotFound) {
+            if (reason?.code != WatchPartyWebsocketCodes.NotFound) {
                 logger.warn { "SessionSync closed unexpectedly: $reason" }
             }
 
             return null
         }
 
-        val initial = wsSession.converter!!.deserialize<SessionSyncData>(frame)
+        val initial = wsSession.converter!!.deserialize<WatchPartyData>(frame)
         val flow = MutableStateFlow(initial)
 
-        val session = SyncSession(flow, wsSession)
+        val session = WatchParty(flow, wsSession)
         wsSession.launch {
             for (frame in wsSession.incoming) {
                 if (frame is Frame.Close) return@launch
 
-                flow.value = wsSession.converter!!.deserialize<SessionSyncData>(frame)
+                flow.value = wsSession.converter!!.deserialize<WatchPartyData>(frame)
             }
         }
 
@@ -71,4 +71,4 @@ class SessionSyncClient(
     }
 }
 
-suspend fun SessionSyncClient.createSession() = connectSession(null)!!
+suspend fun WatchPartyClient.createSession() = connectSession(null)!!

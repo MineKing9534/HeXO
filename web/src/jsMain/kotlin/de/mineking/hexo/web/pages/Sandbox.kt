@@ -21,12 +21,12 @@ import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.ActionButton
-import de.mineking.hexo.web.components.AppLayout
-import de.mineking.hexo.web.components.AppPage
 import de.mineking.hexo.web.components.BoardPane
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.TextAreaInput
+import de.mineking.hexo.web.layout.AppLayout
+import de.mineking.hexo.web.layout.AppPage
 import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.sandbox.BoardUpdateCause
 import de.mineking.hexo.web.sandbox.Sidebar

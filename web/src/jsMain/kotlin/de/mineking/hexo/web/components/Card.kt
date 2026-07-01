@@ -43,7 +43,7 @@ fun StatusCard(
             classes("grid", "place-items-center", "p-8", "min-h-48", "my-auto", "lg:max-w-3xl")
             attrs?.invoke(this)
         }) {
-            Section({ classes("grid", "place-items-center", "gap-4") }) {
+            Section({ classes("grid", "place-items-center", "gap-4", "w-full") }) {
                 content()
             }
         }

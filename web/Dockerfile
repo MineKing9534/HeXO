@@ -2,6 +2,7 @@ FROM gradle:9.4.0-jdk21 AS build
 
 WORKDIR /workspace
 ARG WEB_API_PROXY
+ARG WEB_TOOLS_API
 
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
@@ -35,7 +36,7 @@ COPY buildSrc ./buildSrc
 COPY . .
 
 RUN --mount=type=cache,target=/home/gradle/.gradle,sharing=locked \
-    ./gradlew --no-daemon :web:kobwebExport -PkobwebExportLayout=STATIC -Pweb.apiProxy=${WEB_API_PROXY}
+    ./gradlew --no-daemon :web:kobwebExport -PkobwebExportLayout=STATIC -Pweb.apiProxy=${WEB_API_PROXY} -Pweb.toolsApi=${WEB_TOOLS_API}
 
 FROM nginx:1.31.1-alpine
 

@@ -5,7 +5,7 @@ import androidx.compose.runtime.mutableStateOf
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.render.compose.BoardInteraction
-import de.mineking.hexo.sync.client.SyncSession
+import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.client.asBoard
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -33,10 +33,10 @@ open class LocalHighlightManager : HighlightManager {
 }
 
 @OptIn(DelicateCoroutinesApi::class)
-class SyncHighlightManager(val session: SyncSession) : LocalHighlightManager() {
+class WatchPartyHighlightManager(val watchParty: WatchParty) : LocalHighlightManager() {
     init {
         GlobalScope.launch {
-            session.data
+            watchParty.data
                 .map { it.asBoard() }
                 .collect { board.value = it }
         }
@@ -46,12 +46,12 @@ class SyncHighlightManager(val session: SyncSession) : LocalHighlightManager() {
         super.apply(interaction)
         GlobalScope.launch {
             when (interaction) {
-                is BoardInteraction.HighlightCell -> session.highlightCell(interaction.coordinate, interaction.highlight)
+                is BoardInteraction.HighlightCell -> watchParty.highlightCell(interaction.coordinate, interaction.highlight)
                 is BoardInteraction.HighlightLine -> {
                     if (interaction.isRemove) {
-                        session.removeLine(interaction.line)
+                        watchParty.removeLine(interaction.line)
                     } else {
-                        session.addLine(interaction.line)
+                        watchParty.addLine(interaction.line)
                     }
                 }
             }
@@ -61,7 +61,7 @@ class SyncHighlightManager(val session: SyncSession) : LocalHighlightManager() {
     override fun clearHighlights() {
         super.clearHighlights()
         GlobalScope.launch {
-            session.update(celHighlights = emptyMap(), lineHighlights = emptyList())
+            watchParty.update(celHighlights = emptyMap(), lineHighlights = emptyList())
         }
     }
 }

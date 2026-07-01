@@ -167,7 +167,7 @@ private fun NotationField(
                 classes("min-h-32", "resize-y")
                 if (parseError != null) classes("border-rose-400!")
             },
-            onValueInput = { onChange(BoardUpdateCause.NotationInput, it) },
+            onValueChange = { onChange(BoardUpdateCause.NotationInput, it) },
         )
     }
 }

@@ -15,33 +15,38 @@ import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
-import de.mineking.hexo.web.components.AppLayout
-import de.mineking.hexo.web.components.AppPage
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
+import de.mineking.hexo.web.icons.ChevronLeftIcon
+import de.mineking.hexo.web.layout.AppLayout
+import de.mineking.hexo.web.layout.AppPage
 import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
+import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.session.HighlightManager
 import de.mineking.hexo.web.session.LobbyOverlay
 import de.mineking.hexo.web.session.LocalHighlightManager
 import de.mineking.hexo.web.session.SessionBoardPane
 import de.mineking.hexo.web.session.SessionFinishedOverlay
-import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
+import de.mineking.hexo.web.session.WatchPartyHighlightManager
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.svg.Path
-import org.jetbrains.compose.web.svg.Svg
 
 @Page("{id}")
 @Composable
 fun SessionPage(ctx: PageContext) {
-    val id = remember { SessionId(ctx.route.params["id"]!!) }
+    val watchPartyController = rememberWatchPartyController()
+    val id = SessionId(ctx.route.params["id"]!!)
 
     AppLayout(activePage = AppPage.Lobbies) {
-        val highlightManager = remember { LocalHighlightManager() }
+        val highlightManager = remember(watchPartyController.hostWatchParty) {
+            watchPartyController.hostWatchParty
+                ?.let { WatchPartyHighlightManager(it) }
+                ?: LocalHighlightManager()
+        }
         Session(id, highlightManager)
     }
 }
@@ -122,7 +127,6 @@ private fun NotFoundState() {
     }
 }
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 fun BackToLobbiesLink() {
     Anchor("/", {
@@ -133,16 +137,8 @@ fun BackToLobbiesLink() {
             "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60", "mt-2",
         )
     }) {
-        Svg("0 0 16 16", {
-            attr("aria-hidden", "true")
-            attr("fill", "none")
-            attr("stroke", "currentColor")
-            attr("stroke-width", "1.8")
-            attr("stroke-linecap", "round")
-            attr("stroke-linejoin", "round")
+        ChevronLeftIcon {
             classes("size-4", "shrink-0", "transition-transform", "group-hover:-translate-x-0.5")
-        }) {
-            Path("M9.5 3.5 5 8l4.5 4.5M5.5 8H14")
         }
         Span({ classes("whitespace-nowrap") }) {
             Text("Back to lobbies")

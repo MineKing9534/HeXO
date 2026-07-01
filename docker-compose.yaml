@@ -87,6 +87,7 @@ services:
       dockerfile: web/Dockerfile
       args:
         WEB_API_PROXY: ${WEB_API_PROXY:?}
+        WEB_TOOLS_API: ${SERVER_URL:?}
     restart: unless-stopped
     expose:
       - "80"

@@ -1,12 +1,22 @@
 @file:Suppress("MatchingDeclarationName")
 
-package de.mineking.hexo.web.components
+package de.mineking.hexo.web.layout
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.navigation.Anchor
 import com.varabyte.kobweb.navigation.BasePath
-import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
+import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.icons.BroadcastIcon
+import de.mineking.hexo.web.icons.ChevronRightIcon
+import de.mineking.hexo.web.icons.GitHubIcon
+import de.mineking.hexo.web.pages.watchparty.SessionHostOptions
+import de.mineking.hexo.web.rememberWatchPartyController
 import org.jetbrains.compose.web.dom.A
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Header
 import org.jetbrains.compose.web.dom.Img
@@ -14,16 +24,14 @@ import org.jetbrains.compose.web.dom.Main
 import org.jetbrains.compose.web.dom.Nav
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.svg.Path
-import org.jetbrains.compose.web.svg.Svg
+
+private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
 enum class AppPage(val label: String, val href: String) {
     Lobbies("Lobbies", "/"),
     Sandbox("Sandbox", "/sandbox"),
-    Sync("Watch Party", "/sync"),
+    WatchParty("Watch Party", "/watchparty"),
 }
-
-private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
 @Composable
 fun AppLayout(
@@ -76,10 +84,12 @@ private fun NavBar(activePage: AppPage?) {
                         classes("size-full", "object-contain")
                     })
                 }
-                Span({ classes("truncate", "text-base", "font-bold", "text-xl", "text-slate-100") }) {
+                Span({ classes("truncate", "text-base", "font-bold", "text-xl", "text-slate-100", "hidden", "md:block") }) {
                     Text("MineKing's HeXO Tools")
                 }
             }
+
+            SessionSyncIndicator()
 
             Nav({
                 classes(
@@ -95,7 +105,107 @@ private fun NavBar(activePage: AppPage?) {
     }
 }
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
+@Composable
+private fun SessionSyncIndicator() {
+    val watchPartyController = rememberWatchPartyController()
+
+    if (watchPartyController.hostWatchParty != null) {
+        var open by remember { mutableStateOf(false) }
+
+        SessionHostIndicatorButton(onClick = { open = true })
+
+        if (open) {
+            Dialog("Host Options", onClose = { open = false }) {
+                SessionHostOptions()
+            }
+        }
+        return
+    }
+
+    if (watchPartyController.subscribedWatchParty != null) SessionSubscriptionIndicator()
+}
+
+@Composable
+private fun SessionSubscriptionIndicator() {
+    Div({
+        classes(
+            "group", "inline-flex", "min-w-0", "max-w-72", "items-center", "gap-2.5", "rounded-lg",
+            "border", "border-sky-500/40", "bg-sky-500/10", "pr-2.5", "p-1.5", "text-left",
+            "text-sky-100", "shadow-sm", "shadow-sky-950/20", "transition",
+            "hover:border-sky-400/60", "hover:bg-sky-500/20", "hover:text-white",
+            "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-sky-400/60",
+        )
+    }) {
+        Span({
+            classes(
+                "relative", "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
+                "border-sky-400/40", "bg-slate-950/60", "text-sky-300", "transition",
+                "group-hover:border-sky-300/60", "group-hover:text-sky-100",
+            )
+        }) {
+            Span({
+                classes("absolute", "-right-0.5", "-top-0.5", "size-2.5", "rounded-full", "border", "border-slate-950", "bg-sky-300")
+            })
+            BroadcastIcon {
+                classes("size-4", "shrink-0")
+            }
+        }
+
+        Span({ classes("hidden", "min-w-0", "flex-col", "leading-tight", "sm:flex") }) {
+            Span({ classes("truncate", "text-xs", "font-bold", "text-sky-100") }) {
+                Text("Watching watch party")
+            }
+            Span({ classes("truncate", "text-[11px]", "font-medium", "text-sky-300/70") }) {
+                Text("Live sync enabled")
+            }
+        }
+    }
+}
+
+@Composable
+private fun SessionHostIndicatorButton(onClick: () -> Unit) {
+    Button({
+        classes(
+            "group", "inline-flex", "min-w-0", "max-w-72", "items-center", "gap-2.5", "rounded-lg",
+            "border", "border-emerald-500/40", "bg-emerald-500/10", "pr-2.5", "p-1.5", "text-left",
+            "text-emerald-100", "shadow-sm", "shadow-emerald-950/20", "transition", "cursor-pointer",
+            "hover:border-emerald-400/60", "hover:bg-emerald-500/20", "hover:text-white",
+            "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
+        )
+        attr("aria-label", "Open watch party host options")
+
+        onClick { onClick() }
+    }) {
+        Span({
+            classes(
+                "relative", "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
+                "border-emerald-400/40", "bg-slate-950/60", "text-emerald-300", "transition",
+                "group-hover:border-emerald-300/60", "group-hover:text-emerald-100",
+            )
+        }) {
+            Span({
+                classes("absolute", "-right-0.5", "-top-0.5", "size-2.5", "rounded-full", "border", "border-slate-950", "bg-amber-400")
+            })
+            BroadcastIcon {
+                classes("size-4", "shrink-0")
+            }
+        }
+
+        Span({ classes("hidden", "min-w-0", "flex-col", "leading-tight", "sm:flex") }) {
+            Span({ classes("truncate", "text-xs", "font-bold", "text-emerald-100") }) {
+                Text("Hosting watch party")
+            }
+            Span({ classes("truncate", "text-[11px]", "font-medium", "text-emerald-300/70") }) {
+                Text("Host controls")
+            }
+        }
+
+        ChevronRightIcon {
+            classes("hidden", "size-4", "shrink-0", "text-emerald-300/70", "transition-transform", "group-hover:translate-x-0.5", "md:block")
+        }
+    }
+}
+
 @Composable
 private fun AppFooter() {
     Div({
@@ -121,14 +231,8 @@ private fun AppFooter() {
                     "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
                 )
             }) {
-                Svg("0 0 16 16", {
-                    attr("aria-hidden", "true")
-                    attr("fill", "currentColor")
+                GitHubIcon {
                     classes("size-4", "shrink-0")
-                }) {
-                    Path(
-                        "M8 1.2a6.8 6.8 0 0 0-2.15 13.25c.34.06.46-.15.46-.33v-1.2c-1.9.42-2.3-.81-2.3-.81-.31-.8-.76-1.01-.76-1.01-.62-.43.05-.42.05-.42.69.05 1.05.72 1.05.72.61 1.07 1.61.76 2 .58.06-.45.24-.76.44-.93-1.52-.18-3.12-.78-3.12-3.45 0-.76.27-1.38.7-1.87-.07-.18-.31-.9.07-1.84 0 0 .58-.19 1.88.72A6.37 6.37 0 0 1 8 4.38c.58 0 1.15.08 1.69.24 1.3-.91 1.87-.72 1.87-.72.38.94.14 1.66.07 1.84.44.49.7 1.11.7 1.87 0 2.68-1.6 3.27-3.13 3.44.25.22.47.65.47 1.32v1.95c0 .18.12.39.47.32A6.8 6.8 0 0 0 8 1.2Z",
-                    )
                 }
                 Span({ classes("hidden", "sm:inline") }) {
                     Text("GitHub")

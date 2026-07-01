@@ -1,33 +1,35 @@
+@file:Layout(".layout.RootLayout")
+
 package de.mineking.hexo.web.pages
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import com.varabyte.kobweb.compose.dom.svg.Circle
 import com.varabyte.kobweb.core.Page
+import com.varabyte.kobweb.core.layout.Layout
 import com.varabyte.kobweb.navigation.Anchor
 import de.mineking.hexo.hds.session.LobbySession
 import de.mineking.hexo.hds.session.SessionPlayer
 import de.mineking.hexo.hds.session.SessionRepository
 import de.mineking.hexo.hds.session.hasStarted
 import de.mineking.hexo.hds.utils.TimeControl
-import de.mineking.hexo.web.components.AppLayout
-import de.mineking.hexo.web.components.AppPage
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
+import de.mineking.hexo.web.icons.CasualGameIcon
+import de.mineking.hexo.web.icons.StarIcon
+import de.mineking.hexo.web.icons.TimeControlIcon
+import de.mineking.hexo.web.layout.AppLayout
+import de.mineking.hexo.web.layout.AppPage
 import de.mineking.hexo.web.rememberHdsApiClient
-import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.svg.Path
-import org.jetbrains.compose.web.svg.Svg
 
 @Page
 @Composable
@@ -156,59 +158,24 @@ private fun GameTypeBadge(rated: Boolean) {
     }
 }
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 private fun GameTypeIcon(rated: Boolean) {
     if (rated) {
-        Svg("0 0 16 16", {
-            attr("aria-hidden", "true")
-            attr("fill", "currentColor")
+        StarIcon {
             classes("h-3.5", "w-3.5", "fill-current")
-        }) {
-            Path("M8 1.9l1.7 3.46 3.82.56-2.76 2.69.65 3.8L8 10.59 4.6 12.4l.65-3.8L2.5 5.92l3.8-.56L8 1.9Z")
         }
     } else {
-        Svg("0 0 16 16", {
-            attr("aria-hidden", "true")
-            attr("fill", "none")
-            attr("stroke", "currentColor")
+        CasualGameIcon {
             classes("h-3.5", "w-3.5", "fill-none", "stroke-current")
-        }) {
-            Circle(attrs = {
-                cx(8)
-                cy(8)
-                r(4.75)
-                attr("stroke-width", "1.5")
-            })
-            Path("M5 8h6", attrs = {
-                attr("stroke-width", "1.5")
-                attr("stroke-linecap", "round")
-            })
         }
     }
 }
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 private fun TimeControlBadge(timeControl: TimeControl) {
     Badge {
-        Svg("0 0 16 16", {
-            attr("aria-hidden", "true")
-            attr("fill", "none")
-            attr("stroke", "currentColor")
+        TimeControlIcon {
             classes("h-4", "w-4", "fill-none", "stroke-current")
-        }) {
-            Circle(attrs = {
-                cx(8)
-                cy(8)
-                r(5.25)
-                attr("stroke-width", "1.5")
-            })
-            Path("M8 5.2v3.2l2.1 1.25", attrs = {
-                attr("stroke-width", "1.5")
-                attr("stroke-linecap", "round")
-                attr("stroke-linejoin", "round")
-            })
         }
         Text(timeControl.format())
     }

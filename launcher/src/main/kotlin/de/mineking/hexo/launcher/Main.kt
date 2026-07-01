@@ -23,7 +23,7 @@ import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.link.oauth2.OAuth2Tokens
 import de.mineking.hexo.server.HttpServer
 import de.mineking.hexo.sever.service.WebService
-import de.mineking.hexo.sync.server.SessionSyncWebService
+import de.mineking.hexo.sync.server.WatchPartyWebService
 import javax.crypto.spec.SecretKeySpec
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.ExperimentalExtendedContracts
@@ -61,7 +61,7 @@ fun main() {
         LinkedRolesRedirectWebService(oauth2Service::generateState, discordOAuth2Client)
     }
 
-    val httpServer = config.startHttpServer(oauth2Service, linkedRolesService, SessionSyncWebService())
+    val httpServer = config.startHttpServer(oauth2Service, linkedRolesService, WatchPartyWebService())
     installShutdownHook(bot, httpServer)
     printBanner()
 }

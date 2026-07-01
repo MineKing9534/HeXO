@@ -9,11 +9,11 @@ import kotlin.jvm.JvmInline
 
 @JvmInline
 @Serializable
-value class SessionSyncId(val value: String)
+value class WatchPartyId(val value: String)
 
 @Serializable
-data class SessionSyncData(
-    val id: SessionSyncId,
+data class WatchPartyData(
+    val id: WatchPartyId,
     val sessionId: SessionId?,
     val cellHighlights: Map<CellCoordinate, CellHighlight>,
     val lineHighlights: List<LineHighlight>,

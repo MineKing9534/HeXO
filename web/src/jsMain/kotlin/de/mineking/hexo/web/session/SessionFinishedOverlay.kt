@@ -12,7 +12,7 @@ import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.cssColor
-import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
+import de.mineking.hexo.web.icons.ChevronDownIcon
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.width
@@ -22,8 +22,6 @@ import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.svg.Path
-import org.jetbrains.compose.web.svg.Svg
 import kotlin.time.Duration
 
 private val springTransition = listOf(
@@ -67,7 +65,6 @@ fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Finished) {
     }
 }
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 private fun SessionFinishedOverlayHeader(
     collapsed: Boolean,
@@ -93,21 +90,13 @@ private fun SessionFinishedOverlayHeader(
             Text("Match finished")
         }
 
-        Svg("0 0 24 24", {
-            attr("aria-hidden", "true")
-            attr("fill", "none")
-            attr("stroke", "currentColor")
-            attr("stroke-width", "2")
-            attr("stroke-linecap", "round")
-            attr("stroke-linejoin", "round")
+        ChevronDownIcon {
             classes(
                 "absolute", "right-3", "size-5", "text-slate-400",
                 "transition-all", "group-hover:text-slate-100",
             )
             classes(springTransition)
             if (collapsed) classes("rotate-180")
-        }) {
-            Path("m18 15-6-6-6 6")
         }
     }
 }

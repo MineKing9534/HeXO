@@ -13,19 +13,19 @@ import org.jetbrains.compose.web.dom.TextArea
 @Composable
 fun TextInput(
     value: String,
+    onValueChange: ((String) -> Unit)? = null,
     type: InputType<String> = InputType.Text,
     placeholder: String? = null,
     valid: Boolean? = null,
     readOnly: Boolean = false,
     monospace: Boolean = false,
     attrs: (InputAttrsScope<String>.() -> Unit)? = null,
-    onValueInput: ((String) -> Unit)? = null,
 ) {
     Input(type) {
         value(value)
         if (placeholder != null) placeholder(placeholder)
         if (readOnly) readOnly()
-        if (onValueInput != null) onInput { onValueInput(it.value) }
+        if (onValueChange != null) onInput { onValueChange(it.value) }
         fieldClasses(valid, monospace)
         attrs?.invoke(this)
     }
@@ -34,18 +34,18 @@ fun TextInput(
 @Composable
 fun TextAreaInput(
     value: String,
+    onValueChange: ((String) -> Unit)? = null,
     placeholder: String? = null,
     valid: Boolean? = null,
     readOnly: Boolean = false,
     monospace: Boolean = false,
     attrs: (TextAreaAttrsScope.() -> Unit)? = null,
-    onValueInput: ((String) -> Unit)? = null,
 ) {
     TextArea {
         value(value)
         if (placeholder != null) placeholder(placeholder)
         if (readOnly) readOnly()
-        if (onValueInput != null) onInput { onValueInput(it.value) }
+        if (onValueChange != null) onInput { onValueChange(it.value) }
         fieldClasses(valid, monospace)
         attrs?.invoke(this)
     }

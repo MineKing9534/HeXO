@@ -61,14 +61,14 @@ tailwindcss {
 }
 
 val webApiProxy = providers.gradleProperty("web.apiProxy")
-    .orElse(provider { null })
-    .map {
-        when {
-            it.isBlank() -> null
-            else -> Expression("\"$it\"")
-        }
-    }
+    .orElse(provider { "" })
+    .map { Expression("\"$it\"") }
+
+val webToolsApi = providers.gradleProperty("web.toolsApi")
+    .orElse(provider { "" })
+    .map { Expression("\"$it\"") }
 
 buildConfig {
-    buildConfigField<String?>("API_PROXY", webApiProxy)
+    buildConfigField<String>("API_PROXY", webApiProxy)
+    buildConfigField<String>("TOOLS_API", webToolsApi)
 }

@@ -8,31 +8,31 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface SessionSyncRequest
+sealed interface WatchPartyRequest
 
 @Serializable
 @SerialName("navigate")
-data class SessionSyncNavigateRequest(
+data class WatchPartyNavigateRequest(
     val sessionId: SessionId?,
-) : SessionSyncRequest
+) : WatchPartyRequest
 
 @Serializable
 @SerialName("update")
-data class SessionSyncUpdateRequest(
+data class WatchPartyUpdateRequest(
     val cellHighlights: Map<CellCoordinate, CellHighlight>,
     val lineHighlights: List<LineHighlight>,
-) : SessionSyncRequest
+) : WatchPartyRequest
 
 @Serializable
 @SerialName("cell")
-data class SessionSyncCellHighlightRequest(
+data class WatchPartyCellHighlightRequest(
     val coordinate: CellCoordinate,
     val highlight: CellHighlight?,
-) : SessionSyncRequest
+) : WatchPartyRequest
 
 @Serializable
 @SerialName("line")
-data class SessionSyncLineHighlightRequest(
+data class WatchPartyLineHighlightRequest(
     val line: LineHighlight,
     val remove: Boolean,
-) : SessionSyncRequest
+) : WatchPartyRequest
