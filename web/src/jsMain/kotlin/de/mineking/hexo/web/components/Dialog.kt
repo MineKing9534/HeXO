@@ -9,7 +9,7 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun Dialog(
-    title: String,
+    title: String?,
     onClose: () -> Unit,
     actionRow: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -23,9 +23,11 @@ fun Dialog(
             classes("relative", "w-full", "max-w-xl", "rounded-xl", "border", "border-slate-700", "bg-slate-900", "p-5", "pt-3", "shadow-2xl")
         }) {
             Div({ classes("space-y-6") }) {
-                Div({ classes("flex", "items-center", "justify-between", "gap-4", "pr-8") }) {
-                    H1({ classes("text-lg", "font-bold", "text-slate-100") }) {
-                        Text(title)
+                if (title != null) {
+                    Div({ classes("flex", "items-center", "justify-between", "gap-4", "pr-8") }) {
+                        H1({ classes("text-lg", "font-bold", "text-slate-100") }) {
+                            Text(title)
+                        }
                     }
                 }
 

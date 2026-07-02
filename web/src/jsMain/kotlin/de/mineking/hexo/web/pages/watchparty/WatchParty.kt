@@ -1,6 +1,7 @@
 package de.mineking.hexo.web.pages.watchparty
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -15,6 +16,8 @@ import de.mineking.hexo.sync.common.WatchPartyId
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.TextInput
+import de.mineking.hexo.web.icons.CheckIcon
+import de.mineking.hexo.web.icons.CopyIcon
 import de.mineking.hexo.web.icons.EyeIcon
 import de.mineking.hexo.web.icons.EyeOffIcon
 import de.mineking.hexo.web.icons.PlusIcon
@@ -28,6 +31,7 @@ import de.mineking.hexo.web.watchparty.rememberWatchParty
 import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
@@ -37,6 +41,7 @@ import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 @Page("{id?}")
@@ -63,8 +68,9 @@ fun SessionHostOptions() {
     val watchPartyController = rememberWatchPartyController()
     val hostSession = watchPartyController.hostWatchParty ?: return
     var visible by remember { mutableStateOf(false) }
+    val link = "${window.location.origin}${BasePath.prependTo("/watchparty/${hostSession.data.value.id.value}")}"
 
-    H1({ classes("text-2xl", "font-extrabold", "uppercase", "text-slate-200") }) {
+    H1({ classes("text-2xl", "mb-4", "font-extrabold", "uppercase", "text-slate-200") }) {
         Text("Host Options")
     }
 
@@ -74,31 +80,17 @@ fun SessionHostOptions() {
         }
         Div({ classes("relative", "w-full") }) {
             TextInput(
-                value = "${window.location.origin}${BasePath.prependTo("/watchparty/${hostSession.data.value.id.value}")}",
+                value = link,
                 type = InputType.Url,
                 readOnly = true,
                 monospace = true,
                 attrs = {
-                    classes("pr-12", "text-ellipsis")
+                    classes("pr-20", "text-ellipsis")
                     if (!visible) style { property("-webkit-text-security", "disc") }
                 },
             )
-            Button({
-                attr("aria-label", if (visible) "Hide watch party link" else "Show watch party link")
-                classes(
-                    "absolute", "right-2", "top-1/2", "-translate-y-1/2", "grid", "size-8", "place-items-center",
-                    "rounded-md", "border", "border-transparent", "text-slate-400", "transition", "cursor-pointer",
-                    "hover:bg-slate-800", "hover:text-slate-100",
-                    "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
-                )
-                onClick { visible = !visible }
-            }) {
-                if (visible) {
-                    EyeOffIcon { classes("size-4") }
-                } else {
-                    EyeIcon { classes("size-4") }
-                }
-            }
+            CopyButton(link)
+            VisibleButton(visible = visible, onVisibleChange = { visible = it })
         }
     }
 
@@ -116,6 +108,61 @@ fun SessionHostOptions() {
         }
         P({ classes("text-sm", "leading-relaxed", "text-slate-500") }) {
             Text("This only stops hosting from this browser. Active subscribers will not be kicked from the watch party.")
+        }
+    }
+}
+
+@Composable
+private fun CopyButton(value: String) {
+    var copied by remember { mutableStateOf(false) }
+
+    LaunchedEffect(copied, value) {
+        if (!copied) return@LaunchedEffect
+        delay(1.5.seconds)
+        copied = false
+    }
+
+    Button({
+        attr("aria-label", if (copied) "Watch party link copied" else "Copy watch party link")
+        attr("title", if (copied) "Copied" else "Copy watch party link")
+        classes(
+            "absolute", "right-11", "top-1/2", "-translate-y-1/2", "grid", "size-8", "place-items-center", "rounded-md",
+            "transition", "cursor-pointer", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
+        )
+        if (copied) {
+            classes("text-emerald-300")
+        } else {
+            classes("text-slate-400", "hover:bg-slate-800", "hover:text-slate-100")
+        }
+        onClick {
+            window.navigator.clipboard.writeText(value)
+            copied = true
+        }
+    }) {
+        if (copied) {
+            CheckIcon { classes("size-4") }
+        } else {
+            CopyIcon { classes("size-4") }
+        }
+    }
+}
+
+@Composable
+private fun VisibleButton(visible: Boolean, onVisibleChange: (Boolean) -> Unit) {
+    Button({
+        attr("aria-label", if (visible) "Hide watch party link" else "Show watch party link")
+        classes(
+            "absolute", "right-2", "top-1/2", "-translate-y-1/2", "grid", "size-8", "place-items-center",
+            "rounded-md", "border", "border-transparent", "text-slate-400", "transition", "cursor-pointer",
+            "hover:bg-slate-800", "hover:text-slate-100",
+            "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
+        )
+        onClick { onVisibleChange(!visible) }
+    }) {
+        if (visible) {
+            EyeOffIcon { classes("size-4") }
+        } else {
+            EyeIcon { classes("size-4") }
         }
     }
 }
@@ -182,15 +229,22 @@ private fun WatchPartyCard() {
 private fun JoinSessionInput() {
     var id by remember { mutableStateOf("") }
     val valid = remember(id) { Uuid.parseOrNull(id) != null }
+    var visible by remember { mutableStateOf(false) }
 
     Div({ classes("flex", "w-full", "flex-col", "gap-2", "sm:flex-row") }) {
-        TextInput(
-            value = id,
-            onValueChange = { id = it },
-            valid = valid,
-            placeholder = "Watch Party Id",
-            attrs = { classes("flex-1") },
-        )
+        Div({ classes("relative", "w-full") }) {
+            TextInput(
+                value = id,
+                onValueChange = { id = it },
+                valid = valid,
+                placeholder = "Watch Party Id",
+                attrs = {
+                    classes("mr-10", "flex-1")
+                    if (!visible) style { property("-webkit-text-security", "disc") }
+                },
+            )
+            VisibleButton(visible = visible, onVisibleChange = { visible = it })
+        }
         Anchor(BasePath.prependTo("/watchparty/$id"), {
             classes(
                 "group", "inline-flex", "items-center", "justify-center", "gap-2", "rounded-lg", "border",

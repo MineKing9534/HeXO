@@ -115,7 +115,7 @@ private fun SessionSyncIndicator() {
         SessionHostIndicatorButton(onClick = { open = true })
 
         if (open) {
-            Dialog("Host Options", onClose = { open = false }) {
+            Dialog(title = null, onClose = { open = false }) {
                 SessionHostOptions()
             }
         }
@@ -184,7 +184,7 @@ private fun SessionHostIndicatorButton(onClick: () -> Unit) {
             )
         }) {
             Span({
-                classes("absolute", "-right-0.5", "-top-0.5", "size-2.5", "rounded-full", "border", "border-slate-950", "bg-amber-400")
+                classes("absolute", "-right-0.5", "-top-0.5", "size-2.5", "rounded-full", "border", "border-slate-950", "bg-emerald-400")
             })
             BroadcastIcon {
                 classes("size-4", "shrink-0")
