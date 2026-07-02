@@ -182,8 +182,8 @@ private fun TurnIndicator(session: LiveSession, state: SessionState.InGame) {
         }
     }
 
-    Div({ classes("absolute", "top-3", "left-3", "right-3", "flex", "justify-center") }) {
-        Div({ classes("shadow-xl", "bg-slate-800", "rounded-lg", "p-3", "max-w-xl", "w-full") }) {
+    Div({ classes("pointer-events-none", "absolute", "top-3", "left-3", "right-3", "flex", "justify-center") }) {
+        Div({ classes("pointer-events-auto", "shadow-xl", "bg-slate-800", "rounded-lg", "p-3", "max-w-xl", "w-full") }) {
             if (session.tournamentInfo != null) TournamentInfoCard(session)
             if (session.gameOptions.rated) RatedInfoCard(session)
 
