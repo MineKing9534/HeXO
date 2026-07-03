@@ -60,10 +60,14 @@ class WatchPartyClient(
 
         val session = WatchParty(flow, wsSession)
         wsSession.launch {
-            for (frame in wsSession.incoming) {
-                if (frame is Frame.Close) return@launch
+            try {
+                for (frame in wsSession.incoming) {
+                    if (frame is Frame.Close) return@launch
 
-                flow.value = wsSession.converter!!.deserialize<WatchPartyData>(frame)
+                    flow.value = wsSession.converter!!.deserialize<WatchPartyData>(frame)
+                }
+            } finally {
+                session.close()
             }
         }
 

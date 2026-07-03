@@ -18,10 +18,16 @@ import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.websocket.close
 import kotlinx.coroutines.flow.StateFlow
 
-class WatchParty(
+class WatchParty internal constructor(
     val data: StateFlow<WatchPartyData>,
     private val wsSession: DefaultClientWebSocketSession,
 ) {
+    private val onClose = mutableListOf<() -> Unit>()
+
+    fun onClose(block: () -> Unit) {
+        onClose += block
+    }
+
     private suspend fun request(request: WatchPartyRequest) {
         wsSession.sendSerialized(request)
     }
@@ -51,6 +57,7 @@ class WatchParty(
     }
 
     suspend fun close() {
+        onClose.forEach { it() }
         wsSession.close()
     }
 }

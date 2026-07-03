@@ -8,6 +8,7 @@ import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.client.asBoard
+import de.mineking.hexo.web.interceptSet
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -36,17 +37,9 @@ open class LocalBoardViewManager : BoardViewManager {
 
 @OptIn(DelicateCoroutinesApi::class)
 class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoardViewManager() {
-    override val currentMove = run {
-        val original = super.currentMove
-        object : MutableState<Int> by super.currentMove {
-            override var value: Int
-                get() = original.value
-                set(value) {
-                    original.value = value
-                    GlobalScope.launch {
-                        watchParty.adjustMoveCount(value)
-                    }
-                }
+    override val currentMove = super.currentMove.interceptSet {
+        GlobalScope.launch {
+            watchParty.adjustMoveCount(it)
         }
     }
 

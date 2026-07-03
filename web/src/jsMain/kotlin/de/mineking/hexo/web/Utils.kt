@@ -3,6 +3,7 @@ package de.mineking.hexo.web
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -60,6 +61,15 @@ fun <T> rememberAsyncResourceState(
     }
 
     return state
+}
+
+fun <T> MutableState<T>.interceptSet(handler: MutableState<T>.(T) -> Unit) = object : MutableState<T> by this {
+    override var value: T
+        get() = this@interceptSet.value
+        set(value) {
+            handler(value)
+            this@interceptSet.value = value
+        }
 }
 
 val CellOwner.cssColor: CSSColorValue get() {

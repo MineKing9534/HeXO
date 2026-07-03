@@ -1,7 +1,7 @@
 package de.mineking.hexo.web.watchparty
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
@@ -14,6 +14,7 @@ import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.client.WatchPartyClient
 import de.mineking.hexo.sync.client.createSession
 import de.mineking.hexo.sync.common.WatchPartyId
+import de.mineking.hexo.web.interceptSet
 import de.mineking.hexo.web.rememberAsyncResourceState
 import de.mineking.hexo.web.rememberWatchPartyController
 import kotlinx.browser.localStorage
@@ -28,10 +29,18 @@ private object WatchPartyHostIdKey : StorageKey<WatchPartyId?>("watch_party_host
 
 @OptIn(DelicateCoroutinesApi::class)
 class WatchPartyController(host: String) {
-    var hostWatchParty by mutableStateOf<WatchParty?>(null)
+    private fun MutableState<WatchParty?>.interceptWatchPartyHost() = interceptSet {
+        if (it == null) {
+            localStorage.removeItem(WatchPartyHostIdKey)
+        } else {
+            it.onClose { value = null }
+        }
+    }
+
+    var hostWatchParty by mutableStateOf<WatchParty?>(null).interceptWatchPartyHost()
         private set
 
-    var subscribedWatchParty by mutableStateOf<WatchParty?>(null)
+    var subscribedWatchParty by mutableStateOf<WatchParty?>(null).interceptSet { it?.onClose { value = null } }
         private set
 
     private val watchPartyClient = WatchPartyClient(host)
@@ -58,22 +67,11 @@ class WatchPartyController(host: String) {
     fun closeHost() {
         val session = hostWatchParty
         if (session != null) GlobalScope.launch { session.close() }
-
-        hostWatchParty = null
-        localStorage.removeItem(WatchPartyHostIdKey)
     }
 
-    suspend fun connect(id: WatchPartyId) = watchPartyClient.connectSession(id)
-
-    fun startSubscription(watchParty: WatchParty) {
-        subscribedWatchParty = watchParty
-    }
-
-    fun stopSubscription(watchParty: WatchParty) {
-        if (subscribedWatchParty === watchParty) {
-            subscribedWatchParty = null
-        }
-    }
+    suspend fun connect(id: WatchPartyId) = watchPartyClient
+        .connectSession(id)
+        .also { subscribedWatchParty = it }
 }
 
 @OptIn(DelicateCoroutinesApi::class)
@@ -94,13 +92,6 @@ fun rememberWatchParty(id: WatchPartyId): EntityState<WatchParty> {
             }
         },
     )
-
-    if (state is EntityState.Data) {
-        DisposableEffect(state.value) {
-            watchPartyController.startSubscription(state.value)
-            onDispose { watchPartyController.stopSubscription(state.value) }
-        }
-    }
 
     return state
 }
