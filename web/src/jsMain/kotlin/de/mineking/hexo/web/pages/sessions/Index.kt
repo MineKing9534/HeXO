@@ -20,6 +20,7 @@ import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.ScrollableView
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.icons.CasualGameIcon
@@ -70,9 +71,11 @@ private fun LobbyList(sessionRepository: SessionRepository) {
     )
 
     ContentCard({
-        classes("flex", "flex-col", "gap-4", "p-4")
+        classes(
+            "flex", "max-h-full", "min-h-0", "flex-col", "gap-4", "overflow-hidden", "p-4", "lg:max-h-[calc(100%-3rem)]",
+        )
     }) {
-        Div({ classes("flex", "items-center", "justify-between", "gap-3") }) {
+        Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
             H2({ classes("text-lg", "font-bold", "text-slate-100") }) {
                 Text("Lobbies")
             }
@@ -89,9 +92,13 @@ private fun LobbyList(sessionRepository: SessionRepository) {
         if (sortedLobbies.isEmpty()) {
             EmptyLobbyState()
         } else {
-            Div({ classes("grid", "gap-4") }) {
-                sortedLobbies.forEach { lobby ->
-                    LobbyCard(lobby)
+            ScrollableView({
+                classes("pr-2")
+            }) {
+                Div({ classes("grid", "gap-4") }) {
+                    sortedLobbies.forEach { lobby ->
+                        LobbyCard(lobby)
+                    }
                 }
             }
         }
