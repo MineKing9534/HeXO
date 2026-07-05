@@ -12,7 +12,7 @@ private data class BoardDto(
     override val attributes: BoardAttributes,
 ) : Board {
     constructor(board: Board) : this(
-        cells = board.cells,
+        cells = board.cells.filter { (_, cell) -> !cell.isEmpty() },
         lineHighlights = board.lineHighlights,
         attributes = board.attributes,
     )

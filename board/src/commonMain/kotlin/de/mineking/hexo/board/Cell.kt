@@ -43,8 +43,6 @@ data class MutableCell(
     override fun copy() = copy(owner = owner)
 }
 
-fun Cell.isEmpty() = this == Cell.EMPTY
-
 @Serializable
 data class CellOverride(
     val owner: Omissible<CellOwner?> = omitted(),
@@ -53,6 +51,8 @@ data class CellOverride(
     val turn: Omissible<Int?> = omitted(),
     val label: Omissible<String> = omitted(),
 )
+
+fun Cell.isEmpty() = this == Cell.EMPTY
 
 fun Cell.toOverride() = CellOverride(
     owner = owner.omittedIfNull(),
