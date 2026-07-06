@@ -69,12 +69,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         listen<LobbyRemoved> { event ->
             lobbies.update { it - event.id }
             sessionsLock.withLock {
-                sessions[event.id]?.update {
-                    if (it !is EntityState.Data || it.value !is LobbySession) return@listen
-
-                    sessions -= event.id
-                    EntityState.NotFound
-                }
+                sessions -= event.id
             }
         }
     }
@@ -110,7 +105,6 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         fun cleanup() {
             client.socketClient.request(HexoSocketRequest.UnwatchSession(id))
 
-            this@handleSessionState.value = EntityState.NotFound
             sessionsLock.withLock { sessions -= id }
 
             listeners.forEach { it.remove() }
@@ -121,6 +115,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             if (event.sessionId != id) return@listen
 
             logger.warn { "Failed to watch session ${id.value}: ${event.message}" }
+            this@handleSessionState.value = EntityState.NotFound
             cleanup()
         }
 
