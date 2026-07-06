@@ -218,15 +218,16 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
     }
 
     Div({
-        classes("ml-auto", "font-extrabold", "text-lg")
+        classes("ml-auto", "font-extrabold", "text-lg", "tabular-nums")
         if (current) {
             classes("text-emerald-200")
         } else {
             classes("text-slate-200")
         }
     }) {
-        val minutes = timer.inWholeMinutes
-        val seconds = ceil(timer.inWholeMilliseconds / 1000.0).toInt() % 60
+        val totalSeconds = ceil(timer.inWholeMilliseconds / 1000.0).toInt()
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
         Text("$minutes:${seconds.toString().padStart(2, '0')}")
     }
 }
