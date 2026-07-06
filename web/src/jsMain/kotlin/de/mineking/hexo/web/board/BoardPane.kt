@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.InteractiveBoard
@@ -23,7 +24,7 @@ fun BoardPane(
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    content: @Composable () -> Unit,
+    content: BoardContentBuilder? = null,
 ) {
     if (AppGlobals.isExporting) {
         Div({
@@ -54,7 +55,9 @@ fun BoardPane(
                 classes("block", "h-full", "w-full", "touch-none")
                 attrs?.invoke(this)
             },
-        )
+        ) {
+            content?.invoke(this)
+        }
 
         @Composable
         fun Edge(attrs: AttrBuilderContext<HTMLDivElement>? = null) {
@@ -71,7 +74,5 @@ fun BoardPane(
         Edge { classes("inset-x-0", "bottom-0", "h-4", "bg-linear-to-t") }
         Edge { classes("inset-y-0", "left-0", "w-4", "bg-linear-to-r") }
         Edge { classes("inset-y-0", "right-0", "w-4", "bg-linear-to-l") }
-
-        content()
     }
 }

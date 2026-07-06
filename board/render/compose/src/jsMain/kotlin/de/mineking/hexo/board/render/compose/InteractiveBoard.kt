@@ -59,7 +59,8 @@ fun InteractiveBoard(
     onBoardInteraction: (BoardInteraction) -> Unit,
     theme: Theme = Theme.Default,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    content: ContentBuilder<HTMLCanvasElement>? = null,
+    fallback: ContentBuilder<HTMLCanvasElement>? = null,
+    content: BoardContentBuilder? = null,
 ) {
     var temporaryLine by remember { mutableStateOf<LineHighlight?>(null) }
     val effectiveBoard = remember(board, temporaryLine) {
@@ -119,6 +120,7 @@ fun InteractiveBoard(
             }
         },
         attrs = attrs,
+        fallback = fallback,
         content = content,
     )
 }
@@ -130,7 +132,8 @@ fun BoardView(
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    content: ContentBuilder<HTMLCanvasElement>? = null,
+    fallback: ContentBuilder<HTMLCanvasElement>? = null,
+    content: BoardContentBuilder? = null,
 ) {
     var overlay by remember { mutableStateOf(Board()) }
     val effectiveBoard = remember(board, overlay) { board + overlay }
@@ -148,6 +151,7 @@ fun BoardView(
         },
         theme = theme,
         attrs = attrs,
+        fallback = fallback,
         content = content,
     )
 }

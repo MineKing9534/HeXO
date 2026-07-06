@@ -13,8 +13,11 @@ import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardInteraction
+import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
+import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.hds.asBoard
+import de.mineking.hexo.hds.game.Move
 import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LiveSessionPlayer
 import de.mineking.hexo.hds.session.SessionState
@@ -90,7 +93,7 @@ private fun BoardActionButton(
 )
 
 @Composable
-private fun BoardControls(
+private fun BoardScope.BoardControls(
     session: LiveSession,
     boardViewManager: SessionBoardViewManager,
     viewport: MutableState<BoardViewport?>,
@@ -101,8 +104,9 @@ private fun BoardControls(
     var currentMove by boardViewManager.currentMove
 
     MoveKeyboardShortcuts(
+        moves = session.game.moves,
         move = boardViewManager.currentMove,
-        totalMoves = totalMoves,
+        viewport = viewport,
     )
 
     Div({ classes("absolute", "top-3", "left-3", "z-20") }) {
@@ -145,8 +149,14 @@ private fun BoardControls(
 }
 
 @Composable
-private fun MoveKeyboardShortcuts(move: MutableState<Int>, totalMoves: Int) {
-    val totalMoves by rememberUpdatedState(totalMoves)
+private fun BoardScope.MoveKeyboardShortcuts(
+    moves: List<Move>,
+    move: MutableState<Int>,
+    viewport: MutableState<BoardViewport?>,
+) {
+    val totalMoves by rememberUpdatedState(moves.size)
+    val currentMoves by rememberUpdatedState(moves)
+    val currentRenderLayout by rememberUpdatedState(renderLayout)
 
     DisposableEffect(move) {
         val keyDown = EventListener { event ->
@@ -162,6 +172,17 @@ private fun MoveKeyboardShortcuts(move: MutableState<Int>, totalMoves: Int) {
                 "ArrowRight" -> {
                     event.preventDefault()
                     move.value = nextMove(move.value, totalMoves)
+                }
+                in (1..9).map { "$it" } -> {
+                    val shortcut = event.key.toInt()
+                    val max = move.value.coerceIn(0, currentMoves.size)
+                    if (shortcut > max) return@EventListener
+
+                    val coordinate = currentMoves[max - shortcut].coordinate
+                    val point = currentRenderLayout.size.run { coordinate.toPixel() }
+
+                    val current = viewport.value ?: return@EventListener
+                    viewport.value = current.copy(center = point / current.zoom)
                 }
             }
         }

@@ -32,6 +32,12 @@ import org.w3c.dom.HTMLCanvasElement
 private const val BOARD_LAYOUT_RADIUS = 255.0
 private val cellHoverColor = Color.rgb(0x7dd3fc)
 
+typealias BoardContentBuilder = @Composable BoardScope.() -> Unit
+class BoardScope(
+    val renderLayout: BoardRenderLayout,
+    val element: HTMLCanvasElement,
+)
+
 @Composable
 fun RawBoard(
     board: Board,
@@ -41,7 +47,8 @@ fun RawBoard(
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    content: ContentBuilder<HTMLCanvasElement>? = null,
+    fallback: ContentBuilder<HTMLCanvasElement>? = null,
+    content: BoardContentBuilder? = null,
 ) {
     var element by remember { mutableStateOf<HTMLCanvasElement?>(null) }
     var dragging by remember { mutableStateOf(false) }
@@ -89,7 +96,12 @@ fun RawBoard(
             element = it
             onDispose {}
         }
-    }, content)
+    }, fallback)
+
+    val scope = remember(layout, element) {
+        element?.let { BoardScope(layout, it) }
+    } ?: return
+    content?.invoke(scope)
 }
 
 @Composable
