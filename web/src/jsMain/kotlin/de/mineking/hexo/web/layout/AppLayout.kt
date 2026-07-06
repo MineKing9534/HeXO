@@ -3,10 +3,13 @@
 package de.mineking.hexo.web.layout
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.staticCompositionLocalOf
 import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.getValue
 import com.varabyte.kobweb.core.layout.Layout
@@ -41,13 +44,34 @@ data class PageData(
     val style: PageStyle = PageStyle.Default,
 )
 
+class AppLayout(
+    private val fullscreen: MutableState<Boolean>,
+) {
+    fun isFullscreen() = fullscreen.value
+
+    fun setFullscreen(state: Boolean) {
+        fullscreen.value = state
+    }
+}
+
+private val LocalAppLayout = staticCompositionLocalOf<AppLayout> { error("layout not defined") }
+
+@Composable
+fun rememberAppLayout() = LocalAppLayout.current
+
 @Composable
 @Layout(".layout.RootLayout")
 fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
     val data = ctx.data.getValue<PageData>()
 
+    val layout = remember(ctx.route.path) {
+        AppLayout(fullscreen = mutableStateOf(false))
+    }
+
     Div({ classes("flex", "h-full", "w-full", "flex-col", "overflow-hidden", "select-none") }) {
-        NavBar(data.route)
+        if (!layout.isFullscreen()) {
+            NavBar(data.route)
+        }
 
         Main({
             classes("min-h-0", "flex-1", "overflow-hidden")
@@ -56,11 +80,15 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
             Div({
                 classes("mx-auto", "flex", "w-full", "flex-col", "h-full", "min-h-0", "overflow-hidden")
             }) {
-                content()
+                CompositionLocalProvider(LocalAppLayout provides layout) {
+                    content()
+                }
             }
         }
 
-        AppFooter()
+        if (!layout.isFullscreen()) {
+            AppFooter()
+        }
     }
 }
 

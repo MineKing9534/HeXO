@@ -24,7 +24,13 @@ import de.mineking.hexo.web.board.BoardPane
 import de.mineking.hexo.web.board.SessionBoardViewManager
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
+import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.cssColor
+import de.mineking.hexo.web.icons.ClearHighlightsIcon
+import de.mineking.hexo.web.icons.EnterFullscreenIcon
+import de.mineking.hexo.web.icons.ExitFullscreenIcon
+import de.mineking.hexo.web.icons.ResetViewIcon
+import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberSoundPlayer
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.backgroundColor
@@ -69,60 +75,72 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
 }
 
 @Composable
+private fun BoardActionButton(
+    enabled: Boolean = true,
+    color: Color = Color.Neutral,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) = ActionButton(
+    enabled = enabled,
+    size = ButtonSize.Medium,
+    color = color,
+    attrs = { classes("shadow-lg") },
+    onClick = onClick,
+    content = content,
+)
+
+@Composable
 private fun BoardControls(
     session: LiveSession,
     boardViewManager: SessionBoardViewManager,
     viewport: MutableState<BoardViewport?>,
 ) {
-    var currentMove by boardViewManager.currentMove
-    val highlightBoard by boardViewManager.board
+    val layout = rememberAppLayout()
     val totalMoves = session.game.moves.size
+    val highlightBoard by boardViewManager.board
+    var currentMove by boardViewManager.currentMove
 
     MoveKeyboardShortcuts(
         move = boardViewManager.currentMove,
         totalMoves = totalMoves,
     )
 
-    ActionButton(
-        label = "Move ${min(currentMove, totalMoves)}/$totalMoves",
-        size = ButtonSize.Medium,
-        attrs = { classes("absolute", "top-3", "left-3", "z-20", "shadow-lg") },
-        onClick = { currentMove = Int.MAX_VALUE },
-    )
+    Div({ classes("absolute", "top-3", "left-3", "z-20") }) {
+        BoardActionButton(onClick = { currentMove = Int.MAX_VALUE }) {
+            Text("Move ${min(currentMove, totalMoves)}/$totalMoves")
+        }
+    }
 
     Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
-        ActionButton(
-            label = "Previous",
+        BoardActionButton(
             enabled = currentMove > 0,
-            size = ButtonSize.Medium,
-            attrs = { classes("shadow-lg") },
             onClick = { currentMove = previousMove(currentMove, totalMoves) },
-        )
+        ) { Text("Previous") }
 
-        ActionButton(
-            label = "Next",
+        BoardActionButton(
             enabled = currentMove < totalMoves,
-            size = ButtonSize.Medium,
-            attrs = { classes("shadow-lg") },
             onClick = { currentMove = nextMove(currentMove, totalMoves) },
-        )
+        ) { Text("Next") }
     }
 
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
         if (highlightBoard.lineHighlights.isNotEmpty() || highlightBoard.cells.values.any { it.highlight != null }) {
-            ActionButton(
-                label = "Clear Highlights",
-                size = ButtonSize.Medium,
-                attrs = { classes("shadow-lg") },
-                onClick = { boardViewManager.clearHighlights() },
-            )
+            BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
+                ClearHighlightsIcon { classes("size-4") }
+            }
         }
-        ActionButton(
-            label = "Reset View",
-            size = ButtonSize.Medium,
-            attrs = { classes("shadow-lg") },
-            onClick = { viewport.value = null },
-        )
+
+        BoardActionButton(onClick = { viewport.value = null }) {
+            ResetViewIcon { classes("size-4") }
+        }
+
+        BoardActionButton(onClick = { layout.setFullscreen(!layout.isFullscreen()) }) {
+            if (layout.isFullscreen()) {
+                ExitFullscreenIcon { classes("size-4") }
+            } else {
+                EnterFullscreenIcon { classes("size-4") }
+            }
+        }
     }
 }
 

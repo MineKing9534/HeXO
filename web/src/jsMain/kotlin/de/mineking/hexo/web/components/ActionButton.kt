@@ -18,12 +18,12 @@ enum class ButtonSize {
 
 @Composable
 fun ActionButton(
-    label: String,
     enabled: Boolean = true,
     size: ButtonSize = ButtonSize.Small,
     color: Color = Color.Neutral,
     attrs: AttrBuilderContext<HTMLButtonElement>? = null,
     onClick: () -> Unit,
+    content: @Composable () -> Unit,
 ) {
     val onClick by rememberUpdatedState(onClick)
     Button({
@@ -41,6 +41,18 @@ fun ActionButton(
         attrs?.invoke(this)
         onClick { onClick() }
     }) {
-        Text(label)
+        content()
     }
+}
+
+@Composable
+fun ActionButton(
+    label: String,
+    enabled: Boolean = true,
+    size: ButtonSize = ButtonSize.Small,
+    color: Color = Color.Neutral,
+    attrs: AttrBuilderContext<HTMLButtonElement>? = null,
+    onClick: () -> Unit,
+) {
+    ActionButton(enabled, size, color, attrs, onClick) { Text(label) }
 }

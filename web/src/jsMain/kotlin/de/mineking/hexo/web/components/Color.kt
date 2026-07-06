@@ -28,8 +28,8 @@ internal fun AttrsScope<*>.colorButtonClasses(color: Color, enabled: Boolean) {
 
     when (color) {
         Color.Neutral -> classes(
-            "border-slate-700/80", "bg-slate-950", "text-slate-300", "disabled:text-slate-400",
-            "not-disabled:hover:bg-slate-800", "not-disabled:hover:text-slate-100",
+            "border-slate-600/80", "bg-slate-950", "text-slate-300", "disabled:text-slate-400",
+            "not-disabled:hover:bg-slate-700", "not-disabled:hover:text-slate-100",
         )
 
         Color.Emerald -> classes(
