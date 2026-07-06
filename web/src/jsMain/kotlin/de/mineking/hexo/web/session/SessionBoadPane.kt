@@ -221,7 +221,9 @@ private fun TurnIndicator(session: LiveSession, state: SessionState.InGame) {
     }
 
     Div({ classes("pointer-events-none", "absolute", "top-3", "left-3", "right-3", "flex", "justify-center") }) {
-        Div({ classes("pointer-events-auto", "shadow-xl", "bg-slate-800", "rounded-lg", "p-3", "max-w-xl", "w-full") }) {
+        Div({
+            classes("pointer-events-auto", "shadow-xl", "bg-slate-800/85", "rounded-lg", "p-3", "max-w-xl", "w-full", "backdrop-blur-xs")
+        }) {
             if (session.tournamentInfo != null) TournamentInfoCard(session)
             if (session.gameOptions.rated) RatedInfoCard(session)
 
