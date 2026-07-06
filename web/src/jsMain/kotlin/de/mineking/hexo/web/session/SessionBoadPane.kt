@@ -22,6 +22,7 @@ import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LiveSessionPlayer
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.session.SessionTurn
+import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.BoardPane
 import de.mineking.hexo.web.board.SessionBoardViewManager
@@ -35,6 +36,7 @@ import de.mineking.hexo.web.icons.ExitFullscreenIcon
 import de.mineking.hexo.web.icons.ResetViewIcon
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberSoundPlayer
+import de.mineking.hexo.web.rememberWatchPartyController
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.Div
@@ -61,6 +63,16 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
     val highlightBoard by boardViewManager.board
     val transformedBoard = remember(board, highlightBoard) {
         ((board + highlightBoard) as MutableBoard).focusWinningRows()
+    }
+
+    val watchPartyController = rememberWatchPartyController()
+    LaunchedEffect(session.game.id) {
+        viewport.value = null
+
+        // Don't clear highlights when subscribed to a watch party
+        if (watchPartyController.subscribedWatchParty !is EntityState.Data) {
+            boardViewManager.clearHighlights()
+        }
     }
 
     BoardPane(
