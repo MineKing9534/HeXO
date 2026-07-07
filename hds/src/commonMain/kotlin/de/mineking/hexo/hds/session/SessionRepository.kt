@@ -74,11 +74,6 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         }
     }
 
-    private fun LiveSession.createLastState() = dto.state
-        .let { it as? SessionStateDto.InGame }
-        ?.let { Clock.System.now() to it }
-        ?: lastState
-
     override fun observeSession(id: SessionId): StateFlow<EntityState<Session>> {
         if (client.socketClient == null) error("Cannot observe sessions without a SocketIO connection")
 
@@ -128,21 +123,21 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                     return@listen
                 }
 
-                val value = state.value as? LiveSession ?: return@listen
+                val dto = state.value.dto ?: return@listen
+                val gameState = state.value.gameState ?: return@listen
 
-                val session = LiveSession.of(
+                val session = Session.of(
                     client = this@SessionRepositoryImpl.client,
-                    dto = value.dto.copy(
-                        state = event.session.state ?: value.dto.state,
-                        players = event.session.players ?: value.dto.players,
+                    dto = dto.copy(
+                        state = event.session.state ?: dto.state,
+                        players = event.session.players ?: dto.players,
                     ),
-                    lastState = value.createLastState(),
-                    gameState = value.gameState,
+                    gameState = gameState,
                 )
 
                 if (
                     event.session.state is SessionStateDto.Finished &&
-                    session.players.any { it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
+                    session.players.any { it is LiveSessionPlayer && it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
                 ) {
                     logger.info { "Session ${id.value} removed because it has finished" }
                     cleanup()
@@ -162,10 +157,9 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             if (event.session.id != id) return@listen
 
             logger.info { "Successfully joined session ${event.session.id.value}" }
-            this@populate.value = EntityState.Data(LiveSession.of(
+            this@populate.value = EntityState.Data(Session.of(
                 client = this@SessionRepositoryImpl.client,
                 dto = event.session,
-                lastState = null,
                 gameState = event.gameState,
             ))
         }
@@ -181,10 +175,9 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
                 val value = state.value as? LiveSession ?: return@listen
 
-                EntityState.Data(LiveSession.of(
+                EntityState.Data(Session.of(
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto,
-                    lastState = value.createLastState(),
                     gameState = event.state.copy(
                         cells = (value.gameState.cells ?: emptyList()) + event.cell,
                         playerTiles = value.gameState.playerTiles,
@@ -202,11 +195,9 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                     return@listen
                 }
 
-                val value = state.value as? LiveSession ?: return@listen
-                EntityState.Data(LiveSession.of(
+                EntityState.Data(Session.of(
                     client = this@SessionRepositoryImpl.client,
-                    dto = value.dto,
-                    lastState = value.createLastState(),
+                    dto = state.value.dto ?: return@listen,
                     gameState = event.gameState,
                 ))
             }
