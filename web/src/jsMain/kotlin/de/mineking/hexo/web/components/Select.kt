@@ -11,19 +11,19 @@ fun <T> Select(entries: List<T>, current: T, onChange: (T) -> Unit) {
         entries.forEach { entry ->
             Button({
                 classes(
-                    "rounded-full", "px-8", "py-1.25", "text-xs", "font-medium", "ring-1", "backdrop-blur-sm", "transition-all",
+                    "rounded-full", "px-8", "py-1.25", "text-xs", "font-medium", "border", "backdrop-blur-sm", "transition-all",
                     "duration-200", "hover:shadow-lg", "cursor-pointer",
                 )
 
                 if (entry == current) {
                     classes(
-                        "bg-amber-400/12", "ring-amber-200/40", "text-amber-300", "shadow-amber-950/30",
-                        "hover:bg-amber-400/18", "hover:ring-amber-200/60", "hover:text-amber-200",
+                        "bg-amber-400/12", "border-amber-200/40", "text-amber-300", "shadow-amber-950/30",
+                        "hover:bg-amber-400/18", "hover:border-amber-200/60", "hover:text-amber-200",
                     )
                 } else {
                     classes(
-                        "bg-slate-800/40", "ring-slate-600/60", "text-slate-300",
-                        "hover:bg-slate-700/50", "hover:ring-slate-500/60", "hover:text-slate-100",
+                        "bg-slate-800/40", "border-slate-600/60", "text-slate-300",
+                        "hover:bg-slate-700/50", "hover:border-slate-500/60", "hover:text-slate-100",
                     )
                 }
 
