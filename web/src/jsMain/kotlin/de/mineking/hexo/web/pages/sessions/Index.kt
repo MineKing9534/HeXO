@@ -11,8 +11,8 @@ import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.layout.Layout
 import com.varabyte.kobweb.navigation.Anchor
+import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.session.LobbySession
-import de.mineking.hexo.hds.session.SessionPlayer
 import de.mineking.hexo.hds.session.SessionRepository
 import de.mineking.hexo.hds.session.hasStarted
 import de.mineking.hexo.hds.utils.TimeControl
@@ -194,7 +194,7 @@ private fun TimeControlBadge(timeControl: TimeControl) {
     }
 }
 
-private fun List<SessionPlayer>.formatPlayers() = when (size) {
+private fun List<Player>.formatPlayers() = when (size) {
     1 -> first().displayName
     else -> joinToString(" vs ") { it.displayName }
 }

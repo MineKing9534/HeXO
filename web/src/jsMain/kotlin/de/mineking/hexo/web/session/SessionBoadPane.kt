@@ -354,11 +354,7 @@ private fun TournamentInfoCard(session: LiveSession) {
                     Span({ classes("shrink-0", "tabular-nums") }) {
                         Span({
                             classes("font-bold", "text-sm")
-                            if ((player.tournamentMatchWins ?: 0) > 0) {
-                                classes("text-emerald-500")
-                            } else {
-                                classes("text-slate-300")
-                            }
+                            classes(if ((player.tournamentMatchWins ?: 0) == requiredWins - 1) "text-emerald-500" else "text-slate-300")
                         }) {
                             Text("${player.tournamentMatchWins ?: 0}")
                         }

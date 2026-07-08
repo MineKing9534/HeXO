@@ -22,7 +22,6 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlin.time.Clock
 
 private val logger = KotlinLogging.logger {}
 
@@ -48,14 +47,14 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         val response = client.request("/sessions")
         val lobbies = response.body<List<LobbyInfoDto>>()
 
-        this.lobbies.value = lobbies.associate { it.id to LobbySession.of(this, it) }
+        this.lobbies.value = lobbies.associate { it.id to LobbySession.of(this, client.profileRepository, it) }
         lobbyInitialization.complete(Unit)
     }
 
     private fun SocketIOClient.registerLobbyListeners() {
         listen<LobbyUpdated> { event ->
             val oldLobby = lobbies.value[event.id]
-            val newLobby = LobbySession.of(this@SessionRepositoryImpl, event.data)
+            val newLobby = LobbySession.of(this@SessionRepositoryImpl, client.profileRepository, event.data)
             lobbies.update { it + (event.id to newLobby) }
 
             if (oldLobby == null || !(!oldLobby.hasStarted() && newLobby.hasStarted())) return@listen

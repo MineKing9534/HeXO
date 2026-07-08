@@ -12,6 +12,7 @@ import de.mineking.hexo.hds.game.GameVisibility
 import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.game.PlayerId
 import de.mineking.hexo.hds.game.TournamentMatchSnapshot
+import de.mineking.hexo.hds.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
 import de.mineking.hexo.hds.utils.EntityState
@@ -34,14 +35,6 @@ class SessionReference(
     fun observe() = repository.observeSession(id)
 }
 
-interface SessionPlayer {
-    val profileId: ProfileId?
-    val displayName: String
-    val elo: Int
-}
-
-fun SessionPlayer.isGuest() = profileId != null
-
 sealed interface SessionState {
     data object Lobby : SessionState
 
@@ -56,7 +49,7 @@ abstract class Session(
     val gameOptions: GameOptions,
     val tournamentInfo: TournamentMatchSnapshot?,
 ) {
-    abstract val players: List<SessionPlayer>
+    abstract val players: List<Player>
     abstract val state: SessionState
     internal abstract val dto: SessionDto?
     internal abstract val gameState: SessionGameStateDto?
@@ -80,7 +73,7 @@ class LobbySession private constructor(
     id: SessionId,
     gameOptions: GameOptions,
     tournamentInfo: TournamentMatchSnapshot?,
-    override val players: List<SessionPlayer>,
+    override val players: List<Player>,
     val createdAt: Instant,
     val startedAt: Instant?,
     override val dto: SessionDto?,
@@ -91,7 +84,58 @@ class LobbySession private constructor(
     override fun observe() = repository.observeSession(id)
 
     companion object {
-        internal fun of(repository: SessionRepository, dto: LobbyInfoDto) = LobbySession(
+        private fun createPlayerList(
+            repository: ProfileRepository,
+            players: List<ISessionPlayerDto>,
+            tournament: TournamentMatchSnapshotDto?,
+        ): List<Player> {
+            if (tournament == null) {
+                return players.mapIndexed { index, data ->
+                    Player(
+                        repository = repository,
+                        playerId = PlayerId(""),
+                        profileId = data.profileId,
+                        displayName = data.displayName,
+                        elo = data.elo,
+                        color = CellOwner.entries[index],
+                        tournamentMatchWins = tournament?.let {
+                            when (data.profileId) {
+                                it.leftProfileId -> it.leftWins
+                                it.rightProfileId -> it.rightWins
+                                else -> error("Inconsistent tournament snapshot")
+                            }
+                        },
+                    )
+                }
+            }
+
+            data class TournamentPlayer(
+                val profileId: ProfileId,
+                val displayName: String,
+                val tournamentWins: Int,
+            )
+
+            return listOf(
+                TournamentPlayer(tournament.leftProfileId, tournament.leftDisplayName, tournament.leftWins),
+                TournamentPlayer(tournament.rightProfileId, tournament.rightDisplayName, tournament.rightWins),
+            ).mapIndexed { index, player ->
+                Player(
+                    repository = repository,
+                    playerId = PlayerId(""),
+                    profileId = player.profileId,
+                    displayName = player.displayName,
+                    elo = players.find { it.profileId == player.profileId }?.elo ?: -1,
+                    color = CellOwner.entries[(index + tournament.currentGameNumber + 1) % 2],
+                    tournamentMatchWins = player.tournamentWins,
+                )
+            }
+        }
+
+        internal fun of(
+            repository: SessionRepository,
+            profileRepository: ProfileRepository,
+            dto: LobbyInfoDto,
+        ) = LobbySession(
             repository = repository,
             id = dto.id,
             gameOptions = GameOptions(
@@ -100,7 +144,7 @@ class LobbySession private constructor(
                 visibility = GameVisibility.Public,
             ),
             tournamentInfo = null,
-            players = dto.players,
+            players = createPlayerList(profileRepository, dto.players, null),
             createdAt = dto.createdAt,
             startedAt = dto.startedAt,
             dto = null,
@@ -119,7 +163,7 @@ class LobbySession private constructor(
                 id = dto.id,
                 gameOptions = dto.gameOptions,
                 tournamentInfo = tournament,
-                players = dto.players,
+                players = createPlayerList(client.profileRepository, dto.players, dto.tournament),
                 createdAt = state.createdAt,
                 startedAt = null,
                 dto = dto,
@@ -272,7 +316,7 @@ class LiveSessionPlayer(
     tournamentMatchWins: Int?,
     val timeRemaining: LiveDuration?,
     val connectionStatus: SessionPlayerConnectionStatus,
-) : SessionPlayer, Player(
+) : Player(
     repository = repository,
     playerId = playerId,
     profileId = profileId,

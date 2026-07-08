@@ -38,6 +38,8 @@ data class TournamentMatchSnapshotDto(
     val rightWins: Int,
     val leftProfileId: ProfileId,
     val rightProfileId: ProfileId,
+    val leftDisplayName: String,
+    val rightDisplayName: String,
 )
 
 @Serializable

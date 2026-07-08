@@ -97,6 +97,7 @@ internal data class TournamentMatchDto(
     val order: Int,
     val state: TournamentMatchState,
     val bestOf: Int,
+    val currentGameNumber: Int,
     val leftWins: Int,
     val rightWins: Int,
     val winnerProfileId: ProfileId?,
