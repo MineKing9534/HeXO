@@ -25,7 +25,7 @@ fun Dialog(
             Div({ classes("space-y-6") }) {
                 if (title != null) {
                     Div({ classes("flex", "items-center", "justify-between", "gap-4", "pr-8") }) {
-                        H1({ classes("text-lg", "font-bold", "text-slate-100") }) {
+                        H1({ classes("text-xl", "font-bold", "text-slate-100") }) {
                             Text(title)
                         }
                     }

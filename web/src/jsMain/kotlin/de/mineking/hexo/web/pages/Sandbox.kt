@@ -119,6 +119,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
         Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "p-3", "md:p-6") }) {
             BoardPane(
                 board = transformedBoard,
+                readOnly = false,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
                 onBoardInteraction = { interaction ->

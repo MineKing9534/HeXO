@@ -37,6 +37,8 @@ import de.mineking.hexo.web.icons.ResetViewIcon
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberWatchPartyController
+import de.mineking.hexo.web.settings.SettingsKey
+import de.mineking.hexo.web.settings.rememberSettingsValue
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.Div
@@ -77,6 +79,7 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
 
     BoardPane(
         board = transformedBoard,
+        readOnly = true,
         viewport = viewport.value,
         onViewportChange = { viewport.value = it },
         onBoardInteraction = { interaction ->
@@ -215,6 +218,8 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
     var timer by remember { mutableStateOf(timeRemaining.duration) }
     val current by rememberUpdatedState(current)
 
+    val playerTimerSound by rememberSettingsValue(SettingsKey.SessionViewTimerSounds)
+
     DisposableEffect(Unit) {
         fun countdown() {
             val delta = if (current) Clock.System.now() - timeRemaining.timestamp else Duration.ZERO
@@ -226,7 +231,7 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
     }
 
     LaunchedEffect(timer.inWholeSeconds) {
-        if (timer <= 10.seconds) soundPlayer.play(SoundEffect.CountdownWarning)
+        if (playerTimerSound && timer <= 10.seconds) soundPlayer.play(SoundEffect.CountdownWarning)
     }
 
     Div({

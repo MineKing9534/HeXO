@@ -49,6 +49,8 @@ kotlin {
             implementation(libs.kobweb.core)
             implementation(libs.bundles.compose.html)
             implementation(libs.compose.html.svg)
+
+            implementation(libs.kotlin.serialization.json)
         }
 
         resources.srcDir(layout.buildDirectory.dir("generated/resources"))

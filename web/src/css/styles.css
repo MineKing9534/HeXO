@@ -1,1 +1,25 @@
 @import "tailwindcss";
+
+@layer components {
+    .hexo-checkbox {
+        @apply size-4 shrink-0 cursor-pointer appearance-none rounded-md border border-slate-600 bg-slate-950 transition;
+
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 0.75rem 0.75rem;
+    }
+
+    .hexo-checkbox:checked {
+        @apply border-emerald-400 bg-emerald-500;
+
+        background-image: url("data:image/svg+xml,%3csvg viewBox='0 0 16 16' fill='none' xmlns='http://www.w3.org/2000/svg'%3e%3cpath d='M13.5 4.5L6.5 11.5L3 8' stroke='%230f172a' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'/%3e%3c/svg%3e");
+    }
+
+    .hexo-checkbox:focus {
+        @apply outline-none;
+    }
+
+    .hexo-checkbox:focus-visible {
+        @apply ring-2 ring-emerald-400/60 ring-offset-2 ring-offset-slate-950;
+    }
+}

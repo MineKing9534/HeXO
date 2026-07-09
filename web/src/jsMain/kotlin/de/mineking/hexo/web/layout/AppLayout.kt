@@ -20,8 +20,10 @@ import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.GitHubIcon
+import de.mineking.hexo.web.icons.SettingsIcon
 import de.mineking.hexo.web.pages.watchparty.SessionHostOptions
 import de.mineking.hexo.web.rememberWatchPartyController
+import de.mineking.hexo.web.settings.SettingsView
 import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -242,6 +244,35 @@ private fun SessionHostIndicatorButton(onClick: () -> Unit) {
 }
 
 @Composable
+private fun SettingsButton() {
+    var dialogOpen by remember { mutableStateOf(false) }
+
+    Button({
+        attr("aria-label", "Open settings dialog")
+        onClick { dialogOpen = true }
+        classes(
+            "inline-flex", "items-center", "gap-1.5", "rounded-md", "border", "border-slate-800",
+            "bg-slate-900/60", "px-2.5", "py-1.5", "font-semibold", "text-slate-300", "transition",
+            "hover:border-slate-600", "hover:bg-slate-800", "hover:text-slate-100",
+            "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60", "cursor-pointer",
+        )
+    }) {
+        SettingsIcon {
+            classes("size-4", "shrink-0")
+        }
+        Span({ classes("hidden", "sm:inline") }) {
+            Text("Settings")
+        }
+    }
+
+    if (dialogOpen) {
+        Dialog("Settings", onClose = { dialogOpen = false }) {
+            SettingsView()
+        }
+    }
+}
+
+@Composable
 private fun AppFooter() {
     Div({
         classes(
@@ -255,22 +286,27 @@ private fun AppFooter() {
             Span {
                 Text("Copyright © 2026 MineKing")
             }
-            A(GITHUB_URL, {
-                attr("target", "_blank")
-                attr("rel", "noreferrer noopener")
-                attr("aria-label", "Open GitHub repository")
-                classes(
-                    "inline-flex", "items-center", "gap-1.5", "rounded-md", "border", "border-slate-800",
-                    "bg-slate-900/60", "px-2.5", "py-1.5", "font-semibold", "text-slate-300", "transition",
-                    "hover:border-slate-600", "hover:bg-slate-800", "hover:text-slate-100",
-                    "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
-                )
-            }) {
-                GitHubIcon {
-                    classes("size-4", "shrink-0")
-                }
-                Span({ classes("hidden", "sm:inline") }) {
-                    Text("GitHub")
+
+            Span({ classes("flex", "gap-2") }) {
+                SettingsButton()
+
+                A(GITHUB_URL, {
+                    attr("target", "_blank")
+                    attr("rel", "noreferrer noopener")
+                    attr("aria-label", "Open GitHub repository")
+                    classes(
+                        "inline-flex", "items-center", "gap-1.5", "rounded-md", "border", "border-slate-800",
+                        "bg-slate-900/60", "px-2.5", "py-1.5", "font-semibold", "text-slate-300", "transition",
+                        "hover:border-slate-600", "hover:bg-slate-800", "hover:text-slate-100",
+                        "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
+                    )
+                }) {
+                    GitHubIcon {
+                        classes("size-4", "shrink-0")
+                    }
+                    Span({ classes("hidden", "sm:inline") }) {
+                        Text("GitHub")
+                    }
                 }
             }
         }

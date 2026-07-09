@@ -14,6 +14,7 @@ import de.mineking.hexo.hds.socket.SocketIOOptions
 import de.mineking.hexo.hds.socket.connectSocketClient
 import de.mineking.hexo.web.audio.SoundPlayer
 import de.mineking.hexo.web.pages.NotFoundPage
+import de.mineking.hexo.web.settings.SettingsControllerProvider
 import de.mineking.hexo.web.watchparty.WatchPartyController
 import de.mineking.hexo.web.web.BuildConfig
 import org.jetbrains.compose.web.dom.Main
@@ -59,8 +60,10 @@ fun App(content: @Composable () -> Unit) {
         LocalSoundPlayer provides soundPlayer,
         LocalWatchPartyController provides watchPartyController,
     ) {
-        Main({ classes("h-dvh", "w-screen", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100") }) {
-            content()
+        SettingsControllerProvider {
+            Main({ classes("h-dvh", "w-screen", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100") }) {
+                content()
+            }
         }
     }
 }
