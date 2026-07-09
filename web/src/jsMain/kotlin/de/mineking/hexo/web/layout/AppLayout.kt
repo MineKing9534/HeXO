@@ -7,8 +7,12 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.varabyte.kobweb.core.PageContext
+import com.varabyte.kobweb.core.data.getValue
+import com.varabyte.kobweb.core.layout.Layout
 import com.varabyte.kobweb.navigation.Anchor
 import com.varabyte.kobweb.navigation.BasePath
+import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
@@ -27,24 +31,27 @@ import org.jetbrains.compose.web.dom.Text
 
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
-enum class AppPage(val label: String, val href: String) {
-    Lobbies("Lobbies", "/"),
-    Sandbox("Sandbox", "/sandbox"),
-    WatchParty("Watch Party", "/watchparty"),
+enum class PageStyle(val containerClasses: List<String>) {
+    Default(listOf("p-3", "md:p-6")),
+    Raw(emptyList()),
 }
 
+data class PageData(
+    val route: AppRoute?,
+    val style: PageStyle = PageStyle.Default,
+)
+
 @Composable
-fun AppLayout(
-    activePage: AppPage?,
-    padding: Boolean = true,
-    content: @Composable () -> Unit,
-) {
+@Layout(".layout.RootLayout")
+fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
+    val data = ctx.data.getValue<PageData>()
+
     Div({ classes("flex", "h-full", "w-full", "flex-col", "overflow-hidden", "select-none") }) {
-        NavBar(activePage)
+        NavBar(data.route)
 
         Main({
             classes("min-h-0", "flex-1", "overflow-hidden")
-            if (padding) classes("p-3", "md:p-6")
+            classes(data.style.containerClasses)
         }) {
             Div({
                 classes("mx-auto", "flex", "w-full", "flex-col", "h-full", "min-h-0", "overflow-hidden")
@@ -58,7 +65,7 @@ fun AppLayout(
 }
 
 @Composable
-private fun NavBar(activePage: AppPage?) {
+private fun NavBar(activePage: AppRoute?) {
     Header({
         classes(
             "shrink-0", "border-b", "border-slate-800/80", "bg-slate-950/95", "px-3", "py-2.5",
@@ -97,8 +104,8 @@ private fun NavBar(activePage: AppPage?) {
                     "bg-slate-900/70", "p-1", "shadow-inner", "shadow-black/20",
                 )
             }) {
-                AppPage.entries.forEach {
-                    NavLink(it.label, it.href, activePage == it)
+                NavBarEntry.entries.forEach {
+                    NavLink(it.label, it.route.href, activePage?.navBarEntry == it)
                 }
             }
         }
@@ -122,7 +129,7 @@ private fun SessionSyncIndicator() {
         return
     }
 
-    if (watchPartyController.subscribedWatchParty != null) SessionSubscriptionIndicator()
+    if (watchPartyController.subscribedWatchParty is EntityState.Data) SessionSubscriptionIndicator()
 }
 
 @Composable

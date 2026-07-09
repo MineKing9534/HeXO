@@ -7,6 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.core.PageContext
+import com.varabyte.kobweb.core.RouteInfo
+import com.varabyte.kobweb.core.data.add
+import com.varabyte.kobweb.core.init.InitRoute
+import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.navigation.Anchor
 import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LobbySession
@@ -15,44 +19,40 @@ import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
+import de.mineking.hexo.web.board.SessionBoardViewManager
+import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.icons.ChevronLeftIcon
-import de.mineking.hexo.web.layout.AppLayout
-import de.mineking.hexo.web.layout.AppPage
+import de.mineking.hexo.web.layout.AppRoute
+import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
-import de.mineking.hexo.web.rememberWatchPartyController
-import de.mineking.hexo.web.session.BoardViewManager
 import de.mineking.hexo.web.session.LobbyOverlay
-import de.mineking.hexo.web.session.LocalBoardViewManager
 import de.mineking.hexo.web.session.SessionBoardPane
 import de.mineking.hexo.web.session.SessionFinishedOverlay
-import de.mineking.hexo.web.session.WatchPartyBoardViewManager
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
+private val RouteInfo.sessionId get() = SessionId(params["id"]!!)
+
+@InitRoute
+fun initSessionPage(ctx: InitRouteContext) {
+    ctx.data.add(PageData(AppRoute.Session(ctx.route.sessionId)))
+}
+
 @Page("{id}")
 @Composable
 fun SessionPage(ctx: PageContext) {
-    val watchPartyController = rememberWatchPartyController()
-    val id = SessionId(ctx.route.params["id"]!!)
-
-    AppLayout(activePage = AppPage.Lobbies) {
-        val highlightManager = remember(watchPartyController.hostWatchParty) {
-            watchPartyController.hostWatchParty
-                ?.let { WatchPartyBoardViewManager(it) }
-                ?: LocalBoardViewManager()
-        }
-        Session(id, highlightManager)
-    }
+    val boardViewManager = rememberHostBoardViewManager<SessionBoardViewManager>()
+    Session(ctx.route.sessionId, boardViewManager)
 }
 
 @Composable
-fun Session(id: SessionId, boardViewManager: BoardViewManager) {
+fun Session(id: SessionId, boardViewManager: SessionBoardViewManager) {
     val hdsClient = rememberHdsApiClient()
     if (hdsClient == null) {
         LoadingState()

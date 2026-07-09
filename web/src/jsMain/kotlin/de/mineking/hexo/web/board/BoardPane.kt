@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.components
+package de.mineking.hexo.web.board
 
 import androidx.compose.runtime.Composable
 import com.varabyte.kobweb.core.AppGlobals
@@ -8,6 +8,7 @@ import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.theme.HDSTheme
+import de.mineking.hexo.web.components.LoadingIndicator
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement

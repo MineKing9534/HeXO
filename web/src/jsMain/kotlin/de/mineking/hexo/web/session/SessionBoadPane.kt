@@ -20,8 +20,9 @@ import de.mineking.hexo.hds.session.LiveSessionPlayer
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.session.SessionTurn
 import de.mineking.hexo.web.audio.SoundEffect
+import de.mineking.hexo.web.board.BoardPane
+import de.mineking.hexo.web.board.SessionBoardViewManager
 import de.mineking.hexo.web.components.ActionButton
-import de.mineking.hexo.web.components.BoardPane
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.cssColor
 import de.mineking.hexo.web.rememberSoundPlayer
@@ -43,7 +44,7 @@ import kotlin.time.Duration.Companion.seconds
 private const val MOVES_PER_TURN = 2
 
 @Composable
-fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: BoardViewManager) {
+fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: SessionBoardViewManager) {
     val move by boardViewManager.currentMove
     val board = remember(move, session) { session.game.asBoard(move) }
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
@@ -70,7 +71,7 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
 @Composable
 private fun BoardControls(
     session: LiveSession,
-    boardViewManager: BoardViewManager,
+    boardViewManager: SessionBoardViewManager,
     viewport: MutableState<BoardViewport?>,
 ) {
     var currentMove by boardViewManager.currentMove

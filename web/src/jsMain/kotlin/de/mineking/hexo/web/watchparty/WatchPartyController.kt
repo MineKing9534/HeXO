@@ -1,6 +1,7 @@
 package de.mineking.hexo.web.watchparty
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -14,9 +15,7 @@ import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.client.WatchPartyClient
 import de.mineking.hexo.sync.client.createSession
 import de.mineking.hexo.sync.common.WatchPartyId
-import de.mineking.hexo.web.interceptSet
-import de.mineking.hexo.web.rememberAsyncResourceState
-import de.mineking.hexo.web.rememberWatchPartyController
+import de.mineking.hexo.web.onSet
 import kotlinx.browser.localStorage
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
@@ -29,18 +28,10 @@ private object WatchPartyHostIdKey : StorageKey<WatchPartyId?>("watch_party_host
 
 @OptIn(DelicateCoroutinesApi::class)
 class WatchPartyController(host: String) {
-    private fun MutableState<WatchParty?>.interceptWatchPartyHost() = interceptSet {
-        if (it == null) {
-            localStorage.removeItem(WatchPartyHostIdKey)
-        } else {
-            it.onClose { value = null }
-        }
-    }
-
     var hostWatchParty by mutableStateOf<WatchParty?>(null).interceptWatchPartyHost()
         private set
 
-    var subscribedWatchParty by mutableStateOf<WatchParty?>(null).interceptSet { it?.onClose { value = null } }
+    var subscribedWatchParty by mutableStateOf<EntityState<WatchParty>?>(null).interceptWatchPartySubscriber()
         private set
 
     private val watchPartyClient = WatchPartyClient(host)
@@ -49,7 +40,7 @@ class WatchPartyController(host: String) {
         val hostId = localStorage.getItem(WatchPartyHostIdKey)
         if (hostId != null) {
             GlobalScope.launch {
-                hostWatchParty = watchPartyClient.connectSession(hostId)
+                hostWatchParty = watchPartyClient.connectWatchParty(hostId)
                 if (hostWatchParty == null) localStorage.removeItem(WatchPartyHostIdKey)
             }
         }
@@ -66,32 +57,42 @@ class WatchPartyController(host: String) {
 
     fun closeHost() {
         val session = hostWatchParty
+        hostWatchParty = null
         if (session != null) GlobalScope.launch { session.close() }
     }
 
-    suspend fun connect(id: WatchPartyId) = watchPartyClient
-        .connectSession(id)
-        .also { subscribedWatchParty = it }
-}
-
-@OptIn(DelicateCoroutinesApi::class)
-@Composable
-fun rememberWatchParty(id: WatchPartyId): EntityState<WatchParty> {
-    val watchPartyController = rememberWatchPartyController()
-    val state = rememberAsyncResourceState(
-        key = id,
-        initialState = EntityState.Loading,
-        load = {
-            watchPartyController.connect(id)
-                ?.let { EntityState.Data(it) }
-                ?: EntityState.NotFound
-        },
-        dispose = {
-            if (it is EntityState.Data) {
-                it.value.close()
+    fun connect(id: WatchPartyId) {
+        subscribedWatchParty = EntityState.Loading
+        GlobalScope.launch {
+            subscribedWatchParty = when (val watchParty = watchPartyClient.connectWatchParty(id)) {
+                null -> EntityState.NotFound
+                else -> EntityState.Data(watchParty)
             }
-        },
-    )
+        }
+    }
 
-    return state
+    @Composable
+    fun rememberWatchParty(id: WatchPartyId): EntityState<WatchParty> {
+        DisposableEffect(id) {
+            connect(id)
+            onDispose { subscribedWatchParty = null }
+        }
+
+        return subscribedWatchParty ?: EntityState.NotFound
+    }
+
+    private fun MutableState<WatchParty?>.interceptWatchPartyHost() = onSet {
+        if (it == null) {
+            localStorage.removeItem(WatchPartyHostIdKey)
+        } else {
+            it.onClose { reason ->
+                if (reason.closedByServer) value = null
+            }
+        }
+    }
+
+    private fun MutableState<EntityState<WatchParty>?>.interceptWatchPartySubscriber() = onSet {
+        val party = it as? EntityState.Data<WatchParty> ?: return@onSet
+        party.value.onClose { value = null }
+    }
 }

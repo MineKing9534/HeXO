@@ -10,7 +10,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.web.components.theme
+import de.mineking.hexo.web.board.theme
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -63,13 +63,19 @@ fun <T> rememberAsyncResourceState(
     return state
 }
 
-fun <T> MutableState<T>.interceptSet(handler: MutableState<T>.(T) -> Unit) = object : MutableState<T> by this {
+fun <T> MutableState<T>.interceptSet(handler: MutableState<T>.(T) -> Boolean) = object : MutableState<T> by this {
     override var value: T
         get() = this@interceptSet.value
         set(value) {
-            handler(value)
-            this@interceptSet.value = value
+            if (handler(value)) {
+                this@interceptSet.value = value
+            }
         }
+}
+
+fun <T> MutableState<T>.onSet(handler: MutableState<T>.(T) -> Unit) = interceptSet {
+    handler(it)
+    true
 }
 
 val CellOwner.cssColor: CSSColorValue get() {

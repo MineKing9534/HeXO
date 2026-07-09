@@ -1,9 +1,8 @@
 package de.mineking.hexo.sync.common
 
-import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.CellHighlight
-import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.hds.session.SessionId
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 
@@ -12,10 +11,32 @@ import kotlin.jvm.JvmInline
 value class WatchPartyId(val value: String)
 
 @Serializable
+sealed interface WatchPartyResponse
+
+@Serializable
+sealed interface WatchPartyTarget {
+    @Serializable
+    @SerialName("session")
+    data class Session(
+        val sessionId: SessionId,
+        val move: Int,
+        val overlay: Board,
+    ) : WatchPartyTarget
+
+    @Serializable
+    @SerialName("sandbox")
+    data class Sandbox(
+        val board: Board,
+    ) : WatchPartyTarget
+}
+
+@Serializable
+@SerialName("data")
 data class WatchPartyData(
     val id: WatchPartyId,
-    val sessionId: SessionId?,
-    val move: Int,
-    val cellHighlights: Map<CellCoordinate, CellHighlight>,
-    val lineHighlights: List<LineHighlight>,
-)
+    val target: WatchPartyTarget?,
+) : WatchPartyResponse
+
+@Serializable
+@SerialName("error")
+data class WatchPartyErrorResponse(val message: String) : WatchPartyResponse

@@ -1,7 +1,9 @@
 package de.mineking.hexo.board
 
 import de.mineking.hexo.core.CellOwner
+import kotlinx.serialization.Serializable
 
+@Serializable(with = BoardSerializer::class)
 interface Board {
     companion object {
         const val WIN_MIN_LENGTH = 6
@@ -108,12 +110,7 @@ fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
             requireHexo(overrideOwner || old.owner == null || new.owner == null) {
                 "At $coordinate: Owner override is disabled but both cells have an owner defined"
             }
-            MutableCell(
-                new.owner ?: old.owner,
-                highlight = old.highlight ?: new.highlight,
-                focused = old.focused || new.focused,
-                turn = new.turn ?: old.turn,
-            )
+            old + new.toOverride()
         }
     }
     return MutableBoard(

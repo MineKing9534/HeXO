@@ -2,15 +2,14 @@ package de.mineking.hexo.sync.client
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.CellHighlight
+import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.hds.session.SessionId
-import de.mineking.hexo.sync.common.WatchPartyCellHighlightRequest
+import de.mineking.hexo.sync.common.WatchPartyCellRequest
 import de.mineking.hexo.sync.common.WatchPartyData
 import de.mineking.hexo.sync.common.WatchPartyLineHighlightRequest
 import de.mineking.hexo.sync.common.WatchPartyMoveCountRequest
 import de.mineking.hexo.sync.common.WatchPartyNavigateRequest
+import de.mineking.hexo.sync.common.WatchPartyNavigateTarget
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
@@ -18,13 +17,15 @@ import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.websocket.close
 import kotlinx.coroutines.flow.StateFlow
 
+data class WatchPartyCloseReason(val closedByServer: Boolean)
+
 class WatchParty internal constructor(
     val data: StateFlow<WatchPartyData>,
     private val wsSession: DefaultClientWebSocketSession,
 ) {
-    private val onClose = mutableListOf<() -> Unit>()
+    private val onClose = mutableListOf<(WatchPartyCloseReason) -> Unit>()
 
-    fun onClose(block: () -> Unit) {
+    fun onClose(block: (WatchPartyCloseReason) -> Unit) {
         onClose += block
     }
 
@@ -32,8 +33,8 @@ class WatchParty internal constructor(
         wsSession.sendSerialized(request)
     }
 
-    suspend fun highlightCell(coordinate: CellCoordinate, highlight: CellHighlight?) {
-        request(WatchPartyCellHighlightRequest(coordinate, highlight))
+    suspend fun updateCell(coordinate: CellCoordinate, cell: CellOverride) {
+        request(WatchPartyCellRequest(coordinate, cell))
     }
 
     suspend fun addLine(line: LineHighlight) {
@@ -44,27 +45,25 @@ class WatchParty internal constructor(
         request(WatchPartyLineHighlightRequest(line, remove = true))
     }
 
-    suspend fun update(celHighlights: Map<CellCoordinate, CellHighlight>, lineHighlights: List<LineHighlight>) {
-        request(WatchPartyUpdateRequest(celHighlights, lineHighlights))
+    suspend fun update(board: Board) {
+        request(WatchPartyUpdateRequest(board))
     }
 
-    suspend fun navigate(sessionId: SessionId?) {
-        request(WatchPartyNavigateRequest(sessionId))
+    suspend fun navigate(target: WatchPartyNavigateTarget?) {
+        request(WatchPartyNavigateRequest(target))
     }
 
     suspend fun adjustMoveCount(move: Int) {
         request(WatchPartyMoveCountRequest(move))
     }
 
-    suspend fun close() {
-        onClose.forEach { it() }
-        wsSession.close()
+    internal fun onClose(reason: WatchPartyCloseReason) {
+        onClose.forEach { it(reason) }
+        onClose.clear()
     }
-}
 
-fun WatchPartyData.asBoard(): Board = MutableBoard().apply {
-    this.lineHighlights += this@asBoard.lineHighlights
-    this@asBoard.cellHighlights.forEach { (coordinate, highlight) ->
-        this[coordinate].highlight = highlight
+    suspend fun close() {
+        onClose(WatchPartyCloseReason(closedByServer = false))
+        wsSession.close()
     }
 }

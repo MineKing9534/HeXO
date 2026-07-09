@@ -1,9 +1,22 @@
 package de.mineking.hexo.board
 
+import kotlinx.serialization.InternalSerializationApi
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.PolymorphicSerializer
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.SerializationException
+import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.builtins.nullable
 import kotlinx.serialization.builtins.serializer
+import kotlinx.serialization.descriptors.SerialKind
+import kotlinx.serialization.descriptors.buildClassSerialDescriptor
+import kotlinx.serialization.descriptors.buildSerialDescriptor
+import kotlinx.serialization.encoding.CompositeDecoder
+import kotlinx.serialization.encoding.CompositeEncoder
+import kotlinx.serialization.encoding.Decoder
+import kotlinx.serialization.encoding.Encoder
+import kotlinx.serialization.encoding.decodeStructure
+import kotlinx.serialization.encoding.encodeStructure
 
 @Serializable
 sealed class BoardAttribute<T> {
@@ -19,6 +32,7 @@ sealed class BoardAttribute<T> {
 
 fun BoardAttributes(): BoardAttributes = MutableBoardAttributes()
 
+@Serializable(with = BoardAttributesSerializer::class)
 interface BoardAttributes {
     val values: Map<BoardAttribute<*>, Any?>
 
@@ -47,3 +61,70 @@ class MutableBoardAttributes(override val values: MutableMap<BoardAttribute<*>, 
 fun BoardAttributes.copy() = MutableBoardAttributes(this@copy.values.toMutableMap())
 
 operator fun BoardAttributes.plus(other: BoardAttributes) = MutableBoardAttributes((this@plus.values + other.values).toMutableMap())
+
+internal object BoardAttributesSerializer : KSerializer<BoardAttributes> {
+    private val delegate = ListSerializer(BoardAttributeValueSerializer)
+
+    override val descriptor = delegate.descriptor
+
+    override fun serialize(encoder: Encoder, value: BoardAttributes) {
+        encoder.encodeSerializableValue(
+            delegate,
+            value.values.map { (key, value) -> BoardAttributeValue(key, value) },
+        )
+    }
+
+    override fun deserialize(decoder: Decoder): BoardAttributes {
+        return MutableBoardAttributes(
+            decoder.decodeSerializableValue(delegate)
+                .associate { it.key to it.value }
+                .toMutableMap(),
+        )
+    }
+}
+
+private data class BoardAttributeValue(
+    val key: BoardAttribute<*>,
+    val value: Any?,
+)
+
+private object BoardAttributeValueSerializer : KSerializer<BoardAttributeValue> {
+    @Suppress("UNCHECKED_CAST")
+    private val keySerializer = BoardAttribute.serializer(PolymorphicSerializer(Any::class).nullable) as KSerializer<BoardAttribute<*>>
+
+    @OptIn(InternalSerializationApi::class)
+    override val descriptor = buildClassSerialDescriptor("de.mineking.hexo.board.BoardAttributeValue") {
+        element("key", keySerializer.descriptor)
+        element("value", buildSerialDescriptor("de.mineking.hexo.board.BoardAttributeValue.value", SerialKind.CONTEXTUAL))
+    }
+
+    override fun serialize(encoder: Encoder, value: BoardAttributeValue) = encoder.encodeStructure(descriptor) {
+        encodeSerializableElement(descriptor, 0, keySerializer, value.key)
+        encodeAttributeValue(value.key, value.value)
+    }
+
+    private data object MissingValue
+    override fun deserialize(decoder: Decoder) = decoder.decodeStructure(descriptor) {
+        lateinit var key: BoardAttribute<*>
+        var value: Any? = MissingValue
+
+        while (true) {
+            when (val index = decodeElementIndex(descriptor)) {
+                0 -> key = decodeSerializableElement(descriptor, 0, keySerializer)
+                1 -> value = decodeSerializableElement(descriptor, 1, key.serializer)
+
+                CompositeDecoder.DECODE_DONE -> break
+                else -> throw SerializationException("Unexpected index $index")
+            }
+        }
+
+        if (value is MissingValue) throw SerializationException("Missing board attribute value")
+
+        BoardAttributeValue(key, value)
+    }
+
+    private fun <T> CompositeEncoder.encodeAttributeValue(key: BoardAttribute<T>, value: Any?) {
+        @Suppress("UNCHECKED_CAST")
+        encodeSerializableElement(descriptor, 1, key.serializer, value as T)
+    }
+}
