@@ -24,6 +24,7 @@ import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.core.present
+import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.BoardPane
 import de.mineking.hexo.web.board.SandboxBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
@@ -35,6 +36,8 @@ import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.layout.PageStyle
 import de.mineking.hexo.web.rememberHdsApiClient
+import de.mineking.hexo.web.rememberPrevious
+import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.sandbox.BoardUpdateCause
 import de.mineking.hexo.web.sandbox.Sidebar
 import kotlinx.browser.window
@@ -110,6 +113,8 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
         )
     }
 
+    SandboxSounds(board)
+
     Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "flex-col", "md:flex-row") }) {
         Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "p-3", "md:p-6") }) {
             BoardPane(
@@ -142,6 +147,22 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
                 }
             },
         )
+    }
+}
+
+@Composable
+fun SandboxSounds(board: Board) {
+    val soundPlayer = rememberSoundPlayer()
+    val moveCount = remember(board.cells) {
+        board.cells.count { (_, cell) -> cell.owner != null }
+    }
+
+    val lastMoveCount = rememberPrevious(moveCount) ?: 0
+
+    LaunchedEffect(moveCount) {
+        if (moveCount > lastMoveCount) {
+            soundPlayer.play(SoundEffect.TilePlaced)
+        }
     }
 }
 

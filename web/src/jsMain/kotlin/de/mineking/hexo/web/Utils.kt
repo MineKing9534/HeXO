@@ -28,6 +28,9 @@ fun <T> rememberPrevious(key: Any?, value: T): T? {
     return previous
 }
 
+@Composable
+fun <T> rememberPrevious(value: T) = rememberPrevious(Unit, value)
+
 @OptIn(DelicateCoroutinesApi::class)
 @Composable
 fun <T> rememberAsyncResourceState(
