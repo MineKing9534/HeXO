@@ -17,6 +17,11 @@ data class WatchPartyNavigateRequest(
 ) : WatchPartyRequest
 
 @Serializable
+data class WatchPartyMoveCountRequest(
+    val move: Int,
+) : WatchPartyRequest
+
+@Serializable
 @SerialName("update")
 data class WatchPartyUpdateRequest(
     val cellHighlights: Map<CellCoordinate, CellHighlight>,

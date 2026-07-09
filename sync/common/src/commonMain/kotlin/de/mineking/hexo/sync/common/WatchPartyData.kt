@@ -15,6 +15,7 @@ value class WatchPartyId(val value: String)
 data class WatchPartyData(
     val id: WatchPartyId,
     val sessionId: SessionId?,
+    val move: Int,
     val cellHighlights: Map<CellCoordinate, CellHighlight>,
     val lineHighlights: List<LineHighlight>,
 )

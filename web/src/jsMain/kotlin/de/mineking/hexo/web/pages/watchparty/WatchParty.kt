@@ -23,7 +23,7 @@ import de.mineking.hexo.web.layout.AppLayout
 import de.mineking.hexo.web.layout.AppPage
 import de.mineking.hexo.web.pages.sessions.Session
 import de.mineking.hexo.web.rememberWatchPartyController
-import de.mineking.hexo.web.session.WatchPartyHighlightManager
+import de.mineking.hexo.web.session.WatchPartyBoardViewManager
 import de.mineking.hexo.web.watchparty.rememberWatchParty
 import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -229,7 +229,7 @@ private fun WatchParty(id: WatchPartyId) {
             val data by state.value.data.collectAsState()
             val sessionId = data.sessionId
 
-            val highlightManager = remember(state.value) { WatchPartyHighlightManager(state.value) }
+            val highlightManager = remember(state.value) { WatchPartyBoardViewManager(state.value) }
 
             if (sessionId != null) {
                 Session(sessionId, highlightManager)

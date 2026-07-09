@@ -9,6 +9,7 @@ import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.sync.common.WatchPartyCellHighlightRequest
 import de.mineking.hexo.sync.common.WatchPartyData
 import de.mineking.hexo.sync.common.WatchPartyLineHighlightRequest
+import de.mineking.hexo.sync.common.WatchPartyMoveCountRequest
 import de.mineking.hexo.sync.common.WatchPartyNavigateRequest
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
@@ -45,12 +46,14 @@ class WatchParty(
         request(WatchPartyNavigateRequest(sessionId))
     }
 
+    suspend fun adjustMoveCount(move: Int) {
+        request(WatchPartyMoveCountRequest(move))
+    }
+
     suspend fun close() {
         wsSession.close()
     }
 }
-
-suspend fun WatchParty.reset() = update(emptyMap(), emptyList())
 
 fun WatchPartyData.asBoard(): Board = MutableBoard().apply {
     this.lineHighlights += this@asBoard.lineHighlights

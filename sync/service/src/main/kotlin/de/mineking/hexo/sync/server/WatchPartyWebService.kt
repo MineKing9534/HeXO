@@ -5,6 +5,7 @@ import de.mineking.hexo.sync.common.WatchPartyCellHighlightRequest
 import de.mineking.hexo.sync.common.WatchPartyData
 import de.mineking.hexo.sync.common.WatchPartyId
 import de.mineking.hexo.sync.common.WatchPartyLineHighlightRequest
+import de.mineking.hexo.sync.common.WatchPartyMoveCountRequest
 import de.mineking.hexo.sync.common.WatchPartyNavigateRequest
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
@@ -86,6 +87,7 @@ class WatchPartyWebService : ApiWebService() {
         val data = WatchPartyData(
             id = WatchPartyId(Uuid.random().toString()),
             sessionId = null,
+            move = Int.MAX_VALUE,
             cellHighlights = emptyMap(),
             lineHighlights = emptyList(),
         )
@@ -152,10 +154,12 @@ class WatchPartyWebService : ApiWebService() {
                 if (request.sessionId == it.sessionId) return@update it
                 it.copy(
                     sessionId = request.sessionId,
+                    move = Int.MAX_VALUE,
                     lineHighlights = emptyList(),
                     cellHighlights = emptyMap(),
                 )
             }
+            is WatchPartyMoveCountRequest -> data.update { it.copy(move = request.move) }
             is WatchPartyCellHighlightRequest -> data.update {
                 val highlights = it.cellHighlights.toMutableMap()
                 val highlight = request.highlight

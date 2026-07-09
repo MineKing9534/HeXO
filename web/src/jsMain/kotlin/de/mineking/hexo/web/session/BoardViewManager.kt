@@ -1,5 +1,6 @@
 package de.mineking.hexo.web.session
 
+import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.State
 import androidx.compose.runtime.mutableStateOf
 import de.mineking.hexo.board.Board
@@ -9,18 +10,19 @@ import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.client.asBoard
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 
-interface HighlightManager {
+interface BoardViewManager {
     val board: State<Board>
+    val currentMove: MutableState<Int>
 
     fun apply(interaction: BoardInteraction.HighlightBoardInteraction)
     fun clearHighlights()
 }
 
-open class LocalHighlightManager : HighlightManager {
+open class LocalBoardViewManager : BoardViewManager {
     override val board = mutableStateOf(Board())
+    override val currentMove = mutableStateOf(Int.MAX_VALUE)
 
     override fun apply(interaction: BoardInteraction.HighlightBoardInteraction) {
         board.value = board.value.copy()
@@ -33,12 +35,27 @@ open class LocalHighlightManager : HighlightManager {
 }
 
 @OptIn(DelicateCoroutinesApi::class)
-class WatchPartyHighlightManager(val watchParty: WatchParty) : LocalHighlightManager() {
+class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoardViewManager() {
+    override val currentMove = run {
+        val original = super.currentMove
+        object : MutableState<Int> by super.currentMove {
+            override var value: Int
+                get() = original.value
+                set(value) {
+                    original.value = value
+                    GlobalScope.launch {
+                        watchParty.adjustMoveCount(value)
+                    }
+                }
+        }
+    }
+
     init {
         GlobalScope.launch {
-            watchParty.data
-                .map { it.asBoard() }
-                .collect { board.value = it }
+            watchParty.data.collect {
+                board.value = it.asBoard()
+                currentMove.value = it.move
+            }
         }
     }
 

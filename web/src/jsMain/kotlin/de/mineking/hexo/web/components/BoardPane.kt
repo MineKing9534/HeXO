@@ -10,6 +10,7 @@ import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.theme.HDSTheme
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
+import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 
 val theme = HDSTheme.Default
@@ -20,6 +21,7 @@ fun BoardPane(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
+    attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: @Composable () -> Unit,
 ) {
     if (AppGlobals.isExporting) {
@@ -49,6 +51,7 @@ fun BoardPane(
                 attr("width", "1200")
                 attr("height", "900")
                 classes("block", "h-full", "w-full", "touch-none")
+                attrs?.invoke(this)
             },
         )
 

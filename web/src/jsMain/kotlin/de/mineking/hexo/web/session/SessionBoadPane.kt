@@ -30,6 +30,9 @@ import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.EventListener
+import org.w3c.dom.events.KeyboardEvent
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
@@ -40,13 +43,12 @@ import kotlin.time.Duration.Companion.seconds
 private const val MOVES_PER_TURN = 2
 
 @Composable
-fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, highlightManager: HighlightManager) {
-    val move = remember { mutableStateOf(Int.MAX_VALUE) }
-
-    val board = remember(move.value, session) { session.game.asBoard(move.value) }
+fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: BoardViewManager) {
+    val move by boardViewManager.currentMove
+    val board = remember(move, session) { session.game.asBoard(move) }
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
 
-    val highlightBoard by highlightManager.board
+    val highlightBoard by boardViewManager.board
     val transformedBoard = remember(board, highlightBoard) {
         ((board + highlightBoard) as MutableBoard).focusWinningRows()
     }
@@ -57,46 +59,51 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, highligh
         onViewportChange = { viewport.value = it },
         onBoardInteraction = { interaction ->
             if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
-            highlightManager.apply(interaction)
+            boardViewManager.apply(interaction)
         },
     ) {
         if (state != null) TurnIndicator(session, state)
-        BoardControls(session, move, highlightManager, viewport)
+        BoardControls(session, boardViewManager, viewport)
     }
 }
 
 @Composable
 private fun BoardControls(
     session: LiveSession,
-    move: MutableState<Int>,
-    highlightManager: HighlightManager,
+    boardViewManager: BoardViewManager,
     viewport: MutableState<BoardViewport?>,
 ) {
-    var move by move
-    val highlightBoard by highlightManager.board
+    var currentMove by boardViewManager.currentMove
+    val highlightBoard by boardViewManager.board
+    val totalMoves = session.game.moves.size
+
+    MoveKeyboardShortcuts(
+        move = boardViewManager.currentMove,
+        totalMoves = totalMoves,
+    )
 
     ActionButton(
-        label = "Move ${min(move, session.game.moves.size)}/${session.game.moves.size}",
+        label = "Move ${min(currentMove, totalMoves)}/$totalMoves",
         size = ButtonSize.Medium,
         attrs = { classes("absolute", "top-3", "left-3", "z-20", "shadow-lg") },
-        onClick = { move = Int.MAX_VALUE },
+        onClick = { currentMove = Int.MAX_VALUE },
     )
 
     Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
         ActionButton(
             label = "Previous",
-            enabled = move > 0,
+            enabled = currentMove > 0,
             size = ButtonSize.Medium,
             attrs = { classes("shadow-lg") },
-            onClick = { move = max(0, min(move, session.game.moves.size) - 1) },
+            onClick = { currentMove = previousMove(currentMove, totalMoves) },
         )
 
         ActionButton(
             label = "Next",
-            enabled = move < session.game.moves.size,
+            enabled = currentMove < totalMoves,
             size = ButtonSize.Medium,
             attrs = { classes("shadow-lg") },
-            onClick = { move = if (move == session.game.moves.size - 1) Int.MAX_VALUE else move + 1 },
+            onClick = { currentMove = nextMove(currentMove, totalMoves) },
         )
     }
 
@@ -106,7 +113,7 @@ private fun BoardControls(
                 label = "Clear Highlights",
                 size = ButtonSize.Medium,
                 attrs = { classes("shadow-lg") },
-                onClick = { highlightManager.clearHighlights() },
+                onClick = { boardViewManager.clearHighlights() },
             )
         }
         ActionButton(
@@ -117,6 +124,36 @@ private fun BoardControls(
         )
     }
 }
+
+@Composable
+private fun MoveKeyboardShortcuts(move: MutableState<Int>, totalMoves: Int) {
+    val totalMoves by rememberUpdatedState(totalMoves)
+
+    DisposableEffect(move) {
+        val keyDown = EventListener { event ->
+            if (event !is KeyboardEvent) return@EventListener
+            if (event.altKey || event.ctrlKey || event.metaKey) return@EventListener
+            if ((event.target as? HTMLElement)?.isContentEditable == true) return@EventListener
+
+            when (event.key) {
+                "ArrowLeft" -> {
+                    event.preventDefault()
+                    move.value = previousMove(move.value, totalMoves)
+                }
+                "ArrowRight" -> {
+                    event.preventDefault()
+                    move.value = nextMove(move.value, totalMoves)
+                }
+            }
+        }
+
+        window.addEventListener("keydown", keyDown)
+        onDispose { window.removeEventListener("keydown", keyDown) }
+    }
+}
+
+private fun previousMove(move: Int, totalMoves: Int) = max(0, min(move, totalMoves) - 1)
+private fun nextMove(move: Int, totalMoves: Int) = if (move >= totalMoves - 1) Int.MAX_VALUE else move + 1
 
 @Composable
 private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {

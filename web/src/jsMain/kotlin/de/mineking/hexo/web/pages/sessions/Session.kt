@@ -24,12 +24,12 @@ import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberWatchPartyController
-import de.mineking.hexo.web.session.HighlightManager
+import de.mineking.hexo.web.session.BoardViewManager
 import de.mineking.hexo.web.session.LobbyOverlay
-import de.mineking.hexo.web.session.LocalHighlightManager
+import de.mineking.hexo.web.session.LocalBoardViewManager
 import de.mineking.hexo.web.session.SessionBoardPane
 import de.mineking.hexo.web.session.SessionFinishedOverlay
-import de.mineking.hexo.web.session.WatchPartyHighlightManager
+import de.mineking.hexo.web.session.WatchPartyBoardViewManager
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
@@ -44,15 +44,15 @@ fun SessionPage(ctx: PageContext) {
     AppLayout(activePage = AppPage.Lobbies) {
         val highlightManager = remember(watchPartyController.hostWatchParty) {
             watchPartyController.hostWatchParty
-                ?.let { WatchPartyHighlightManager(it) }
-                ?: LocalHighlightManager()
+                ?.let { WatchPartyBoardViewManager(it) }
+                ?: LocalBoardViewManager()
         }
         Session(id, highlightManager)
     }
 }
 
 @Composable
-fun Session(id: SessionId, highlightManager: HighlightManager) {
+fun Session(id: SessionId, boardViewManager: BoardViewManager) {
     val hdsClient = rememberHdsApiClient()
     if (hdsClient == null) {
         LoadingState()
@@ -70,7 +70,7 @@ fun Session(id: SessionId, highlightManager: HighlightManager) {
                 is LiveSession -> {
                     val state = session.state
 
-                    SessionBoardPane(session, state as? SessionState.InGame, highlightManager)
+                    SessionBoardPane(session, state as? SessionState.InGame, boardViewManager)
                     if (state is SessionState.Finished) SessionFinishedOverlay(session, state)
                 }
                 is LobbySession -> LobbyOverlay(session)
