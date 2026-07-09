@@ -2,6 +2,7 @@ package de.mineking.hexo.web.session
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -20,10 +21,12 @@ import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LiveSessionPlayer
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.session.SessionTurn
+import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.BoardPane
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.cssColor
+import de.mineking.hexo.web.rememberSoundPlayer
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.Div
@@ -34,6 +37,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 private const val MOVES_PER_TURN = 2
 
@@ -120,6 +124,8 @@ private fun BoardControls(
 
 @Composable
 private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
+    val soundPlayer = rememberSoundPlayer()
+
     val timeRemaining by rememberUpdatedState(player.timeRemaining ?: return)
     var timer by remember { mutableStateOf(timeRemaining.duration) }
     val current by rememberUpdatedState(current)
@@ -132,6 +138,10 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
 
         val interval = window.setInterval(::countdown, 250)
         onDispose { window.clearInterval(interval) }
+    }
+
+    LaunchedEffect(timer.inWholeSeconds) {
+        if (timer <= 10.seconds) soundPlayer.play(SoundEffect.CountdownWarning)
     }
 
     Div({

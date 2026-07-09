@@ -1,6 +1,7 @@
 package de.mineking.hexo.web.pages.sessions
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
@@ -9,14 +10,18 @@ import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.navigation.Anchor
 import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LobbySession
+import de.mineking.hexo.hds.session.Session
 import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.components.AppLayout
 import de.mineking.hexo.web.components.AppPage
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.rememberHdsApiClient
+import de.mineking.hexo.web.rememberPrevious
+import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.session.LobbyOverlay
 import de.mineking.hexo.web.session.SessionBoardPane
 import de.mineking.hexo.web.session.SessionFinishedOverlay
@@ -46,6 +51,8 @@ fun Session(ctx: PageContext) {
             is EntityState.Loading -> LoadingState()
             is EntityState.NotFound -> NotFoundState()
             is EntityState.Data -> {
+                SessionSounds(state.value)
+
                 when (val session = state.value) {
                     is LiveSession -> {
                         val state = session.state
@@ -56,6 +63,31 @@ fun Session(ctx: PageContext) {
                     is LobbySession -> LobbyOverlay(session)
                 }
             }
+        }
+    }
+}
+
+@Composable
+private fun SessionSounds(session: Session) {
+    val soundPlayer = rememberSoundPlayer()
+    val previousState = rememberPrevious(session.id, session.state)
+
+    if (session is LiveSession) {
+        val previousMoveCount = rememberPrevious(session.id, session.game.moveCount)
+
+        LaunchedEffect(session.game.moveCount) {
+            if (previousMoveCount != null && session.game.moveCount > previousMoveCount) {
+                soundPlayer.play(SoundEffect.TilePlaced)
+            }
+        }
+    }
+
+    LaunchedEffect(session.state) {
+        if (session.state is SessionState.InGame && previousState !is SessionState.InGame) {
+            soundPlayer.play(SoundEffect.GameStart)
+        }
+        if (session.state is SessionState.Finished && previousState is SessionState.InGame) {
+            soundPlayer.play(SoundEffect.GameWin)
         }
     }
 }

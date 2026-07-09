@@ -43,10 +43,20 @@ interface SessionPlayer {
 
 fun SessionPlayer.isGuest() = profileId != null
 
+sealed interface SessionState {
+    data object Lobby : SessionState
+
+    sealed interface LiveSessionState : SessionState
+
+    data class InGame(val currentTurn: SessionTurn) : LiveSessionState
+    data class Finished(val result: GameResult, val rematchAcceptedPlayers: List<LiveSessionPlayer>) : LiveSessionState
+}
+
 interface Session {
     val id: SessionId
     val gameOptions: GameOptions
     val players: List<SessionPlayer>
+    val state: SessionState
 
     fun observe(): SharedFlow<EntityState<Session>>
 }
@@ -59,6 +69,8 @@ class LobbySession(
     val createdAt: Instant,
     val startedAt: Instant?,
 ) : Session {
+    override val state = SessionState.Lobby
+
     override fun observe() = repository.observeSession(id)
 
     companion object {
@@ -84,8 +96,8 @@ class LiveSession private constructor(
     override val id: SessionId,
     override val gameOptions: GameOptions,
     override val players: List<LiveSessionPlayer>,
+    override val state: SessionState.LiveSessionState,
     val tournamentInfo: TournamentMatchSnapshot?,
-    val state: SessionState,
     val game: SessionGame,
     internal val dto: SessionDto,
     internal val lastState: Pair<Instant, SessionStateDto.InGame>?,
@@ -237,11 +249,6 @@ class LiveSessionPlayer(
     override val profileId = super.profileId
     override val displayName = super.displayName
     override val elo = super.elo
-}
-
-sealed interface SessionState {
-    data class InGame(val currentTurn: SessionTurn) : SessionState
-    data class Finished(val result: GameResult, val rematchAcceptedPlayers: List<LiveSessionPlayer>) : SessionState
 }
 
 data class SessionTurn(
