@@ -7,6 +7,7 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.board)
+            implementation(projects.hds)
 
             implementation(libs.kotlin.serialization.core)
         }

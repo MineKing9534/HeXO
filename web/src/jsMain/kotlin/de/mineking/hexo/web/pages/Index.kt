@@ -31,10 +31,10 @@ import org.jetbrains.compose.web.svg.Svg
 
 @Page
 @Composable
-fun Index() {
+fun IndexPage() {
     val client = rememberHdsApiClient()
 
-    AppLayout(activePage = AppPage.Home) {
+    AppLayout(activePage = AppPage.Lobbies) {
         if (client == null) {
             LoadingState()
         } else {

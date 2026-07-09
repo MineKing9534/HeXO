@@ -20,17 +20,22 @@ import de.mineking.hexo.hds.socket.SocketIOOptions
 import de.mineking.hexo.hds.socket.connectSocketClient
 import de.mineking.hexo.web.audio.SoundPlayer
 import de.mineking.hexo.web.pages.NotFoundPage
+import de.mineking.hexo.web.sync.SessionSyncService
 import de.mineking.hexo.web.web.BuildConfig
 import org.jetbrains.compose.web.dom.Main
 
 private val LocalHdsApiClient = staticCompositionLocalOf<HdsApiClient?> { null }
 private val LocalSoundPlayer = staticCompositionLocalOf<SoundPlayer> { error("SoundPlayer not initialized!") }
+private val LocalSessionSyncService = staticCompositionLocalOf<SessionSyncService> { error("SessionSyncService not initialized!") }
 
 @Composable
-fun rememberHdsApiClient(): HdsApiClient? = LocalHdsApiClient.current
+fun rememberHdsApiClient() = LocalHdsApiClient.current
 
 @Composable
-fun rememberSoundPlayer(): SoundPlayer = LocalSoundPlayer.current
+fun rememberSoundPlayer() = LocalSoundPlayer.current
+
+@Composable
+fun rememberSessionSyncService() = LocalSessionSyncService.current
 
 @Composable
 private fun rememberSharedHdsApiClient(): HdsApiClient? {
@@ -59,10 +64,12 @@ private fun rememberSharedHdsApiClient(): HdsApiClient? {
 fun App(content: @Composable () -> Unit) {
     val hdsApiClient = rememberSharedHdsApiClient()
     val soundPlayer = remember { SoundPlayer() }
+    val sessionSyncService = remember { SessionSyncService("http://localhost:1234") } // TODO
 
     CompositionLocalProvider(
         LocalHdsApiClient provides hdsApiClient,
         LocalSoundPlayer provides soundPlayer,
+        LocalSessionSyncService provides sessionSyncService,
     ) {
         Main({ classes("h-dvh", "w-screen", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100") }) {
             content()

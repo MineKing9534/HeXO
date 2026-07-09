@@ -28,7 +28,9 @@ fun createDefaultHttpClient(
     config: HttpClientConfig<*>.() -> Unit = {},
 ) = HttpClient(engine) {
     install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(Json)
+        contentConverter = KotlinxWebsocketSerializationConverter(Json {
+            allowStructuredMapKeys = true
+        })
     }
 
     config()
@@ -39,7 +41,7 @@ class SessionSyncClient(
     private val httpClient: HttpClient = createDefaultHttpClient(),
 ) {
     suspend fun connectSession(id: SessionSyncId?): SyncSession? {
-        val wsSession = httpClient.webSocketSession("$host/api/sessions/sync/gateway") {
+        val wsSession = httpClient.webSocketSession("${host.replace("http", "ws")}/api/sessions/sync/gateway") {
             parameter("id", id?.value)
         }
 

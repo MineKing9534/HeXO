@@ -17,9 +17,10 @@ import org.jetbrains.compose.web.dom.Text
 import org.jetbrains.compose.web.svg.Path
 import org.jetbrains.compose.web.svg.Svg
 
-enum class AppPage {
-    Home,
-    Sandbox,
+enum class AppPage(val label: String, val href: String) {
+    Lobbies("Lobbies", "/"),
+    Sandbox("Sandbox", "/sandbox"),
+    Sync("Watch Party", "/sync"),
 }
 
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
@@ -86,8 +87,9 @@ private fun NavBar(activePage: AppPage?) {
                     "bg-slate-900/70", "p-1", "shadow-inner", "shadow-black/20",
                 )
             }) {
-                NavLink("Lobbies", "/", activePage == AppPage.Home)
-                NavLink("Sandbox", "/sandbox", activePage == AppPage.Sandbox)
+                AppPage.entries.forEach {
+                    NavLink(it.label, it.href, activePage == it)
+                }
             }
         }
     }

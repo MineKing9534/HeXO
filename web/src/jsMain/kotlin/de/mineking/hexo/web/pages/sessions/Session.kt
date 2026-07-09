@@ -22,7 +22,9 @@ import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
+import de.mineking.hexo.web.session.HighlightManager
 import de.mineking.hexo.web.session.LobbyOverlay
+import de.mineking.hexo.web.session.LocalHighlightManager
 import de.mineking.hexo.web.session.SessionBoardPane
 import de.mineking.hexo.web.session.SessionFinishedOverlay
 import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
@@ -35,33 +37,38 @@ import org.jetbrains.compose.web.svg.Svg
 
 @Page("{id}")
 @Composable
-fun Session(ctx: PageContext) {
-    val hdsClient = rememberHdsApiClient()
-
+fun SessionPage(ctx: PageContext) {
     val id = remember { SessionId(ctx.route.params["id"]!!) }
 
-    AppLayout(activePage = AppPage.Home) {
-        if (hdsClient == null) {
-            LoadingState()
-            return@AppLayout
-        }
+    AppLayout(activePage = AppPage.Lobbies) {
+        val highlightManager = remember { LocalHighlightManager() }
+        Session(id, highlightManager)
+    }
+}
 
-        val state by remember { hdsClient.sessionRepository.observeSession(id) }.collectAsState()
-        when (val state = state) {
-            is EntityState.Loading -> LoadingState()
-            is EntityState.NotFound -> NotFoundState()
-            is EntityState.Data -> {
-                SessionSounds(state.value)
+@Composable
+fun Session(id: SessionId, highlightManager: HighlightManager) {
+    val hdsClient = rememberHdsApiClient()
+    if (hdsClient == null) {
+        LoadingState()
+        return
+    }
 
-                when (val session = state.value) {
-                    is LiveSession -> {
-                        val state = session.state
+    val state by remember(id) { hdsClient.sessionRepository.observeSession(id) }.collectAsState()
+    when (val state = state) {
+        is EntityState.Loading -> LoadingState()
+        is EntityState.NotFound -> NotFoundState()
+        is EntityState.Data -> {
+            SessionSounds(state.value)
 
-                        SessionBoardPane(session, state as? SessionState.InGame)
-                        if (state is SessionState.Finished) SessionFinishedOverlay(session, state)
-                    }
-                    is LobbySession -> LobbyOverlay(session)
+            when (val session = state.value) {
+                is LiveSession -> {
+                    val state = session.state
+
+                    SessionBoardPane(session, state as? SessionState.InGame, highlightManager)
+                    if (state is SessionState.Finished) SessionFinishedOverlay(session, state)
                 }
+                is LobbySession -> LobbyOverlay(session)
             }
         }
     }

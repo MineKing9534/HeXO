@@ -9,9 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardInteraction
@@ -42,15 +40,15 @@ import kotlin.time.Duration.Companion.seconds
 private const val MOVES_PER_TURN = 2
 
 @Composable
-fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?) {
+fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, highlightManager: HighlightManager) {
     val move = remember { mutableStateOf(Int.MAX_VALUE) }
 
     val board = remember(move.value, session) { session.game.asBoard(move.value) }
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
 
-    val highlightBoard = remember(session.game.id) { mutableStateOf(Board()) }
-    val transformedBoard = remember(board, highlightBoard.value) {
-        ((board + highlightBoard.value) as MutableBoard).focusWinningRows()
+    val highlightBoard by highlightManager.board
+    val transformedBoard = remember(board, highlightBoard) {
+        ((board + highlightBoard) as MutableBoard).focusWinningRows()
     }
 
     BoardPane(
@@ -59,13 +57,11 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?) {
         onViewportChange = { viewport.value = it },
         onBoardInteraction = { interaction ->
             if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
-            highlightBoard.value = highlightBoard.value.copy().also {
-                interaction.apply(it)
-            }
+            highlightManager.apply(interaction)
         },
     ) {
         if (state != null) TurnIndicator(session, state)
-        BoardControls(session, move, highlightBoard, viewport)
+        BoardControls(session, move, highlightManager, viewport)
     }
 }
 
@@ -73,11 +69,11 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?) {
 private fun BoardControls(
     session: LiveSession,
     move: MutableState<Int>,
-    highlightBoard: MutableState<Board>,
+    highlightManager: HighlightManager,
     viewport: MutableState<BoardViewport?>,
 ) {
     var move by move
-    var highlightBoard by highlightBoard
+    val highlightBoard by highlightManager.board
 
     ActionButton(
         label = "Move ${min(move, session.game.moves.size)}/${session.game.moves.size}",
@@ -110,7 +106,7 @@ private fun BoardControls(
                 label = "Clear Highlights",
                 size = ButtonSize.Medium,
                 attrs = { classes("shadow-lg") },
-                onClick = { highlightBoard = Board() },
+                onClick = { highlightManager.clearHighlights() },
             )
         }
         ActionButton(
