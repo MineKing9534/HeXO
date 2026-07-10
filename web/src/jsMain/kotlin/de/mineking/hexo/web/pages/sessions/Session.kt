@@ -23,7 +23,7 @@ import de.mineking.hexo.web.board.SessionBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
-import de.mineking.hexo.web.icons.ChevronLeftIcon
+import de.mineking.hexo.web.icons.ArrowLeftIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsApiClient
@@ -137,7 +137,7 @@ fun BackToLobbiesLink() {
             "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60", "mt-2",
         )
     }) {
-        ChevronLeftIcon {
+        ArrowLeftIcon {
             classes("size-4", "shrink-0", "transition-transform", "group-hover:-translate-x-0.5")
         }
         Span({ classes("whitespace-nowrap") }) {

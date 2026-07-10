@@ -30,6 +30,8 @@ import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.cssColor
+import de.mineking.hexo.web.icons.ChevronLeftIcon
+import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.ClearHighlightsIcon
 import de.mineking.hexo.web.icons.EnterFullscreenIcon
 import de.mineking.hexo.web.icons.ExitFullscreenIcon
@@ -41,9 +43,11 @@ import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.rememberSettingsValue
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.KeyboardEvent
@@ -96,13 +100,17 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
 private fun BoardActionButton(
     enabled: Boolean = true,
     color: Color = Color.Neutral,
+    attrs: AttrBuilderContext<HTMLButtonElement>? = null,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) = ActionButton(
     enabled = enabled,
     size = ButtonSize.Medium,
     color = color,
-    attrs = { classes("shadow-lg") },
+    attrs = {
+        classes("shadow-lg")
+        attrs?.invoke(this)
+    },
     onClick = onClick,
     content = content,
 )
@@ -133,13 +141,21 @@ private fun BoardScope.BoardControls(
     Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
         BoardActionButton(
             enabled = currentMove > 0,
+            attrs = {
+                attr("aria-label", "Previous move")
+                attr("title", "Previous move")
+            },
             onClick = { currentMove = previousMove(currentMove, totalMoves) },
-        ) { Text("Previous") }
+        ) { ChevronLeftIcon { classes("size-4") } }
 
         BoardActionButton(
             enabled = currentMove < totalMoves,
+            attrs = {
+                attr("aria-label", "Next move")
+                attr("title", "Next move")
+            },
             onClick = { currentMove = nextMove(currentMove, totalMoves) },
-        ) { Text("Next") }
+        ) { ChevronRightIcon { classes("size-4") } }
     }
 
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
