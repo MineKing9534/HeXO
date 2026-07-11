@@ -13,6 +13,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderLayout
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
+import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.center
 import de.mineking.hexo.board.render.image.createHex
@@ -45,6 +46,7 @@ fun RawBoard(
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
+    middleLayer: RenderingContext.() -> Unit = {},
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
@@ -65,6 +67,8 @@ fun RawBoard(
     }
     val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
 
+    val middleLayer by rememberUpdatedState(middleLayer)
+
     fun redraw() {
         element?.drawBoard(
             layout = layout,
@@ -72,6 +76,7 @@ fun RawBoard(
             hoveredCell = hoveredCell,
             theme = theme,
             cellHoverColor = cellHoverColor,
+            middleLayer = middleLayer,
         )
     }
 
@@ -132,6 +137,7 @@ private fun HTMLCanvasElement.drawBoard(
     hoveredCell: CellCoordinate?,
     theme: Theme,
     cellHoverColor: Color?,
+    middleLayer: RenderingContext.() -> Unit = {},
 ) {
     width = clientWidth
     height = clientHeight
@@ -142,6 +148,8 @@ private fun HTMLCanvasElement.drawBoard(
         offset = viewport.offset(this),
         theme = theme,
     ) {
+        middleLayer()
+
         if (hoveredCell == null || cellHoverColor == null) return@drawBoard
         val cell = layout.board.cells[hoveredCell]
 

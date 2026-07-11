@@ -45,6 +45,7 @@ kotlin {
             implementation(projects.hds)
 
             implementation(projects.sync.client)
+            implementation(projects.solver)
 
             implementation(libs.kobweb.core)
             implementation(libs.bundles.compose.html)

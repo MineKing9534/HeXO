@@ -15,8 +15,9 @@ import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.SubCard
-import de.mineking.hexo.web.cssColor
 import de.mineking.hexo.web.icons.ChevronDownIcon
+import de.mineking.hexo.web.playerCssColor
+import de.mineking.hexo.web.rememberTheme
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.css.percent
 import org.jetbrains.compose.web.css.width
@@ -227,12 +228,13 @@ private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSe
 private fun SessionFinishedPlayerHeader(player: LiveSessionPlayer, winner: Player?) {
     Div({ classes("flex", "items-start", "justify-between", "gap-3") }) {
         Div({ classes("min-w-0", "flex", "items-center", "gap-3") }) {
+            val theme by rememberTheme()
             Div({
                 classes(
                     "grid", "size-11", "shrink-0", "place-items-center", "rounded-full", "border",
                     "bg-slate-950/60", "text-sm", "font-black", "text-slate-100", "shadow-md",
                 )
-                style { backgroundColor(player.color.cssColor) }
+                style { backgroundColor(theme.playerCssColor(player.color)) }
             }) {
                 Text(player.displayName.take(1).uppercase())
             }
@@ -328,9 +330,10 @@ private fun SessionFinishedTournamentPlayer(
 @Composable
 private fun SessionFinishedTournamentPlayerLabel(player: LiveSessionPlayer) {
     Div({ classes("mb-2", "flex", "items-center", "gap-2") }) {
+        val theme by rememberTheme()
         Div({
             classes("rounded-full", "size-2.5", "shrink-0")
-            style { backgroundColor(player.color.cssColor) }
+            style { backgroundColor(theme.playerCssColor(player.color)) }
         })
         Span({ classes("truncate", "text-sm", "font-semibold", "text-slate-200") }) {
             Text(player.displayName)

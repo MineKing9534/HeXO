@@ -1,4 +1,4 @@
-@file:JsModule("./pkg/hexo_wasm.js")
+@file:JsModule("HeXO-solver/kotlin/pkg/hexo_wasm.js")
 @file:JsNonModule
 
 package cc.tyto

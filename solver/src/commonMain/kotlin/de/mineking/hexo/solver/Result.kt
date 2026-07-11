@@ -11,7 +11,7 @@ sealed interface FindWinResult {
     data class Win(val turns: List<Turn>) : FindWinResult
 }
 
-data class Defense(val first: CellCoordinate, val second: CellCoordinate?)
+data class Defense(val first: CellCoordinate, val second: CellCoordinate?) : Collection<CellCoordinate> by listOfNotNull(first, second)
 
 sealed interface FindDefenseResult {
     data object NoThreat : FindDefenseResult

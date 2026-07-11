@@ -19,9 +19,9 @@ data class HDSTheme(
     val focusColor: Color,
     val emptyCellBackgroundColor: Color,
     val emptyCellLabelColor: Color,
-    val playerXColor: Color,
-    val playerOColor: Color,
-) : BaseTheme(gap, backgroundColor) {
+    override val playerXColor: Color,
+    override val playerOColor: Color,
+) : BaseTheme() {
     companion object {
         val Default = HDSTheme(
             gap = 6.0,

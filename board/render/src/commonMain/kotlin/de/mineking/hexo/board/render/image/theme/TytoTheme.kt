@@ -16,9 +16,9 @@ class TytoTheme(
     val emptyCellBackgroundColor: Color,
     val emptyCellBorderColor: Color,
     val occupiedCellBorderColor: Color,
-    val playerXColor: Color,
-    val playerOColor: Color,
-) : BaseTheme(gap, backgroundColor) {
+    override val playerXColor: Color,
+    override val playerOColor: Color,
+) : BaseTheme() {
     companion object {
         val Default = TytoTheme(
             gap = 1.0,

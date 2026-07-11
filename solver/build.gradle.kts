@@ -36,3 +36,16 @@ kotlin {
         }
     }
 }
+
+val copyWasmPackageResources = tasks.register<Sync>("copyWasmPackageResources") {
+    from(layout.projectDirectory.dir("src/jsMain/resources/pkg"))
+    into(rootProject.layout.buildDirectory.dir("js/packages/HeXO-solver/kotlin/pkg"))
+}
+
+tasks.matching { it.name in setOf("jsBrowserDevelopmentWebpack", "jsBrowserProductionWebpack") }.configureEach {
+    dependsOn(copyWasmPackageResources)
+}
+
+tasks.named("jsJar") {
+    dependsOn(copyWasmPackageResources)
+}

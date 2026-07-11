@@ -4,17 +4,19 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.web.board.theme
+import de.mineking.hexo.web.settings.SettingsKey
+import de.mineking.hexo.web.settings.rememberSettingsValue
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import org.jetbrains.compose.web.css.CSSColorValue
 import org.jetbrains.compose.web.css.rgba
 
 @Composable
@@ -81,7 +83,16 @@ fun <T> MutableState<T>.onSet(handler: MutableState<T>.(T) -> Unit) = interceptS
     true
 }
 
-val CellOwner.cssColor: CSSColorValue get() {
-    val color = theme.run { color(default = Color.Transparent) }
-    return rgba(color.red.toInt(), color.green.toInt(), color.blue.toInt(), color.alpha.toInt())
+fun <T, U> State<T>.map(transform: (T) -> U) = object : State<U> {
+    override val value get() = transform(this@map.value)
+}
+
+@Composable
+fun rememberTheme() = rememberSettingsValue(SettingsKey.Theme).map { it.theme }
+
+private val Color.css get() = rgba(red.toInt(), green.toInt(), blue.toInt(), alpha.toInt())
+fun BaseTheme.playerCssColor(owner: CellOwner) = playerColor(owner).css
+fun BaseTheme.playerColor(owner: CellOwner) = when (owner) {
+    CellOwner.X -> playerXColor
+    CellOwner.O -> playerOColor
 }

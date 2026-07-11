@@ -9,26 +9,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.board.focusWinningRows
-import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.image.div
-import de.mineking.hexo.hds.asBoard
 import de.mineking.hexo.hds.game.Move
+import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LiveSessionPlayer
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.session.SessionTurn
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
-import de.mineking.hexo.web.board.BoardPane
+import de.mineking.hexo.web.board.AnalyserTurn
+import de.mineking.hexo.web.board.GamePositionBoardPane
 import de.mineking.hexo.web.board.SessionBoardViewManager
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
-import de.mineking.hexo.web.cssColor
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.ClearHighlightsIcon
@@ -36,7 +34,9 @@ import de.mineking.hexo.web.icons.EnterFullscreenIcon
 import de.mineking.hexo.web.icons.ExitFullscreenIcon
 import de.mineking.hexo.web.icons.ResetViewIcon
 import de.mineking.hexo.web.layout.rememberAppLayout
+import de.mineking.hexo.web.playerCssColor
 import de.mineking.hexo.web.rememberSoundPlayer
+import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.rememberSettingsValue
@@ -62,13 +62,7 @@ private const val MOVES_PER_TURN = 2
 @Composable
 fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: SessionBoardViewManager) {
     val move by boardViewManager.currentMove
-    val board = remember(move, session) { session.game.asBoard(move) }
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
-
-    val highlightBoard by boardViewManager.board
-    val transformedBoard = remember(board, highlightBoard) {
-        (board + highlightBoard).focusWinningRows()
-    }
 
     val watchPartyController = rememberWatchPartyController()
     LaunchedEffect(session.game.id) {
@@ -80,13 +74,21 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
         }
     }
 
-    BoardPane(
-        board = transformedBoard,
+    val analyserTurn = when (val state = session.state) {
+        is SessionState.InGame -> AnalyserTurn(state.currentTurn.player.color, state.currentTurn.placementsRemaining)
+        else -> null
+    }
+
+    GamePositionBoardPane(
+        position = session.game,
+        move = move,
+        overlay = boardViewManager.board.value,
         readOnly = true,
+        analyseAs = analyserTurn,
         viewport = viewport.value,
         onViewportChange = { viewport.value = it },
         onBoardInteraction = { interaction ->
-            if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
+            if (interaction !is BoardInteraction.HighlightBoardInteraction) return@GamePositionBoardPane
             boardViewManager.apply(interaction)
         },
     ) {
@@ -278,9 +280,10 @@ private fun TurnIndicator(session: LiveSession, state: SessionState.InGame) {
                     classes("bg-slate-500/20", "border-slate-500/50")
                 }
             }) {
+                val theme by rememberTheme()
                 Div({
                     classes("rounded-full", "size-2", "shrink-0")
-                    style { backgroundColor(player.color.cssColor) }
+                    style { backgroundColor(theme.playerCssColor(player.color)) }
                 })
                 Span({ classes("max-w-52", "truncate") }) {
                     Text(player.displayName)
@@ -322,13 +325,7 @@ private fun RatedInfoCard(session: LiveSession) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             session.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Div({
-                        classes("rounded-full", "size-2", "shrink-0")
-                        style { backgroundColor(player.color.cssColor) }
-                    })
-                    Span({ classes("min-w-0", "flex-1", "truncate", "text-slate-300") }) {
-                        Text(player.displayName)
-                    }
+                    Player(player)
                     Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
                         Text("Elo ${player.elo}")
 
@@ -364,13 +361,7 @@ private fun TournamentInfoCard(session: LiveSession) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             session.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Div({
-                        classes("rounded-full", "size-2", "shrink-0")
-                        style { backgroundColor(player.color.cssColor) }
-                    })
-                    Span({ classes("min-w-0", "flex-1", "truncate", "text-slate-300") }) {
-                        Text(player.displayName)
-                    }
+                    Player(player)
                     Span({ classes("shrink-0", "tabular-nums") }) {
                         Span({
                             classes("font-bold", "text-sm")
@@ -389,13 +380,26 @@ private fun TournamentInfoCard(session: LiveSession) {
 }
 
 @Composable
+private fun Player(player: Player) {
+    val theme by rememberTheme()
+    Div({
+        classes("rounded-full", "size-2", "shrink-0")
+        style { backgroundColor(theme.playerCssColor(player.color)) }
+    })
+    Span({ classes("min-w-0", "flex-1", "truncate", "text-slate-300") }) {
+        Text(player.displayName)
+    }
+}
+
+@Composable
 private fun TurnIndicator(turn: SessionTurn) {
+    val theme by rememberTheme()
     Div({ classes("flex", "gap-1", "flex-row-reverse", "mx-auto", "justify-center") }) {
         repeat(MOVES_PER_TURN) {
             Div({
                 classes("rounded-full", "w-6", "h-1.5")
                 if (it < turn.placementsRemaining) {
-                    style { backgroundColor(turn.player.color.cssColor) }
+                    style { backgroundColor(theme.playerCssColor(turn.player.color)) }
                 } else {
                     classes("bg-slate-500")
                 }
