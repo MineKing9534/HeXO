@@ -52,7 +52,12 @@ data class CellOverride(
     val label: Omissible<String> = omitted(),
 )
 
-fun Cell.isEmpty() = this == Cell.EMPTY
+fun Cell.isEmpty(includeHighlights: Boolean): Boolean {
+    if (owner != null) return false
+    if (!includeHighlights) return true
+
+    return !focused && highlight == null && label.isBlank()
+}
 
 fun Cell.toOverride() = CellOverride(
     owner = owner.omittedIfNull(),

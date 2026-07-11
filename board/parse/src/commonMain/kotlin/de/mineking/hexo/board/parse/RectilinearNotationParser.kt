@@ -8,6 +8,7 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.MutableCell
 import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
@@ -37,7 +38,7 @@ fun String.parseRectilinearNotation(focusWinningRows: Boolean = true): Board {
         board.focusWinningRows()
     }
 
-    requireHexo(board.cells.isNotEmpty() || board.lineHighlights.isNotEmpty()) { "Cannot parse an empty board" }
+    requireHexo(!board.isEmpty(includeHighlights = true)) { "Cannot parse an empty board" }
 
     return board
 }

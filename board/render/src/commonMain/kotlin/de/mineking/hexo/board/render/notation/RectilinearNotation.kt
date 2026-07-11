@@ -4,6 +4,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.core.CellOwner
 import kotlin.math.min
@@ -40,7 +41,7 @@ internal data class RenderedRectilinearNotation(val notation: String, val topLef
 internal fun Board.renderRectilinearNotationInternal(type: RectilinearNotationType): RenderedRectilinearNotation {
     val lineHighlights = this@renderRectilinearNotationInternal.lineHighlights.groupBy { it.start }
     val renderCells = (lineHighlights.keys.associateWith { Cell() } + cells)
-        .filter { (coordinate, cell) -> coordinate in lineHighlights || cell.shouldRender() }
+        .filter { (coordinate, cell) -> coordinate in lineHighlights || !cell.isEmpty(includeHighlights = true) }
 
     if (renderCells.isEmpty()) return RenderedRectilinearNotation("", CellCoordinate.Zero)
 
@@ -67,8 +68,6 @@ internal fun Board.renderRectilinearNotationInternal(type: RectilinearNotationTy
 
     return RenderedRectilinearNotation(notation, CellCoordinate(minQ, minR))
 }
-
-private fun Cell.shouldRender() = owner != null || highlight != null || label.isNotBlank()
 
 private fun StringBuilder.appendRow(
     r: Int,

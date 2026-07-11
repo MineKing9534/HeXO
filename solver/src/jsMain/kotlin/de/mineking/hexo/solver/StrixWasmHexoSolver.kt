@@ -15,6 +15,7 @@ import cc.tyto.jsBigInt
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.core.CellOwner
 import kotlinx.coroutines.await
 import org.khronos.webgl.Int32Array
@@ -39,6 +40,7 @@ class StrixWasmHexoSolver : HexoSolver {
     private val solver by lazy { StrixSolver() }
 
     override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
+        if (board.isEmpty(includeHighlights = false)) return FindWinResult.NoWin
         ready.await()
 
         val position = board.toPosition(player, remaining)
@@ -48,12 +50,14 @@ class StrixWasmHexoSolver : HexoSolver {
     }
 
     override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
+        if (board.isEmpty(includeHighlights = false)) return FindDefenseResult.NoThreat
         ready.await()
 
-        val position = board.toPosition(player, remaining)
+        val transformed = board.transform()
+        val position = transformed.board.toPosition(transformed.flipPlayer(player), remaining)
         val outcome = solver.solveDefense(position, limits)
 
-        return outcome.toResult()
+        return outcome.toResult(transformed)
     }
 
     private fun Map<CellCoordinate, Cell>.toFlatStones(): Int32Array {
@@ -90,14 +94,17 @@ class StrixWasmHexoSolver : HexoSolver {
         )
     }
 
-    private fun DefenseOutcome.toResult() = when (kind) {
+    private fun DefenseOutcome.findDefenses() = killers
+        .takeIf { it.isNotEmpty() }
+        ?.map { Defense(it.core, null) }
+        ?: pairAnchors.map { (first, second) -> Defense(first.core, second.core) }
+
+    private fun DefenseOutcome.toResult(transform: BoardTransformResult) = when (kind) {
         DefenseKind.NoThreat -> FindDefenseResult.NoThreat
         DefenseKind.ThreatFound -> FindDefenseResult.Threat(
-            threat = threat!!.toResult() as FindWinResult.Win,
-            defenses = killers.takeIf { it.isNotEmpty() }
-                ?.map { Defense(it.core, null) }
-                ?: pairAnchors.map { (first, second) -> Defense(first.core, second.core) },
-            bestDelay = bestDelay?.core,
+            threat = transform.transformBack(threat!!.toResult() as FindWinResult.Win),
+            defenses = findDefenses().map { transform.transformBack(it) },
+            bestDelay = bestDelay?.core?.let { transform.transformBack(it) },
         )
     }
 }

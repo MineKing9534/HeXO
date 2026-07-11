@@ -81,4 +81,24 @@ abstract class HexoSolverTest(val solver: HexoSolver) {
 
         checkWin(board, CellOwner.X, result.threat)
     }
+
+    @Test
+    fun `defend offset board`() = runTest {
+        val board = MutableBoard()
+        board[100, 100].owner = CellOwner.O
+        board[101, 100].owner = CellOwner.O
+        board[102, 100].owner = CellOwner.O
+
+        board[101, 101].owner = CellOwner.O
+        board[101, 99].owner = CellOwner.O
+
+        val result = solver.findDefense(board, CellOwner.X, 2)
+
+        assertIs<FindDefenseResult.Threat>(result)
+
+        assertTrue(result.isLost())
+        assertFalse(result.isDefendable())
+
+        checkWin(board, CellOwner.O, result.threat)
+    }
 }

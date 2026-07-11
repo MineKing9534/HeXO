@@ -57,6 +57,10 @@ class MutableBoard(
 }
 
 fun Board.hasHighlights() = lineHighlights.isNotEmpty() || cells.values.any { it.highlight != null }
+fun Board.isEmpty(includeHighlights: Boolean): Boolean {
+    if (includeHighlights && lineHighlights.isNotEmpty()) return false
+    return cells.all { (_, cell) -> cell.isEmpty(includeHighlights) }
+}
 
 private val directions = listOf(
     CellCoordinate(1, 0),

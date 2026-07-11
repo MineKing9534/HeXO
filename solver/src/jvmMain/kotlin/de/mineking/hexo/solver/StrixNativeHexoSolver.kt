@@ -10,6 +10,7 @@ import cc.tyto.Stone
 import cc.tyto.StrixSolverLib
 import cc.tyto.ThreatContainer
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.json.Json
 
@@ -19,6 +20,8 @@ class StrixNativeHexoSolver : HexoSolver {
     }
 
     override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
+        if (board.isEmpty(includeHighlights = false)) return FindWinResult.NoWin
+
         val request = createRequest(board, player, remaining)
         val responsePtr = StrixSolverLib.INSTANCE.solve(json.encodeToString(request))
 
@@ -31,12 +34,15 @@ class StrixNativeHexoSolver : HexoSolver {
     }
 
     override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
-        val request = createRequest(board, player, remaining)
+        if (board.isEmpty(includeHighlights = false)) return FindDefenseResult.NoThreat
+
+        val transformed = board.transform()
+        val request = createRequest(transformed.board, transformed.flipPlayer(player), remaining)
         val responsePtr = StrixSolverLib.INSTANCE.solveDefense(json.encodeToString(request))
 
         try {
             val response = json.decodeFromString<DefenseResponse>(responsePtr.getString(0))
-            return response.toResult()
+            return response.toResult(transformed)
         } finally {
             StrixSolverLib.INSTANCE.freeString(responsePtr)
         }
@@ -63,16 +69,19 @@ class StrixNativeHexoSolver : HexoSolver {
         )
     }
 
+    private fun DefenseResponse.findDefenses() = killers
+        .takeIf { it.isNotEmpty() }
+        ?.map { Defense(it, null) }
+        ?: pairAnchors.map { (first, second) -> Defense(first, second) }
+
     @Suppress("TooGenericExceptionThrown")
-    private fun DefenseResponse.toResult() = when (kind) {
+    private fun DefenseResponse.toResult(transform: BoardTransformResult) = when (kind) {
         DefenseKind.NoThreat -> FindDefenseResult.NoThreat
         DefenseKind.Error -> throw RuntimeException(error)
         DefenseKind.ThreatFound -> FindDefenseResult.Threat(
-            threat = threat!!.toWinResult(),
-            defenses = killers.takeIf { it.isNotEmpty() }
-                ?.map { Defense(it, null) }
-                ?: pairAnchors.map { (first, second) -> Defense(first, second) },
-            bestDelay = bestDelay,
+            threat = transform.transformBack(threat!!.toWinResult()),
+            defenses = findDefenses().map { transform.transformBack(it) },
+            bestDelay = bestDelay?.let { transform.transformBack(it) },
         )
     }
 
