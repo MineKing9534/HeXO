@@ -24,6 +24,8 @@ include(":web")
 include(":hds")
 include(":hds:processor")
 
+include(":solver")
+
 include(":discord:link")
 include(":discord:bot")
 

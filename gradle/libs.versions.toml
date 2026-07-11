@@ -16,6 +16,8 @@ detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version
 testlogger-gradle-plugin = { module = "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin", version = "4.0.0" }
 node-gradle-plugin = { module = "com.github.node-gradle:gradle-node-plugin", version = "7.1.0" }
 
+jna = { module = "net.java.dev.jna:jna", version = "5.19.1" }
+
 kotlin-poet = { module = "com.squareup:kotlinpoet-ksp", version = "2.3.0" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
 
