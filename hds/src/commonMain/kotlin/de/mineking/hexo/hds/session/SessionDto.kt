@@ -76,9 +76,7 @@ internal data class SessionPlayerDto(
 internal sealed interface SessionStateDto {
     @Serializable
     @SerialName("lobby")
-    data class Lobby(
-        val createdAt: Instant,
-    ) : SessionStateDto
+    data object Lobby : SessionStateDto
 
     sealed interface GameSessionState : SessionStateDto {
         val gameId: GameId
@@ -95,8 +93,6 @@ internal sealed interface SessionStateDto {
     @SerialName("finished")
     data class Finished(
         override val gameId: GameId,
-        val startedAt: Instant,
-        val finishedAt: Instant,
         val finishReason: GameFinishReason,
         val winningPlayerId: PlayerId?,
         val rematchAcceptedPlayerIds: List<PlayerId>,

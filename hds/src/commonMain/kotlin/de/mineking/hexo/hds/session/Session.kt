@@ -15,6 +15,7 @@ import de.mineking.hexo.hds.game.TournamentMatchSnapshot
 import de.mineking.hexo.hds.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
+import de.mineking.hexo.hds.utils.Duration
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.hds.utils.LiveDuration
 import de.mineking.hexo.hds.utils.TimeControl
@@ -60,10 +61,11 @@ abstract class Session(
         internal fun of(
             client: HdsApiClient,
             dto: SessionDto,
+            lastState: Pair<Instant, SessionStateDto.InGame>?,
             gameState: SessionGameStateDto,
         ) = when (dto.state) {
-            is SessionStateDto.Lobby -> LobbySession.of(client, dto, dto.state, gameState)
-            is SessionStateDto.GameSessionState -> LiveSession.of(client, dto, dto.state, gameState)
+            is SessionStateDto.Lobby -> LobbySession.of(client, dto, gameState)
+            is SessionStateDto.GameSessionState -> LiveSession.of(client, dto, lastState, dto.state, gameState)
         }
     }
 }
@@ -154,7 +156,6 @@ class LobbySession private constructor(
         internal fun of(
             client: HdsApiClient,
             dto: SessionDto,
-            state: SessionStateDto.Lobby,
             gameState: SessionGameStateDto,
         ): LobbySession {
             val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) }
@@ -164,7 +165,7 @@ class LobbySession private constructor(
                 gameOptions = dto.gameOptions,
                 tournamentInfo = tournament,
                 players = createPlayerList(client.profileRepository, dto.players, dto.tournament),
-                createdAt = state.createdAt,
+                createdAt = Instant.DISTANT_PAST,
                 startedAt = null,
                 dto = dto,
                 gameState = gameState,
@@ -184,6 +185,7 @@ class LiveSession private constructor(
     override val state: SessionState.LiveSessionState,
     val game: SessionGame,
     override val dto: SessionDto,
+    internal val lastState: Pair<Instant, SessionStateDto.InGame>?,
     override val gameState: SessionGameStateDto,
 ) : Session(id, gameOptions, tournamentInfo) {
     override fun observe() = repository.observeSession(id)
@@ -240,6 +242,7 @@ class LiveSession private constructor(
 
         private fun SessionStateDto.GameSessionState.toSessionState(
             gameState: SessionGameStateDto?,
+            lastState: Pair<Instant, SessionStateDto.InGame>?,
             playersById: Map<PlayerId, LiveSessionPlayer>,
         ) = when (this) {
             is SessionStateDto.InGame -> SessionState.InGame(
@@ -253,7 +256,7 @@ class LiveSession private constructor(
             is SessionStateDto.Finished -> SessionState.Finished(
                 result = GameResult(
                     winner = playersById[winningPlayerId],
-                    duration = finishedAt - startedAt,
+                    duration = lastState?.let { it.first - it.second.startedAt } ?: Duration.ZERO,
                     reason = finishReason,
                 ),
                 rematchAcceptedPlayers = rematchAcceptedPlayerIds.mapNotNull { playersById[it] },
@@ -263,6 +266,7 @@ class LiveSession private constructor(
         internal fun of(
             client: HdsApiClient,
             dto: SessionDto,
+            lastState: Pair<Instant, SessionStateDto.InGame>?,
             state: SessionStateDto.GameSessionState,
             gameState: SessionGameStateDto,
         ): LiveSession {
@@ -270,7 +274,7 @@ class LiveSession private constructor(
             val playersById = players.associateBy { it.playerId }
 
             val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) }
-            val state = state.toSessionState(gameState, playersById)
+            val state = state.toSessionState(gameState, lastState, playersById)
 
             return LiveSession(
                 repository = client.sessionRepository,
@@ -281,6 +285,7 @@ class LiveSession private constructor(
                 state = state,
                 game = SessionGame.of(
                     dto = dto,
+                    lastState = lastState,
                     tournamentInfo = tournament,
                     gameState = gameState,
                     players = players,
@@ -288,6 +293,7 @@ class LiveSession private constructor(
                     result = (state as? SessionState.Finished)?.result,
                 ),
                 dto = dto,
+                lastState = lastState,
                 gameState = gameState,
             )
         }
@@ -350,6 +356,7 @@ class SessionGame(
     companion object {
         internal fun of(
             dto: SessionDto,
+            lastState: Pair<Instant, SessionStateDto.InGame>?,
             tournamentInfo: TournamentMatchSnapshot?,
             gameState: SessionGameStateDto,
             players: List<LiveSessionPlayer>,
@@ -359,7 +366,7 @@ class SessionGame(
             id = (dto.state as SessionStateDto.GameSessionState).gameId,
             startedAt = when (dto.state) {
                 is SessionStateDto.InGame -> dto.state.startedAt
-                is SessionStateDto.Finished -> dto.state.startedAt
+                is SessionStateDto.Finished -> lastState?.second?.startedAt ?: Instant.DISTANT_PAST
             },
             result = result,
             options = dto.gameOptions,

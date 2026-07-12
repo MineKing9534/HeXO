@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlin.time.Clock
 
 private val logger = KotlinLogging.logger {}
 
@@ -73,6 +74,11 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         }
     }
 
+    private fun LiveSession.createLastState() = dto.state
+        .let { it as? SessionStateDto.InGame }
+        ?.let { Clock.System.now() to it }
+        ?: lastState
+
     override fun observeSession(id: SessionId): StateFlow<EntityState<Session>> {
         if (client.socketClient == null) error("Cannot observe sessions without a SocketIO connection")
 
@@ -122,16 +128,16 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                     return@listen
                 }
 
-                val dto = state.value.dto ?: return@listen
-                val gameState = state.value.gameState ?: return@listen
+                val value = state.value as? LiveSession ?: return@listen
 
                 val session = Session.of(
                     client = this@SessionRepositoryImpl.client,
-                    dto = dto.copy(
-                        state = event.session.state ?: dto.state,
-                        players = event.session.players ?: dto.players,
+                    dto = value.dto.copy(
+                        state = event.session.state ?: value.dto.state,
+                        players = event.session.players ?: value.dto.players,
                     ),
-                    gameState = gameState,
+                    lastState = value.createLastState(),
+                    gameState = value.gameState,
                 )
 
                 if (
@@ -159,6 +165,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             this@populate.value = EntityState.Data(Session.of(
                 client = this@SessionRepositoryImpl.client,
                 dto = event.session,
+                lastState = null,
                 gameState = event.gameState,
             ))
         }
@@ -177,6 +184,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                 EntityState.Data(Session.of(
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto,
+                    lastState = value.createLastState(),
                     gameState = event.state.copy(
                         cells = (value.gameState.cells ?: emptyList()) + event.cell,
                         playerTiles = value.gameState.playerTiles,
@@ -194,9 +202,11 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                     return@listen
                 }
 
+                val value = state.value as? LiveSession ?: return@listen
                 EntityState.Data(Session.of(
                     client = this@SessionRepositoryImpl.client,
-                    dto = state.value.dto ?: return@listen,
+                    dto = value.dto,
+                    lastState = value.createLastState(),
                     gameState = event.gameState,
                 ))
             }
