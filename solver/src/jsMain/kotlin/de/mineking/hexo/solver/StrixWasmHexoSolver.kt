@@ -97,7 +97,7 @@ class StrixWasmHexoSolver : HexoSolver {
     private fun DefenseOutcome.findDefenses() = killers
         .takeIf { it.isNotEmpty() }
         ?.map { Defense(it.core, null) }
-        ?: pairAnchors.map { (first, second) -> Defense(first.core, second.core) }
+        ?: pairAnchors.map { Defense(it.first.core, it.second.core) }
 
     private fun DefenseOutcome.toResult(transform: BoardTransformResult) = when (kind) {
         DefenseKind.NoThreat -> FindDefenseResult.NoThreat

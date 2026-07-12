@@ -41,8 +41,13 @@ internal external class DefenseOutcome private constructor() {
     val kind: DefenseKind
     val threat: SolveOutcome?
     val killers: Array<CoordW>
-    @JsName("pair_anchors") val pairAnchors: Array<Pair<CoordW, CoordW>>
+    @JsName("pair_anchors") val pairAnchors: Array<PairAnchor>
     @JsName("best_delay") val bestDelay: CoordW?
+}
+
+internal external class PairAnchor private constructor() {
+    val first: CoordW
+    val second: CoordW
 }
 
 @JsName("SolverEngineEnum")

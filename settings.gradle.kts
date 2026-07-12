@@ -19,6 +19,7 @@ include(":board:parse")
 include(":board:render")
 
 include(":board:render:compose")
+include(":web:analysis-worker")
 include(":web")
 
 include(":hds")

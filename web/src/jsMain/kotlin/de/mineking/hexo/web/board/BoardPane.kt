@@ -9,7 +9,6 @@ import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.board.MutableCell
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
@@ -26,12 +25,14 @@ import de.mineking.hexo.board.render.image.theme.withAlpha
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
-import de.mineking.hexo.solver.StrixWasmHexoSolver
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.playerColor
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.rememberSettingsValue
+import de.mineking.hexo.web.worker.AnalysisInput
+import de.mineking.hexo.web.worker.AnalysisWorker
+import kotlinx.coroutines.awaitCancellation
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement
@@ -162,22 +163,36 @@ private fun RenderingContext.drawDefenseOverlay(theme: BaseTheme, result: FindDe
 
 @Composable
 private fun rememberAnalyserResult(board: Board, turn: AnalyserTurn): AnalyserResult? {
-    val solver = remember { StrixWasmHexoSolver() }
-    var result by remember { mutableStateOf<AnalyserResult?>(null) }
-
-    val cells = remember(board) {
-        board.cells.mapNotNull { (_, cell) ->
+    val boardOwners = remember(board) {
+        board.cells.mapNotNull { (coordinate, cell) ->
             val owner = cell.owner ?: return@mapNotNull null
-            MutableCell().apply { this.owner = owner }
-        }
+            coordinate to owner
+        }.sortedWith(compareBy({ it.first.q }, { it.first.r }, { it.second.name }))
     }
-    LaunchedEffect(cells, turn) {
-        result = null
 
-        val threat = solver.findWin(board, turn.player, turn.remaining)
-        val defense = solver.findDefense(board, turn.player, turn.remaining)
+    var result by remember(boardOwners, turn) { mutableStateOf<AnalyserResult?>(null) }
+    var requestId by remember { mutableStateOf(0) }
 
-        result = AnalyserResult(threat, defense)
+    LaunchedEffect(boardOwners, turn) {
+        val currentRequestId = ++requestId
+
+        val worker = AnalysisWorker { output ->
+            if (output.requestId == requestId) {
+                result = AnalyserResult(output.threat, output.defense)
+            }
+        }
+
+        try {
+            worker.postInput(AnalysisInput(
+                requestId = currentRequestId,
+                board = board,
+                player = turn.player,
+                remaining = turn.remaining,
+            ))
+            awaitCancellation()
+        } finally {
+            worker.terminate()
+        }
     }
 
     return result

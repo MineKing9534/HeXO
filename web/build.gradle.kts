@@ -46,6 +46,7 @@ kotlin {
 
             implementation(projects.sync.client)
             implementation(projects.solver)
+            implementation(projects.web.analysisWorker)
 
             implementation(libs.kobweb.core)
             implementation(libs.bundles.compose.html)
@@ -65,13 +66,18 @@ tailwindcss {
 
 val webApiProxy = providers.gradleProperty("web.apiProxy")
     .orElse(provider { "" })
-    .map { Expression("\"$it\"") }
 
 val webToolsApi = providers.gradleProperty("web.toolsApi")
     .orElse(provider { "" })
-    .map { Expression("\"$it\"") }
 
 buildConfig {
-    buildConfigField<String>("API_PROXY", webApiProxy)
-    buildConfigField<String>("TOOLS_API", webToolsApi)
+    buildConfigField<String>("API_PROXY", webApiProxy.map { Expression("\"$it\"") })
+    buildConfigField<String>("TOOLS_API", webToolsApi.map { Expression("\"$it\"") })
+}
+
+tasks.matching {
+    it.name in setOf("compileKotlinJs", "compileDevelopmentExecutableKotlinJs", "compileProductionExecutableKotlinJs")
+}.configureEach {
+    inputs.property("web.apiProxy", webApiProxy)
+    inputs.property("web.toolsApi", webToolsApi)
 }
