@@ -10,6 +10,7 @@ import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.common.WatchPartyId
 import de.mineking.hexo.sync.common.WatchPartyTarget
 import de.mineking.hexo.web.board.rememberSubscriberBoardViewManager
@@ -38,16 +39,19 @@ fun WatchPartyPage(ctx: PageContext) {
     when (val state = watchPartyController.rememberWatchParty(ctx.route.watchPartyId)) {
         is EntityState.Loading -> LoadingState()
         is EntityState.NotFound -> NotFoundState()
-        is EntityState.Data -> {
-            val data by state.value.data.collectAsState()
-            val boardViewManager = rememberSubscriberBoardViewManager(state.value)
+        is EntityState.Data -> WatchPartyContent(state.value)
+    }
+}
 
-            when (val target = data.target) {
-                is WatchPartyTarget.Session -> Session(target.sessionId, boardViewManager)
-                is WatchPartyTarget.Sandbox -> Sandbox(boardViewManager)
-                null -> NoSessionState()
-            }
-        }
+@Composable
+fun WatchPartyContent(watchParty: WatchParty) {
+    val data by watchParty.data.collectAsState()
+    val boardViewManager = rememberSubscriberBoardViewManager(watchParty)
+
+    when (val target = data.target) {
+        is WatchPartyTarget.Session -> Session(target.sessionId, boardViewManager)
+        is WatchPartyTarget.Sandbox -> Sandbox(boardViewManager)
+        null -> NoSessionState()
     }
 }
 

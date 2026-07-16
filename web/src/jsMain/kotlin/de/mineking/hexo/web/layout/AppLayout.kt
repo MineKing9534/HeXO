@@ -21,7 +21,7 @@ import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.GitHubIcon
 import de.mineking.hexo.web.icons.SettingsIcon
-import de.mineking.hexo.web.pages.watchparty.SessionHostOptions
+import de.mineking.hexo.web.pages.watchparty.WatchPartyHostOptions
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsView
 import org.jetbrains.compose.web.dom.A
@@ -153,7 +153,7 @@ private fun SessionSyncIndicator() {
 
         if (open) {
             Dialog(title = null, onClose = { open = false }) {
-                SessionHostOptions()
+                WatchPartyHostOptions()
             }
         }
         return

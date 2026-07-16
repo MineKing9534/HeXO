@@ -17,6 +17,7 @@ import de.mineking.hexo.web.pages.NotFoundPage
 import de.mineking.hexo.web.settings.SettingsControllerProvider
 import de.mineking.hexo.web.watchparty.WatchPartyController
 import de.mineking.hexo.web.web.BuildConfig
+import kotlinx.browser.localStorage
 import org.jetbrains.compose.web.dom.Main
 
 private val LocalHdsApiClient = staticCompositionLocalOf<HdsApiClient?> { null }
@@ -51,16 +52,16 @@ private fun rememberSharedHdsApiClient(): HdsApiClient? {
 @App
 @Composable
 fun App(content: @Composable () -> Unit) {
-    val hdsApiClient = rememberSharedHdsApiClient()
-    val soundPlayer = remember { SoundPlayer() }
-    val watchPartyController = remember { WatchPartyController(BuildConfig.TOOLS_API) }
+    SettingsControllerProvider(localStorage) { settingsController ->
+        val hdsApiClient = rememberSharedHdsApiClient()
+        val soundPlayer = remember { SoundPlayer() }
+        val watchPartyController = remember { WatchPartyController(BuildConfig.TOOLS_API, settingsController) }
 
-    CompositionLocalProvider(
-        LocalHdsApiClient provides hdsApiClient,
-        LocalSoundPlayer provides soundPlayer,
-        LocalWatchPartyController provides watchPartyController,
-    ) {
-        SettingsControllerProvider {
+        CompositionLocalProvider(
+            LocalHdsApiClient provides hdsApiClient,
+            LocalSoundPlayer provides soundPlayer,
+            LocalWatchPartyController provides watchPartyController,
+        ) {
             Main({ classes("h-dvh", "w-screen", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100") }) {
                 content()
             }

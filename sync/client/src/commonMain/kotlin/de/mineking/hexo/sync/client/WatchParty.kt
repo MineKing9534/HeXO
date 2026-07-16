@@ -25,6 +25,8 @@ class WatchParty internal constructor(
 ) {
     private val onClose = mutableListOf<(WatchPartyCloseReason) -> Unit>()
 
+    val id get() = data.value.id
+
     fun onClose(block: (WatchPartyCloseReason) -> Unit) {
         onClose += block
     }

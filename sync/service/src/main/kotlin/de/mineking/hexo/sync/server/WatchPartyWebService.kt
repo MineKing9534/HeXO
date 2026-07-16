@@ -114,6 +114,8 @@ class WatchPartyWebService : ApiWebService() {
         route("/watchparties") {
             webSocket("/ws") {
                 val id = call.request.queryParameters["id"]?.let { WatchPartyId(it) }
+                val detachOnClose = call.request.queryParameters["detachOnClose"] == "true"
+
                 val session = when {
                     id != null -> acquireSession(id) ?: run {
                         close(CloseReason(WatchPartyWebsocketCodes.NotFound, "No session found with id ${id.value}"))
@@ -122,7 +124,13 @@ class WatchPartyWebService : ApiWebService() {
                     else -> createSession()
                 }
 
-                handleConnection(session)
+                try {
+                    handleConnection(session)
+                } finally {
+                    if (detachOnClose) {
+                        session.data.update { it.copy(target = null) }
+                    }
+                }
             }
         }
     }

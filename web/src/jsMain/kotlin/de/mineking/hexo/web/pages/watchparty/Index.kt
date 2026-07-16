@@ -53,17 +53,17 @@ fun WatchPartyHomePage() {
         WatchPartyCard()
     } else {
         StatusCard {
-            SessionHostOptions()
+            WatchPartyHostOptions()
         }
     }
 }
 
 @Composable
-fun SessionHostOptions() {
+fun WatchPartyHostOptions() {
     val watchPartyController = rememberWatchPartyController()
     val hostSession = watchPartyController.hostWatchParty ?: return
     var visible by remember { mutableStateOf(false) }
-    val link = "${window.location.origin}${BasePath.prependTo("/watchparty/${hostSession.data.value.id.value}")}"
+    val link = "${window.location.origin}${BasePath.prependTo("/watchparty/${hostSession.id.value}")}"
 
     H1({ classes("text-2xl", "mb-4", "font-extrabold", "uppercase", "text-slate-200") }) {
         Text("Host Options")

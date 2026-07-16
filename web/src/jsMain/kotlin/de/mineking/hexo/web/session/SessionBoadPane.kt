@@ -9,8 +9,8 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.mutable
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
@@ -68,7 +68,7 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
 
     val highlightBoard by boardViewManager.board
     val transformedBoard = remember(board, highlightBoard) {
-        ((board + highlightBoard) as MutableBoard).focusWinningRows()
+        (board + highlightBoard).mutable().focusWinningRows()
     }
 
     val watchPartyController = rememberWatchPartyController()
