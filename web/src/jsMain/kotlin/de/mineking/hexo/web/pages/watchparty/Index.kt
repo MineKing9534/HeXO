@@ -1,7 +1,6 @@
 package de.mineking.hexo.web.pages.watchparty
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -12,11 +11,10 @@ import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.navigation.Anchor
 import com.varabyte.kobweb.navigation.BasePath
+import de.mineking.hexo.web.components.CopyButton
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.TextInput
-import de.mineking.hexo.web.icons.CheckIcon
-import de.mineking.hexo.web.icons.CopyIcon
 import de.mineking.hexo.web.icons.EyeIcon
 import de.mineking.hexo.web.icons.EyeOffIcon
 import de.mineking.hexo.web.icons.PlusIcon
@@ -27,7 +25,6 @@ import de.mineking.hexo.web.rememberWatchPartyController
 import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
 import org.jetbrains.compose.web.attributes.disabled
@@ -37,7 +34,6 @@ import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 @InitRoute
@@ -84,7 +80,7 @@ fun WatchPartyHostOptions() {
                     if (!visible) style { property("-webkit-text-security", "disc") }
                 },
             )
-            CopyButton(link)
+            CopyButton(link, label = "watch party link", rightClass = "right-11")
             VisibleButton(visible = visible, onVisibleChange = { visible = it })
         }
     }
@@ -103,41 +99,6 @@ fun WatchPartyHostOptions() {
         }
         P({ classes("text-sm", "leading-relaxed", "text-slate-500") }) {
             Text("This only stops hosting from this browser. Active subscribers will not be kicked from the watch party.")
-        }
-    }
-}
-
-@Composable
-private fun CopyButton(value: String) {
-    var copied by remember { mutableStateOf(false) }
-
-    LaunchedEffect(copied, value) {
-        if (!copied) return@LaunchedEffect
-        delay(1.5.seconds)
-        copied = false
-    }
-
-    Button({
-        attr("aria-label", if (copied) "Watch party link copied" else "Copy watch party link")
-        attr("title", if (copied) "Copied" else "Copy watch party link")
-        classes(
-            "absolute", "right-11", "top-1/2", "-translate-y-1/2", "grid", "size-8", "place-items-center", "rounded-md",
-            "transition", "cursor-pointer", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
-        )
-        if (copied) {
-            classes("text-emerald-300")
-        } else {
-            classes("text-slate-400", "hover:bg-slate-800", "hover:text-slate-100")
-        }
-        onClick {
-            window.navigator.clipboard.writeText(value)
-            copied = true
-        }
-    }) {
-        if (copied) {
-            CheckIcon { classes("size-4") }
-        } else {
-            CopyIcon { classes("size-4") }
         }
     }
 }

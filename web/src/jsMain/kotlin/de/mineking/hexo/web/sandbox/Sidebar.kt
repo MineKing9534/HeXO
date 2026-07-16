@@ -20,6 +20,7 @@ import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.CopyButton
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.ResizableTrailingPanel
 import de.mineking.hexo.web.components.Select
@@ -192,13 +193,16 @@ private fun NotationActions(
                 title = "Position Link",
                 onClose = { link = null },
             ) {
-                TextInput(
-                    value = link ?: "",
-                    type = InputType.Url,
-                    readOnly = true,
-                    monospace = true,
-                    attrs = { classes("resize-y", "text-ellipsis") },
-                )
+                Div({ classes("relative", "w-full") }) {
+                    TextInput(
+                        value = link ?: "",
+                        type = InputType.Url,
+                        readOnly = true,
+                        monospace = true,
+                        attrs = { classes("pr-12", "resize-y", "text-ellipsis") },
+                    )
+                    CopyButton(link ?: "", label = "position link")
+                }
             }
         }
 
