@@ -35,6 +35,7 @@ sealed interface WatchPartyTarget {
 data class WatchPartyData(
     val id: WatchPartyId,
     val target: WatchPartyTarget?,
+    val clearableHighlights: Boolean = false,
 ) : WatchPartyResponse
 
 @Serializable

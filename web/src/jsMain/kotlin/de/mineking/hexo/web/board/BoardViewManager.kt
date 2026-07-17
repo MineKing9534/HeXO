@@ -10,6 +10,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.copy
+import de.mineking.hexo.board.hasHighlights
 import de.mineking.hexo.board.plusAssign
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.core.present
@@ -43,6 +44,7 @@ fun <T : BoardViewManager> rememberHostBoardViewManager(): T {
 
 interface BoardViewManager {
     val board: State<Board>
+    val hasClearableHighlights: State<Boolean>
 
     fun apply(interaction: BoardInteraction.HighlightBoardInteraction)
     fun clearHighlights()
@@ -61,8 +63,15 @@ interface SandboxBoardViewManager : BoardViewManager {
 interface SubscriberBoardViewManager : SessionBoardViewManager, SandboxBoardViewManager
 
 private open class LocalBoardViewManager : SubscriberBoardViewManager {
-    override val board = mutableStateOf(Board(), neverEqualPolicy())
+    override val hasClearableHighlights = mutableStateOf(false)
+    override val board = mutableStateOf(Board(), neverEqualPolicy()).onSet {
+        updateHasClearableHighlights(it)
+    }
     override val currentMove = mutableStateOf(Int.MAX_VALUE)
+
+    protected open fun updateHasClearableHighlights(board: Board) {
+        hasClearableHighlights.value = board.hasHighlights()
+    }
 
     override fun apply(interaction: BoardInteraction.HighlightBoardInteraction) {
         board.value = board.value.copy()
@@ -86,6 +95,7 @@ private open class LocalBoardViewManager : SubscriberBoardViewManager {
 @OptIn(DelicateCoroutinesApi::class)
 private class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoardViewManager() {
     private var suppressOutboundUpdate = false
+    override val hasClearableHighlights = mutableStateOf(false)
 
     override val board = super.board.onSet {
         if (suppressOutboundUpdate) return@onSet
@@ -94,6 +104,8 @@ private class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoar
             watchParty.update(it)
         }
     }
+
+    override fun updateHasClearableHighlights(board: Board) = Unit
 
     override val currentMove = super.currentMove.onSet {
         if (suppressOutboundUpdate) return@onSet
@@ -115,6 +127,8 @@ private class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoar
     init {
         GlobalScope.launch {
             watchParty.data.collect {
+                hasClearableHighlights.value = it.clearableHighlights
+
                 suppressOutboundUpdate {
                     when (val target = it.target) {
                         is WatchPartyTarget.Sandbox -> {
@@ -161,6 +175,12 @@ private class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoar
 
         GlobalScope.launch {
             watchParty.updateCell(coordinate, override)
+        }
+    }
+
+    override fun clearHighlights() {
+        GlobalScope.launch {
+            watchParty.clearHighlights()
         }
     }
 }

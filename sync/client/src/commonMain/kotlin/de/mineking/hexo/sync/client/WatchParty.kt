@@ -5,6 +5,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.sync.common.WatchPartyCellRequest
+import de.mineking.hexo.sync.common.WatchPartyClearHighlightsRequest
 import de.mineking.hexo.sync.common.WatchPartyData
 import de.mineking.hexo.sync.common.WatchPartyLineHighlightRequest
 import de.mineking.hexo.sync.common.WatchPartyMoveCountRequest
@@ -45,6 +46,10 @@ class WatchParty internal constructor(
 
     suspend fun removeLine(line: LineHighlight) {
         request(WatchPartyLineHighlightRequest(line, remove = true))
+    }
+
+    suspend fun clearHighlights() {
+        request(WatchPartyClearHighlightsRequest)
     }
 
     suspend fun update(board: Board) {

@@ -123,7 +123,7 @@ private fun BoardScope.BoardControls(
 ) {
     val layout = rememberAppLayout()
     val totalMoves = session.game.moves.size
-    val highlightBoard by boardViewManager.board
+    val hasClearableHighlights by boardViewManager.hasClearableHighlights
     var currentMove by boardViewManager.currentMove
 
     MoveKeyboardShortcuts(
@@ -159,7 +159,7 @@ private fun BoardScope.BoardControls(
     }
 
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
-        if (highlightBoard.lineHighlights.isNotEmpty() || highlightBoard.cells.values.any { it.highlight != null }) {
+        if (hasClearableHighlights) {
             BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
                 ClearHighlightsIcon { classes("size-4") }
             }

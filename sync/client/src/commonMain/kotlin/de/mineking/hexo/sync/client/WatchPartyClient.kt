@@ -44,11 +44,16 @@ class WatchPartyClient(
     private val host: String,
     private val httpClient: HttpClient = createDefaultHttpClient(),
 ) {
-    suspend fun connectWatchParty(id: WatchPartyId?, detachOnClose: Boolean): WatchParty? {
+    suspend fun connectWatchParty(
+        id: WatchPartyId?,
+        detachOnClose: Boolean,
+        connectionId: String? = null,
+    ): WatchParty? {
         val wsSession = try {
             httpClient.webSocketSession("${host.replace("http", "ws")}/api/watchparties/ws") {
                 parameter("id", id?.value)
                 parameter("detachOnClose", detachOnClose)
+                parameter("connectionId", connectionId)
             }
         } catch (e: WebSocketException) {
             logger.error(e) { "Failed to connect to watch party" }
@@ -92,4 +97,5 @@ class WatchPartyClient(
     }
 }
 
-suspend fun WatchPartyClient.createSession(detachOnClose: Boolean) = connectWatchParty(null, detachOnClose)!!
+suspend fun WatchPartyClient.createSession(detachOnClose: Boolean, connectionId: String? = null) =
+    connectWatchParty(null, detachOnClose, connectionId)!!

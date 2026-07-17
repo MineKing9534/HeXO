@@ -1,22 +1,10 @@
 package de.mineking.hexo.sync.server
 
-import de.mineking.hexo.board.Board
-import de.mineking.hexo.board.copy
-import de.mineking.hexo.board.plusAssign
-import de.mineking.hexo.core.omitted
 import de.mineking.hexo.sever.service.ApiWebService
-import de.mineking.hexo.sync.common.WatchPartyCellRequest
-import de.mineking.hexo.sync.common.WatchPartyData
 import de.mineking.hexo.sync.common.WatchPartyErrorResponse
 import de.mineking.hexo.sync.common.WatchPartyId
-import de.mineking.hexo.sync.common.WatchPartyLineHighlightRequest
-import de.mineking.hexo.sync.common.WatchPartyMoveCountRequest
-import de.mineking.hexo.sync.common.WatchPartyNavigateRequest
-import de.mineking.hexo.sync.common.WatchPartyNavigateTarget
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyResponse
-import de.mineking.hexo.sync.common.WatchPartyTarget
-import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
 import de.mineking.hexo.sync.common.WatchPartyWebsocketCodes
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.deserialize
@@ -34,72 +22,55 @@ import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration.Companion.minutes
+import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 private val logger = KotlinLogging.logger {}
+private val connectionCleanupTimeout = 5.seconds
 private val sessionRemovalTimeout = 5.minutes
 
 class WatchPartyWebService : ApiWebService() {
-    data class Session(
-        val data: MutableStateFlow<WatchPartyData>,
-        val lock: Mutex = Mutex(),
-        val connections: AtomicInteger = AtomicInteger(1),
-        val removalJob: AtomicReference<Job?> = AtomicReference(null),
-    )
-    private val sessions = ConcurrentHashMap<WatchPartyId, Session>()
+    private val sessions = ConcurrentHashMap<WatchPartyId, WatchPartySession>()
     private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
-    private fun acquireSession(id: WatchPartyId): Session? {
+    private fun acquireSession(id: WatchPartyId, connectionId: WatchPartyConnectionId): WatchPartySession? {
         val session = sessions[id] ?: return null
-
-        while (true) {
-            val connections = session.connections.get()
-            if (connections < 0) return null
-            if (session.connections.compareAndSet(connections, connections + 1)) {
-                session.removalJob.getAndSet(null)?.cancel()
-                return session
-            }
-        }
+        return if (session.acquire(connectionId)) session else null
     }
 
-    private fun scheduleRemoval(session: Session) {
+    private fun scheduleRemoval(session: WatchPartySession) {
         val job = cleanupScope.launch {
             delay(sessionRemovalTimeout)
 
-            if (session.connections.compareAndSet(0, -1)) {
-                sessions.remove(session.data.value.id, session)
-                logger.info { "Removed watchparty with id ${session.data.value.id.value}" }
+            if (session.markRemovingIfUnused()) {
+                sessions.remove(session.id, session)
+                logger.info { "Removed watchparty with id ${session.id.value}" }
             }
         }
 
-        session.removalJob.getAndSet(job)?.cancel()
+        session.scheduleRemoval(job)
     }
 
-    private fun createSession(): Session {
-        val data = WatchPartyData(
-            id = WatchPartyId(Uuid.random().toString()),
-            target = null,
-        )
+    private fun createSession(connectionId: WatchPartyConnectionId): WatchPartySession {
+        val id = WatchPartyId(Uuid.random().toString())
+        logger.info { "Created watchparty with id ${id.value}" }
 
-        logger.info { "Created watchparty with id ${data.id.value}" }
-
-        return Session(MutableStateFlow(data))
-            .also { sessions[data.id] = it }
+        return WatchPartySession(
+            id = id,
+            cleanupScope = cleanupScope,
+            connectionCleanupTimeout = connectionCleanupTimeout,
+        ).also {
+            check(it.acquire(connectionId))
+            sessions[id] = it
+        }
     }
 
     override fun Application.setup() {
@@ -115,29 +86,40 @@ class WatchPartyWebService : ApiWebService() {
             webSocket("/ws") {
                 val id = call.request.queryParameters["id"]?.let { WatchPartyId(it) }
                 val detachOnClose = call.request.queryParameters["detachOnClose"] == "true"
+                val connectionId = call.request.queryParameters["connectionId"]
+                    ?.takeIf { it.isNotBlank() }
+                    ?.let { WatchPartyConnectionId(it) }
+                    ?: WatchPartyConnectionId(Uuid.random().toString())
 
                 val session = when {
-                    id != null -> acquireSession(id) ?: run {
+                    id != null -> acquireSession(id, connectionId) ?: run {
                         close(CloseReason(WatchPartyWebsocketCodes.NotFound, "No session found with id ${id.value}"))
                         return@webSocket
                     }
-                    else -> createSession()
+                    else -> createSession(connectionId)
                 }
 
                 try {
-                    handleConnection(session)
+                    handleConnection(session, connectionId = connectionId)
                 } finally {
+                    if (session.release(connectionId)) {
+                        scheduleRemoval(session)
+                    }
+
                     if (detachOnClose) {
-                        session.data.update { it.copy(target = null) }
+                        session.update { it.copy(target = null) }
                     }
                 }
             }
         }
     }
 
-    private suspend fun DefaultWebSocketServerSession.handleConnection(session: Session) {
+    private suspend fun DefaultWebSocketServerSession.handleConnection(
+        session: WatchPartySession,
+        connectionId: WatchPartyConnectionId,
+    ) {
         val job = launch {
-            session.data.collect {
+            session.collect(connectionId) {
                 sendSerialized<WatchPartyResponse>(it)
             }
         }
@@ -146,100 +128,15 @@ class WatchPartyWebService : ApiWebService() {
             for (frame in incoming) {
                 try {
                     val request = converter!!.deserialize<WatchPartyRequest>(frame)
-                    session.applyRequest(request)
+                    session.apply(request, connectionId)
                 } catch (e: SerializationException) {
                     sendSerialized<WatchPartyResponse>(WatchPartyErrorResponse(e.message ?: "Invalid request"))
+                } catch (e: WatchPartyRequestException) {
+                    sendSerialized<WatchPartyResponse>(WatchPartyErrorResponse(e.message))
                 }
             }
         } finally {
             job.cancelAndJoin()
-            if (session.connections.decrementAndGet() == 0) {
-                scheduleRemoval(session)
-            }
         }
-    }
-
-    context(wsSession: DefaultWebSocketServerSession)
-    private suspend fun Session.applyRequest(request: WatchPartyRequest): Unit = lock.withLock {
-        data.update {
-            when (request) {
-                is WatchPartyNavigateRequest -> it.applyNavigateRequest(request)
-                is WatchPartyUpdateRequest -> it.applyUpdateRequest(request) ?: return
-                is WatchPartyMoveCountRequest -> it.applyMoveCountRequest(request) ?: return
-                is WatchPartyCellRequest -> it.applyCellRequest(request) ?: return
-                is WatchPartyLineHighlightRequest -> it.applyLineHighlightRequest(request) ?: return
-            }
-        }
-    }
-
-    private fun WatchPartyData.applyNavigateRequest(request: WatchPartyNavigateRequest): WatchPartyData {
-        return copy(target = when (val target = request.target) {
-            is WatchPartyNavigateTarget.Sandbox -> WatchPartyTarget.Sandbox(Board())
-            is WatchPartyNavigateTarget.Session -> WatchPartyTarget.Session(
-                sessionId = target.id,
-                move = Int.MAX_VALUE,
-                overlay = Board(),
-            )
-            null -> null
-        })
-    }
-
-    context(wsSession: DefaultWebSocketServerSession)
-    private suspend fun WatchPartyData.applyUpdateRequest(request: WatchPartyUpdateRequest): WatchPartyData? {
-        val target = target
-            ?: return null.also { wsSession.sendSerialized(WatchPartyErrorResponse("no watchparty target")) }
-
-        return copy(target = when (target) {
-            is WatchPartyTarget.Session -> target.copy(overlay = request.board.removeOwners())
-            is WatchPartyTarget.Sandbox -> target.copy(board = request.board)
-        })
-    }
-
-    context(wsSession: DefaultWebSocketServerSession)
-    private suspend fun WatchPartyData.applyMoveCountRequest(request: WatchPartyMoveCountRequest): WatchPartyData? {
-        val target = target as? WatchPartyTarget.Session
-            ?: return null.also { wsSession.sendSerialized(WatchPartyErrorResponse("invalid watchparty target")) }
-
-        return copy(target = target.copy(move = request.move))
-    }
-
-    context(wsSession: DefaultWebSocketServerSession)
-    private suspend fun WatchPartyData.applyCellRequest(request: WatchPartyCellRequest): WatchPartyData? {
-        val target = target
-            ?: return null.also { wsSession.sendSerialized(WatchPartyErrorResponse("no watchparty target")) }
-
-        return copy(target = when (target) {
-            is WatchPartyTarget.Session -> target.copy(overlay = target.overlay.copy().apply {
-                this@apply[request.coordinate] += request.cell.copy(owner = omitted())
-            })
-            is WatchPartyTarget.Sandbox -> target.copy(board = target.board.copy().apply {
-                this@apply[request.coordinate] += request.cell.copy()
-            })
-        })
-    }
-
-    context(wsSession: DefaultWebSocketServerSession)
-    private suspend fun WatchPartyData.applyLineHighlightRequest(request: WatchPartyLineHighlightRequest): WatchPartyData? {
-        val target = target
-            ?: return null.also { wsSession.sendSerialized(WatchPartyErrorResponse("no watchparty target")) }
-
-        fun Board.applyRequest() = copy().apply {
-            if (request.remove) {
-                lineHighlights -= request.line
-            } else {
-                lineHighlights += request.line
-            }
-        }
-
-        return copy(target = when (target) {
-            is WatchPartyTarget.Session -> target.copy(overlay = target.overlay.applyRequest())
-            is WatchPartyTarget.Sandbox -> target.copy(board = target.board.applyRequest())
-        })
-    }
-}
-
-private fun Board.removeOwners() = copy().apply {
-    cells.forEach { (_, cell) ->
-        cell.owner = null
     }
 }

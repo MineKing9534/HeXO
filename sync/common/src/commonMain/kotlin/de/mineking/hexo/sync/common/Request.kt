@@ -53,3 +53,7 @@ data class WatchPartyLineHighlightRequest(
     val line: LineHighlight,
     val remove: Boolean,
 ) : WatchPartyRequest
+
+@Serializable
+@SerialName("clear-highlights")
+data object WatchPartyClearHighlightsRequest : WatchPartyRequest

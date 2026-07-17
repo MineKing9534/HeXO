@@ -43,6 +43,8 @@ class MutableBoard(
     }
 }
 
+fun Board.hasHighlights() = lineHighlights.isNotEmpty() || cells.values.any { it.highlight != null }
+
 private val directions = listOf(
     CellCoordinate(1, 0),
     CellCoordinate(0, 1),
