@@ -67,7 +67,7 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
     val data = ctx.data.getValue<PageData>()
 
     val layout = remember(ctx.route.path) {
-        AppLayout(fullscreen = mutableStateOf(false))
+        AppLayout(fullscreen = mutableStateOf("fullscreen" in ctx.route.queryParams))
     }
 
     Div({ classes("flex", "h-full", "w-full", "flex-col", "overflow-hidden", "select-none") }) {
