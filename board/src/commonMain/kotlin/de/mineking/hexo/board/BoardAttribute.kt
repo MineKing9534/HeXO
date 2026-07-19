@@ -30,19 +30,19 @@ sealed class BoardAttribute<T> {
     }
 }
 
-fun BoardAttributes(): BoardAttributes = MutableBoardAttributes()
+@ConsistentCopyVisibility
+data class BoardAttributeValue<T> internal constructor(val key: BoardAttribute<out T>, val value: T)
+infix fun <T> BoardAttribute<T>.to(value: T) = BoardAttributeValue(this, value)
+
+fun BoardAttributes(
+    vararg values: BoardAttributeValue<*>,
+): BoardAttributes = MutableBoardAttributes(values.associate { (key, value) -> Pair(key, value) }.toMutableMap())
 
 @Serializable(with = BoardAttributesSerializer::class)
 interface BoardAttributes {
     val values: Map<BoardAttribute<*>, Any?>
 
     operator fun <T> get(key: BoardAttribute<T>): T
-
-    companion object {
-        fun createDefault() = MutableBoardAttributes(mutableMapOf(
-            BoardAttribute.ShowTurnNumbers to true,
-        ))
-    }
 }
 
 class MutableBoardAttributes(override val values: MutableMap<BoardAttribute<*>, Any?> = mutableMapOf()) : BoardAttributes {
@@ -77,18 +77,13 @@ internal object BoardAttributesSerializer : KSerializer<BoardAttributes> {
     override fun deserialize(decoder: Decoder): BoardAttributes {
         return MutableBoardAttributes(
             decoder.decodeSerializableValue(delegate)
-                .associate { it.key to it.value }
+                .associate { Pair(it.key, it.value) }
                 .toMutableMap(),
         )
     }
 }
 
-private data class BoardAttributeValue(
-    val key: BoardAttribute<*>,
-    val value: Any?,
-)
-
-private object BoardAttributeValueSerializer : KSerializer<BoardAttributeValue> {
+private object BoardAttributeValueSerializer : KSerializer<BoardAttributeValue<*>> {
     @Suppress("UNCHECKED_CAST")
     private val keySerializer = BoardAttribute.serializer(PolymorphicSerializer(Any::class).nullable) as KSerializer<BoardAttribute<*>>
 
@@ -98,7 +93,7 @@ private object BoardAttributeValueSerializer : KSerializer<BoardAttributeValue> 
         element("value", buildSerialDescriptor("de.mineking.hexo.board.BoardAttributeValue.value", SerialKind.CONTEXTUAL))
     }
 
-    override fun serialize(encoder: Encoder, value: BoardAttributeValue) = encoder.encodeStructure(descriptor) {
+    override fun serialize(encoder: Encoder, value: BoardAttributeValue<*>) = encoder.encodeStructure(descriptor) {
         encodeSerializableElement(descriptor, 0, keySerializer, value.key)
         encodeAttributeValue(value.key, value.value)
     }

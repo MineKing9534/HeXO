@@ -3,10 +3,15 @@ package de.mineking.hexo.board
 import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.Serializable
 
+@RequiresOptIn
+annotation class InternalBoardApi
+
 @Serializable(with = BoardSerializer::class)
 interface Board {
     companion object {
         const val WIN_MIN_LENGTH = 6
+
+        fun withTurnNumbers() = Board(attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to true))
     }
 
     val lineHighlights: List<LineHighlight>
@@ -15,7 +20,15 @@ interface Board {
     val attributes: BoardAttributes
 }
 
-fun Board(): Board = MutableBoard(attributes = BoardAttributes.createDefault())
+fun Board(
+    lineHighlights: List<LineHighlight> = listOf(),
+    cells: Map<CellCoordinate, Cell> = mapOf(),
+    attributes: BoardAttributes = BoardAttributes(),
+): Board = MutableBoard(
+    lineHighlights = lineHighlights.toMutableList(),
+    cells = cells.mapValues { (_, cell) -> cell.copy() }.toMutableMap(),
+    attributes = attributes.copy(),
+)
 
 class MutableBoard(
     override val lineHighlights: MutableList<LineHighlight> = mutableListOf(),
@@ -97,13 +110,14 @@ fun Board.copy() = MutableBoard(
     attributes = this@copy.attributes.copy(),
 )
 
+@InternalBoardApi
 fun Board.mutable() = when (this) {
     is MutableBoard -> this
     else -> copy()
 }
 
 operator fun Board.plus(other: Board) = merge(other)
-fun Board.merge(other: Board, overrideOwner: Boolean = false): Board {
+fun Board.merge(other: Board, overrideOwner: Boolean = false): MutableBoard {
     val cells = mutableMapOf<CellCoordinate, MutableCell>()
     this.cells.forEach { (coordinate, cell) -> cells[coordinate] = cell.copy() }
 

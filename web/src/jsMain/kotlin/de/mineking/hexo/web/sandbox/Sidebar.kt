@@ -84,7 +84,7 @@ fun Sidebar(
                 onChange = { cause, value ->
                     notation = value
                     if (value.isBlank()) {
-                        onBoardChange(cause, Board())
+                        onBoardChange(cause, Board.withTurnNumbers())
                         return@NotationField
                     }
 

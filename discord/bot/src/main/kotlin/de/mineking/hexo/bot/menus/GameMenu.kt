@@ -43,9 +43,10 @@ import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
-import de.mineking.hexo.board.mutable
+import de.mineking.hexo.board.BoardAttributes
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.notation.NotationType
+import de.mineking.hexo.board.to
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
@@ -93,9 +94,11 @@ fun UIManager.gameMenu(
 
     val matchData by lazy(default = null) {
         val match = gameRepository.getGame(id) ?: return@lazy null
-        val board = match.asBoard(move, focusWinningRows = true)
-            .mutable()
-            .also { it.attributes[BoardAttribute.ShowTurnNumbers] = showTurnNumbers.value }
+        val board = match.asBoard(
+            maxMoves = move,
+            focusWinningRows = true,
+            attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to showTurnNumbers.value),
+        )
 
         MatchData(match, board)
     }

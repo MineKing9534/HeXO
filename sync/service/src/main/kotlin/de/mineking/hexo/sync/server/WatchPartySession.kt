@@ -145,7 +145,7 @@ internal class WatchPartySession private constructor(
         request: WatchPartyNavigateRequest,
     ): WatchPartyState {
         return state.copy(target = when (val target = request.target) {
-            is WatchPartyNavigateTarget.Sandbox -> WatchPartyServerTarget.Sandbox(Board())
+            is WatchPartyNavigateTarget.Sandbox -> WatchPartyServerTarget.Sandbox(Board.withTurnNumbers())
             is WatchPartyNavigateTarget.Session -> WatchPartyServerTarget.Session(
                 sessionId = target.id,
                 move = Int.MAX_VALUE,

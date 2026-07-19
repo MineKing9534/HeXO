@@ -57,13 +57,13 @@ fun SandboxPage(ctx: PageContext) {
 
         try {
             val board = when {
-                initial.isBlank() -> Board()
+                initial.isBlank() -> Board.withTurnNumbers()
                 else -> initial.parseRectilinearStateBKETurnNotation(focusWinningRows = false)
             }
 
             board to null
         } catch (e: HexoNotationException) {
-            Board() to e.message
+            Board.withTurnNumbers() to e.message
         }
     }
 

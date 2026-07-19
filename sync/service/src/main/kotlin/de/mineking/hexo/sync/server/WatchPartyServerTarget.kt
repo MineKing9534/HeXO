@@ -1,18 +1,16 @@
 package de.mineking.hexo.sync.server
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.MutableCell
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.hasHighlights
 import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.sync.common.WatchPartyData
 import de.mineking.hexo.sync.common.WatchPartyId
 import de.mineking.hexo.sync.common.WatchPartyTarget
-import io.ktor.server.config.configLoaders
 
 internal sealed interface WatchPartyServerTarget {
     fun toDto(): WatchPartyTarget
@@ -99,9 +97,9 @@ internal data class WatchPartySessionOverlay(
 
     fun hasHighlightBy(author: WatchPartyConnectionId) = cells.any { (_, cell) -> cell.author == author } || lines.any { it.author == author }
 
-    fun toBoard(): Board = MutableBoard(
-        cells = cells.mapValues { (_, highlight) -> MutableCell(highlight = highlight.highlight) }.toMutableMap(),
-        lineHighlights = lines.map { it.line }.toMutableList(),
+    fun toBoard() = Board(
+        cells = cells.mapValues { (_, highlight) -> Cell(highlight = highlight.highlight) },
+        lineHighlights = lines.map { it.line },
     )
 }
 

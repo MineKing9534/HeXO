@@ -7,7 +7,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.browser.storage.StorageKey
-import com.varabyte.kobweb.browser.storage.StringStorageKey
 import com.varabyte.kobweb.browser.storage.getItem
 import com.varabyte.kobweb.browser.storage.setItem
 import de.mineking.hexo.hds.utils.EntityState
