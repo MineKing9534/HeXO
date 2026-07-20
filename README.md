@@ -23,6 +23,9 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
     * [Command `game`](#command-game)
   * [Contributing](#contributing)
   * [Build](#build)
+    * [Backend](#backend)
+    * [Web](#web)
+    * [Docker Compose](#docker-compose)
 <!-- TOC -->
 
 ## Notation
@@ -154,11 +157,72 @@ If you have a small or medium improvement, feel free to open a PR directly.
 For larger changes, please open an issue first so we can align on scope and approach.
 
 ## Build
-If you want to build (and run) the bot yourself, you can run `./gradlew discord:shadowJar`, which will create `discord/build/libs/discord-[version]-all.jar`. 
-You can then run this jar with `java -jar path-to.jar`.
+
+### Backend
+
+To build the backend manually, run:
+
+```shell
+./gradlew :launcher:shadowJar
+```
+
+This creates `launcher/build/libs/launcher-[version]-all.jar`. You can run it with:
+
+```shell
+java -jar launcher/build/libs/launcher-[version]-all.jar
+```
 
 > [!NOTE]
 > You need a JDK 21 (or higher) installed to build the jar. To run it, a JRE is sufficient.
 
-Alternatively you can use the `Dockerfile` to build a docker image that you can run.
-In both cases the environment variable `TOKEN` has to be set to the bot token of your discord bot.
+Configuration is done using environment variables at runtime. The following environment variables are used by the backend:
+```dotenv
+bot.token=              # Discord bot token, required
+
+# The oauth2 block is optional
+oauth2.clientId=        # Discord client id for linked roles
+oauth2.clientSecret=    # Discord client secret for linked roles
+oauth2.encryptionKey=   # Encryption key used for encrypting discord tokens
+
+# The database block is optional
+database.url=           # JDBC url for persisting data
+
+# The server block is optional
+server.port=            # The port for the API to listen on
+server.url=             # The public url of the server
+```
+
+### Web
+
+To export the web module as a static site manually, run:
+
+```shell
+./gradlew :web:kobwebExport \
+    -PkobwebExportLayout=STATIC \
+    -Pweb.apiProxy=http://localhost:3001 \  # The HDS API proxy, e.g. https://hexo.mineking.dev/proxy
+    -Pweb.toolsApi=http://localhost:1234    # The mineking hexo tools API, used for watch parties etc., e.g. https://hexo.mineking.dev
+```
+
+The generated site is written to `web/.kobweb/site`. The two URLs are embedded into the web application at build time.
+
+### Docker Compose
+
+As an alternative to building the modules manually, Docker Compose can build both the backend and frontend images. Set the required values in a `.env` file in the project root:
+
+```dotenv
+BOT_TOKEN=              # Discord bot token, required
+
+# The oauth2 block is optional
+OAUTH2_CLIENT_ID=       # Discord client id for linked roles
+OAUTH2_CLIENT_SECRET=   # Discord client secret for linked roles
+OAUTH2_ENCRYPTION_KEY=  # Encryption key used for encrypting discord tokens
+
+SERVER_URL=             # The public server url
+
+WEB_API_PROXY=          # The HDS API proxy, e.g. https://hexo.mineking.dev/proxy
+```
+
+To deploy both backend and frontend, run:
+```shell
+docker compose up
+```

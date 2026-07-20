@@ -1,8 +1,19 @@
-.git
-.gradle
-.kotlin
-build
-**/.gradle
-**/.kotlin
-**/build
-.idea
+# Exclude everything by default, then include only build definitions and sources.
+**
+
+!gradlew
+!gradle.properties
+!gradle/**
+!**/*.gradle.kts
+!**/src/**
+!**/webpack.config.d/**
+
+**/.gradle/**
+**/.kotlin/**
+**/build/**
+**/node_modules/**
+**/.kobweb/**
+
+# Additional inputs referenced directly by build scripts.
+!discord/bot/localization/**
+!web/.kobweb/conf.yaml

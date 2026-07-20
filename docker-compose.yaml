@@ -74,9 +74,9 @@ services:
       - "80"
     environment:
       bot.token: ${BOT_TOKEN:?}
-      oauth2.clientId: ${OAUTH2_CLIENT_ID:?}
-      oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:?}
-      oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:?}
+      oauth2.clientId: ${OAUTH2_CLIENT_ID:-}
+      oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:-}
+      oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:-}
       database.url: jdbc:postgresql://database:5432/hexo?user=hexo&password=hexo
       server.port: 80
       server.url: ${SERVER_URL:?}

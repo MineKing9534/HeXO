@@ -1,11 +1,14 @@
 FROM gradle:9.4.0-jdk21 AS build
 
 WORKDIR /workspace
+
 ARG WEB_API_PROXY
 ARG WEB_TOOLS_API
 
+# Kobweb's browser tooling needs these libraries while exporting the static site.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends \
+    && apt-get \
+        install -y --no-install-recommends \
         libasound2t64 \
         libatk-bridge2.0-0 \
         libatk1.0-0 \
@@ -29,14 +32,14 @@ RUN apt-get update \
         libxrandr2 \
     && rm -rf /var/lib/apt/lists/*
 
-COPY gradlew settings.gradle.kts build.gradle.kts gradle.properties ./
-COPY gradle ./gradle
-COPY buildSrc ./buildSrc
-
 COPY . .
 
-RUN --mount=type=cache,target=/home/gradle/.gradle,sharing=locked \
-    ./gradlew --no-daemon :web:kobwebExport -PkobwebExportLayout=STATIC -Pweb.apiProxy=${WEB_API_PROXY} -Pweb.toolsApi=${WEB_TOOLS_API}
+RUN --mount=type=cache,id=hexo-gradle,target=/home/gradle/.gradle,sharing=locked \
+    ./gradlew --no-daemon --parallel \
+        :web:kobwebExport \
+        -PkobwebExportLayout=STATIC \
+        -Pweb.apiProxy=${WEB_API_PROXY} \
+        -Pweb.toolsApi=${WEB_TOOLS_API}
 
 FROM nginx:1.31.1-alpine
 
