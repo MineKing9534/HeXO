@@ -34,6 +34,8 @@ private const val BOARD_LAYOUT_RADIUS = 255.0
 val DEFAULT_CELL_HOVER_COlOR = Color.rgb(0x7dd3fc)
 
 typealias BoardContentBuilder = @Composable BoardScope.() -> Unit
+typealias BoardMiddleLayer = RenderingContext.() -> Unit
+
 class BoardScope(
     val renderLayout: BoardRenderLayout,
     val element: HTMLCanvasElement,
@@ -46,7 +48,7 @@ fun RawBoard(
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
-    middleLayer: RenderingContext.() -> Unit = {},
+    middleLayer: BoardMiddleLayer? = null,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
@@ -81,7 +83,7 @@ fun RawBoard(
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme) { redraw() }
+    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme, cellHoverColor, middleLayer, element) { redraw() }
 
     BoardInteractions(
         element = element,
@@ -137,7 +139,7 @@ private fun HTMLCanvasElement.drawBoard(
     hoveredCell: CellCoordinate?,
     theme: Theme,
     cellHoverColor: Color?,
-    middleLayer: RenderingContext.() -> Unit = {},
+    middleLayer: BoardMiddleLayer?,
 ) {
     width = clientWidth
     height = clientHeight
@@ -148,7 +150,7 @@ private fun HTMLCanvasElement.drawBoard(
         offset = viewport.offset(this),
         theme = theme,
     ) {
-        middleLayer()
+        middleLayer?.invoke(this)
 
         if (hoveredCell == null || cellHoverColor == null) return@drawBoard
         val cell = layout.board.cells[hoveredCell]

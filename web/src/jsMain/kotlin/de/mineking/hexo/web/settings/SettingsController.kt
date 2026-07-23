@@ -98,9 +98,9 @@ fun SettingsControllerProvider(storage: Storage, content: @Composable (SettingsC
 }
 
 @Composable
-fun <T> rememberSettingsValue(key: SettingsKey<T>): MutableState<T> {
+fun <T> SettingsKey<T>.collectAsState(): MutableState<T> {
     val controller = LocalSettingsController.current
-    val flow = remember(key) { controller[key] }
+    val flow = remember(this) { controller[this] }
     val value by flow.collectAsState()
 
     return object : MutableState<T> {

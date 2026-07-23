@@ -13,7 +13,7 @@ import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.web.settings.SettingsKey
-import de.mineking.hexo.web.settings.rememberSettingsValue
+import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
@@ -88,7 +88,7 @@ fun <T, U> State<T>.map(transform: (T) -> U) = object : State<U> {
 }
 
 @Composable
-fun rememberTheme() = rememberSettingsValue(SettingsKey.Theme).map { it.theme }
+fun rememberTheme() = SettingsKey.Theme.collectAsState().map { it.theme }
 
 private val Color.css get() = rgba(red.toInt(), green.toInt(), blue.toInt(), alpha.toInt())
 fun BaseTheme.playerCssColor(owner: CellOwner) = playerColor(owner).css

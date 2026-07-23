@@ -371,13 +371,13 @@ class SessionGame(
             result = result,
             options = dto.gameOptions,
             tournamentInfo = tournamentInfo,
-            moves = gameState.cells?.map {
+            moves = gameState.cells!!.map {
                 GameMove(
                     coordinate = CellCoordinate(it.q, it.r),
                     player = playersById[it.occupiedBy]!!,
                 )
-            }!!,
-            players = players,
+            },
+            players = players.sortedBy { player -> gameState.cells.indexOfFirst { it.occupiedBy == player.playerId } },
         )
     }
 }

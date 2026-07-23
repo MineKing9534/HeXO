@@ -18,7 +18,6 @@ import de.mineking.hexo.board.contains
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.plus
-import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
@@ -61,7 +60,7 @@ fun InteractiveBoard(
     onBoardInteraction: (BoardInteraction) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
-    middleLayer: RenderingContext.() -> Unit = {},
+    middleLayer: BoardMiddleLayer? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     fallback: ContentBuilder<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
@@ -138,7 +137,7 @@ fun BoardView(
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
-    middleLayer: RenderingContext.() -> Unit = {},
+    middleLayer: BoardMiddleLayer? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     fallback: ContentBuilder<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,

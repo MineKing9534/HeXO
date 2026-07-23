@@ -58,7 +58,6 @@ internal sealed external class SolverEngine {
     object Pdspn : SolverEngine
 }
 
-@OptIn(ExperimentalWasmJsInterop::class)
 internal external class SolverLimits(
     @JsName("depth_cap") val depthCap: Int,
     @JsName("node_budget") val nodeBudget: dynamic,

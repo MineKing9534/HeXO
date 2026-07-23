@@ -13,17 +13,21 @@ import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.image.div
+import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.game.Move
 import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LiveSessionPlayer
 import de.mineking.hexo.hds.session.SessionState
-import de.mineking.hexo.hds.session.SessionTurn
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
-import de.mineking.hexo.web.board.AnalyserTurn
-import de.mineking.hexo.web.board.GamePositionBoardPane
+import de.mineking.hexo.web.board.AnalyzerStatusDisplay
+import de.mineking.hexo.web.board.AnalyzerTurn
+import de.mineking.hexo.web.board.BoardPane
 import de.mineking.hexo.web.board.SessionBoardViewManager
+import de.mineking.hexo.web.board.drawLayer
+import de.mineking.hexo.web.board.rememberBoard
+import de.mineking.hexo.web.board.rememberBoardAnalysis
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
@@ -32,6 +36,8 @@ import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.ClearHighlightsIcon
 import de.mineking.hexo.web.icons.EnterFullscreenIcon
 import de.mineking.hexo.web.icons.ExitFullscreenIcon
+import de.mineking.hexo.web.icons.EyeIcon
+import de.mineking.hexo.web.icons.EyeOffIcon
 import de.mineking.hexo.web.icons.ResetViewIcon
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.playerCssColor
@@ -39,7 +45,7 @@ import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
-import de.mineking.hexo.web.settings.rememberSettingsValue
+import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
@@ -61,7 +67,6 @@ private const val MOVES_PER_TURN = 2
 
 @Composable
 fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: SessionBoardViewManager) {
-    val move by boardViewManager.currentMove
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
 
     val watchPartyController = rememberWatchPartyController()
@@ -74,27 +79,68 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
         }
     }
 
-    val analyserTurn = when (val state = session.state) {
-        is SessionState.InGame -> AnalyserTurn(state.currentTurn.player.color, state.currentTurn.placementsRemaining)
-        else -> null
+    val move by boardViewManager.currentMove
+    val board = session.game.rememberBoard(
+        overlay = boardViewManager.board.value,
+        move = move,
+    )
+
+    val (effectiveTurnPlayer, effectivePlacementsRemaining) = session.effectiveTurn(move)
+
+    val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
+    val analyzerState = if (shouldAnalyze && (state != null || move < session.game.moveCount)) {
+        val turn = AnalyzerTurn(effectiveTurnPlayer.color, effectivePlacementsRemaining)
+        rememberBoardAnalysis(board, turn)
+    } else {
+        null
     }
 
-    GamePositionBoardPane(
-        position = session.game,
-        move = move,
-        overlay = boardViewManager.board.value,
+    var showAnalyzerOverlay by remember { mutableStateOf(true) }
+
+    BoardPane(
+        board = board,
         readOnly = true,
-        analyseAs = analyserTurn,
         viewport = viewport.value,
         onViewportChange = { viewport.value = it },
+        middleLayer = analyzerState?.takeIf { showAnalyzerOverlay }?.drawLayer(),
         onBoardInteraction = { interaction ->
-            if (interaction !is BoardInteraction.HighlightBoardInteraction) return@GamePositionBoardPane
+            if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
             boardViewManager.apply(interaction)
         },
     ) {
-        if (state != null) TurnIndicator(session, state)
+        if (state != null) TurnIndicator(session, effectiveTurnPlayer, effectivePlacementsRemaining)
         BoardControls(session, boardViewManager, viewport)
+
+        if (analyzerState != null) {
+            AnalyzerStatusDisplay(
+                state = analyzerState,
+                analyzedPlayer = effectiveTurnPlayer,
+                otherPlayer = session.players.first { it != effectiveTurnPlayer },
+                attrs = { classes("absolute", "right-4", "top-4") },
+            ) {
+                ActionButton(
+                    onClick = { showAnalyzerOverlay = !showAnalyzerOverlay },
+                    attrs = { classes("flex-0") },
+                ) {
+                    if (showAnalyzerOverlay) {
+                        EyeOffIcon { classes("size-4") }
+                    } else {
+                        EyeIcon { classes("size-4") }
+                    }
+                }
+            }
+        }
     }
+}
+
+private fun LiveSession.effectiveTurn(move: Int): Pair<Player, Int> {
+    val move = move.coerceIn(0, game.moveCount) + 1
+
+    val index = (move / 2) % 2
+    val player = game.players[index] // Game players are ordered by first placement
+    val remaining = 2 - (move % 2)
+
+    return player to remaining
 }
 
 @Composable
@@ -235,7 +281,7 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
     var timer by remember { mutableStateOf(timeRemaining.duration) }
     val current by rememberUpdatedState(current)
 
-    val playerTimerSound by rememberSettingsValue(SettingsKey.SessionViewTimerSounds)
+    val playerTimerSound by SettingsKey.SessionViewTimerSounds.collectAsState()
 
     DisposableEffect(Unit) {
         fun countdown() {
@@ -252,7 +298,7 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
     }
 
     Div({
-        classes("ml-auto", "font-extrabold", "text-lg", "tabular-nums")
+        classes("font-extrabold", "text-lg", "tabular-nums")
         if (current) {
             classes("text-emerald-200")
         } else {
@@ -267,31 +313,23 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
 }
 
 @Composable
-private fun TurnIndicator(session: LiveSession, state: SessionState.InGame) {
+private fun TurnIndicator(session: LiveSession, currentPlayer: Player, placementsRemaining: Int) {
     @Composable
     fun PlayerIndicator(player: LiveSessionPlayer) {
-        val isCurrentTurn = player === state.currentTurn.player
+        val isCurrentTurn = player === currentPlayer
         Div({ classes("flex", "flex-col", "justify-center", "gap-2") }) {
             Div({
-                classes("rounded-md", "py-1", "px-3", "border", "flex", "items-center", "gap-2")
+                classes("rounded-md", "py-1", "px-3", "border", "flex", "items-center", "justify-between")
                 if (isCurrentTurn) {
                     classes("bg-emerald-500/20", "border-emerald-500/50")
                 } else {
                     classes("bg-slate-500/20", "border-slate-500/50")
                 }
             }) {
-                val theme by rememberTheme()
-                Div({
-                    classes("rounded-full", "size-2", "shrink-0")
-                    style { backgroundColor(theme.playerCssColor(player.color)) }
-                })
-                Span({ classes("max-w-52", "truncate") }) {
-                    Text(player.displayName)
-                }
-
+                Player(player)
                 PlayerTimer(player, isCurrentTurn)
             }
-            if (isCurrentTurn) TurnIndicator(state.currentTurn)
+            if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
         }
     }
 
@@ -380,26 +418,28 @@ private fun TournamentInfoCard(session: LiveSession) {
 }
 
 @Composable
-private fun Player(player: Player) {
+fun Player(player: Player) {
     val theme by rememberTheme()
-    Div({
-        classes("rounded-full", "size-2", "shrink-0")
-        style { backgroundColor(theme.playerCssColor(player.color)) }
-    })
-    Span({ classes("min-w-0", "flex-1", "truncate", "text-slate-300") }) {
-        Text(player.displayName)
+    Span({ classes("inline-flex", "gap-1.5", "flex-nowrap", "items-center") }) {
+        Div({
+            classes("rounded-full", "size-2", "shrink-0")
+            style { backgroundColor(theme.playerCssColor(player.color)) }
+        })
+        Span({ classes("min-w-0", "max-w-52", "flex-1", "truncate", "text-slate-300") }) {
+            Text(player.displayName)
+        }
     }
 }
 
 @Composable
-private fun TurnIndicator(turn: SessionTurn) {
+private fun PlacementsRemainingIndicator(color: CellOwner, remaining: Int) {
     val theme by rememberTheme()
     Div({ classes("flex", "gap-1", "flex-row-reverse", "mx-auto", "justify-center") }) {
         repeat(MOVES_PER_TURN) {
             Div({
                 classes("rounded-full", "w-6", "h-1.5")
-                if (it < turn.placementsRemaining) {
-                    style { backgroundColor(theme.playerCssColor(turn.player.color)) }
+                if (it < remaining) {
+                    style { backgroundColor(theme.playerCssColor(color)) }
                 } else {
                     classes("bg-slate-500")
                 }
