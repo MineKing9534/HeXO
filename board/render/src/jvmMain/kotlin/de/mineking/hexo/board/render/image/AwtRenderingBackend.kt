@@ -27,7 +27,7 @@ fun Board.renderToImage(
     padding: Int,
     visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     theme: Theme = Theme.Default,
-    middleLayer: RenderingContext.() -> Unit = {},
+    renderingHook: BoardRenderingHook? = null,
 ): BufferedImage {
     require(!isEmpty(includeHighlights = true))
 
@@ -46,7 +46,7 @@ fun Board.renderToImage(
 
     val context = AwtRenderingBackend(graphics)
     try {
-        context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
+        context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, renderingHook)
     } finally {
         graphics.dispose()
     }

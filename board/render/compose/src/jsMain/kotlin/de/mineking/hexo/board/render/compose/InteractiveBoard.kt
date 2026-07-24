@@ -18,6 +18,7 @@ import de.mineking.hexo.board.contains
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.core.CellOwner
@@ -60,7 +61,7 @@ fun InteractiveBoard(
     onBoardInteraction: (BoardInteraction) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
-    middleLayer: BoardMiddleLayer? = null,
+    renderingHook: BoardRenderingHook? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     fallback: ContentBuilder<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
@@ -85,7 +86,7 @@ fun InteractiveBoard(
         onViewportChange = onViewportChange,
         theme = theme,
         cellHoverColor = cellHoverColor,
-        middleLayer = middleLayer,
+        renderingHook = renderingHook,
         onCellClick = {
             onBoardInteraction(BoardInteraction.PlaceCell(it))
         },
@@ -137,7 +138,7 @@ fun BoardView(
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
-    middleLayer: BoardMiddleLayer? = null,
+    renderingHook: BoardRenderingHook? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     fallback: ContentBuilder<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
@@ -158,7 +159,7 @@ fun BoardView(
         },
         theme = theme,
         cellHoverColor = cellHoverColor,
-        middleLayer = middleLayer,
+        renderingHook = renderingHook,
         attrs = attrs,
         fallback = fallback,
         content = content,

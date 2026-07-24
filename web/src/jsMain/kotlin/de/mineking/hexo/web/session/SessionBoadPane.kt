@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
+import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.game.Move
@@ -23,9 +24,10 @@ import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.AnalyzerStatusDisplay
 import de.mineking.hexo.web.board.AnalyzerTurn
+import de.mineking.hexo.web.board.BoardAnalyzerState
 import de.mineking.hexo.web.board.BoardPane
 import de.mineking.hexo.web.board.SessionBoardViewManager
-import de.mineking.hexo.web.board.drawLayer
+import de.mineking.hexo.web.board.drawAnalyzerOverlay
 import de.mineking.hexo.web.board.rememberBoard
 import de.mineking.hexo.web.board.rememberBoardAnalysis
 import de.mineking.hexo.web.components.ActionButton
@@ -66,6 +68,7 @@ import kotlin.time.Duration.Companion.seconds
 private const val MOVES_PER_TURN = 2
 
 @Composable
+@Suppress("LongMethod")
 fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: SessionBoardViewManager) {
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
 
@@ -85,6 +88,7 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
         move = move,
     )
 
+    val theme by rememberTheme()
     val (effectiveTurnPlayer, effectivePlacementsRemaining) = session.effectiveTurn(move)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
@@ -102,7 +106,11 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
         readOnly = true,
         viewport = viewport.value,
         onViewportChange = { viewport.value = it },
-        middleLayer = analyzerState?.takeIf { showAnalyzerOverlay }?.drawLayer(),
+        renderingHook = BoardRenderingHook.topLayer {
+            if (showAnalyzerOverlay && analyzerState is BoardAnalyzerState.Data) {
+                drawAnalyzerOverlay(theme, analyzerState)
+            }
+        },
         onBoardInteraction = { interaction ->
             if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
             boardViewManager.apply(interaction)

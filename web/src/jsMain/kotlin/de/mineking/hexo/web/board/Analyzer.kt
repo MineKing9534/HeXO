@@ -20,7 +20,6 @@ import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.web.playerColor
-import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.worker.AnalysisInput
 import de.mineking.hexo.web.worker.AnalysisWorker
 import kotlinx.coroutines.awaitCancellation
@@ -33,14 +32,6 @@ sealed interface BoardAnalyzerState {
         val threat: FindWinResult,
         val defense: FindDefenseResult,
     ) : BoardAnalyzerState
-}
-
-@Composable
-fun BoardAnalyzerState.drawLayer(): RenderingContext.() -> Unit {
-    if (this !is BoardAnalyzerState.Data) return {}
-
-    val theme by rememberTheme()
-    return { drawAnalyzerOverlay(theme, this@drawLayer) }
 }
 
 @Composable
@@ -89,11 +80,11 @@ private enum class AnalyzerMarkerStyle {
     Defense,
 }
 
-private fun RenderingContext.drawAnalyzerOverlay(theme: BaseTheme, result: BoardAnalyzerState.Data) {
-    if (result.threat is FindWinResult.Win) {
-        drawThreatOverlay(theme, result.threat, AnalyzerMarkerStyle.Opportunity)
-    } else if (result.defense is FindDefenseResult.Threat) {
-        drawDefenseOverlay(theme, result.defense)
+fun RenderingContext.drawAnalyzerOverlay(theme: BaseTheme, state: BoardAnalyzerState.Data) {
+    if (state.threat is FindWinResult.Win) {
+        drawThreatOverlay(theme, state.threat)
+    } else if (state.defense is FindDefenseResult.Threat) {
+        drawDefenseOverlay(theme, state.defense)
     }
 }
 

@@ -12,14 +12,15 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderLayout
+import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
-import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.center
 import de.mineking.hexo.board.render.image.createHex
 import de.mineking.hexo.board.render.image.createRenderLayout
 import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.board.render.image.drawBoard
+import de.mineking.hexo.board.render.image.plus
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.board.render.image.theme.withAlpha
@@ -34,7 +35,6 @@ private const val BOARD_LAYOUT_RADIUS = 255.0
 val DEFAULT_CELL_HOVER_COlOR = Color.rgb(0x7dd3fc)
 
 typealias BoardContentBuilder = @Composable BoardScope.() -> Unit
-typealias BoardMiddleLayer = RenderingContext.() -> Unit
 
 class BoardScope(
     val renderLayout: BoardRenderLayout,
@@ -48,7 +48,7 @@ fun RawBoard(
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
-    middleLayer: BoardMiddleLayer? = null,
+    renderingHook: BoardRenderingHook? = null,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
@@ -69,7 +69,7 @@ fun RawBoard(
     }
     val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
 
-    val middleLayer by rememberUpdatedState(middleLayer)
+    val renderingHook by rememberUpdatedState(renderingHook)
 
     fun redraw() {
         element?.drawBoard(
@@ -78,12 +78,12 @@ fun RawBoard(
             hoveredCell = hoveredCell,
             theme = theme,
             cellHoverColor = cellHoverColor,
-            middleLayer = middleLayer,
+            renderingHook = renderingHook,
         )
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme, cellHoverColor, middleLayer, element) { redraw() }
+    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme, cellHoverColor, renderingHook, element) { redraw() }
 
     BoardInteractions(
         element = element,
@@ -139,7 +139,7 @@ private fun HTMLCanvasElement.drawBoard(
     hoveredCell: CellCoordinate?,
     theme: Theme,
     cellHoverColor: Color?,
-    middleLayer: BoardMiddleLayer?,
+    renderingHook: BoardRenderingHook?,
 ) {
     width = clientWidth
     height = clientHeight
@@ -149,16 +149,15 @@ private fun HTMLCanvasElement.drawBoard(
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this),
         theme = theme,
-    ) {
-        middleLayer?.invoke(this)
+        renderingHook = renderingHook + BoardRenderingHook.middleLayer {
+            if (hoveredCell == null || cellHoverColor == null) return@middleLayer
+            val cell = layout.board.cells[hoveredCell]
 
-        if (hoveredCell == null || cellHoverColor == null) return@drawBoard
-        val cell = layout.board.cells[hoveredCell]
-
-        backend.drawPolygon(
-            shape = hoveredCell.toPixel().createHex(hexSize),
-            color = cellHoverColor.withAlpha(48),
-            outline = if (cell != null && (cell.highlight != null || cell.focused)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
-        )
-    }
+            backend.drawPolygon(
+                shape = hoveredCell.toPixel().createHex(hexSize),
+                color = cellHoverColor.withAlpha(48),
+                outline = if (cell != null && (cell.highlight != null || cell.focused)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
+            )
+        },
+    )
 }

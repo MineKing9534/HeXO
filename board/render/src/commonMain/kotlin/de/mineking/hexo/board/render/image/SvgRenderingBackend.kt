@@ -78,7 +78,7 @@ fun Board.renderToSvg(
     visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     prettyPrint: Boolean = false,
     theme: Theme = Theme.Default,
-    middleLayer: RenderingContext.() -> Unit = {},
+    renderingHook: BoardRenderingHook? = null,
 ): String {
     require(!isEmpty(includeHighlights = true))
 
@@ -89,7 +89,7 @@ fun Board.renderToSvg(
     val topLeftCorner = layout.boundingBox.topLeft - Point(padding, padding)
 
     val context = SvgRenderingBackend(topLeftCorner)
-    context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
+    context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, renderingHook)
 
     return svgString(prettyPrint) {
         svg {

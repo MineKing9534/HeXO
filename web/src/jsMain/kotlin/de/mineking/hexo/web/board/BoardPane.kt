@@ -10,10 +10,10 @@ import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
-import de.mineking.hexo.board.render.compose.BoardMiddleLayer
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
+import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.hds.AbstractGamePosition
 import de.mineking.hexo.hds.asBoard
 import de.mineking.hexo.web.components.LoadingIndicator
@@ -40,7 +40,7 @@ fun BoardPane(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
-    middleLayer: BoardMiddleLayer? = null,
+    renderingHook: BoardRenderingHook? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
 ) {
@@ -71,7 +71,7 @@ fun BoardPane(
             onBoardInteraction = onBoardInteraction,
             theme = theme,
             cellHoverColor = DEFAULT_CELL_HOVER_COlOR.takeIf { readOnlyBoardHoverIndicator || !readOnly },
-            middleLayer = middleLayer,
+            renderingHook = renderingHook,
             attrs = {
                 attr("width", "1200")
                 attr("height", "900")
