@@ -2,7 +2,7 @@ package de.mineking.hexo.board.render.image.theme
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.end
+import de.mineking.hexo.board.endInclusive
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
@@ -102,7 +102,7 @@ class HTTTXRenderer(
     override fun drawLineHighlight(lineHighlight: LineHighlight) = context.run {
         context.backend.drawLine(
             from = lineHighlight.start.toPixel(),
-            to = lineHighlight.end.toPixel(),
+            to = lineHighlight.endInclusive.toPixel(),
             stroke = Stroke(theme.lineHighlightColor, lineThickness),
         )
     }

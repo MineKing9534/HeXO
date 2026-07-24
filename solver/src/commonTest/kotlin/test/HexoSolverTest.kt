@@ -30,8 +30,8 @@ abstract class HexoSolverTest(val solver: HexoSolver) {
         val rows = board.findWinningRows()
         assertFalse(rows.isEmpty())
 
-        rows.forEach { (entry) ->
-            assertEquals(entry.second.owner, player)
+        rows.forEach { line ->
+            assertEquals(board[line.start].owner, player)
         }
     }
 

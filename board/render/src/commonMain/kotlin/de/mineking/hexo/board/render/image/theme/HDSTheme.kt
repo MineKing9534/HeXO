@@ -2,7 +2,7 @@ package de.mineking.hexo.board.render.image.theme
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.end
+import de.mineking.hexo.board.endInclusive
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
@@ -112,7 +112,7 @@ class HDSRenderer(
         val thickness = borderThickness * 8
         context.backend.drawLine(
             from = lineHighlight.start.toPixel(),
-            to = lineHighlight.end.toPixel(),
+            to = lineHighlight.endInclusive.toPixel(),
             stroke = Stroke(backgroundColor, thickness),
             outline = Stroke(borderColor, thickness / 3),
         )
