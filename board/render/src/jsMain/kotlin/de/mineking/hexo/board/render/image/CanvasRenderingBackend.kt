@@ -220,4 +220,4 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
     }
 }
 
-private val Color.css: String get() = "rgba(${red.toInt()}, ${green.toInt()}, ${blue.toInt()}, ${alpha.toInt() / 255.0})"
+val Color.css: String get() = "rgba(${red.toInt()}, ${green.toInt()}, ${blue.toInt()}, ${alpha.toInt() / 255.0})"
