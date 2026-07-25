@@ -15,6 +15,7 @@ import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.SubCard
+import de.mineking.hexo.web.formatCompact
 import de.mineking.hexo.web.icons.ChevronDownIcon
 import de.mineking.hexo.web.playerCssColor
 import de.mineking.hexo.web.rememberTheme
@@ -27,7 +28,6 @@ import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import kotlin.time.Duration
 
 private val springTransition = listOf(
     "duration-300",
@@ -393,16 +393,4 @@ private val GameFinishReason.label get() = when (this) {
     GameFinishReason.Disconnect -> "Disconnect"
     GameFinishReason.DrawAgreement -> "Draw agreed"
     GameFinishReason.Terminated -> "Terminated"
-}
-
-private fun Duration.formatCompact(): String {
-    val hours = inWholeHours
-    val minutes = inWholeMinutes % 60
-    val seconds = inWholeSeconds % 60
-
-    return when {
-        hours > 0 -> "${hours}h ${minutes}m"
-        minutes > 0 -> "${minutes}m ${seconds}s"
-        else -> "${seconds}s"
-    }
 }

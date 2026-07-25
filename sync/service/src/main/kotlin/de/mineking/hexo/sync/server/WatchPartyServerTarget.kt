@@ -7,6 +7,7 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.hasHighlights
+import de.mineking.hexo.hds.game.GameId
 import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.sync.common.WatchPartyData
 import de.mineking.hexo.sync.common.WatchPartyId
@@ -19,20 +20,41 @@ internal sealed interface WatchPartyServerTarget {
 
     fun handleDisconnect(connectionId: WatchPartyConnectionId): WatchPartyServerTarget = this
 
+    abstract class AbstractGameTarget : WatchPartyServerTarget {
+        abstract val overlay: WatchPartyOverlay
+        abstract fun copy(overlay: WatchPartyOverlay): AbstractGameTarget
+
+        override fun hasClearableHighlights(connectionId: WatchPartyConnectionId) = overlay.hasHighlightBy(connectionId)
+        override fun clearHighlightsBy(connectionId: WatchPartyConnectionId) = copy(overlay = overlay.clearHighlightsBy(connectionId))
+        override fun handleDisconnect(connectionId: WatchPartyConnectionId) = clearHighlightsBy(connectionId)
+    }
+
     data class Session(
         val sessionId: SessionId,
         val move: Int,
-        val overlay: WatchPartySessionOverlay = WatchPartySessionOverlay(),
-    ) : WatchPartyServerTarget {
+        override val overlay: WatchPartyOverlay = WatchPartyOverlay(),
+    ) : AbstractGameTarget() {
+        override fun copy(overlay: WatchPartyOverlay) = copy(overlay = overlay, move = move)
+
         override fun toDto() = WatchPartyTarget.Session(
             sessionId = sessionId,
             move = move,
             overlay = overlay.toBoard(),
         )
+    }
 
-        override fun hasClearableHighlights(connectionId: WatchPartyConnectionId) = overlay.hasHighlightBy(connectionId)
-        override fun clearHighlightsBy(connectionId: WatchPartyConnectionId) = copy(overlay = overlay.clearHighlightsBy(connectionId))
-        override fun handleDisconnect(connectionId: WatchPartyConnectionId) = clearHighlightsBy(connectionId)
+    data class Game(
+        val gameId: GameId,
+        val move: Int,
+        override val overlay: WatchPartyOverlay = WatchPartyOverlay(),
+    ) : AbstractGameTarget() {
+        override fun copy(overlay: WatchPartyOverlay) = copy(overlay = overlay, move = move)
+
+        override fun toDto() = WatchPartyTarget.Game(
+            gameId = gameId,
+            move = move,
+            overlay = overlay.toBoard(),
+        )
     }
 
     data class Sandbox(
@@ -55,12 +77,12 @@ internal data class AuthoredLineHighlight(
     val author: WatchPartyConnectionId,
 )
 
-internal data class WatchPartySessionOverlay(
+internal data class WatchPartyOverlay(
     val cells: Map<CellCoordinate, AuthoredCellHighlight> = emptyMap(),
     val lines: List<AuthoredLineHighlight> = emptyList(),
 ) {
     companion object {
-        fun fromBoard(board: Board, author: WatchPartyConnectionId) = WatchPartySessionOverlay(
+        fun fromBoard(board: Board, author: WatchPartyConnectionId) = WatchPartyOverlay(
             cells = board.cells
                 .mapNotNull { (coordinate, cell) ->
                     val highlight = cell.highlight ?: return@mapNotNull null
@@ -83,7 +105,7 @@ internal data class WatchPartySessionOverlay(
         lines = lines + AuthoredLineHighlight(line, author),
     )
 
-    fun removeLine(line: LineHighlight): WatchPartySessionOverlay {
+    fun removeLine(line: LineHighlight): WatchPartyOverlay {
         val index = lines.indexOfLast { it.line == line }
         if (index == -1) return this
 

@@ -1,6 +1,7 @@
 package de.mineking.hexo.sync.common
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.hds.game.GameId
 import de.mineking.hexo.hds.session.SessionId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -19,6 +20,14 @@ sealed interface WatchPartyTarget {
     @SerialName("session")
     data class Session(
         val sessionId: SessionId,
+        val move: Int,
+        val overlay: Board,
+    ) : WatchPartyTarget
+
+    @Serializable
+    @SerialName("game")
+    data class Game(
+        val gameId: GameId,
         val move: Int,
         val overlay: Board,
     ) : WatchPartyTarget

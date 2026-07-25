@@ -1,5 +1,4 @@
 import com.varabyte.kobweb.gradle.worker.util.configAsKobwebWorker
-import org.gradle.api.tasks.Sync
 
 plugins {
     id("kotlin-common")

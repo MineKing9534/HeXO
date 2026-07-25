@@ -19,6 +19,7 @@ import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.pages.Sandbox
+import de.mineking.hexo.web.pages.games.Game
 import de.mineking.hexo.web.pages.sessions.Session
 import de.mineking.hexo.web.rememberWatchPartyController
 import org.jetbrains.compose.web.dom.H1
@@ -50,6 +51,7 @@ fun WatchPartyContent(watchParty: WatchParty) {
 
     when (val target = data.target) {
         is WatchPartyTarget.Session -> Session(target.sessionId, boardViewManager)
+        is WatchPartyTarget.Game -> Game(target.gameId, boardViewManager)
         is WatchPartyTarget.Sandbox -> Sandbox(boardViewManager)
         null -> NoSessionState()
     }

@@ -9,8 +9,9 @@ import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import com.varabyte.kobweb.navigation.Anchor
 import com.varabyte.kobweb.navigation.BasePath
+import de.mineking.hexo.sync.common.WatchPartyId
+import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.CopyButton
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
@@ -201,7 +202,7 @@ private fun JoinSessionInput() {
             )
             VisibleButton(visible = visible, onVisibleChange = { visible = it })
         }
-        Anchor(BasePath.prependTo("/watchparty/$id"), {
+        Anchor(AppRoute.WatchParty(WatchPartyId(id)), {
             classes(
                 "group", "inline-flex", "items-center", "justify-center", "gap-2", "rounded-lg", "border",
                 "px-4", "py-3", "font-semibold", "text-nowrap", "shadow-sm", "transition", "focus:outline-none",

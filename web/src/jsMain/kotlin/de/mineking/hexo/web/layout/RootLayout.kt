@@ -25,6 +25,7 @@ fun RootLayout(ctx: PageContext, content: @Composable () -> Unit) {
 
         session.navigate(when (val route = data.route) {
             is AppRoute.Session -> WatchPartyNavigateTarget.Session(route.id)
+            is AppRoute.FinishedGame -> WatchPartyNavigateTarget.Game(route.id)
             is AppRoute.Sandbox -> WatchPartyNavigateTarget.Sandbox
             else -> null
         })
@@ -37,9 +38,10 @@ fun RootLayout(ctx: PageContext, content: @Composable () -> Unit) {
         watchParty.data.collect {
             val route = when (val target = it.target) {
                 is WatchPartyTarget.Sandbox -> AppRoute.Sandbox
+                is WatchPartyTarget.Game -> AppRoute.FinishedGame(target.gameId)
                 is WatchPartyTarget.Session -> AppRoute.Session(target.sessionId)
                 null -> AppRoute.LobbyList.takeIf {
-                    data.route is AppRoute.Sandbox || data.route is AppRoute.Session
+                    data.route is AppRoute.Sandbox || data.route is AppRoute.Session || data.route is AppRoute.FinishedGame
                 }
             } ?: return@collect
 

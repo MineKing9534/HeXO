@@ -48,7 +48,7 @@ class FinishedGame(
     override val result: GameResult,
     override val options: GameOptions,
     override val tournamentInfo: TournamentMatchSnapshot?,
-    override val moves: List<GameMove>,
+    override val moves: List<FinishedGameMove>,
     override val moveCount: Int,
     override val players: List<FinishedGamePlayer>,
 ) : Game {
@@ -94,9 +94,10 @@ class FinishedGame(
                 options = dto.options,
                 tournamentInfo = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) },
                 moves = dto.moves.map {
-                    GameMove(
+                    FinishedGameMove(
                         coordinate = CellCoordinate(it.q, it.r),
                         player = playersById[it.playerId]!!,
+                        it.timestamp,
                     )
                 },
                 moveCount = dto.moveCount,
@@ -184,9 +185,15 @@ interface Move {
     val owner: CellOwner
 }
 
-data class GameMove(
+open class GameMove(
     override val coordinate: CellCoordinate,
     val player: Player,
 ) : Move {
-    override val owner = player.color
+    override val owner get() = player.color
 }
+
+class FinishedGameMove(
+    coordinate: CellCoordinate,
+    player: Player,
+    val timestamp: Instant,
+) : GameMove(coordinate, player)

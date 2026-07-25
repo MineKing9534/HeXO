@@ -4,12 +4,13 @@ import androidx.compose.runtime.Composable
 import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.session.LobbySession
 import de.mineking.hexo.hds.utils.TimeControl
+import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.SubCard
-import de.mineking.hexo.web.pages.sessions.BackToLobbiesLink
+import de.mineking.hexo.web.layout.AppRoute
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
@@ -38,7 +39,7 @@ fun LobbyOverlay(session: LobbySession) {
         }
 
         Div({ classes("flex", "justify-center") }) {
-            BackToLobbiesLink()
+            BackLink(AppRoute.LobbyList, "Back to lobbies")
         }
     }
 }

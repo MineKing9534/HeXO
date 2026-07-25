@@ -146,6 +146,10 @@ internal class WatchPartySession private constructor(
     ): WatchPartyState {
         return state.copy(target = when (val target = request.target) {
             is WatchPartyNavigateTarget.Sandbox -> WatchPartyServerTarget.Sandbox(Board.withTurnNumbers())
+            is WatchPartyNavigateTarget.Game -> WatchPartyServerTarget.Game(
+                gameId = target.id,
+                move = Int.MAX_VALUE,
+            )
             is WatchPartyNavigateTarget.Session -> WatchPartyServerTarget.Session(
                 sessionId = target.id,
                 move = Int.MAX_VALUE,
@@ -163,8 +167,8 @@ internal class WatchPartySession private constructor(
             ?: throw WatchPartyRequestException("no watchparty target")
 
         return state.copy(target = when (target) {
-            is WatchPartyServerTarget.Session -> target.copy(
-                overlay = WatchPartySessionOverlay.fromBoard(request.board.removeOwners(), connectionId),
+            is WatchPartyServerTarget.AbstractGameTarget -> target.copy(
+                overlay = WatchPartyOverlay.fromBoard(request.board.removeOwners(), connectionId),
             )
             is WatchPartyServerTarget.Sandbox -> target.copy(board = request.board)
         })
@@ -189,7 +193,7 @@ internal class WatchPartySession private constructor(
             ?: throw WatchPartyRequestException("no watchparty target")
 
         return state.copy(target = when (target) {
-            is WatchPartyServerTarget.Session -> {
+            is WatchPartyServerTarget.AbstractGameTarget -> {
                 val highlight = request.cell.highlight
 
                 if (highlight is Omissible.Present) {
@@ -227,7 +231,7 @@ internal class WatchPartySession private constructor(
         }
 
         return state.copy(target = when (target) {
-            is WatchPartyServerTarget.Session -> {
+            is WatchPartyServerTarget.AbstractGameTarget -> {
                 val overlay = if (request.remove) {
                     target.overlay.removeLine(request.line)
                 } else {

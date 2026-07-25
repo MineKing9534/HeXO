@@ -57,7 +57,7 @@ private fun AnalyzerResultDisplay(
     if (state.threat is FindWinResult.Win) {
         AnalyzerNotificationCard(
             title = {
-                de.mineking.hexo.web.session.Player(analyzedPlayer)
+                Player(analyzedPlayer)
                 Text(" has a forced win")
             },
             color = "emerald-400",
@@ -69,7 +69,7 @@ private fun AnalyzerResultDisplay(
     if (state.defense is FindDefenseResult.Threat) {
         AnalyzerNotificationCard(
             title = {
-                de.mineking.hexo.web.session.Player(otherPlayer)
+                Player(otherPlayer)
                 Text(" threatens a forced win")
             },
             color = "rose-400",
