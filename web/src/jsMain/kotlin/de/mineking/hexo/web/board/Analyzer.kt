@@ -20,6 +20,7 @@ import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
 import de.mineking.hexo.board.render.image.theme.withAlpha
 import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.solver.Defense
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.web.icons.SHIELD_ICON_PATH
@@ -136,6 +137,8 @@ private fun RenderingContext.drawThreatOverlay(
 
 private fun RenderingContext.drawDefenseOverlay(theme: BaseTheme, result: FindDefenseResult.Threat) {
     val defense = result.defenses.firstOrNull()
+        ?: result.bestDelay?.let { Defense(it, null) }
+
     val defenseCells = defense?.toSet().orEmpty()
 
     drawThreatOverlay(
@@ -150,7 +153,7 @@ private fun RenderingContext.drawDefenseOverlay(theme: BaseTheme, result: FindDe
             point = point,
             color = defenseOverlayColor,
             backgroundColor = theme.backgroundColor,
-            label = "+",
+            label = if (result.defenses.isEmpty()) "+?" else "+",
         )
     }
 }
@@ -174,15 +177,18 @@ private fun RenderingContext.drawOverlayTarget(
         outline = Stroke(color, 4.0.relativeWidth()),
     )
 
-    val backend = backend
-    if (backend is CanvasRenderingBackend && label == "+") {
-        backend.drawShieldIcon(
+    when (val backend = backend) {
+        is CanvasRenderingBackend if label == "+" -> backend.drawShieldIcon(
             point = point,
             color = color,
             size = hexSize * 0.5,
         )
-    } else {
-        backend.drawString(
+        is CanvasRenderingBackend if label == "+?" -> backend.drawDelayIcon(
+            point = point,
+            color = color,
+            size = hexSize * 0.5,
+        )
+        else -> backend.drawString(
             point = point,
             text = label,
             maxWidth = hexSize * 0.35,
@@ -205,6 +211,24 @@ private fun CanvasRenderingBackend.drawShieldIcon(
     canvas.scale(scale, scale)
     canvas.fillStyle = color.css
     canvas.fill(Path2D(SHIELD_ICON_PATH))
+    canvas.restore()
+}
+
+private fun CanvasRenderingBackend.drawDelayIcon(
+    point: Point,
+    color: Color,
+    size: Double,
+) {
+    val scale = size / 24.0
+
+    canvas.save()
+    canvas.translate(point.x - size / 2.0, point.y - size / 2.0)
+    canvas.scale(scale, scale)
+    canvas.strokeStyle = color.css
+    canvas.lineWidth = 2.0
+    canvas.stroke(Path2D(
+        "M5 22h14M5 2h14M17 22v-4.172a2 2 0 0 0-.586-1.414L12 12l-4.414 4.414A2 2 0 0 0 7 17.828V22 M7 2v4.172a2 2 0 0 0 .586 1.414L12 12l4.414-4.414A2 2 0 0 0 17 6.172V2",
+    ))
     canvas.restore()
 }
 
