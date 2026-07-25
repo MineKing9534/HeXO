@@ -24,6 +24,8 @@ import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.Tooltip
+import de.mineking.hexo.web.icons.AlertTriangleIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.ClearHighlightsIcon
@@ -89,6 +91,7 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
         null
     }
 
+    val allowAnalyzerOverlay = !(isLive && game.options.rated)
     var showAnalyzerOverlay by remember { mutableStateOf(true) }
 
     BoardPane(
@@ -96,7 +99,7 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
         readOnly = true,
         viewport = viewport.value,
         onViewportChange = { viewport.value = it },
-        renderingHook = analyzerState?.takeIf { showAnalyzerOverlay }?.renderingHook(),
+        renderingHook = analyzerState?.takeIf { showAnalyzerOverlay && allowAnalyzerOverlay }?.renderingHook(),
         onBoardInteraction = { interaction ->
             if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
             boardViewManager.apply(interaction)
@@ -108,19 +111,60 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
         if (analyzerState != null) {
             AnalyzerStatusDisplay(
                 state = analyzerState,
-                analyzedPlayer = effectiveTurnPlayer,
+                allowAnalyzerOverlay = allowAnalyzerOverlay,
+                showAnalyzerOverlay = showAnalyzerOverlay,
+                onShowAnalyzerOverlayChange = { showAnalyzerOverlay = it },
+                effectiveTurnPlayer = effectiveTurnPlayer,
                 otherPlayer = game.players.first { it != effectiveTurnPlayer },
-                attrs = { classes("absolute", "right-4", "top-4") },
+            )
+        }
+    }
+}
+
+@Composable
+private fun AnalyzerStatusDisplay(
+    state: BoardAnalyzerState,
+    allowAnalyzerOverlay: Boolean,
+    showAnalyzerOverlay: Boolean,
+    onShowAnalyzerOverlayChange: (Boolean) -> Unit,
+    effectiveTurnPlayer: Player,
+    otherPlayer: Player,
+) {
+    AnalyzerStatusDisplay(
+        state = state,
+        analyzedPlayer = effectiveTurnPlayer,
+        otherPlayer = otherPlayer,
+        attrs = { classes("absolute", "right-4", "top-4") },
+    ) {
+        if (allowAnalyzerOverlay) {
+            ActionButton(
+                onClick = { onShowAnalyzerOverlayChange(!showAnalyzerOverlay) },
+                attrs = { classes("flex-0") },
             ) {
-                ActionButton(
-                    onClick = { showAnalyzerOverlay = !showAnalyzerOverlay },
-                    attrs = { classes("flex-0") },
-                ) {
-                    if (showAnalyzerOverlay) {
-                        EyeOffIcon { classes("size-4") }
-                    } else {
-                        EyeIcon { classes("size-4") }
-                    }
+                if (showAnalyzerOverlay) {
+                    EyeOffIcon { classes("size-4") }
+                } else {
+                    EyeIcon { classes("size-4") }
+                }
+            }
+        } else {
+            Tooltip(
+                text = "The forced-win overlay is disabled for live rated games",
+                tooltipAttrs = {
+                    classes("right-11", "top-1/2", "w-max", "max-w-72", "-translate-y-1/2")
+                },
+            ) {
+                Div({
+                    classes(
+                        "size-9", "rounded-md", "border", "shadow-lg", "backdrop-blur-xs", "grid", "place-items-center",
+                        "border-amber-400/50", "bg-slate-900/90", "text-amber-300",
+                    )
+                    attr("role", "img")
+                    attr("aria-label", "The forced-win overlay is disabled for live rated games")
+                    attr("tabindex", "0")
+                    onMouseDown { it.preventDefault() }
+                }) {
+                    AlertTriangleIcon { classes("size-4") }
                 }
             }
         }
