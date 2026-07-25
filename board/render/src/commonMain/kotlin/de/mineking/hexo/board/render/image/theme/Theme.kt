@@ -9,11 +9,6 @@ import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.createHex
 import kotlinx.serialization.Serializable
 
-enum class FontType {
-    SansSerifBold,
-    MonospaceRegular,
-}
-
 abstract class Theme {
     abstract val gap: Double
     abstract val backgroundColor: Color
