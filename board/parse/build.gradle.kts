@@ -1,4 +1,5 @@
 plugins {
+    id("latex")
     id("kotlin-multiplatform")
     id("publish")
 }

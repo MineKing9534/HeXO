@@ -26,29 +26,24 @@ fun Board.renderToTikZ(
     visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     theme: Theme = Theme.Default,
     renderingHook: BoardRenderingHook? = null,
+    rawLabels: Boolean = true,
+    labelStyle: String = "",
+    width: String? = "\\linewidth",
 ): String {
     require(cells.isNotEmpty())
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val bounds = layout.boundingBox.pad(padding)
-    val backend = TikZRenderingBackend()
+    val backend = TikZRenderingBackend(theme.backgroundColor, rawLabels, labelStyle)
     backend.drawBoard(layout.copy(boundingBox = bounds), theme, renderingHook)
 
-    val viewport = TikZPath(
-        bounds.topLeft.tikz,
-        listOf(
-            TikZPathSegment.Line(Point(bounds.maxX, bounds.minY).tikz),
-            TikZPathSegment.Line(bounds.bottomRight.tikz),
-            TikZPathSegment.Line(Point(bounds.minX, bounds.maxY).tikz),
-        ),
-        closed = true,
-    )
+    val viewport = rectangleTikZPath(bounds.topLeft, bounds.bottomRight)
 
-    return tikzPicture(listOf("x=${CSS_PIXEL_IN_BP.tikzNumber()}bp", "y=-${CSS_PIXEL_IN_BP.tikzNumber()}bp")) {
-        path(
-            viewport,
-            theme.backgroundColor.fillOptions(),
-        )
+    return tikzPicture(
+        options = listOf("x=${CSS_PIXEL_IN_BP.tikzNumber()}bp", "y=-${CSS_PIXEL_IN_BP.tikzNumber()}bp"),
+        width = width,
+    ) {
+        path(viewport, theme.backgroundColor.fillOptions())
         scope {
             clip(viewport)
             backend.appendTo(this)
@@ -56,18 +51,27 @@ fun Board.renderToTikZ(
     }
 }
 
-class TikZRenderingBackend : RenderingBackend {
-    private val commands = mutableListOf<TikZPicture.() -> Unit>()
+class TikZRenderingBackend(
+    private val backgroundColor: Color = Color.Transparent,
+    private val rawLabels: Boolean = true,
+    private val labelStyle: String = "",
+) : RenderingBackend {
+    private val polygonCommands = mutableListOf<TikZPicture.() -> Unit>()
+    private val lineCommands = mutableListOf<TikZPicture.() -> Unit>()
+    private val textMaskCommands = mutableListOf<TikZPicture.() -> Unit>()
     private val textCommands = mutableListOf<TikZPicture.() -> Unit>()
+    private var textBackgroundColor = backgroundColor
 
     fun appendTo(picture: TikZPicture) {
-        commands.forEach { picture.it() }
+        polygonCommands.forEach { picture.it() }
+        lineCommands.forEach { picture.it() }
+        textMaskCommands.forEach { picture.it() }
         textCommands.forEach { picture.it() }
     }
 
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
         fun addLine(value: Stroke) {
-            commands += {
+            lineCommands += {
                 if (from == to) {
                     circle(
                         from.tikz,
@@ -89,26 +93,40 @@ class TikZRenderingBackend : RenderingBackend {
     }
 
     override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) {
-        val polygon = shape.toPath(borderRadius)
-        commands += {
-            path(
-                TikZPath(
-                    polygon.start.tikz,
-                    polygon.segments.map {
-                        when (it) {
-                            is PolygonPath.Segment.Line -> TikZPathSegment.Line(it.to.tikz)
-                            is PolygonPath.Segment.QuadraticCurve ->
-                                TikZPathSegment.QuadraticCurve(it.control.tikz, it.to.tikz)
-                        }
-                    },
-                    closed = true,
-                ),
-                color.fillOptions() + outline.strokeOptions(),
-            )
+        textBackgroundColor = when (color.alpha.toInt()) {
+            0 -> backgroundColor
+            255 -> color
+            else -> textBackgroundColor
+        }
+
+        val polygon = shape.toPath(borderRadius).toTikZPath()
+        polygonCommands += {
+            path(polygon, color.fillOptions() + outline.strokeOptions())
         }
     }
 
     override fun drawString(
+        point: Point,
+        text: String,
+        maxWidth: Double,
+        fontSize: Float,
+        font: FontType,
+        color: Color,
+    ) {
+        if (rawLabels) {
+            drawRawLabel(point, text)
+        } else {
+            drawGlyphLabel(point, text, maxWidth, fontSize, font, color)
+        }
+    }
+
+    private fun drawRawLabel(point: Point, text: String) {
+        val styledText = text.withLabelStyle()
+        addMaskNode(point, styledText.rawMask(textBackgroundColor), TEXT_SPACING_OPTIONS)
+        addRawTextNode(point, styledText, TEXT_SPACING_OPTIONS)
+    }
+
+    private fun drawGlyphLabel(
         point: Point,
         text: String,
         maxWidth: Double,
@@ -127,24 +145,82 @@ class TikZRenderingBackend : RenderingBackend {
             FontType.MonospaceRegular -> "\\ttfamily\\mdseries"
         }
         val effectiveSizeBp = effectiveSize * CSS_PIXEL_IN_BP
+        val fontOptions = TEXT_SPACING_OPTIONS + listOf(
+            "font={$fontOption\\fontsize{${effectiveSizeBp.tikzNumber()}bp}{${effectiveSizeBp.tikzNumber()}bp}\\selectfont}",
+        )
 
+        addMaskNode(
+            point,
+            text.glyphMask(textBackgroundColor, effectiveSizeBp / GLYPH_MASK_WIDTH_FACTOR),
+            fontOptions + "text opacity=0.8",
+        )
         textCommands += {
             node(
                 point.tikz,
                 text,
-                listOf(
+                fontOptions + listOf(
                     "text=${color.tikzColor()}",
-                    "font={$fontOption\\fontsize{${effectiveSizeBp.tikzNumber()}bp}{${effectiveSizeBp.tikzNumber()}bp}\\selectfont}",
-                    "inner sep=0bp",
-                    "outer sep=0pt",
                     "text opacity=${color.opacity()}",
                 ),
             )
         }
     }
+
+    private fun String.withLabelStyle() = if (labelStyle.isEmpty()) this else "{$labelStyle $this}"
+
+    private fun addMaskNode(point: Point, content: String, options: List<String>) {
+        textMaskCommands += { nodeRaw(point.tikz, content, options) }
+    }
+
+    private fun addRawTextNode(point: Point, content: String, options: List<String>) {
+        textCommands += { nodeRaw(point.tikz, content, options) }
+    }
 }
 
 private val Point.tikz get() = TikZPoint(x, y)
+
+private fun rectangleTikZPath(topLeft: Point, bottomRight: Point) = TikZPath(
+    topLeft.tikz,
+    listOf(
+        TikZPathSegment.Line(Point(bottomRight.x, topLeft.y).tikz),
+        TikZPathSegment.Line(bottomRight.tikz),
+        TikZPathSegment.Line(Point(topLeft.x, bottomRight.y).tikz),
+    ),
+    closed = true,
+)
+
+private fun PolygonPath.toTikZPath() = TikZPath(
+    start.tikz,
+    segments.map {
+        when (it) {
+            is PolygonPath.Segment.Line -> TikZPathSegment.Line(it.to.tikz)
+            is PolygonPath.Segment.QuadraticCurve -> TikZPathSegment.QuadraticCurve(it.control.tikz, it.to.tikz)
+        }
+    },
+    closed = true,
+)
+
+private fun String.rawMask(color: Color) = buildString {
+    append("{\\definecolor{hexolabelbackground}{RGB}{")
+    append(color.rgbComponents())
+    append("}\\textpdfrender{")
+    append("TextRenderingMode=Stroke,")
+    append("LineWidth=\\hexolabelmaskwidth,")
+    append("StrokeColor=hexolabelbackground")
+    append("}{\\hexolabelwithoutcolor{")
+    append(this@rawMask)
+    append("}}}")
+}
+
+private fun String.glyphMask(color: Color, strokeWidth: Double) = buildString {
+    append("\\pdfextension literal page {q ")
+    append(color.pdfStrokeColor())
+    append(' ')
+    append(strokeWidth.tikzNumber())
+    append(" w 1 Tr}")
+    append(escapeTikZ(this@glyphMask))
+    append("\\pdfextension literal page {Q}")
+}
 
 private fun Stroke?.strokeOptions(): List<String> = this?.let {
     listOf(
@@ -161,7 +237,12 @@ private fun Color.fillOptions() = listOf(
     "fill opacity=${opacity()}",
 )
 
+private fun Color.rgbComponents() = "$red,$green,$blue"
+private fun Color.pdfStrokeColor() = "${red.pdfColorComponent()} ${green.pdfColorComponent()} ${blue.pdfColorComponent()} RG"
 private fun Color.tikzColor() = "{rgb,255:red,$red;green,$green;blue,$blue}"
 private fun Color.opacity() = (alpha / 255.0).tikzNumber()
+private fun Int.pdfColorComponent() = (this / 255.0).tikzNumber()
 
+private val TEXT_SPACING_OPTIONS = listOf("inner sep=0bp", "outer sep=0pt")
+private const val GLYPH_MASK_WIDTH_FACTOR = 6.0
 private const val CSS_PIXEL_IN_BP = 0.75

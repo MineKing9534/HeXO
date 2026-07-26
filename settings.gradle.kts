@@ -2,6 +2,7 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         maven("https://maven.mineking.dev/snapshots")
+        mavenLocal()
     }
 }
 
@@ -17,6 +18,7 @@ include(":board")
 include(":board:parse")
 include(":board:parse:hds")
 include(":board:render")
+include(":board:latex")
 
 include(":board:render:compose")
 include(":web:analysis-worker")

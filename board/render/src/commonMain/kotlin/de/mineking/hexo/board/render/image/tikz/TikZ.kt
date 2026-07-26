@@ -25,58 +25,15 @@ data class TikZPath(
 )
 
 @TikZDsl
-class TikZPicture internal constructor(
-    private val commands: MutableList<String>,
-) {
-    fun raw(command: String) {
-        commands += command
-    }
+class TikZPicture internal constructor() {
+    private val commands = mutableListOf<String>()
 
-    fun path(path: TikZPath, options: List<String>) {
-        val value = buildString {
-            append("\\path")
-            appendOptions(options)
-            append(' ')
-            append(path.start)
-            path.segments.forEach {
-                when (it) {
-                    is TikZPathSegment.Line -> append(" -- ").append(it.point)
-                    is TikZPathSegment.QuadraticCurve -> append(" .. controls ")
-                        .append(it.control)
-                        .append(" .. ")
-                        .append(it.point)
-                }
-            }
-            if (path.closed) append(" -- cycle")
-            append(';')
-        }
-        commands += value
-    }
-
-    fun line(from: TikZPoint, to: TikZPoint, options: List<String>) =
-        path(TikZPath(from, listOf(TikZPathSegment.Line(to))), options)
-
-    fun clip(path: TikZPath) {
-        val value = buildString {
-            append("\\clip ")
-            append(path.start)
-            path.segments.forEach {
-                when (it) {
-                    is TikZPathSegment.Line -> append(" -- ").append(it.point)
-                    is TikZPathSegment.QuadraticCurve -> append(" .. controls ")
-                        .append(it.control)
-                        .append(" .. ")
-                        .append(it.point)
-                }
-            }
-            if (path.closed) append(" -- cycle")
-            append(';')
-        }
-        commands += value
-    }
+    fun path(path: TikZPath, options: List<String> = emptyList()) = addPathCommand("\\path", path, options)
+    fun line(from: TikZPoint, to: TikZPoint, options: List<String>) = path(TikZPath(from, listOf(TikZPathSegment.Line(to))), options)
+    fun clip(path: TikZPath) = addPathCommand("\\clip", path)
 
     fun circle(center: TikZPoint, radius: Double, options: List<String>) {
-        commands += buildString {
+        addCommand {
             append("\\path")
             appendOptions(options)
             append(' ')
@@ -87,14 +44,18 @@ class TikZPicture internal constructor(
         }
     }
 
-    fun node(point: TikZPoint, text: String, options: List<String>) {
-        commands += buildString {
+    fun node(point: TikZPoint, text: String, options: List<String> = emptyList()) {
+        nodeRaw(point, escapeTikZ(text), options)
+    }
+
+    fun nodeRaw(point: TikZPoint, content: String, options: List<String> = emptyList()) {
+        addCommand {
             append("\\node")
             appendOptions(options)
             append(" at ")
             append(point)
             append(" {")
-            append(escapeTikZ(text))
+            append(content)
             append("};")
         }
     }
@@ -104,21 +65,9 @@ class TikZPicture internal constructor(
         block()
         commands += "\\end{scope}"
     }
-}
 
-fun tikzPicture(
-    options: List<String> = emptyList(),
-    width: String? = "\\textwidth",
-    block: TikZPicture.() -> Unit,
-): String {
-    val commands = mutableListOf<String>()
-    TikZPicture(commands).block()
-    return buildString {
-        if (width != null) {
-            append("\\resizebox{")
-            append(width)
-            append("}{!}{%\n")
-        }
+    internal fun render(options: List<String>, width: String?) = buildString {
+        if (width != null) append("\\resizebox{$width}{!}{%\n")
         append("\\begin{tikzpicture}")
         appendOptions(options)
         append('\n')
@@ -126,6 +75,49 @@ fun tikzPicture(
         append("\\end{tikzpicture}")
         if (width != null) append("%\n}")
     }
+
+    private fun addPathCommand(
+        command: String,
+        path: TikZPath,
+        options: List<String> = emptyList(),
+    ) {
+        addCommand {
+            append(command)
+            appendOptions(options)
+            append(' ')
+            appendPath(path)
+            append(';')
+        }
+    }
+
+    private fun addCommand(block: StringBuilder.() -> Unit) {
+        commands += buildString(block)
+    }
+}
+
+fun tikzPicture(
+    options: List<String> = emptyList(),
+    width: String? = "\\textwidth",
+    block: TikZPicture.() -> Unit,
+): String {
+    val picture = TikZPicture()
+    picture.block()
+    return picture.render(options, width)
+}
+
+private fun StringBuilder.appendPath(path: TikZPath) {
+    append(path.start)
+    path.segments.forEach { segment ->
+        when (segment) {
+            is TikZPathSegment.Line -> append(" -- ").append(segment.point)
+            is TikZPathSegment.QuadraticCurve -> append(" .. controls ")
+                .append(segment.control)
+                .append(" .. ")
+                .append(segment.point)
+        }
+    }
+
+    if (path.closed) append(" -- cycle")
 }
 
 private fun StringBuilder.appendOptions(options: List<String>) {
