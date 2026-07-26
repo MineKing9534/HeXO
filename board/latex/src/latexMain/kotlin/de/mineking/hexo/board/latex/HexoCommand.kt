@@ -13,6 +13,7 @@ fun hexoCommand(
     padding: Latex = latex("32"),
     rawLabels: Latex = latex("true"),
     width: Latex = raw("\\linewidth"),
+    @ExpandLatex theme: Latex = raw("\\hdstheme"),
     @ExpandLatex notation: Latex,
 ): Latex {
     require(rawLabels.source == "true" || rawLabels.source == "false") {
@@ -22,6 +23,7 @@ fun hexoCommand(
     val board = notation.source.parseRectilinearNotation()
     val tikz = board.renderToTikZ(
         padding = padding.source.toInt(),
+        theme = parseTheme(theme.source),
         rawLabels = rawLabels.source == "true",
         labelStyle = "\\hexolabelfont",
         width = width.source.takeUnless { it == "none" },

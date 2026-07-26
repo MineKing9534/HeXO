@@ -93,7 +93,7 @@ class TikZRenderingBackend(
     }
 
     override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) {
-        textBackgroundColor = when (color.alpha.toInt()) {
+        textBackgroundColor = when (color.alpha) {
             0 -> backgroundColor
             255 -> color
             else -> textBackgroundColor
