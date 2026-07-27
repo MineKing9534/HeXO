@@ -105,7 +105,7 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
             boardViewManager.apply(interaction)
         },
     ) {
-        TurnIndicator(game, effectiveTurnPlayer, effectivePlacementsRemaining)
+        TurnIndicator(game, isLive, effectiveTurnPlayer, effectivePlacementsRemaining)
         BoardControls(game, boardViewManager, viewport)
 
         if (analyzerState != null) {
@@ -351,7 +351,12 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
 }
 
 @Composable
-private fun TurnIndicator(game: Game, currentPlayer: Player, placementsRemaining: Int) {
+private fun TurnIndicator(
+    game: Game,
+    isLive: Boolean,
+    currentPlayer: Player,
+    placementsRemaining: Int,
+) {
     @Composable
     fun PlayerIndicator(player: Player) {
         val isCurrentTurn = player === currentPlayer
@@ -365,7 +370,7 @@ private fun TurnIndicator(game: Game, currentPlayer: Player, placementsRemaining
                 }
             }) {
                 Player(player)
-                if (player is LiveSessionPlayer) PlayerTimer(player, isCurrentTurn)
+                if (player is LiveSessionPlayer && isLive) PlayerTimer(player, isCurrentTurn)
             }
             if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
         }
