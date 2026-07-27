@@ -11,13 +11,14 @@ import de.mineking.kotlinlatex.raw
 fun hexoCommand(
     padding: Latex = raw("32"),
     rawLabels: Latex = raw("true"),
+    focusWinningRows: Latex = raw("true"),
     width: Latex = raw("none"),
     scale: Latex = raw("none"),
     fading: Latex = raw("0"),
     @ExpandLatex theme: Latex = raw("\\hdstheme"),
     @ExpandLatex notation: Latex,
 ): Latex {
-    val board = notation.source.parseRectilinearNotation()
+    val board = notation.source.parseRectilinearNotation(focusWinningRows = focusWinningRows.toBoolean("focusWinningRows"))
     val tikz = board.renderToTikZ(
         padding = padding.source.toInt(),
         theme = parseTheme(theme.source),
