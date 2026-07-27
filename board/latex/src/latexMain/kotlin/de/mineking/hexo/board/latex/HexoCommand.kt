@@ -13,18 +13,15 @@ fun hexoCommand(
     rawLabels: Latex = raw("true"),
     width: Latex = raw("none"),
     scale: Latex = raw("none"),
+    fading: Latex = raw("0"),
     @ExpandLatex theme: Latex = raw("\\hdstheme"),
     @ExpandLatex notation: Latex,
 ): Latex {
-    require(rawLabels.source == "true" || rawLabels.source == "false") {
-        "rawLabels must be either `true` or `false`"
-    }
-
     val board = notation.source.parseRectilinearNotation()
     val tikz = board.renderToTikZ(
         padding = padding.source.toInt(),
         theme = parseTheme(theme.source),
-        rawLabels = rawLabels.source == "true",
+        rawLabels = rawLabels.toBoolean("rawLabels"),
         labelStyle = "\\hexolabelfont",
     )
 
@@ -32,7 +29,9 @@ fun hexoCommand(
         if (scale.source != "none") append("\\scalebox{${scale.source}}{")
         if (width.source != "none") append("\\resizebox{${width.source}}{!}{")
 
+        if (fading.source != "0") append("\\fadeedges[${fading.source}]{")
         append(tikz)
+        if (fading.source != "0") append("}")
 
         if (width.source != "none") append("}")
         if (scale.source != "none") append("}")
