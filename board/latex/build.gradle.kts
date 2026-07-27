@@ -18,6 +18,7 @@ latexPackage {
     outputFileName.set("hexo.sty")
 
     requirePackage("tikz")
+    requirePackage("graphicx")
     requirePackage("pdfrender")
     preamble("""
         \newcommand{\hexolabelfont}{\Huge\bfseries}

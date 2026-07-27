@@ -1,18 +1,18 @@
 package de.mineking.hexo.board.latex
 
-import de.mineking.kotlinlatex.Latex
-import de.mineking.kotlinlatex.LatexCommand
-import de.mineking.kotlinlatex.ExpandLatex
-import de.mineking.kotlinlatex.latex
-import de.mineking.kotlinlatex.raw
 import de.mineking.hexo.board.parse.parseRectilinearNotation
 import de.mineking.hexo.board.render.image.tikz.renderToTikZ
+import de.mineking.kotlinlatex.ExpandLatex
+import de.mineking.kotlinlatex.Latex
+import de.mineking.kotlinlatex.LatexCommand
+import de.mineking.kotlinlatex.raw
 
 @LatexCommand("hexo")
 fun hexoCommand(
-    padding: Latex = latex("32"),
-    rawLabels: Latex = latex("true"),
-    width: Latex = raw("\\linewidth"),
+    padding: Latex = raw("32"),
+    rawLabels: Latex = raw("true"),
+    width: Latex = raw("none"),
+    scale: Latex = raw("none"),
     @ExpandLatex theme: Latex = raw("\\hdstheme"),
     @ExpandLatex notation: Latex,
 ): Latex {
@@ -26,7 +26,15 @@ fun hexoCommand(
         theme = parseTheme(theme.source),
         rawLabels = rawLabels.source == "true",
         labelStyle = "\\hexolabelfont",
-        width = width.source.takeUnless { it == "none" },
     )
-    return raw(tikz)
+
+    return raw(buildString {
+        if (scale.source != "none") append("\\scalebox{${scale.source}}{")
+        if (width.source != "none") append("\\resizebox{${width.source}}{!}{")
+
+        append(tikz)
+
+        if (width.source != "none") append("}")
+        if (scale.source != "none") append("}")
+    })
 }

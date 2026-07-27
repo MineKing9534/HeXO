@@ -66,14 +66,12 @@ class TikZPicture internal constructor() {
         commands += "\\end{scope}"
     }
 
-    internal fun render(options: List<String>, width: String?) = buildString {
-        if (width != null) append("\\resizebox{$width}{!}{%\n")
+    internal fun render(options: List<String>) = buildString {
         append("\\begin{tikzpicture}")
         appendOptions(options)
         append('\n')
         commands.forEach { append("  ").append(it).append('\n') }
         append("\\end{tikzpicture}")
-        if (width != null) append("%\n}")
     }
 
     private fun addPathCommand(
@@ -97,12 +95,11 @@ class TikZPicture internal constructor() {
 
 fun tikzPicture(
     options: List<String> = emptyList(),
-    width: String? = "\\textwidth",
     block: TikZPicture.() -> Unit,
 ): String {
     val picture = TikZPicture()
     picture.block()
-    return picture.render(options, width)
+    return picture.render(options)
 }
 
 private fun StringBuilder.appendPath(path: TikZPath) {

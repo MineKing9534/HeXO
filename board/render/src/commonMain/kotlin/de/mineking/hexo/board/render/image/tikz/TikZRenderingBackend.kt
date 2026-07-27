@@ -28,7 +28,6 @@ fun Board.renderToTikZ(
     renderingHook: BoardRenderingHook? = null,
     rawLabels: Boolean = true,
     labelStyle: String = "",
-    width: String? = "\\linewidth",
 ): String {
     require(cells.isNotEmpty())
 
@@ -39,10 +38,7 @@ fun Board.renderToTikZ(
 
     val viewport = rectangleTikZPath(bounds.topLeft, bounds.bottomRight)
 
-    return tikzPicture(
-        options = listOf("x=${CSS_PIXEL_IN_BP.tikzNumber()}bp", "y=-${CSS_PIXEL_IN_BP.tikzNumber()}bp"),
-        width = width,
-    ) {
+    return tikzPicture(listOf("x=${CSS_PIXEL_IN_BP.tikzNumber()}bp", "y=-${CSS_PIXEL_IN_BP.tikzNumber()}bp")) {
         path(viewport, theme.backgroundColor.fillOptions())
         scope {
             clip(viewport)
