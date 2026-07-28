@@ -12,6 +12,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderLayout
+import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.center
 import de.mineking.hexo.board.render.image.createHex
@@ -47,7 +48,13 @@ fun RawBoard(
     var hoveredCell by remember { mutableStateOf<CellCoordinate?>(null) }
 
     val zoom = viewport?.zoom ?: 0.2
-    val layout = remember(board, zoom) { board.createRenderLayout(BOARD_LAYOUT_RADIUS * zoom, BoardRenderBounds.IncludeSurroundings) }
+    val layout = remember(board, zoom) {
+        board.createRenderLayout(
+            layoutRadius = BOARD_LAYOUT_RADIUS * zoom,
+            bounds = BoardRenderBounds.IncludeSurroundings,
+            visibleRadius = DEFAULT_VISIBLE_RADIUS,
+        )
+    }
     val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
 
     fun redraw() {

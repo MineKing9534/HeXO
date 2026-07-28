@@ -74,13 +74,14 @@ import dev.jamesyox.svg4k.attr.types.obj.Point as SvgPoint
 fun Board.renderToSvg(
     padding: Int,
     layoutRadius: Double = 64.0,
+    visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     prettyPrint: Boolean = false,
     theme: Theme = Theme.Default,
     middleLayer: RenderingContext.() -> Unit = {},
 ): String {
     require(cells.isNotEmpty())
 
-    val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact)
+    val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val width = layout.boundingBox.width + 2 * padding
     val height = layout.boundingBox.height + 2 * padding
 
