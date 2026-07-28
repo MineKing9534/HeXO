@@ -48,14 +48,14 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         val response = client.request("/sessions")
         val lobbies = response.body<List<LobbyInfoDto>>()
 
-        this.lobbies.value = lobbies.associate { it.id to LobbySession.of(this, it) }
+        this.lobbies.value = lobbies.associate { it.id to LobbySession.of(this, client.profileRepository, it) }
         lobbyInitialization.complete(Unit)
     }
 
     private fun SocketIOClient.registerLobbyListeners() {
         listen<LobbyUpdated> { event ->
             val oldLobby = lobbies.value[event.id]
-            val newLobby = LobbySession.of(this@SessionRepositoryImpl, event.data)
+            val newLobby = LobbySession.of(this@SessionRepositoryImpl, client.profileRepository, event.data)
             lobbies.update { it + (event.id to newLobby) }
 
             if (oldLobby == null || !(!oldLobby.hasStarted() && newLobby.hasStarted())) return@listen
@@ -69,12 +69,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         listen<LobbyRemoved> { event ->
             lobbies.update { it - event.id }
             sessionsLock.withLock {
-                sessions[event.id]?.update {
-                    if (it !is EntityState.Data || it.value !is LobbySession) return@listen
-
-                    sessions -= event.id
-                    EntityState.NotFound
-                }
+                sessions -= event.id
             }
         }
     }
@@ -110,7 +105,6 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         fun cleanup() {
             client.socketClient.request(HexoSocketRequest.UnwatchSession(id))
 
-            this@handleSessionState.value = EntityState.NotFound
             sessionsLock.withLock { sessions -= id }
 
             listeners.forEach { it.remove() }
@@ -121,6 +115,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             if (event.sessionId != id) return@listen
 
             logger.warn { "Failed to watch session ${id.value}: ${event.message}" }
+            this@handleSessionState.value = EntityState.NotFound
             cleanup()
         }
 
@@ -135,7 +130,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
                 val value = state.value as? LiveSession ?: return@listen
 
-                val session = LiveSession.of(
+                val session = Session.of(
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto.copy(
                         state = event.session.state ?: value.dto.state,
@@ -147,7 +142,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
                 if (
                     event.session.state is SessionStateDto.Finished &&
-                    session.players.any { it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
+                    session.players.any { it is LiveSessionPlayer && it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
                 ) {
                     logger.info { "Session ${id.value} removed because it has finished" }
                     cleanup()
@@ -167,7 +162,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             if (event.session.id != id) return@listen
 
             logger.info { "Successfully joined session ${event.session.id.value}" }
-            this@populate.value = EntityState.Data(LiveSession.of(
+            this@populate.value = EntityState.Data(Session.of(
                 client = this@SessionRepositoryImpl.client,
                 dto = event.session,
                 lastState = null,
@@ -186,7 +181,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
                 val value = state.value as? LiveSession ?: return@listen
 
-                EntityState.Data(LiveSession.of(
+                EntityState.Data(Session.of(
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto,
                     lastState = value.createLastState(),
@@ -208,7 +203,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                 }
 
                 val value = state.value as? LiveSession ?: return@listen
-                EntityState.Data(LiveSession.of(
+                EntityState.Data(Session.of(
                     client = this@SessionRepositoryImpl.client,
                     dto = value.dto,
                     lastState = value.createLastState(),

@@ -1,8 +1,11 @@
+@file:OptIn(InternalBoardApi::class)
+
 package de.mineking.hexo.board.parse
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.HexoNotationFormatException
+import de.mineking.hexo.board.InternalBoardApi
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.mutable
 import de.mineking.hexo.hds.HdsApiClient

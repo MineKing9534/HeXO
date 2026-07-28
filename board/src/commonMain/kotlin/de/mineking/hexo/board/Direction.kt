@@ -1,5 +1,8 @@
 package de.mineking.hexo.board
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 enum class Direction(val symbol: String, val direction: CellCoordinate) {
     Right(">", CellCoordinate(1, 0)),
     BottomRight("q", CellCoordinate(0, 1)),

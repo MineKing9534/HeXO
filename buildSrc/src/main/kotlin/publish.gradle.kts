@@ -44,6 +44,7 @@ afterEvaluate {
     publishing.publications.withType<MavenPublication>().configureEach {
         val suffix = artifactId.removePrefix(project.name)
         artifactId = "${project.path.removePrefix(":").replace(":", "-")}$suffix"
+        groupId = "${rootProject.group}"
 
         version = if (release) "${ project.version }" else System.getenv("BRANCH")
     }

@@ -109,7 +109,7 @@ class HDSRenderer(
         val backgroundColor = theme.run { lineHighlight.color.color(default = highlightColor) }.withAlpha(240)
         val borderColor = theme.cellBorderColor.withAlpha(128)
 
-        val thickness = borderThickness * 6
+        val thickness = borderThickness * 8
         context.backend.drawLine(
             from = lineHighlight.start.toPixel(),
             to = lineHighlight.end.toPixel(),

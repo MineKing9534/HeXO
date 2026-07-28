@@ -30,7 +30,13 @@ import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 
 private const val BOARD_LAYOUT_RADIUS = 255.0
-private val cellHoverColor = Color.rgb(0x7dd3fc)
+val DEFAULT_CELL_HOVER_COlOR = Color.rgb(0x7dd3fc)
+
+typealias BoardContentBuilder = @Composable BoardScope.() -> Unit
+class BoardScope(
+    val renderLayout: BoardRenderLayout,
+    val element: HTMLCanvasElement,
+)
 
 @Composable
 fun RawBoard(
@@ -38,10 +44,12 @@ fun RawBoard(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
+    cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
     onCellClick: ((CellCoordinate) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
-    content: ContentBuilder<HTMLCanvasElement>? = null,
+    fallback: ContentBuilder<HTMLCanvasElement>? = null,
+    content: BoardContentBuilder? = null,
 ) {
     var element by remember { mutableStateOf<HTMLCanvasElement?>(null) }
     var dragging by remember { mutableStateOf(false) }
@@ -63,6 +71,7 @@ fun RawBoard(
             viewport = effectiveViewport,
             hoveredCell = hoveredCell,
             theme = theme,
+            cellHoverColor = cellHoverColor,
         )
     }
 
@@ -89,7 +98,12 @@ fun RawBoard(
             element = it
             onDispose {}
         }
-    }, content)
+    }, fallback)
+
+    val scope = remember(layout, element) {
+        element?.let { BoardScope(layout, it) }
+    } ?: return
+    content?.invoke(scope)
 }
 
 @Composable
@@ -117,6 +131,7 @@ private fun HTMLCanvasElement.drawBoard(
     viewport: BoardViewport,
     hoveredCell: CellCoordinate?,
     theme: Theme,
+    cellHoverColor: Color?,
 ) {
     width = clientWidth
     height = clientHeight
@@ -127,7 +142,7 @@ private fun HTMLCanvasElement.drawBoard(
         offset = viewport.offset(this),
         theme = theme,
     ) {
-        if (hoveredCell == null) return@drawBoard
+        if (hoveredCell == null || cellHoverColor == null) return@drawBoard
         val cell = layout.board.cells[hoveredCell]
 
         backend.drawPolygon(

@@ -1,5 +1,6 @@
 package de.mineking.hexo.hds.tournament
 
+import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.hds.HdsApiClient
 import de.mineking.hexo.hds.game.FinishedGameRepository
 import de.mineking.hexo.hds.game.GameReference
@@ -72,8 +73,13 @@ class Tournament private constructor(
                             1 -> match.rightWins
                             else -> error("Unexpected slot index $index")
                         },
-                        isWinner = slot.profileId == match.winnerProfileId,
+                        isWinner = when (match.winnerProfileId) {
+                            null -> null
+                            slot.profileId -> true
+                            else -> false
+                        },
                         seed = slot.seed,
+                        currentColor = CellOwner.entries[(index + match.currentGameNumber + 1) % 2],
                     )
                 }
 
@@ -84,6 +90,7 @@ class Tournament private constructor(
                     order = match.order,
                     state = match.state,
                     bestOf = match.bestOf,
+                    currentGameNumber = match.currentGameNumber,
                     resultType = match.resultType,
                     waitingForPlayers = match.waitingForPlayers,
                     startedAt = match.startedAt,
@@ -141,7 +148,8 @@ data class TournamentMatchPlayer(
     val seed: Int?,
     val isByte: Boolean,
     val wins: Int,
-    val isWinner: Boolean,
+    val isWinner: Boolean?,
+    val currentColor: CellOwner,
 )
 
 data class TournamentMatch(
@@ -151,6 +159,7 @@ data class TournamentMatch(
     val order: Int,
     val state: TournamentMatchState,
     val bestOf: Int,
+    val currentGameNumber: Int,
     val winner: TournamentParticipant?,
     val resultType: TournamentMatchResultType?,
     val waitingForPlayers: Boolean,

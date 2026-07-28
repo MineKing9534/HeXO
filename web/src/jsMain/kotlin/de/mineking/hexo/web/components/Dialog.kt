@@ -1,18 +1,15 @@
 package de.mineking.hexo.web.components
 
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
+import de.mineking.hexo.web.icons.CloseIcon
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.Text
-import org.jetbrains.compose.web.svg.Path
-import org.jetbrains.compose.web.svg.Svg
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 fun Dialog(
-    title: String,
+    title: String?,
     onClose: () -> Unit,
     actionRow: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
@@ -26,9 +23,11 @@ fun Dialog(
             classes("relative", "w-full", "max-w-xl", "rounded-xl", "border", "border-slate-700", "bg-slate-900", "p-5", "pt-3", "shadow-2xl")
         }) {
             Div({ classes("space-y-6") }) {
-                Div({ classes("flex", "items-center", "justify-between", "gap-4", "pr-8") }) {
-                    H1({ classes("text-lg", "font-bold", "text-slate-100") }) {
-                        Text(title)
+                if (title != null) {
+                    Div({ classes("flex", "items-center", "justify-between", "gap-4", "pr-8") }) {
+                        H1({ classes("text-xl", "font-bold", "text-slate-100") }) {
+                            Text(title)
+                        }
                     }
                 }
 
@@ -40,16 +39,7 @@ fun Dialog(
                     )
                     onClick { onClose() }
                 }) {
-                    Svg("0 0 24 24", {
-                        attr("fill", "none")
-                        attr("stroke", "currentColor")
-                        attr("stroke-width", "2")
-                        attr("stroke-linecap", "round")
-                        attr("stroke-linejoin", "round")
-                    }) {
-                        Path("m9 9 6 6")
-                        Path("m15 9-6 6")
-                    }
+                    CloseIcon()
                 }
 
                 Div({ classes("flex", "flex-col", "space-y-2") }) {

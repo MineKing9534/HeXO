@@ -16,10 +16,17 @@ dependencies {
     implementation(projects.board.parse)
     implementation(projects.board.render)
 
+    implementation(projects.sync.service)
+
+    implementation(libs.ktor.server.html)
+    implementation(libs.cache)
+
     implementation(libs.kotlin.serialization.properties)
 
     implementation(libs.logging)
     runtimeOnly(libs.logback)
+
+    runtimeOnly(libs.postgres)
 }
 
 application {

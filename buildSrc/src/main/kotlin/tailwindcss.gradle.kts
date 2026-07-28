@@ -1,4 +1,7 @@
 import com.github.gradle.node.npm.task.NpmTask
+import org.jetbrains.kotlin.gradle.dsl.KotlinJvmProjectExtension
+import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
+import org.jetbrains.kotlin.gradle.plugin.KotlinSourceSet
 
 plugins {
     id("com.github.node-gradle.node")
@@ -11,14 +14,14 @@ node {
 }
 
 abstract class TailwindExtension {
-    abstract val resourceTask: Property<TaskProvider<out Copy>>
+    abstract val sourceSetName: Property<String>
     abstract val resourcePath: Property<String>
 }
 
 val extension = extensions.create<TailwindExtension>("tailwindcss")
 
 val tailwindVersion = "4.3.0"
-val generatedTailwindCss = layout.buildDirectory.file("generated/resources/tailwind/styles.css")
+val generatedTailwindDirectory = layout.buildDirectory.dir("generated/tailwindcss")
 val tailwindInputCss = layout.projectDirectory.file("src/css/styles.css")
 
 val installTailwindCss = tasks.register<NpmTask>("installTailwindCss") {
@@ -49,10 +52,15 @@ val tailwindTask = tasks.register<NpmTask>("generateTailwindCss") {
             include("**/*.css", "**/*.html", "**/*.kt")
         }
     )
-    outputs.file(generatedTailwindCss)
+    outputs.dir(generatedTailwindDirectory)
+
+    val file = generatedTailwindDirectory.get()
+        .dir(extension.resourcePath.get())
+        .file("styles.css")
+        .asFile
 
     doFirst {
-        generatedTailwindCss.get().asFile.parentFile.mkdirs()
+        file.parentFile.mkdirs()
     }
 
     args.set(listOf(
@@ -60,16 +68,26 @@ val tailwindTask = tasks.register<NpmTask>("generateTailwindCss") {
         "--",
         "tailwindcss",
         "-i", tailwindInputCss.asFile.absolutePath,
-        "-o", generatedTailwindCss.get().asFile.absolutePath,
+        "-o", file.absolutePath,
         "--minify",
     ))
 }
 
-afterEvaluate {
-    extension.resourceTask.get().configure {
-        dependsOn(tailwindTask)
-        from(generatedTailwindCss) {
-            into(extension.resourcePath)
-        }
+fun configureResources(sourceSets: NamedDomainObjectContainer<KotlinSourceSet>) {
+    afterEvaluate {
+        val sourceSet = sourceSets.getByName(extension.sourceSetName.get())
+        sourceSet.resources.srcDir(tailwindTask)
+    }
+}
+
+pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
+    extensions.configure<KotlinJvmProjectExtension>("kotlin") {
+        configureResources(sourceSets)
+    }
+}
+
+pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
+    extensions.configure<KotlinMultiplatformExtension>("kotlin") {
+        configureResources(sourceSets)
     }
 }

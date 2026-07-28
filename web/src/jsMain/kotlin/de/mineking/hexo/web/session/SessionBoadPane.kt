@@ -1,0 +1,405 @@
+package de.mineking.hexo.web.session
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
+import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.render.compose.BoardInteraction
+import de.mineking.hexo.board.render.compose.BoardScope
+import de.mineking.hexo.board.render.compose.BoardViewport
+import de.mineking.hexo.board.render.image.div
+import de.mineking.hexo.hds.asBoard
+import de.mineking.hexo.hds.game.Move
+import de.mineking.hexo.hds.session.LiveSession
+import de.mineking.hexo.hds.session.LiveSessionPlayer
+import de.mineking.hexo.hds.session.SessionState
+import de.mineking.hexo.hds.session.SessionTurn
+import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.web.audio.SoundEffect
+import de.mineking.hexo.web.board.BoardPane
+import de.mineking.hexo.web.board.SessionBoardViewManager
+import de.mineking.hexo.web.components.ActionButton
+import de.mineking.hexo.web.components.ButtonSize
+import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.cssColor
+import de.mineking.hexo.web.icons.ChevronLeftIcon
+import de.mineking.hexo.web.icons.ChevronRightIcon
+import de.mineking.hexo.web.icons.ClearHighlightsIcon
+import de.mineking.hexo.web.icons.EnterFullscreenIcon
+import de.mineking.hexo.web.icons.ExitFullscreenIcon
+import de.mineking.hexo.web.icons.ResetViewIcon
+import de.mineking.hexo.web.layout.rememberAppLayout
+import de.mineking.hexo.web.rememberSoundPlayer
+import de.mineking.hexo.web.rememberWatchPartyController
+import de.mineking.hexo.web.settings.SettingsKey
+import de.mineking.hexo.web.settings.rememberSettingsValue
+import kotlinx.browser.window
+import org.jetbrains.compose.web.css.backgroundColor
+import org.jetbrains.compose.web.dom.AttrBuilderContext
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Span
+import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLButtonElement
+import org.w3c.dom.HTMLElement
+import org.w3c.dom.events.EventListener
+import org.w3c.dom.events.KeyboardEvent
+import kotlin.math.ceil
+import kotlin.math.max
+import kotlin.math.min
+import kotlin.time.Clock
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
+
+private const val MOVES_PER_TURN = 2
+
+@Composable
+fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: SessionBoardViewManager) {
+    val move by boardViewManager.currentMove
+    val board = remember(move, session) { session.game.asBoard(move) }
+    val viewport = remember { mutableStateOf<BoardViewport?>(null) }
+
+    val highlightBoard by boardViewManager.board
+    val transformedBoard = remember(board, highlightBoard) {
+        (board + highlightBoard).focusWinningRows()
+    }
+
+    val watchPartyController = rememberWatchPartyController()
+    LaunchedEffect(session.game.id) {
+        viewport.value = null
+
+        // Don't clear highlights when subscribed to a watch party
+        if (watchPartyController.subscribedWatchParty !is EntityState.Data) {
+            boardViewManager.clearHighlights()
+        }
+    }
+
+    BoardPane(
+        board = transformedBoard,
+        readOnly = true,
+        viewport = viewport.value,
+        onViewportChange = { viewport.value = it },
+        onBoardInteraction = { interaction ->
+            if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
+            boardViewManager.apply(interaction)
+        },
+    ) {
+        if (state != null) TurnIndicator(session, state)
+        BoardControls(session, boardViewManager, viewport)
+    }
+}
+
+@Composable
+private fun BoardActionButton(
+    enabled: Boolean = true,
+    color: Color = Color.Neutral,
+    attrs: AttrBuilderContext<HTMLButtonElement>? = null,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) = ActionButton(
+    enabled = enabled,
+    size = ButtonSize.Medium,
+    color = color,
+    attrs = {
+        classes("shadow-lg")
+        attrs?.invoke(this)
+    },
+    onClick = onClick,
+    content = content,
+)
+
+@Composable
+private fun BoardScope.BoardControls(
+    session: LiveSession,
+    boardViewManager: SessionBoardViewManager,
+    viewport: MutableState<BoardViewport?>,
+) {
+    val layout = rememberAppLayout()
+    val totalMoves = session.game.moves.size
+    val hasClearableHighlights by boardViewManager.hasClearableHighlights
+    var currentMove by boardViewManager.currentMove
+
+    MoveKeyboardShortcuts(
+        moves = session.game.moves,
+        move = boardViewManager.currentMove,
+        viewport = viewport,
+    )
+
+    Div({ classes("absolute", "top-3", "left-3", "z-20") }) {
+        BoardActionButton(onClick = { currentMove = Int.MAX_VALUE }) {
+            Text("Move ${min(currentMove, totalMoves)}/$totalMoves")
+        }
+    }
+
+    Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
+        BoardActionButton(
+            enabled = currentMove > 0,
+            attrs = {
+                attr("aria-label", "Previous move")
+                attr("title", "Previous move")
+            },
+            onClick = { currentMove = previousMove(currentMove, totalMoves) },
+        ) { ChevronLeftIcon { classes("size-4") } }
+
+        BoardActionButton(
+            enabled = currentMove < totalMoves,
+            attrs = {
+                attr("aria-label", "Next move")
+                attr("title", "Next move")
+            },
+            onClick = { currentMove = nextMove(currentMove, totalMoves) },
+        ) { ChevronRightIcon { classes("size-4") } }
+    }
+
+    Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
+        if (hasClearableHighlights) {
+            BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
+                ClearHighlightsIcon { classes("size-4") }
+            }
+        }
+
+        BoardActionButton(onClick = { viewport.value = null }) {
+            ResetViewIcon { classes("size-4") }
+        }
+
+        BoardActionButton(onClick = { layout.setFullscreen(!layout.isFullscreen()) }) {
+            if (layout.isFullscreen()) {
+                ExitFullscreenIcon { classes("size-4") }
+            } else {
+                EnterFullscreenIcon { classes("size-4") }
+            }
+        }
+    }
+}
+
+@Composable
+private fun BoardScope.MoveKeyboardShortcuts(
+    moves: List<Move>,
+    move: MutableState<Int>,
+    viewport: MutableState<BoardViewport?>,
+) {
+    val totalMoves by rememberUpdatedState(moves.size)
+    val currentMoves by rememberUpdatedState(moves)
+    val currentRenderLayout by rememberUpdatedState(renderLayout)
+
+    DisposableEffect(move) {
+        val keyDown = EventListener { event ->
+            if (event !is KeyboardEvent) return@EventListener
+            if (event.altKey || event.ctrlKey || event.metaKey) return@EventListener
+            if ((event.target as? HTMLElement)?.isContentEditable == true) return@EventListener
+
+            when (event.key) {
+                "ArrowLeft" -> {
+                    event.preventDefault()
+                    move.value = previousMove(move.value, totalMoves)
+                }
+                "ArrowRight" -> {
+                    event.preventDefault()
+                    move.value = nextMove(move.value, totalMoves)
+                }
+                in (1..9).map { "$it" } -> {
+                    val shortcut = event.key.toInt()
+                    val max = move.value.coerceIn(0, currentMoves.size)
+                    if (shortcut > max) return@EventListener
+
+                    val coordinate = currentMoves[max - shortcut].coordinate
+                    val point = currentRenderLayout.size.run { coordinate.toPixel() }
+
+                    val current = viewport.value ?: return@EventListener
+                    viewport.value = current.copy(center = point / current.zoom)
+                }
+            }
+        }
+
+        window.addEventListener("keydown", keyDown)
+        onDispose { window.removeEventListener("keydown", keyDown) }
+    }
+}
+
+private fun previousMove(move: Int, totalMoves: Int) = max(0, min(move, totalMoves) - 1)
+private fun nextMove(move: Int, totalMoves: Int) = if (move >= totalMoves - 1) Int.MAX_VALUE else move + 1
+
+@Composable
+private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
+    val soundPlayer = rememberSoundPlayer()
+
+    val timeRemaining by rememberUpdatedState(player.timeRemaining ?: return)
+    var timer by remember { mutableStateOf(timeRemaining.duration) }
+    val current by rememberUpdatedState(current)
+
+    val playerTimerSound by rememberSettingsValue(SettingsKey.SessionViewTimerSounds)
+
+    DisposableEffect(Unit) {
+        fun countdown() {
+            val delta = if (current) Clock.System.now() - timeRemaining.timestamp else Duration.ZERO
+            timer = maxOf(Duration.ZERO, timeRemaining.duration - delta)
+        }
+
+        val interval = window.setInterval(::countdown, 250)
+        onDispose { window.clearInterval(interval) }
+    }
+
+    LaunchedEffect(timer.inWholeSeconds) {
+        if (playerTimerSound && timer <= 10.seconds) soundPlayer.play(SoundEffect.CountdownWarning)
+    }
+
+    Div({
+        classes("ml-auto", "font-extrabold", "text-lg", "tabular-nums")
+        if (current) {
+            classes("text-emerald-200")
+        } else {
+            classes("text-slate-200")
+        }
+    }) {
+        val totalSeconds = ceil(timer.inWholeMilliseconds / 1000.0).toInt()
+        val minutes = totalSeconds / 60
+        val seconds = totalSeconds % 60
+        Text("$minutes:${seconds.toString().padStart(2, '0')}")
+    }
+}
+
+@Composable
+private fun TurnIndicator(session: LiveSession, state: SessionState.InGame) {
+    @Composable
+    fun PlayerIndicator(player: LiveSessionPlayer) {
+        val isCurrentTurn = player === state.currentTurn.player
+        Div({ classes("flex", "flex-col", "justify-center", "gap-2") }) {
+            Div({
+                classes("rounded-md", "py-1", "px-3", "border", "flex", "items-center", "gap-2")
+                if (isCurrentTurn) {
+                    classes("bg-emerald-500/20", "border-emerald-500/50")
+                } else {
+                    classes("bg-slate-500/20", "border-slate-500/50")
+                }
+            }) {
+                Div({
+                    classes("rounded-full", "size-2", "shrink-0")
+                    style { backgroundColor(player.color.cssColor) }
+                })
+                Span({ classes("max-w-52", "truncate") }) {
+                    Text(player.displayName)
+                }
+
+                PlayerTimer(player, isCurrentTurn)
+            }
+            if (isCurrentTurn) TurnIndicator(state.currentTurn)
+        }
+    }
+
+    Div({ classes("pointer-events-none", "absolute", "top-3", "left-3", "right-3", "flex", "justify-center") }) {
+        Div({
+            classes("pointer-events-auto", "shadow-xl", "bg-slate-800/85", "rounded-lg", "p-3", "max-w-xl", "w-full", "backdrop-blur-xs")
+        }) {
+            if (session.tournamentInfo != null) TournamentInfoCard(session)
+            if (session.gameOptions.rated) RatedInfoCard(session)
+
+            Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
+                session.players.forEach {
+                    PlayerIndicator(it)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RatedInfoCard(session: LiveSession) {
+    Div({
+        classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
+    }) {
+        Div({ classes("mb-1.5", "flex", "items-center", "justify-center", "text-xs") }) {
+            Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-400", "uppercase") }) {
+                Text("Rated Match")
+            }
+        }
+
+        Div({ classes("grid", "grid-cols-2", "gap-2") }) {
+            session.players.forEach { player ->
+                Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
+                    Div({
+                        classes("rounded-full", "size-2", "shrink-0")
+                        style { backgroundColor(player.color.cssColor) }
+                    })
+                    Span({ classes("min-w-0", "flex-1", "truncate", "text-slate-300") }) {
+                        Text(player.displayName)
+                    }
+                    Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
+                        Text("Elo ${player.elo}")
+
+                        Span({ classes("ml-1", "text-xs") }) {
+                            Span({ classes("text-emerald-300") }) { Text("+${player.eloAdjustment?.eloGain}") }
+                            Text("/")
+                            Span({ classes("text-rose-300") }) { Text("${player.eloAdjustment?.eloLoss}") }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TournamentInfoCard(session: LiveSession) {
+    val tournament = session.tournamentInfo ?: return
+    val requiredWins = tournament.bestOf / 2 + 1
+
+    Div({
+        classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
+    }) {
+        Div({ classes("mb-1.5", "flex", "items-center", "justify-between", "gap-3", "text-xs") }) {
+            Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-200") }) {
+                Text(tournament.tournamentName)
+            }
+            Span({ classes("shrink-0", "font-medium", "text-slate-400") }) {
+                Text("Game ${tournament.currentGameNumber} of ${tournament.bestOf}")
+            }
+        }
+
+        Div({ classes("grid", "grid-cols-2", "gap-2") }) {
+            session.players.forEach { player ->
+                Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
+                    Div({
+                        classes("rounded-full", "size-2", "shrink-0")
+                        style { backgroundColor(player.color.cssColor) }
+                    })
+                    Span({ classes("min-w-0", "flex-1", "truncate", "text-slate-300") }) {
+                        Text(player.displayName)
+                    }
+                    Span({ classes("shrink-0", "tabular-nums") }) {
+                        Span({
+                            classes("font-bold", "text-sm")
+                            classes(if ((player.tournamentMatchWins ?: 0) == requiredWins - 1) "text-emerald-500" else "text-slate-300")
+                        }) {
+                            Text("${player.tournamentMatchWins ?: 0}")
+                        }
+                        Span({ classes("font-semibold", "text-slate-400", "text-xs") }) {
+                            Text("/$requiredWins")
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun TurnIndicator(turn: SessionTurn) {
+    Div({ classes("flex", "gap-1", "flex-row-reverse", "mx-auto", "justify-center") }) {
+        repeat(MOVES_PER_TURN) {
+            Div({
+                classes("rounded-full", "w-6", "h-1.5")
+                if (it < turn.placementsRemaining) {
+                    style { backgroundColor(turn.player.color.cssColor) }
+                } else {
+                    classes("bg-slate-500")
+                }
+            })
+        }
+    }
+}

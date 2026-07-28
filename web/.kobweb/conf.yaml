@@ -1,0 +1,14 @@
+site:
+  title: "HeXO"
+  basePath: "app"
+
+server:
+  files:
+    dev:
+      contentRoot: "build/processedResources/js/main/public"
+      script: "build/kotlin-webpack/js/developmentExecutable/de-mineking-hexo-web.js"
+    prod:
+      script: "build/kotlin-webpack/js/productionExecutable/de-mineking-hexo-web.js"
+      siteRoot: ".kobweb/site"
+
+  port: 8080

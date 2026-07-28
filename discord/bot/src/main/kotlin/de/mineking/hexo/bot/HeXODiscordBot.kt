@@ -59,7 +59,7 @@ class HeXODiscordBot(
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
     val notationParser: BoardParser,
     val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
-    val linkedRolesUrl: String?,
+    val publicUrl: String?,
     token: String,
 ) {
     init {
@@ -122,8 +122,7 @@ class HeXODiscordBot(
         .build()
 
     init {
-        if (linkedRolesUrl != null) {
-            logger.info { "Updating linked roles metadata..." }
+        if (publicUrl != null) {
             runBlocking {
                 dtk.updateLinkedRoleMetadata()
             }

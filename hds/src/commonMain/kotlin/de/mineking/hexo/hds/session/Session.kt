@@ -12,8 +12,10 @@ import de.mineking.hexo.hds.game.GameVisibility
 import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.game.PlayerId
 import de.mineking.hexo.hds.game.TournamentMatchSnapshot
+import de.mineking.hexo.hds.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.profile.ProfileId
 import de.mineking.hexo.hds.profile.ProfileRepository
+import de.mineking.hexo.hds.utils.Duration
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.hds.utils.LiveDuration
 import de.mineking.hexo.hds.utils.TimeControl
@@ -21,7 +23,6 @@ import kotlinx.coroutines.flow.SharedFlow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Clock
-import kotlin.time.Duration
 import kotlin.time.Instant
 
 @JvmInline
@@ -35,34 +36,108 @@ class SessionReference(
     fun observe() = repository.observeSession(id)
 }
 
-interface SessionPlayer {
-    val profileId: ProfileId?
-    val displayName: String
-    val elo: Int
+sealed interface SessionState {
+    data object Lobby : SessionState
+
+    sealed interface LiveSessionState : SessionState
+
+    data class InGame(val currentTurn: SessionTurn) : LiveSessionState
+    data class Finished(val result: GameResult, val rematchAcceptedPlayers: List<LiveSessionPlayer>) : LiveSessionState
 }
 
-fun SessionPlayer.isGuest() = profileId != null
+abstract class Session(
+    val id: SessionId,
+    val gameOptions: GameOptions,
+    val tournamentInfo: TournamentMatchSnapshot?,
+) {
+    abstract val players: List<Player>
+    abstract val state: SessionState
+    internal abstract val dto: SessionDto?
+    internal abstract val gameState: SessionGameStateDto?
 
-interface Session {
-    val id: SessionId
-    val gameOptions: GameOptions
-    val players: List<SessionPlayer>
+    abstract fun observe(): SharedFlow<EntityState<Session>>
 
-    fun observe(): SharedFlow<EntityState<Session>>
+    companion object {
+        internal fun of(
+            client: HdsApiClient,
+            dto: SessionDto,
+            lastState: Pair<Instant, SessionStateDto.InGame>?,
+            gameState: SessionGameStateDto,
+        ) = when (dto.state) {
+            is SessionStateDto.Lobby -> LobbySession.of(client, dto, gameState)
+            is SessionStateDto.GameSessionState -> LiveSession.of(client, dto, lastState, dto.state, gameState)
+        }
+    }
 }
 
-class LobbySession(
+class LobbySession private constructor(
     private val repository: SessionRepository,
-    override val id: SessionId,
-    override val gameOptions: GameOptions,
-    override val players: List<SessionPlayer>,
+    id: SessionId,
+    gameOptions: GameOptions,
+    tournamentInfo: TournamentMatchSnapshot?,
+    override val players: List<Player>,
     val createdAt: Instant,
     val startedAt: Instant?,
-) : Session {
+    override val dto: SessionDto?,
+    override val gameState: SessionGameStateDto?,
+) : Session(id, gameOptions, tournamentInfo) {
+    override val state = SessionState.Lobby
+
     override fun observe() = repository.observeSession(id)
 
     companion object {
-        internal fun of(repository: SessionRepository, dto: LobbyInfoDto) = LobbySession(
+        private fun createPlayerList(
+            repository: ProfileRepository,
+            players: List<ISessionPlayerDto>,
+            tournament: TournamentMatchSnapshotDto?,
+        ): List<Player> {
+            if (tournament == null) {
+                return players.mapIndexed { index, data ->
+                    Player(
+                        repository = repository,
+                        playerId = PlayerId(""),
+                        profileId = data.profileId,
+                        displayName = data.displayName,
+                        elo = data.elo,
+                        color = CellOwner.entries[index],
+                        tournamentMatchWins = tournament?.let {
+                            when (data.profileId) {
+                                it.leftProfileId -> it.leftWins
+                                it.rightProfileId -> it.rightWins
+                                else -> error("Inconsistent tournament snapshot")
+                            }
+                        },
+                    )
+                }
+            }
+
+            data class TournamentPlayer(
+                val profileId: ProfileId,
+                val displayName: String,
+                val tournamentWins: Int,
+            )
+
+            return listOf(
+                TournamentPlayer(tournament.leftProfileId, tournament.leftDisplayName, tournament.leftWins),
+                TournamentPlayer(tournament.rightProfileId, tournament.rightDisplayName, tournament.rightWins),
+            ).mapIndexed { index, player ->
+                Player(
+                    repository = repository,
+                    playerId = PlayerId(""),
+                    profileId = player.profileId,
+                    displayName = player.displayName,
+                    elo = players.find { it.profileId == player.profileId }?.elo ?: -1,
+                    color = CellOwner.entries[(index + tournament.currentGameNumber + 1) % 2],
+                    tournamentMatchWins = player.tournamentWins,
+                )
+            }
+        }
+
+        internal fun of(
+            repository: SessionRepository,
+            profileRepository: ProfileRepository,
+            dto: LobbyInfoDto,
+        ) = LobbySession(
             repository = repository,
             id = dto.id,
             gameOptions = GameOptions(
@@ -70,10 +145,32 @@ class LobbySession(
                 timeControl = dto.timeControl,
                 visibility = GameVisibility.Public,
             ),
-            players = dto.players,
+            tournamentInfo = null,
+            players = createPlayerList(profileRepository, dto.players, null),
             createdAt = dto.createdAt,
             startedAt = dto.startedAt,
+            dto = null,
+            gameState = null,
         )
+
+        internal fun of(
+            client: HdsApiClient,
+            dto: SessionDto,
+            gameState: SessionGameStateDto,
+        ): LobbySession {
+            val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) }
+            return LobbySession(
+                repository = client.sessionRepository,
+                id = dto.id,
+                gameOptions = dto.gameOptions,
+                tournamentInfo = tournament,
+                players = createPlayerList(client.profileRepository, dto.players, dto.tournament),
+                createdAt = Instant.DISTANT_PAST,
+                startedAt = null,
+                dto = dto,
+                gameState = gameState,
+            )
+        }
     }
 }
 
@@ -81,16 +178,16 @@ fun LobbySession.hasStarted() = startedAt != null
 
 class LiveSession private constructor(
     private val repository: SessionRepository,
-    override val id: SessionId,
-    override val gameOptions: GameOptions,
+    id: SessionId,
+    gameOptions: GameOptions,
+    tournamentInfo: TournamentMatchSnapshot?,
     override val players: List<LiveSessionPlayer>,
-    val tournamentInfo: TournamentMatchSnapshot?,
-    val state: SessionState,
+    override val state: SessionState.LiveSessionState,
     val game: SessionGame,
-    internal val dto: SessionDto,
+    override val dto: SessionDto,
     internal val lastState: Pair<Instant, SessionStateDto.InGame>?,
-    internal val gameState: SessionGameStateDto,
-) : Session {
+    override val gameState: SessionGameStateDto,
+) : Session(id, gameOptions, tournamentInfo) {
     override fun observe() = repository.observeSession(id)
 
     companion object {
@@ -143,12 +240,11 @@ class LiveSession private constructor(
             )
         }
 
-        private fun SessionStateDto.toSessionState(
+        private fun SessionStateDto.GameSessionState.toSessionState(
             gameState: SessionGameStateDto?,
             lastState: Pair<Instant, SessionStateDto.InGame>?,
             playersById: Map<PlayerId, LiveSessionPlayer>,
         ) = when (this) {
-            is SessionStateDto.Lobby -> error("Cannot create live LiveSession from lobby")
             is SessionStateDto.InGame -> SessionState.InGame(
                 currentTurn = SessionTurn(
                     player = playersById[gameState!!.currentTurnPlayerId]!!,
@@ -171,20 +267,21 @@ class LiveSession private constructor(
             client: HdsApiClient,
             dto: SessionDto,
             lastState: Pair<Instant, SessionStateDto.InGame>?,
+            state: SessionStateDto.GameSessionState,
             gameState: SessionGameStateDto,
         ): LiveSession {
             val players = dto.createPlayerList(client.profileRepository, gameState, dto.gameOptions.timeControl)
             val playersById = players.associateBy { it.playerId }
 
             val tournament = dto.tournament?.let { TournamentMatchSnapshot.of(it, client) }
-            val state = dto.state.toSessionState(gameState, lastState, playersById)
+            val state = state.toSessionState(gameState, lastState, playersById)
 
             return LiveSession(
                 repository = client.sessionRepository,
                 id = dto.id,
                 gameOptions = dto.gameOptions,
-                players = players,
                 tournamentInfo = tournament,
+                players = players,
                 state = state,
                 game = SessionGame.of(
                     dto = dto,
@@ -225,7 +322,7 @@ class LiveSessionPlayer(
     tournamentMatchWins: Int?,
     val timeRemaining: LiveDuration?,
     val connectionStatus: SessionPlayerConnectionStatus,
-) : SessionPlayer, Player(
+) : Player(
     repository = repository,
     playerId = playerId,
     profileId = profileId,
@@ -237,11 +334,6 @@ class LiveSessionPlayer(
     override val profileId = super.profileId
     override val displayName = super.displayName
     override val elo = super.elo
-}
-
-sealed interface SessionState {
-    data class InGame(val currentTurn: SessionTurn) : SessionState
-    data class Finished(val result: GameResult, val rematchAcceptedPlayers: List<LiveSessionPlayer>) : SessionState
 }
 
 data class SessionTurn(

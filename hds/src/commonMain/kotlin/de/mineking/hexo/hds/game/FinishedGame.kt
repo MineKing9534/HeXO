@@ -125,7 +125,7 @@ class FinishedGamePlayer(
     tournamentMatchWins = tournamentMatchWins,
 )
 
-abstract class Player(
+open class Player(
     private val repository: ProfileRepository,
     val playerId: PlayerId,
     open val profileId: ProfileId?,

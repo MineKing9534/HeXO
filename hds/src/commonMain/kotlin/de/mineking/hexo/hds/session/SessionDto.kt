@@ -15,15 +15,23 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 
+interface ISessionPlayerDto {
+    val profileId: ProfileId?
+    val displayName: String
+    val elo: Int
+}
+
 @Serializable
 internal data class SessionPlayerDto(
     val id: PlayerId,
-    val profileId: ProfileId?,
-    val displayName: String,
+    override val profileId: ProfileId?,
+    override val displayName: String,
     val rating: Rating,
     val ratingAdjustment: RatingAdjustment?,
     val connection: SessionPlayerConnectionDto,
-) {
+) : ISessionPlayerDto {
+    override val elo = rating.eloScore
+
     @Serializable
     data class Rating(
         val eloScore: Int,
@@ -123,7 +131,7 @@ internal data class LobbyPlayerDto(
     override val profileId: ProfileId?,
     override val displayName: String,
     override val elo: Int,
-) : SessionPlayer
+) : ISessionPlayerDto
 
 @Serializable
 internal data class LobbyInfoDto(

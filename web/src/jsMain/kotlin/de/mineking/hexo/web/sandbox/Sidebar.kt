@@ -1,0 +1,249 @@
+package de.mineking.hexo.web.sandbox
+
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
+import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.copy
+import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.focusWinningRows
+import de.mineking.hexo.board.render.notation.RectilinearNotationType
+import de.mineking.hexo.board.render.notation.renderRectilinearNotation
+import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.web.components.ActionButton
+import de.mineking.hexo.web.components.Badge
+import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.CopyButton
+import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.ResizableTrailingPanel
+import de.mineking.hexo.web.components.Select
+import de.mineking.hexo.web.components.TextAreaInput
+import de.mineking.hexo.web.components.TextInput
+import de.mineking.hexo.web.pages.CellPlacementMode
+import kotlinx.browser.window
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.url.URL
+
+private const val DEFAULT_SIDEBAR_WIDTH = 380
+private const val MIN_SIDEBAR_WIDTH = 330
+private const val MAX_SIDEBAR_WIDTH = 560
+
+private val boardParser = BoardParser.Default.focusWinningRows()
+
+enum class BoardUpdateCause {
+    NotationInput,
+    Import,
+    RemoveTurnData,
+}
+
+@Composable
+fun Sidebar(
+    client: HdsApiClient?,
+    placementMode: MutableState<CellPlacementMode>,
+    board: Board,
+    onBoardChange: (BoardUpdateCause, Board) -> Unit,
+) {
+    ResizableTrailingPanel(
+        defaultWidth = DEFAULT_SIDEBAR_WIDTH,
+        minWidth = MIN_SIDEBAR_WIDTH,
+        maxWidth = MAX_SIDEBAR_WIDTH,
+        attrs = {
+            classes(
+                "relative", "flex", "min-h-0", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5",
+                "overflow-y-auto", "border-t", "border-slate-800", "bg-slate-900/80", "p-4", "shadow-2xl",
+                "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0", "md:p-6",
+            )
+        },
+    ) {
+        var parseError by remember { mutableStateOf<String?>(null) }
+        var notation by remember { mutableStateOf("") }
+
+        LaunchedEffect(board) {
+            notation = board.renderRectilinearStateBKETurnNotation()
+            parseError = null
+        }
+
+        SidebarHeader(parseError)
+
+        Div({ classes("flex", "flex-col", "gap-2") }) {
+            val coroutineScope = rememberCoroutineScope()
+            NotationField(
+                client = client,
+                notation = notation,
+                parseError = parseError,
+                onChange = { cause, value ->
+                    notation = value
+                    if (value.isBlank()) {
+                        onBoardChange(cause, Board.withTurnNumbers())
+                        return@NotationField
+                    }
+
+                    coroutineScope.launch {
+                        try {
+                            onBoardChange(cause, boardParser.parse(value))
+                            parseError = null
+                        } catch (e: HexoNotationException) {
+                            parseError = e.message
+                        }
+                    }
+                },
+            )
+            SidebarNotationInfo(board, onBoardChange, parseError)
+        }
+
+        PlacementMode(placementMode)
+    }
+}
+
+@Composable
+private fun PlacementMode(placementMode: MutableState<CellPlacementMode>) {
+    var placementMode by placementMode
+    Div({ classes("space-y-2") }) {
+        Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
+            Text("Placement Mode")
+        }
+
+        Select(CellPlacementMode.entries, current = placementMode, onChange = { placementMode = it })
+    }
+}
+
+@Composable
+private fun SidebarHeader(parseError: String?) {
+    Div({ classes("flex", "items-center", "justify-between") }) {
+        Div({ classes("text-lg", "font-semibold") }) {
+            Text("Board")
+        }
+        ParseStatus(parseError == null)
+    }
+}
+
+@Composable
+private fun ParseStatus(valid: Boolean) {
+    Badge(if (valid) Color.Emerald else Color.Rose, {
+        classes("m-px", "px-3")
+    }) {
+        Text(if (valid) "Parsed" else "Invalid")
+    }
+}
+
+@Composable
+private fun NotationField(
+    client: HdsApiClient?,
+    notation: String,
+    parseError: String?,
+    onChange: (BoardUpdateCause, String) -> Unit,
+) {
+    Div({ classes("space-y-2") }) {
+        Div({ classes("relative", "min-h-8", "overflow-hidden") }) {
+            Div({ classes("pt-1.5", "text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
+                Text("Notation")
+            }
+            Div({
+                classes(
+                    "absolute", "right-0", "top-0", "z-10", "max-w-full",
+                    "before:pointer-events-none", "before:absolute", "before:-left-5", "before:top-0", "before:h-full", "before:w-5",
+                    "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
+                )
+            }) {
+                NotationActions(client, notation, onChange)
+            }
+        }
+
+        TextAreaInput(
+            value = notation,
+            placeholder = "Board notation",
+            valid = parseError == null,
+            monospace = true,
+            attrs = {
+                classes("min-h-32", "resize-y")
+                if (parseError != null) classes("border-rose-400!")
+            },
+            onValueChange = { onChange(BoardUpdateCause.NotationInput, it) },
+        )
+    }
+}
+
+@Composable
+private fun NotationActions(
+    client: HdsApiClient?,
+    notation: String,
+    onChange: (BoardUpdateCause, String) -> Unit,
+) {
+    var importDialogOpen by remember { mutableStateOf(false) }
+    Div({ classes("flex", "max-w-full", "justify-end", "gap-2") }) {
+        var link by remember { mutableStateOf<String?>(null) }
+        ActionButton("Copy Link", enabled = notation.isNotBlank()) {
+            val url = URL(window.location.href)
+            url.searchParams.set("position", notation.replace("/", "_"))
+            link = url.toString()
+        }
+
+        if (link != null) {
+            Dialog(
+                title = "Position Link",
+                onClose = { link = null },
+            ) {
+                Div({ classes("relative", "w-full") }) {
+                    TextInput(
+                        value = link ?: "",
+                        type = InputType.Url,
+                        readOnly = true,
+                        monospace = true,
+                        attrs = { classes("pr-12", "resize-y", "text-ellipsis") },
+                    )
+                    CopyButton(link ?: "", label = "position link")
+                }
+            }
+        }
+
+        if (client != null) {
+            ActionButton("Import Position") { importDialogOpen = true }
+        }
+    }
+
+    if (importDialogOpen && client != null) {
+        ImportDialog(
+            formationRepository = client.formationRepository,
+            finishedGameRepository = client.finishedGameRepository,
+            onClose = { importDialogOpen = false },
+            onConfirm = {
+                importDialogOpen = false
+                onChange(BoardUpdateCause.Import, it.renderRectilinearNotation(RectilinearNotationType.Compact))
+            },
+        )
+    }
+}
+
+@Composable
+private fun SidebarNotationInfo(board: Board, onBoardChange: (BoardUpdateCause, Board) -> Unit, parseError: String?) {
+    Div({ classes("flex", "justify-between", "w-full", "h-6") }) {
+        Div({
+            classes("min-h-5", "text-sm", "leading-relaxed")
+            if (parseError == null) {
+                classes("text-slate-500")
+            } else {
+                classes("text-rose-400")
+            }
+        }) {
+            Text(parseError ?: (if (board.cells.size == 1) "1 cell" else "${board.cells.size} cells"))
+        }
+
+        if (parseError == null && board.cells.any { it.value.turn != null }) {
+            ActionButton("Remove Turn Data") {
+                onBoardChange(BoardUpdateCause.RemoveTurnData, board.copy().apply {
+                    cells.values.forEach { it.turn = null }
+                })
+            }
+        }
+    }
+}

@@ -1,0 +1,98 @@
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    depends_on:
+      backend:
+        condition: service_started
+      web:
+        condition: service_started
+    ports:
+      - "11234:80"
+    command:
+      - sh
+      - -c
+      - |
+        cat >/etc/caddy/Caddyfile <<'EOF'
+        http:// {
+          redir / /app
+          handle_path /app* {
+            route {
+              @root path /
+              rewrite @root /index.html
+
+              @page {
+                not path *.*
+              }
+              rewrite @page {path}.html
+
+              reverse_proxy web:80 {
+                @notFound status 404
+                handle_response @notFound {
+                  rewrite * /not-found.html
+                  reverse_proxy web:80
+                }
+              }
+            }
+          }
+
+          handle {
+            reverse_proxy backend:80
+          }
+        }
+        EOF
+
+        caddy run --config /etc/caddy/Caddyfile --adapter caddyfile
+    volumes:
+      - caddy_data:/data
+      - caddy_config:/config
+
+  database:
+    image: postgres:18
+    environment:
+      POSTGRES_USER: hexo
+      POSTGRES_PASSWORD: hexo
+      POSTGRES_DB: hexo
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U hexo -d hexo" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    volumes:
+      - hexo:/var/lib/postgresql
+
+  backend:
+    build:
+      context: .
+      dockerfile: launcher/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    expose:
+      - "80"
+    environment:
+      bot.token: ${BOT_TOKEN:?}
+      oauth2.clientId: ${OAUTH2_CLIENT_ID:-}
+      oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:-}
+      oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:-}
+      database.url: jdbc:postgresql://database:5432/hexo?user=hexo&password=hexo
+      server.port: 80
+      server.url: ${SERVER_URL:?}
+
+  web:
+    build:
+      context: .
+      dockerfile: web/Dockerfile
+      args:
+        WEB_API_PROXY: ${WEB_API_PROXY:?}
+        WEB_TOOLS_API: ${SERVER_URL:?}
+    restart: unless-stopped
+    expose:
+      - "80"
+
+volumes:
+  hexo:
+  caddy_data:
+  caddy_config:

@@ -6,17 +6,15 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.discord.link)
+    api(projects.server.service)
 
     implementation(libs.bundles.ktor.server)
     implementation(libs.ktor.server.html)
-
-    implementation(libs.cache)
 
     implementation(libs.logging)
 }
 
 tailwindcss {
-    resourceTask = tasks.processResources
+    sourceSetName = "main"
     resourcePath = "static"
 }
