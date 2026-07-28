@@ -239,6 +239,10 @@ private fun Color.tikzColor() = "{rgb,255:red,$red;green,$green;blue,$blue}"
 private fun Color.opacity() = (alpha / 255.0).tikzNumber()
 private fun Int.pdfColorComponent() = (this / 255.0).tikzNumber()
 
-private val TEXT_SPACING_OPTIONS = listOf("inner sep=0bp", "outer sep=0pt")
+private val TEXT_SPACING_OPTIONS = listOf(
+    "anchor=center",
+    "inner sep=0bp",
+    "outer sep=0pt",
+)
 private const val GLYPH_MASK_WIDTH_FACTOR = 6.0
 private const val CSS_PIXEL_IN_BP = 0.75
