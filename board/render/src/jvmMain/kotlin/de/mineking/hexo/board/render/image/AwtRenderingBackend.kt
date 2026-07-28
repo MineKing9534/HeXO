@@ -24,12 +24,13 @@ import java.awt.Color as AwtColor
 fun Board.renderToImage(
     layoutRadius: Double,
     padding: Int,
+    visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     theme: Theme = Theme.Default,
     middleLayer: RenderingContext.() -> Unit = {},
 ): BufferedImage {
     require(cells.isNotEmpty() || lineHighlights.isNotEmpty())
 
-    val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact)
+    val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val width = layout.boundingBox.width + 2 * padding
     val height = layout.boundingBox.height + 2 * padding
 

@@ -78,8 +78,14 @@ data class BoardRenderLayout(
     }
 }
 
-fun Board.createRenderLayout(layoutRadius: Double, bounds: BoardRenderBounds): BoardRenderLayout {
-    val visibleCoordinates = findVisibleCoordinates()
+const val DEFAULT_VISIBLE_RADIUS = 8
+
+fun Board.createRenderLayout(
+    layoutRadius: Double,
+    bounds: BoardRenderBounds,
+    visibleRadius: Int,
+): BoardRenderLayout {
+    val visibleCoordinates = findVisibleCoordinates(visibleRadius)
     val size = RenderSize(layoutRadius)
     return BoardRenderLayout(
         size = size,
@@ -120,8 +126,7 @@ private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<Cell
     )
 }
 
-private const val VISIBLE_DISTANCE = 8
-internal fun Board.findVisibleCoordinates(): Set<CellCoordinate> {
+internal fun Board.findVisibleCoordinates(distance: Int): Set<CellCoordinate> {
     val occupied = cells
         .filterValues { it.owner != null || it.highlight != null || it.focused || it.label.isNotBlank() }
         .keys
@@ -129,10 +134,10 @@ internal fun Board.findVisibleCoordinates(): Set<CellCoordinate> {
 
     return buildSet {
         for (origin in occupied) {
-            for (dq in -VISIBLE_DISTANCE + 1 until VISIBLE_DISTANCE) {
-                for (dr in -VISIBLE_DISTANCE + 1 until VISIBLE_DISTANCE) {
+            for (dq in -distance + 1 until distance) {
+                for (dr in -distance + 1 until distance) {
                     val coordinate = CellCoordinate(origin.q + dq, origin.r + dr)
-                    if (origin.distanceTo(coordinate) < VISIBLE_DISTANCE) {
+                    if (origin.distanceTo(coordinate) < distance) {
                         add(coordinate)
                     }
                 }
