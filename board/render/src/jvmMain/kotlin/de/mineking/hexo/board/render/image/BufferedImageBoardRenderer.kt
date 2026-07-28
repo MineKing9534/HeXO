@@ -10,6 +10,7 @@ import javax.imageio.ImageIO
 class BufferedImageBoardRenderer(
     private val layoutRadius: Double,
     private val padding: Int,
+    private val visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
 ) : BoardRenderer<Theme, BufferedImage> {
     companion object {
         val Default = BufferedImageBoardRenderer(
@@ -21,6 +22,7 @@ class BufferedImageBoardRenderer(
     override suspend fun render(board: Board, param: Theme) = board.renderToImage(
         layoutRadius = layoutRadius,
         padding = padding,
+        visibleRadius = visibleRadius,
         theme = param,
     )
 }
