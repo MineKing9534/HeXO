@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.latex
 
 import de.mineking.hexo.board.parse.parseRectilinearNotation
+import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.tikz.renderToTikZ
 import de.mineking.kotlinlatex.ExpandLatex
 import de.mineking.kotlinlatex.Latex
@@ -12,6 +13,7 @@ fun hexoCommand(
     padding: Latex = raw("32"),
     rawLabels: Latex = raw("true"),
     focusWinningRows: Latex = raw("true"),
+    visibleRadius: Latex = raw("$DEFAULT_VISIBLE_RADIUS"),
     width: Latex = raw("none"),
     scale: Latex = raw("none"),
     fading: Latex = raw("0"),
@@ -21,6 +23,7 @@ fun hexoCommand(
     val board = notation.source.parseRectilinearNotation(focusWinningRows = focusWinningRows.toBoolean("focusWinningRows"))
     val tikz = board.renderToTikZ(
         padding = padding.source.toInt(),
+        visibleRadius = visibleRadius.source.toInt(),
         theme = parseTheme(theme.source),
         rawLabels = rawLabels.toBoolean("rawLabels"),
         labelStyle = "\\hexolabelfont",
