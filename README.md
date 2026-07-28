@@ -82,9 +82,6 @@ The length can be specified directly after. If no length is specified, it will d
 #### Custom Labels
 Cells can also be labeled. The label will be rendered as text inside the labeled cell.
 
-> [!NOTE]
-> Labels can be at most 3 characters long to avoid overlap with other cells.
-
 Labels are define for the previous cell in square brackets.
 
 `.o.[a].[b].[c].[d]/oxxxx.[e]/.[f].[g].[h]x.[i]/...[j].[k]`
