@@ -20,12 +20,12 @@ fun hexoCommand(
     @ExpandLatex theme: Latex = raw("\\hdstheme"),
     @ExpandLatex notation: Latex,
 ): Latex {
-    val board = notation.source.parseRectilinearNotation(focusWinningRows = focusWinningRows.toBoolean("focusWinningRows"))
+    val board = notation.source.parseRectilinearNotation(focusWinningRows = focusWinningRows.source.toBooleanStrict())
     val tikz = board.renderToTikZ(
         padding = padding.source.toInt(),
         visibleRadius = visibleRadius.source.toInt(),
         theme = theme.parseTheme(),
-        rawLabels = rawLabels.toBoolean("rawLabels"),
+        rawLabels = rawLabels.source.toBooleanStrict(),
         labelStyle = "\\hexolabelfont",
     )
 
