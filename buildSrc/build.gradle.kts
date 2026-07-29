@@ -5,6 +5,7 @@ plugins {
 repositories {
     mavenCentral()
     gradlePluginPortal()
+    maven("https://maven.mineking.dev/snapshots")
     mavenLocal()
 }
 

@@ -15,7 +15,7 @@ build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", ve
 detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alpha.6" }
 testlogger-gradle-plugin = { module = "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin", version = "4.0.0" }
 node-gradle-plugin = { module = "com.github.node-gradle:gradle-node-plugin", version = "7.1.0" }
-latex-gradle-plugin = { module = "de.mineking:latex-gradle-plugin", version = "0.1.0-SNAPSHOT" }
+latex-gradle-plugin = { module = "de.mineking:latex-gradle-plugin", version = "1.0.0-SNAPSHOT" }
 
 jna = { module = "net.java.dev.jna:jna", version = "5.19.1" }
 
