@@ -28,7 +28,7 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         val expected = javaClass.getResourceAsStream("/$snapshotPath")?.readAllBytes()
 
         if (!actual.contentEquals(expected)) {
-            val file = File("expected/$snapshotPath")
+            val file = File("actual/$snapshotPath")
             file.parentFile.mkdirs()
 
             file.outputStream().use { it.write(actual) }
