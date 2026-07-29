@@ -1,6 +1,22 @@
 plugins {
     id("latex")
     id("kotlin-multiplatform")
+    alias(libs.plugins.ksp)
+}
+
+dependencies {
+    add("kspLatex", projects.board.latex.processor)
+}
+
+ksp {
+    arg(
+        "themes",
+        listOf(
+            "de.mineking.hexo.board.render.image.theme.HDSTheme",
+            "de.mineking.hexo.board.render.image.theme.HTTTXTheme",
+            "de.mineking.hexo.board.render.image.theme.TytoTheme",
+        ).joinToString()
+    )
 }
 
 kotlin {

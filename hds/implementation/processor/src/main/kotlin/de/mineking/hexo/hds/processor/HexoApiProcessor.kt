@@ -9,7 +9,6 @@ import com.google.devtools.ksp.symbol.ClassKind
 import com.google.devtools.ksp.symbol.KSAnnotated
 import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.squareup.kotlinpoet.ClassName
-import com.squareup.kotlinpoet.CodeBlock
 import com.squareup.kotlinpoet.FileSpec
 import com.squareup.kotlinpoet.KModifier
 import com.squareup.kotlinpoet.ParameterizedTypeName.Companion.parameterizedBy
@@ -17,6 +16,7 @@ import com.squareup.kotlinpoet.PropertySpec
 import com.squareup.kotlinpoet.TypeSpec
 import com.squareup.kotlinpoet.WildcardTypeName
 import com.squareup.kotlinpoet.asClassName
+import com.squareup.kotlinpoet.buildCodeBlock
 import com.squareup.kotlinpoet.ksp.toClassName
 import com.squareup.kotlinpoet.ksp.writeTo
 import kotlin.reflect.KClass
@@ -100,17 +100,15 @@ class HexoApiProcessor(private val codeGenerator: CodeGenerator) : SymbolProcess
         )
 
         return PropertySpec.builder(propertyName, type)
-            .initializer(
-                CodeBlock.builder()
-                    .add("mapOf(\n")
-                    .apply {
-                        entries.forEach { (name, type) ->
-                            add("%T::class to %S,\n", type.toClassName(), name)
-                        }
-                    }
-                    .add(")")
-                    .build(),
-            )
+            .initializer(buildCodeBlock {
+                addStatement("mapOf(")
+                indent()
+                entries.forEach { (name, type) ->
+                    addStatement("%T::class to %S,", type.toClassName(), name)
+                }
+                unindent()
+                addStatement(")")
+            })
             .build()
     }
 }
