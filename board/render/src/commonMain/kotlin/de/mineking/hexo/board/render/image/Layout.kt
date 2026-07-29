@@ -4,8 +4,10 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.endInclusive
+import de.mineking.hexo.board.isEmpty
 import kotlin.math.abs
 import kotlin.math.ceil
+import kotlin.math.floor
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
@@ -78,25 +80,36 @@ data class BoardRenderLayout(
     }
 }
 
-const val DEFAULT_VISIBLE_RADIUS = 8
+const val DEFAULT_VISIBLE_RADIUS = 7
 
 fun Board.createRenderLayout(
     layoutRadius: Double,
     bounds: BoardRenderBounds,
     visibleRadius: Int,
 ): BoardRenderLayout {
-    val visibleCoordinates = findVisibleCoordinates(visibleRadius)
     val size = RenderSize(layoutRadius)
+    val compactCoordinates = cells.keys.ifEmpty { setOf(CellCoordinate.Zero) }
+    val compactBoundingBox = findBoundingBox(size, compactCoordinates)
+    val visibleCoordinates = findVisibleCoordinates(
+        distance = visibleRadius,
+        size = size,
+        boundingBox = compactBoundingBox.takeIf { bounds == BoardRenderBounds.Compact },
+    )
     return BoardRenderLayout(
         size = size,
         boundingBox = findBoundingBox(size, when (bounds) {
             BoardRenderBounds.IncludeSurroundings -> visibleCoordinates
-            BoardRenderBounds.Compact -> cells.keys.ifEmpty { setOf(CellCoordinate.Zero) }
+            BoardRenderBounds.Compact -> compactCoordinates
         }),
         coordinates = visibleCoordinates,
         board = this,
     )
 }
+
+private fun Board.renderOrigins() = cells
+    .filterValues { !it.isEmpty(includeHighlights = true) }
+    .keys
+    .ifEmpty { setOf(CellCoordinate.Zero) }
 
 private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<CellCoordinate>): BoundingBox {
     var minX = Double.POSITIVE_INFINITY
@@ -126,22 +139,65 @@ private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<Cell
     )
 }
 
-internal fun Board.findVisibleCoordinates(distance: Int): Set<CellCoordinate> {
-    val occupied = cells
-        .filterValues { it.owner != null || it.highlight != null || it.focused || it.label.isNotBlank() }
-        .keys
-        .ifEmpty { setOf(CellCoordinate.Zero) }
+private fun Board.findVisibleCoordinates(
+    distance: Int,
+    size: RenderSize,
+    boundingBox: BoundingBox?,
+): Set<CellCoordinate> {
+    require(distance >= 0) { "Visible radius must not be negative" }
+    val occupied = renderOrigins()
+
+    val qRange: IntRange
+    val rRange: IntRange
+    if (boundingBox == null) {
+        val minQ = occupied.minOf { it.q }.toLong() - distance
+        val maxQ = occupied.maxOf { it.q }.toLong() + distance
+        val minR = occupied.minOf { it.r }.toLong() - distance
+        val maxR = occupied.maxOf { it.r }.toLong() + distance
+
+        qRange = IntRange(
+            start = minQ.coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt(),
+            endInclusive = maxQ.coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt(),
+        )
+        rRange = IntRange(
+            start = minR.coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt(),
+            endInclusive = maxR.coerceIn(Int.MIN_VALUE.toLong(), Int.MAX_VALUE.toLong()).toInt(),
+        )
+    } else {
+        val minR = floor((boundingBox.minY - size.layoutRadius) / (size.layoutRadius * 1.5)).toInt()
+        val maxR = ceil((boundingBox.maxY + size.layoutRadius) / (size.layoutRadius * 1.5)).toInt()
+
+        val qValues = listOf(minR, maxR).flatMap { r ->
+            listOf(boundingBox.minX - size.layoutRadius, boundingBox.maxX + size.layoutRadius).map { x ->
+                x / (size.layoutRadius * SQRT3) - r / 2.0
+            }
+        }
+
+        qRange = floor(qValues.min()).toInt()..ceil(qValues.max()).toInt()
+        rRange = minR..maxR
+    }
 
     return buildSet {
         for (origin in occupied) {
-            for (dq in -distance + 1 until distance) {
-                for (dr in -distance + 1 until distance) {
-                    val coordinate = CellCoordinate(origin.q + dq, origin.r + dr)
-                    if (origin.distanceTo(coordinate) < distance) {
+            val originQRange = intersect(qRange, origin.q, distance)
+            val originRRange = intersect(rRange, origin.r, distance)
+
+            for (q in originQRange) {
+                for (r in originRRange) {
+                    val coordinate = CellCoordinate(q, r)
+                    if (origin.distanceTo(coordinate) <= distance) {
                         add(coordinate)
                     }
                 }
             }
         }
     }
+}
+
+private fun intersect(range: IntRange, center: Int, radius: Int): IntRange {
+    val start = maxOf(range.first.toLong(), center.toLong() - radius)
+    val endInclusive = minOf(range.last.toLong(), center.toLong() + radius)
+    if (start > endInclusive) return IntRange.EMPTY
+
+    return start.toInt()..endInclusive.toInt()
 }
