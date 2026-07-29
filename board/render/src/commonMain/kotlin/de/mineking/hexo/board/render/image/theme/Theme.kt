@@ -7,6 +7,7 @@ import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.createHex
+import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 
 @JvmInline
@@ -83,7 +84,12 @@ fun Color.isTransparent() = alpha == 0.toUByte()
 
 fun Color.withAlpha(alpha: Int) = Color.rgba((((alpha and 0xff) shl (3 * 8)) or (rgba and 0xffffff)).toLong())
 
-private fun UByte.adjustBrightness(factor: Double) = (toDouble() * factor).coerceIn(0.0, 255.0).toInt().toUByte()
+private fun UByte.adjustBrightness(factor: Double) = (toDouble() * factor).coerceIn(0.0, 255.0)
+    .toInt().toUByte()
+
+private fun UByte.tint(target: UByte, factor: Double) = (toDouble() + (target.toDouble() - toDouble()) * factor)
+    .coerceIn(0.0, 255.0)
+    .toInt().toUByte()
 
 fun Color.adjustBrightness(factor: Double) = Color.of(
     red.adjustBrightness(factor),
@@ -91,6 +97,17 @@ fun Color.adjustBrightness(factor: Double) = Color.of(
     blue.adjustBrightness(factor),
     alpha,
 )
+
+fun Color.tint(target: Color): Color {
+    val factor = target.alpha.toDouble() / 255.0
+
+    return Color.of(
+        red.tint(target.red, factor),
+        green.tint(target.green, factor),
+        blue.tint(target.blue, factor),
+        alpha,
+    )
+}
 
 fun Color.darker() = adjustBrightness(0.35)
 fun Color.brighter() = adjustBrightness(2.85)
@@ -100,10 +117,10 @@ enum class FontType {
     MonospaceRegular,
 }
 
-abstract class Theme(
-    open val gap: Double,
-    open val backgroundColor: Color,
-) {
+abstract class Theme {
+    abstract val gap: Double
+    abstract val backgroundColor: Color
+
     abstract fun render(context: RenderingContext, middleLayer: () -> Unit)
 
     companion object {
@@ -111,10 +128,7 @@ abstract class Theme(
     }
 }
 
-abstract class BaseTheme(
-    override val gap: Double,
-    override val backgroundColor: Color,
-) : Theme(gap, backgroundColor) {
+abstract class BaseTheme : Theme() {
     abstract class Renderer(val context: RenderingContext) {
         abstract fun drawCell(point: Point, hex: Polygon, cell: Cell)
         abstract fun drawLineHighlight(lineHighlight: LineHighlight)
@@ -128,6 +142,9 @@ abstract class BaseTheme(
                 ?.let { "${turnTransform(it)}" }
                 .takeIf { context.layout.board.attributes[BoardAttribute.ShowTurnNumbers] ?: defaultShowTurnLabels }
     }
+
+    abstract val playerXColor: Color
+    abstract val playerOColor: Color
 
     protected abstract fun renderer(context: RenderingContext): Renderer
 
@@ -154,7 +171,8 @@ abstract class BaseTheme(
     }
 }
 
-enum class DefaultTheme(val theme: Theme) {
+@Serializable
+enum class DefaultTheme(val theme: BaseTheme) {
     HDS(HDSTheme.Default),
     HTTTX(HTTTXTheme.Default),
     Tyto(TytoTheme.Default),

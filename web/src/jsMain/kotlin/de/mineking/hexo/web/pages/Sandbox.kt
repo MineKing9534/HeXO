@@ -19,6 +19,7 @@ import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
@@ -107,7 +108,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
     val placementMode = remember {
         mutableStateOf(
             when {
-                board.cells.values.any { it.owner != null } -> CellPlacementMode.Turn
+                !board.isEmpty(includeHighlights = false) -> CellPlacementMode.Turn
                 else -> CellPlacementMode.State
             },
         )
@@ -158,7 +159,7 @@ fun SandboxSounds(board: Board) {
         board.cells.count { (_, cell) -> cell.owner != null }
     }
 
-    val lastMoveCount = rememberPrevious(moveCount) ?: 0
+    val lastMoveCount = rememberPrevious(moveCount) ?: Int.MAX_VALUE
 
     LaunchedEffect(moveCount) {
         if (moveCount > lastMoveCount) {

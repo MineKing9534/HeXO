@@ -3,7 +3,7 @@ package de.mineking.hexo.board.render.image
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.distanceTo
-import de.mineking.hexo.board.end
+import de.mineking.hexo.board.endInclusive
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.max
@@ -104,7 +104,7 @@ private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<Cell
     var minY = Double.POSITIVE_INFINITY
     var maxY = Double.NEGATIVE_INFINITY
 
-    val endPoints = lineHighlights.flatMap { listOf(it.start, it.end) }
+    val endPoints = lineHighlights.flatMap { listOf(it.start, it.endInclusive) }
     val positions = visibleCoordinates + endPoints
     for (position in positions.ifEmpty { listOf(CellCoordinate.Zero) }) {
         val center = size.run { position.toPixel() }

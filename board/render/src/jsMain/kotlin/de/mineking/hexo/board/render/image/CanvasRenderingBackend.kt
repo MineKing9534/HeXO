@@ -23,7 +23,7 @@ fun HTMLCanvasElement.drawBoard(
     padding: Int,
     offset: Point = Point.Zero,
     theme: Theme = Theme.Default,
-    middleLayer: RenderingContext.() -> Unit = {},
+    renderingHook: BoardRenderingHook? = null,
 ) {
     val context = getContext("2d") as CanvasRenderingContext2D
 
@@ -32,7 +32,7 @@ fun HTMLCanvasElement.drawBoard(
     context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
     context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
 
-    CanvasRenderingBackend(context).drawBoard(layout, theme, middleLayer)
+    CanvasRenderingBackend(context).drawBoard(layout, theme, renderingHook)
 }
 
 class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBackend {
@@ -65,6 +65,12 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
             layer.context.lineCap = CanvasLineCap.ROUND
             layer.context.lineJoin = CanvasLineJoin.ROUND
             layer.context.strokeSegment(from, to)
+
+            layer.context.save()
+            layer.context.globalCompositeOperation = "destination-out"
+            layer.context.lineWidth = stroke.width.toDouble()
+            layer.context.strokeSegment(from, to)
+            layer.context.restore()
         }
 
         layer.context.strokeStyle = stroke.color.css
@@ -214,4 +220,4 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
     }
 }
 
-private val Color.css: String get() = "rgba(${red.toInt()}, ${green.toInt()}, ${blue.toInt()}, ${alpha.toInt() / 255.0})"
+val Color.css: String get() = "rgba(${red.toInt()}, ${green.toInt()}, ${blue.toInt()}, ${alpha.toInt() / 255.0})"

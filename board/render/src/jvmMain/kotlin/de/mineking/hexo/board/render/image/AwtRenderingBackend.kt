@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
 import de.mineking.hexo.board.render.image.theme.Theme
@@ -26,9 +27,9 @@ fun Board.renderToImage(
     padding: Int,
     visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     theme: Theme = Theme.Default,
-    middleLayer: RenderingContext.() -> Unit = {},
+    renderingHook: BoardRenderingHook? = null,
 ): BufferedImage {
-    require(cells.isNotEmpty() || lineHighlights.isNotEmpty())
+    require(!isEmpty(includeHighlights = true))
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val width = layout.boundingBox.width + 2 * padding
@@ -45,7 +46,7 @@ fun Board.renderToImage(
 
     val context = AwtRenderingBackend(graphics)
     try {
-        context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
+        context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, renderingHook)
     } finally {
         graphics.dispose()
     }

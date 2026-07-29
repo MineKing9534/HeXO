@@ -2,7 +2,7 @@ package de.mineking.hexo.board.render.image.theme
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.end
+import de.mineking.hexo.board.endInclusive
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
@@ -25,7 +25,7 @@ data class HTTTXTheme(
     val playerXDecorationColor: Color,
     val playerOBackgroundColor: Color,
     val playerODecorationColor: Color,
-) : BaseTheme(gap, backgroundColor) {
+) : BaseTheme() {
     companion object {
         val Default = HTTTXTheme(
             gap = 1.0,
@@ -42,6 +42,9 @@ data class HTTTXTheme(
             playerODecorationColor = Color.rgb(0x0383e1),
         )
     }
+
+    override val playerXColor = playerXBackgroundColor
+    override val playerOColor = playerOBackgroundColor
 
     override fun renderer(context: RenderingContext) = HTTTXRenderer(context, this)
 
@@ -99,7 +102,7 @@ class HTTTXRenderer(
     override fun drawLineHighlight(lineHighlight: LineHighlight) = context.run {
         context.backend.drawLine(
             from = lineHighlight.start.toPixel(),
-            to = lineHighlight.end.toPixel(),
+            to = lineHighlight.endInclusive.toPixel(),
             stroke = Stroke(theme.lineHighlightColor, lineThickness),
         )
     }

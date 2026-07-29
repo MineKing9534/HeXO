@@ -2,24 +2,36 @@ package de.mineking.hexo.web.board
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
-import de.mineking.hexo.board.render.image.theme.HDSTheme
+import de.mineking.hexo.board.render.image.BoardRenderingHook
+import de.mineking.hexo.hds.AbstractGamePosition
+import de.mineking.hexo.hds.asBoard
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.settings.SettingsKey
-import de.mineking.hexo.web.settings.rememberSettingsValue
+import de.mineking.hexo.web.settings.collectAsState
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 
-val theme = HDSTheme.Default
+@Composable
+fun AbstractGamePosition.rememberBoard(overlay: Board, move: Int): Board {
+    val board = remember(move, this) { asBoard(move) }
+    return remember(board, overlay) {
+        (board + overlay).focusWinningRows()
+    }
+}
 
 @Composable
 fun BoardPane(
@@ -28,6 +40,7 @@ fun BoardPane(
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
+    renderingHook: BoardRenderingHook? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
 ) {
@@ -42,7 +55,9 @@ fun BoardPane(
         }
     }
 
-    val readOnlyBoardHoverIndicator by rememberSettingsValue(SettingsKey.ReadOnlyBoardHoverIndicator)
+    val readOnlyBoardHoverIndicator by SettingsKey.ReadOnlyBoardHoverIndicator.collectAsState()
+    val theme by rememberTheme()
+
     Div({
         classes(
             "relative", "min-h-0", "min-w-0", "flex-1", "overflow-hidden", "rounded-2xl",
@@ -56,6 +71,7 @@ fun BoardPane(
             onBoardInteraction = onBoardInteraction,
             theme = theme,
             cellHoverColor = DEFAULT_CELL_HOVER_COlOR.takeIf { readOnlyBoardHoverIndicator || !readOnly },
+            renderingHook = renderingHook,
             attrs = {
                 attr("width", "1200")
                 attr("height", "900")

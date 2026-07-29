@@ -57,48 +57,46 @@ class MutableBoard(
 }
 
 fun Board.hasHighlights() = lineHighlights.isNotEmpty() || cells.values.any { it.highlight != null }
+fun Board.isEmpty(includeHighlights: Boolean): Boolean {
+    if (includeHighlights && lineHighlights.isNotEmpty()) return false
+    return cells.all { (_, cell) -> cell.isEmpty(includeHighlights) }
+}
 
-private val directions = listOf(
-    CellCoordinate(1, 0),
-    CellCoordinate(0, 1),
-    CellCoordinate(1, -1),
-)
-
-fun Board.findWinningRows(): List<List<Pair<CellCoordinate, Cell>>> {
-    val rows = mutableListOf<List<Pair<CellCoordinate, Cell>>>()
+fun Board.findWinningRows(requiredLength: Int = Board.WIN_MIN_LENGTH): List<BoardLine> {
+    val result = mutableListOf<BoardLine>()
 
     for ((coordinate, cell) in cells) {
         val owner = cell.owner ?: continue
 
-        for (direction in directions) {
-            val previousCoordinate = coordinate - direction
+        for (direction in Direction.entries.take(3)) {
+            val previousCoordinate = coordinate - direction.direction
             val previousOwner = cells[previousCoordinate]?.owner
             if (previousOwner == owner) continue
 
-            val row = mutableListOf<Pair<CellCoordinate, Cell>>()
             var current = coordinate
+            var length = 0
 
             while (true) {
                 val currentCell = cells[current] ?: break
                 if (currentCell.owner != owner) break
 
-                row += current to currentCell
-                current += direction
+                current += direction.direction
+                length++
             }
 
-            if (row.size >= Board.WIN_MIN_LENGTH) {
-                rows += row
+            if (length >= requiredLength) {
+                result += BoardLine(coordinate, direction, length)
             }
         }
     }
 
-    return rows
+    return result
 }
 
 @IgnorableReturnValue
 fun MutableBoard.focusWinningRows() = apply {
     findWinningRows().forEach {
-        it.forEach { (coordinate) ->
+        it.forEach { coordinate ->
             this[coordinate].focused = true
         }
     }

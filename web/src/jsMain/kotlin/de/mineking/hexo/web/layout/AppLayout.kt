@@ -24,6 +24,8 @@ import de.mineking.hexo.web.icons.SettingsIcon
 import de.mineking.hexo.web.pages.watchparty.WatchPartyHostOptions
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsView
+import org.jetbrains.compose.web.attributes.ATarget
+import org.jetbrains.compose.web.attributes.target
 import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
@@ -291,7 +293,7 @@ private fun AppFooter() {
                 SettingsButton()
 
                 A(GITHUB_URL, {
-                    attr("target", "_blank")
+                    target(ATarget.Blank)
                     attr("rel", "noreferrer noopener")
                     attr("aria-label", "Open GitHub repository")
                     classes(

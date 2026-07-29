@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
 import de.mineking.hexo.board.render.image.theme.Theme
@@ -77,9 +78,9 @@ fun Board.renderToSvg(
     visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     prettyPrint: Boolean = false,
     theme: Theme = Theme.Default,
-    middleLayer: RenderingContext.() -> Unit = {},
+    renderingHook: BoardRenderingHook? = null,
 ): String {
-    require(cells.isNotEmpty())
+    require(!isEmpty(includeHighlights = true))
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val width = layout.boundingBox.width + 2 * padding
@@ -88,7 +89,7 @@ fun Board.renderToSvg(
     val topLeftCorner = layout.boundingBox.topLeft - Point(padding, padding)
 
     val context = SvgRenderingBackend(topLeftCorner)
-    context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, middleLayer)
+    context.drawBoard(layout.copy(boundingBox = layout.boundingBox.pad(padding)), theme, renderingHook)
 
     return svgString(prettyPrint) {
         svg {

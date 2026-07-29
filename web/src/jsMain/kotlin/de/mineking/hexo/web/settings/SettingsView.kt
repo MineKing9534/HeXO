@@ -4,6 +4,9 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.web.components.Checkbox
+import org.jetbrains.compose.web.attributes.ATarget
+import org.jetbrains.compose.web.attributes.target
+import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Label
 import org.jetbrains.compose.web.dom.Span
@@ -15,12 +18,26 @@ fun SettingsView() {
         BooleanSettingsField(
             key = SettingsKey.SessionViewTimerSounds,
             title = "Timeout sounds",
-            description = "Play an alert when a watched session timer runs out.",
+            description = { Text("Play an alert when a watched session timer runs out.") },
         )
         BooleanSettingsField(
             key = SettingsKey.ReadOnlyBoardHoverIndicator,
             title = "Read-only hover indicator",
-            description = "Show the target cell while hovering over boards you cannot edit.",
+            description = { Text("Show the target cell while hovering over boards you cannot edit.") },
+        )
+        BooleanSettingsField(
+            key = SettingsKey.SessionAnalyzer,
+            title = "Session analyzer",
+            description = {
+                Text("Analyzed sessions for forced-wins while watching (Powered by ")
+                A(href = "https://github.com/SootyOwl/hexo-strix", {
+                    target(ATarget.Blank)
+                    classes("font-bold", "text-sky-400")
+                }) {
+                    Text("Strix")
+                }
+                Text(").")
+            },
         )
     }
 }
@@ -29,9 +46,9 @@ fun SettingsView() {
 private fun BooleanSettingsField(
     key: SettingsKey<Boolean>,
     title: String,
-    description: String,
+    description: @Composable () -> Unit,
 ) {
-    var value by rememberSettingsValue(key)
+    var value by key.collectAsState()
     val checkboxId = "setting-${key.name}"
 
     Label(forId = checkboxId, attrs = {
@@ -55,7 +72,7 @@ private fun BooleanSettingsField(
                 Text(title)
             }
             Span({ classes("text-sm", "leading-snug", "text-slate-500") }) {
-                Text(description)
+                description()
             }
         }
     }

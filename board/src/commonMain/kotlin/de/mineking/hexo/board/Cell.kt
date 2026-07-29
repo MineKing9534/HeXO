@@ -52,7 +52,12 @@ data class CellOverride(
     val label: Omissible<String> = omitted(),
 )
 
-fun Cell.isEmpty() = this == Cell.EMPTY
+fun Cell.isEmpty(includeHighlights: Boolean): Boolean {
+    if (owner != null) return false
+    if (!includeHighlights) return true
+
+    return !focused && highlight == null && label.isBlank()
+}
 
 fun Cell.toOverride() = CellOverride(
     owner = owner.omittedIfNull(),
@@ -92,8 +97,46 @@ operator fun CellCoordinate.plus(other: CellCoordinate) = CellCoordinate(q + oth
 operator fun CellCoordinate.minus(other: CellCoordinate) = CellCoordinate(q - other.q, r - other.r)
 operator fun CellCoordinate.times(scalar: Int) = CellCoordinate(q * scalar, r * scalar)
 
+interface BoardLine : Iterable<CellCoordinate> {
+    val start: CellCoordinate
+    val direction: Direction
+    val length: Int
+
+    override fun iterator() = BoardLineIterator(start, direction, endExclusive)
+
+    class BoardLineIterator(
+        private var current: CellCoordinate,
+        private val direction: Direction,
+        private val endExclusive: CellCoordinate,
+    ) : Iterator<CellCoordinate> {
+        override fun hasNext() = current != endExclusive
+        override fun next(): CellCoordinate {
+            if (!hasNext()) throw NoSuchElementException()
+            return current.also {
+                current += direction.direction
+            }
+        }
+    }
+}
+
+@Suppress("FunctionNaming")
+fun BoardLine(
+    start: CellCoordinate,
+    direction: Direction,
+    length: Int,
+) = object : BoardLine {
+    override val start = start
+    override val direction = direction
+    override val length = length
+}
+
 @Serializable
-data class LineHighlight(val start: CellCoordinate, val direction: Direction, val length: Int, val color: CellOwner?) {
+data class LineHighlight(
+    override val start: CellCoordinate,
+    override val direction: Direction,
+    override val length: Int,
+    val color: CellOwner?,
+) : BoardLine {
     init {
         requireHexo(length in 1..MAX_LENGTH) { "Length must be between 1 and $MAX_LENGTH" }
     }
@@ -103,5 +146,7 @@ data class LineHighlight(val start: CellCoordinate, val direction: Direction, va
     }
 }
 
-val LineHighlight.end get() = start + direction.direction * (length - 1)
-operator fun LineHighlight.contains(coordinate: CellCoordinate) = (0 until length).any { coordinate == start + direction.direction * it }
+val BoardLine.endInclusive get() = start + direction.direction * (length - 1)
+val BoardLine.endExclusive get() = start + direction.direction * length
+
+operator fun BoardLine.contains(coordinate: CellCoordinate) = (0 until length).any { coordinate == start + direction.direction * it }

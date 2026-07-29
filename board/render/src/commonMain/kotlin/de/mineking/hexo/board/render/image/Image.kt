@@ -9,7 +9,7 @@ import kotlin.math.sin
 fun RenderingBackend.drawBoard(
     layout: BoardRenderLayout,
     theme: Theme = Theme.Default,
-    middleLayer: RenderingContext.() -> Unit = {},
+    renderingHook: BoardRenderingHook? = null,
 ) {
     val context = RenderingContext(
         backend = this,
@@ -17,8 +17,55 @@ fun RenderingBackend.drawBoard(
         theme = theme,
     )
 
+    renderingHook?.run { context.drawBottomLayer() }
+
     theme.render(context) {
-        context.middleLayer()
+        renderingHook?.run { context.drawMiddleLayer() }
+    }
+
+    renderingHook?.run { context.drawTopLayer() }
+}
+
+interface BoardRenderingHook {
+    fun RenderingContext.drawBottomLayer() {}
+    fun RenderingContext.drawMiddleLayer() {}
+    fun RenderingContext.drawTopLayer() {}
+
+    companion object {
+        fun bottomLayer(block: RenderingContext.() -> Unit) = object : BoardRenderingHook {
+            override fun RenderingContext.drawBottomLayer() {
+                block()
+            }
+        }
+
+        fun middleLayer(block: RenderingContext.() -> Unit) = object : BoardRenderingHook {
+            override fun RenderingContext.drawMiddleLayer() {
+                block()
+            }
+        }
+
+        fun topLayer(block: RenderingContext.() -> Unit) = object : BoardRenderingHook {
+            override fun RenderingContext.drawTopLayer() {
+                block()
+            }
+        }
+    }
+}
+
+operator fun BoardRenderingHook?.plus(other: BoardRenderingHook?) = object : BoardRenderingHook {
+    override fun RenderingContext.drawBottomLayer() {
+        this@plus?.run { this@drawBottomLayer.drawBottomLayer() }
+        other?.run { this@drawBottomLayer.drawBottomLayer() }
+    }
+
+    override fun RenderingContext.drawMiddleLayer() {
+        this@plus?.run { this@drawMiddleLayer.drawMiddleLayer() }
+        other?.run { this@drawMiddleLayer.drawMiddleLayer() }
+    }
+
+    override fun RenderingContext.drawTopLayer() {
+        this@plus?.run { this@drawTopLayer.drawTopLayer() }
+        other?.run { this@drawTopLayer.drawTopLayer() }
     }
 }
 
