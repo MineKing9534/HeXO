@@ -139,6 +139,10 @@ private class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoar
                             board.value = target.overlay
                             currentMove.value = target.move
                         }
+                        is WatchPartyTarget.Game -> {
+                            board.value = target.overlay
+                            currentMove.value = target.move
+                        }
                         else -> {}
                     }
                 }
