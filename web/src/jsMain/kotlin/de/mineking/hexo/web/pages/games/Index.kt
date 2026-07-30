@@ -13,6 +13,7 @@ import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import de.mineking.hexo.hds.game.FinishedGame
 import de.mineking.hexo.hds.game.FinishedGameRepository
+import de.mineking.hexo.hds.game.Game
 import de.mineking.hexo.web.board.Player
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
@@ -30,6 +31,7 @@ import de.mineking.hexo.web.icons.CasualGameIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.StarIcon
+import de.mineking.hexo.web.icons.TournamentIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsApiClient
@@ -209,14 +211,7 @@ private fun GameCard(game: FinishedGame) {
         }) {
             Div({ classes("min-w-0") }) {
                 Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
-                    Badge(if (game.options.rated) Color.Yellow else Color.Neutral) {
-                        if (game.options.rated) {
-                            StarIcon { classes("size-3.5", "fill-current") }
-                        } else {
-                            CasualGameIcon { classes("size-3.5", "fill-none", "stroke-current") }
-                        }
-                        Text(if (game.options.rated) "Rated" else "Casual")
-                    }
+                    GameTypeBadge(game)
                     Badge(attrs = {
                         attr("title", game.startedAt.toString())
                     }) {
@@ -250,6 +245,32 @@ private fun GameCard(game: FinishedGame) {
                 ChevronRightIcon {
                     classes("size-4", "transition-transform", "group-hover:translate-x-0.5")
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun GameTypeBadge(game: Game) {
+    Badge(
+        when {
+            game.tournamentInfo != null -> Color.Sky
+            game.options.rated -> Color.Yellow
+            else -> Color.Neutral
+        },
+    ) {
+        when {
+            game.tournamentInfo != null -> {
+                TournamentIcon { classes("size-3.5") }
+                Text("Tournament")
+            }
+            game.options.rated -> {
+                StarIcon { classes("size-3.5", "fill-current") }
+                Text("Rated")
+            }
+            else -> {
+                CasualGameIcon { classes("size-3.5", "fill-none", "stroke-current") }
+                Text("Casual")
             }
         }
     }
