@@ -13,9 +13,9 @@ import androidx.compose.runtime.staticCompositionLocalOf
 import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.getValue
 import com.varabyte.kobweb.core.layout.Layout
-import com.varabyte.kobweb.navigation.Anchor
 import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
@@ -107,7 +107,7 @@ private fun NavBar(activePage: AppRoute?) {
         Div({
             classes("mx-auto", "flex", "w-full", "items-center", "justify-between", "gap-3")
         }) {
-            Anchor("/", {
+            Anchor(AppRoute.LobbyList, {
                 classes(
                     "group", "flex", "min-w-0", "items-center", "gap-2.5", "rounded-md", "px-1", "py-1",
                     "transition", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
@@ -137,7 +137,7 @@ private fun NavBar(activePage: AppRoute?) {
                 )
             }) {
                 NavBarEntry.entries.forEach {
-                    NavLink(it.label, it.route.href, activePage?.navBarEntry == it)
+                    NavLink(it.label, it.route, activePage?.navBarEntry == it)
                 }
             }
         }
@@ -316,8 +316,8 @@ private fun AppFooter() {
 }
 
 @Composable
-private fun NavLink(label: String, href: String, active: Boolean) {
-    Anchor(href, {
+private fun NavLink(label: String, route: AppRoute, active: Boolean) {
+    Anchor(route, {
         classes(
             "rounded-lg", "border", "px-3", "py-1.5", "text-sm", "font-semibold", "transition",
             "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60", "md:px-4",

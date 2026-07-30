@@ -11,7 +11,6 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import com.varabyte.kobweb.navigation.Anchor
 import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LobbySession
 import de.mineking.hexo.hds.session.Session
@@ -19,22 +18,21 @@ import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
-import de.mineking.hexo.web.board.SessionBoardViewManager
+import de.mineking.hexo.web.board.GameBoardPane
+import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
+import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
-import de.mineking.hexo.web.icons.ArrowLeftIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsApiClient
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.session.LobbyOverlay
-import de.mineking.hexo.web.session.SessionBoardPane
 import de.mineking.hexo.web.session.SessionFinishedOverlay
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
 private val RouteInfo.sessionId get() = SessionId(params["id"]!!)
@@ -47,12 +45,12 @@ fun initSessionPage(ctx: InitRouteContext) {
 @Page("{id}")
 @Composable
 fun SessionPage(ctx: PageContext) {
-    val boardViewManager = rememberHostBoardViewManager<SessionBoardViewManager>()
+    val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
     Session(ctx.route.sessionId, boardViewManager)
 }
 
 @Composable
-fun Session(id: SessionId, boardViewManager: SessionBoardViewManager) {
+fun Session(id: SessionId, boardViewManager: GameBoardViewManager) {
     val hdsClient = rememberHdsApiClient()
     if (hdsClient == null) {
         LoadingState()
@@ -70,7 +68,7 @@ fun Session(id: SessionId, boardViewManager: SessionBoardViewManager) {
                 is LiveSession -> {
                     val state = session.state
 
-                    SessionBoardPane(session, state as? SessionState.InGame, boardViewManager)
+                    GameBoardPane(session.game, state is SessionState.InGame, boardViewManager)
                     if (state is SessionState.Finished) SessionFinishedOverlay(session, state)
                 }
                 is LobbySession -> LobbyOverlay(session)
@@ -123,25 +121,6 @@ private fun NotFoundState() {
         P({ classes("text-slate-400", "text-center") }) {
             Text("This live session does not exist anymore. It may have finished already, been closed, or the link may be incorrect.")
         }
-        BackToLobbiesLink()
-    }
-}
-
-@Composable
-fun BackToLobbiesLink() {
-    Anchor("/", {
-        classes(
-            "group", "inline-flex", "items-center", "gap-2", "rounded-lg", "border", "px-4", "py-2", "text-sm", "font-semibold", "shadow-sm",
-            "border-emerald-500/40", "bg-emerald-500/10", "text-emerald-100", "shadow-emerald-950/20", "transition",
-            "hover:border-emerald-400/60", "hover:bg-emerald-500/20", "hover:text-white",
-            "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60", "mt-2",
-        )
-    }) {
-        ArrowLeftIcon {
-            classes("size-4", "shrink-0", "transition-transform", "group-hover:-translate-x-0.5")
-        }
-        Span({ classes("whitespace-nowrap") }) {
-            Text("Back to lobbies")
-        }
+        BackLink(AppRoute.LobbyList, "Back to lobbies")
     }
 }

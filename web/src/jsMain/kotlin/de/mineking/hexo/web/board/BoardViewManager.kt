@@ -50,7 +50,7 @@ interface BoardViewManager {
     fun clearHighlights()
 }
 
-interface SessionBoardViewManager : BoardViewManager {
+interface GameBoardViewManager : BoardViewManager {
     val currentMove: MutableState<Int>
 }
 
@@ -60,7 +60,7 @@ interface SandboxBoardViewManager : BoardViewManager {
     fun updateCell(coordinate: CellCoordinate, override: CellOverride)
 }
 
-interface SubscriberBoardViewManager : SessionBoardViewManager, SandboxBoardViewManager
+interface SubscriberBoardViewManager : GameBoardViewManager, SandboxBoardViewManager
 
 private open class LocalBoardViewManager : SubscriberBoardViewManager {
     override val hasClearableHighlights = mutableStateOf(false)
@@ -136,6 +136,10 @@ private class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoar
                             currentMove.value = Int.MAX_VALUE
                         }
                         is WatchPartyTarget.Session -> {
+                            board.value = target.overlay
+                            currentMove.value = target.move
+                        }
+                        is WatchPartyTarget.Game -> {
                             board.value = target.overlay
                             currentMove.value = target.move
                         }

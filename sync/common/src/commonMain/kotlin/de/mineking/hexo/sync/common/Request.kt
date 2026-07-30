@@ -4,6 +4,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.hds.game.GameId
 import de.mineking.hexo.hds.session.SessionId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -20,6 +21,10 @@ sealed interface WatchPartyNavigateTarget {
     @Serializable
     @SerialName("session")
     data class Session(val id: SessionId) : WatchPartyNavigateTarget
+
+    @Serializable
+    @SerialName("game")
+    data class Game(val id: GameId) : WatchPartyNavigateTarget
 }
 
 @Serializable

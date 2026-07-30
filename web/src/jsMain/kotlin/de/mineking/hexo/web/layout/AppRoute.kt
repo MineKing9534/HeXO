@@ -1,10 +1,12 @@
 package de.mineking.hexo.web.layout
 
+import de.mineking.hexo.hds.game.GameId
 import de.mineking.hexo.hds.session.SessionId
 import de.mineking.hexo.sync.common.WatchPartyId
 
 enum class NavBarEntry(val label: String, val route: AppRoute) {
     Lobbies("Lobbies", AppRoute.LobbyList),
+    History("History", AppRoute.FinishedGameList),
     Sandbox("Sandbox", AppRoute.Sandbox),
     WatchParty("Watch Party", AppRoute.WatchPartyHome),
 }
@@ -21,6 +23,16 @@ sealed interface AppRoute {
     data class Session(val id: SessionId) : AppRoute {
         override val href = "/sessions/${id.value}"
         override val navBarEntry get() = NavBarEntry.Lobbies
+    }
+
+    data object FinishedGameList : AppRoute {
+        override val href = "/games"
+        override val navBarEntry get() = NavBarEntry.History
+    }
+
+    data class FinishedGame(val id: GameId) : AppRoute {
+        override val href = "/games/${id.value}"
+        override val navBarEntry get() = NavBarEntry.History
     }
 
     data object Sandbox : AppRoute {

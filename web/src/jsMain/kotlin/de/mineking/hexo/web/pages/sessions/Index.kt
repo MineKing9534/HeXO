@@ -10,12 +10,12 @@ import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.layout.Layout
-import com.varabyte.kobweb.navigation.Anchor
 import de.mineking.hexo.hds.game.Player
 import de.mineking.hexo.hds.session.LobbySession
 import de.mineking.hexo.hds.session.SessionRepository
 import de.mineking.hexo.hds.session.hasStarted
 import de.mineking.hexo.hds.utils.TimeControl
+import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
@@ -123,7 +123,7 @@ private fun EmptyLobbyState() {
 
 @Composable
 private fun LobbyCard(lobby: LobbySession) {
-    Anchor("/sessions/${lobby.id.value}", {
+    Anchor(AppRoute.Session(lobby.id), {
         classes("block")
     }) {
         SubCard({

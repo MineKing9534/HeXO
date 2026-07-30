@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.session
+package de.mineking.hexo.web.board
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -14,23 +14,18 @@ import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.hds.game.FinishedGamePlayer
+import de.mineking.hexo.hds.game.Game
 import de.mineking.hexo.hds.game.Move
 import de.mineking.hexo.hds.game.Player
-import de.mineking.hexo.hds.session.LiveSession
 import de.mineking.hexo.hds.session.LiveSessionPlayer
-import de.mineking.hexo.hds.session.SessionState
 import de.mineking.hexo.hds.utils.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
-import de.mineking.hexo.web.board.AnalyzerStatusDisplay
-import de.mineking.hexo.web.board.AnalyzerTurn
-import de.mineking.hexo.web.board.BoardPane
-import de.mineking.hexo.web.board.SessionBoardViewManager
-import de.mineking.hexo.web.board.rememberBoard
-import de.mineking.hexo.web.board.rememberBoardAnalysis
-import de.mineking.hexo.web.board.renderingHook
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.Tooltip
+import de.mineking.hexo.web.icons.AlertTriangleIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.ClearHighlightsIcon
@@ -54,6 +49,7 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
+import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.events.EventListener
 import org.w3c.dom.events.KeyboardEvent
 import kotlin.math.ceil
@@ -66,11 +62,11 @@ import kotlin.time.Duration.Companion.seconds
 private const val MOVES_PER_TURN = 2
 
 @Composable
-fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardViewManager: SessionBoardViewManager) {
+fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewManager) {
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
 
     val watchPartyController = rememberWatchPartyController()
-    LaunchedEffect(session.game.id) {
+    LaunchedEffect(game.id) {
         viewport.value = null
 
         // Don't clear highlights when subscribed to a watch party
@@ -80,21 +76,22 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
     }
 
     val move by boardViewManager.currentMove
-    val board = session.game.rememberBoard(
+    val board = game.rememberBoard(
         overlay = boardViewManager.board.value,
         move = move,
     )
 
-    val (effectiveTurnPlayer, effectivePlacementsRemaining) = session.effectiveTurn(move)
+    val (effectiveTurnPlayer, effectivePlacementsRemaining) = game.effectiveTurn(move)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
-    val analyzerState = if (shouldAnalyze && (state != null || move < session.game.moveCount)) {
+    val analyzerState = if (shouldAnalyze && (isLive || move < game.moveCount)) {
         val turn = AnalyzerTurn(effectiveTurnPlayer.color, effectivePlacementsRemaining)
         rememberBoardAnalysis(board, turn)
     } else {
         null
     }
 
+    val allowAnalyzerOverlay = !(isLive && game.options.rated)
     var showAnalyzerOverlay by remember { mutableStateOf(true) }
 
     BoardPane(
@@ -102,42 +99,83 @@ fun SessionBoardPane(session: LiveSession, state: SessionState.InGame?, boardVie
         readOnly = true,
         viewport = viewport.value,
         onViewportChange = { viewport.value = it },
-        renderingHook = analyzerState?.takeIf { showAnalyzerOverlay }?.renderingHook(),
+        renderingHook = analyzerState?.takeIf { showAnalyzerOverlay && allowAnalyzerOverlay }?.renderingHook(),
         onBoardInteraction = { interaction ->
             if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
             boardViewManager.apply(interaction)
         },
     ) {
-        if (state != null) TurnIndicator(session, effectiveTurnPlayer, effectivePlacementsRemaining)
-        BoardControls(session, boardViewManager, viewport)
+        TurnIndicator(game, isLive, effectiveTurnPlayer, effectivePlacementsRemaining)
+        BoardControls(game, boardViewManager, viewport)
 
         if (analyzerState != null) {
             AnalyzerStatusDisplay(
                 state = analyzerState,
-                analyzedPlayer = effectiveTurnPlayer,
-                otherPlayer = session.players.first { it != effectiveTurnPlayer },
-                attrs = { classes("absolute", "right-4", "top-4") },
+                allowAnalyzerOverlay = allowAnalyzerOverlay,
+                showAnalyzerOverlay = showAnalyzerOverlay,
+                onShowAnalyzerOverlayChange = { showAnalyzerOverlay = it },
+                effectiveTurnPlayer = effectiveTurnPlayer,
+                otherPlayer = game.players.first { it != effectiveTurnPlayer },
+            )
+        }
+    }
+}
+
+@Composable
+private fun AnalyzerStatusDisplay(
+    state: BoardAnalyzerState,
+    allowAnalyzerOverlay: Boolean,
+    showAnalyzerOverlay: Boolean,
+    onShowAnalyzerOverlayChange: (Boolean) -> Unit,
+    effectiveTurnPlayer: Player,
+    otherPlayer: Player,
+) {
+    AnalyzerStatusDisplay(
+        state = state,
+        analyzedPlayer = effectiveTurnPlayer,
+        otherPlayer = otherPlayer,
+        attrs = { classes("absolute", "right-4", "top-4") },
+    ) {
+        if (allowAnalyzerOverlay) {
+            ActionButton(
+                onClick = { onShowAnalyzerOverlayChange(!showAnalyzerOverlay) },
+                attrs = { classes("flex-0") },
             ) {
-                ActionButton(
-                    onClick = { showAnalyzerOverlay = !showAnalyzerOverlay },
-                    attrs = { classes("flex-0") },
-                ) {
-                    if (showAnalyzerOverlay) {
-                        EyeOffIcon { classes("size-4") }
-                    } else {
-                        EyeIcon { classes("size-4") }
-                    }
+                if (showAnalyzerOverlay) {
+                    EyeOffIcon { classes("size-4") }
+                } else {
+                    EyeIcon { classes("size-4") }
+                }
+            }
+        } else {
+            Tooltip(
+                text = "The forced-win overlay is disabled for live rated games",
+                tooltipAttrs = {
+                    classes("right-11", "top-1/2", "w-max", "max-w-72", "-translate-y-1/2")
+                },
+            ) {
+                Div({
+                    classes(
+                        "size-9", "rounded-md", "border", "shadow-lg", "backdrop-blur-xs", "grid", "place-items-center",
+                        "border-amber-400/50", "bg-slate-900/90", "text-amber-300",
+                    )
+                    attr("role", "img")
+                    attr("aria-label", "The forced-win overlay is disabled for live rated games")
+                    attr("tabindex", "0")
+                    onMouseDown { it.preventDefault() }
+                }) {
+                    AlertTriangleIcon { classes("size-4") }
                 }
             }
         }
     }
 }
 
-private fun LiveSession.effectiveTurn(move: Int): Pair<Player, Int> {
-    val move = move.coerceIn(0, game.moveCount) + 1
+private fun Game.effectiveTurn(move: Int): Pair<Player, Int> {
+    val move = move.coerceIn(0, moveCount) + 1
 
     val index = (move / 2) % 2
-    val player = game.players[index] // Game players are ordered by first placement
+    val player = players[index] // Game players are ordered by first placement
     val remaining = 2 - (move % 2)
 
     return player to remaining
@@ -164,17 +202,17 @@ private fun BoardActionButton(
 
 @Composable
 private fun BoardScope.BoardControls(
-    session: LiveSession,
-    boardViewManager: SessionBoardViewManager,
+    game: Game,
+    boardViewManager: GameBoardViewManager,
     viewport: MutableState<BoardViewport?>,
 ) {
     val layout = rememberAppLayout()
-    val totalMoves = session.game.moves.size
+    val totalMoves = game.moves.size
     val hasClearableHighlights by boardViewManager.hasClearableHighlights
     var currentMove by boardViewManager.currentMove
 
     MoveKeyboardShortcuts(
-        moves = session.game.moves,
+        moves = game.moves,
         move = boardViewManager.currentMove,
         viewport = viewport,
     )
@@ -313,9 +351,14 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
 }
 
 @Composable
-private fun TurnIndicator(session: LiveSession, currentPlayer: Player, placementsRemaining: Int) {
+private fun TurnIndicator(
+    game: Game,
+    isLive: Boolean,
+    currentPlayer: Player,
+    placementsRemaining: Int,
+) {
     @Composable
-    fun PlayerIndicator(player: LiveSessionPlayer) {
+    fun PlayerIndicator(player: Player) {
         val isCurrentTurn = player === currentPlayer
         Div({ classes("flex", "flex-col", "justify-center", "gap-2") }) {
             Div({
@@ -327,7 +370,7 @@ private fun TurnIndicator(session: LiveSession, currentPlayer: Player, placement
                 }
             }) {
                 Player(player)
-                PlayerTimer(player, isCurrentTurn)
+                if (player is LiveSessionPlayer && isLive) PlayerTimer(player, isCurrentTurn)
             }
             if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
         }
@@ -337,11 +380,11 @@ private fun TurnIndicator(session: LiveSession, currentPlayer: Player, placement
         Div({
             classes("pointer-events-auto", "shadow-xl", "bg-slate-800/85", "rounded-lg", "p-3", "max-w-xl", "w-full", "backdrop-blur-xs")
         }) {
-            if (session.tournamentInfo != null) TournamentInfoCard(session)
-            if (session.gameOptions.rated) RatedInfoCard(session)
+            if (game.tournamentInfo != null) TournamentInfoCard(game)
+            if (game.options.rated) RatedInfoCard(game)
 
             Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
-                session.players.forEach {
+                game.players.forEach {
                     PlayerIndicator(it)
                 }
             }
@@ -350,7 +393,7 @@ private fun TurnIndicator(session: LiveSession, currentPlayer: Player, placement
 }
 
 @Composable
-private fun RatedInfoCard(session: LiveSession) {
+private fun RatedInfoCard(game: Game) {
     Div({
         classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
     }) {
@@ -361,16 +404,30 @@ private fun RatedInfoCard(session: LiveSession) {
         }
 
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
-            session.players.forEach { player ->
+            game.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
                     Player(player)
                     Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
                         Text("Elo ${player.elo}")
 
+                        @Composable
+                        fun EloDiff(diff: Int) {
+                            Span({
+                                classes(if (diff >= 0) "text-emerald-300" else "text-rose-300")
+                            }) {
+                                if (diff >= 0) Text("+")
+                                Text("$diff")
+                            }
+                        }
+
                         Span({ classes("ml-1", "text-xs") }) {
-                            Span({ classes("text-emerald-300") }) { Text("+${player.eloAdjustment?.eloGain}") }
-                            Text("/")
-                            Span({ classes("text-rose-300") }) { Text("${player.eloAdjustment?.eloLoss}") }
+                            if (player is LiveSessionPlayer) {
+                                EloDiff(player.eloAdjustment?.eloGain ?: 0)
+                                Text("/")
+                                EloDiff(player.eloAdjustment?.eloLoss ?: 0)
+                            } else if (player is FinishedGamePlayer) {
+                                EloDiff(player.eloChange ?: 0)
+                            }
                         }
                     }
                 }
@@ -380,8 +437,8 @@ private fun RatedInfoCard(session: LiveSession) {
 }
 
 @Composable
-private fun TournamentInfoCard(session: LiveSession) {
-    val tournament = session.tournamentInfo ?: return
+private fun TournamentInfoCard(game: Game) {
+    val tournament = game.tournamentInfo ?: return
     val requiredWins = tournament.bestOf / 2 + 1
 
     Div({
@@ -397,7 +454,7 @@ private fun TournamentInfoCard(session: LiveSession) {
         }
 
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
-            session.players.forEach { player ->
+            game.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
                     Player(player)
                     Span({ classes("shrink-0", "tabular-nums") }) {
@@ -418,14 +475,20 @@ private fun TournamentInfoCard(session: LiveSession) {
 }
 
 @Composable
-fun Player(player: Player) {
+fun Player(
+    player: Player,
+    attrs: AttrBuilderContext<HTMLSpanElement>? = null,
+) {
     val theme by rememberTheme()
-    Span({ classes("inline-flex", "gap-1.5", "flex-nowrap", "items-center") }) {
+    Span({
+        classes("inline-flex", "gap-1.5", "flex-nowrap", "items-center", "text-slate-300")
+        attrs?.invoke(this)
+    }) {
         Div({
             classes("rounded-full", "size-2", "shrink-0")
             style { backgroundColor(theme.playerCssColor(player.color)) }
         })
-        Span({ classes("min-w-0", "max-w-52", "flex-1", "truncate", "text-slate-300") }) {
+        Span({ classes("min-w-0", "max-w-52", "flex-1", "truncate") }) {
             Text(player.displayName)
         }
     }

@@ -18,6 +18,7 @@ import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.rgba
+import kotlin.time.Duration
 
 @Composable
 fun <T> rememberPrevious(key: Any?, value: T): T? {
@@ -95,4 +96,16 @@ fun BaseTheme.playerCssColor(owner: CellOwner) = playerColor(owner).css
 fun BaseTheme.playerColor(owner: CellOwner) = when (owner) {
     CellOwner.X -> playerXColor
     CellOwner.O -> playerOColor
+}
+
+fun Duration.formatCompact(): String {
+    val hours = inWholeHours
+    val minutes = inWholeMinutes % 60
+    val seconds = inWholeSeconds % 60
+
+    return when {
+        hours > 0 -> "${hours}h ${minutes}m"
+        minutes > 0 -> "${minutes}m ${seconds}s"
+        else -> "${seconds}s"
+    }
 }

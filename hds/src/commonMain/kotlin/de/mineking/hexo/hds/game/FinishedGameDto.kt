@@ -47,6 +47,7 @@ internal data class MoveDto(
     val playerId: PlayerId,
     @SerialName("x") val q: Int,
     @SerialName("y") val r: Int,
+    val timestamp: Instant,
 )
 
 @Serializable
