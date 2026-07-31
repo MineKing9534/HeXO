@@ -1,13 +1,18 @@
 package de.mineking.hexo.board.latex
 
-import de.mineking.hexo.board.parse.parseRectilinearNotation
+import de.mineking.hexo.board.InternalBoardApi
+import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.mutable
+import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.tikz.renderToTikZ
 import de.mineking.kotlinlatex.ExpandLatex
 import de.mineking.kotlinlatex.Latex
 import de.mineking.kotlinlatex.LatexCommand
 import de.mineking.kotlinlatex.raw
+import kotlinx.coroutines.runBlocking
 
+@OptIn(InternalBoardApi::class)
 @LatexCommand("hexo")
 fun hexoCommand(
     padding: Latex = raw("32"),
@@ -20,7 +25,12 @@ fun hexoCommand(
     @ExpandLatex theme: Latex = raw("\\hdstheme"),
     @ExpandLatex notation: Latex,
 ): Latex {
-    val board = notation.source.parseRectilinearNotation(focusWinningRows = focusWinningRows.source.toBooleanStrict())
+    val board = runBlocking { // BoardParser.Default only has synchronous implementations so using the dummy runBlocking is safe
+        BoardParser.Default.parse(notation.source).mutable().apply {
+            if (focusWinningRows.source.toBooleanStrict()) focusWinningRows()
+        }
+    }
+
     val tikz = board.renderToTikZ(
         padding = padding.source.toInt(),
         visibleRadius = visibleRadius.source.toInt(),
