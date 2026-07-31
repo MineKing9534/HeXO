@@ -3,6 +3,7 @@ package de.mineking.hexo.board.render.image.tikz
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderingHook
+import de.mineking.hexo.board.render.image.BoundingBox
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
@@ -12,12 +13,17 @@ import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.bottomRight
 import de.mineking.hexo.board.render.image.createRenderLayout
 import de.mineking.hexo.board.render.image.drawBoard
+import de.mineking.hexo.board.render.image.minus
 import de.mineking.hexo.board.render.image.pad
+import de.mineking.hexo.board.render.image.plus
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
 import de.mineking.hexo.board.render.image.theme.Theme
+import de.mineking.hexo.board.render.image.times
 import de.mineking.hexo.board.render.image.toPath
 import de.mineking.hexo.board.render.image.topLeft
+import kotlin.math.abs
+import kotlin.math.max
 import kotlin.math.min
 
 fun Board.renderToTikZ(
@@ -33,55 +39,50 @@ fun Board.renderToTikZ(
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val bounds = layout.boundingBox.pad(padding)
-    val backend = TikZRenderingBackend(theme.backgroundColor, rawLabels, labelStyle)
+    val backend = TikZRenderingBackend(rawLabels, labelStyle)
     backend.drawBoard(layout.copy(boundingBox = bounds), theme, renderingHook)
 
     val viewport = rectangleTikZPath(bounds.topLeft, bounds.bottomRight)
 
-    return tikzPicture(listOf("x=${CSS_PIXEL_IN_BP.tikzNumber()}bp", "y=-${CSS_PIXEL_IN_BP.tikzNumber()}bp")) {
+    val picture = tikzPicture(PICTURE_SCALE_OPTIONS) {
         path(viewport, theme.backgroundColor.fillOptions())
         scope {
             clip(viewport)
-            backend.appendTo(this)
+            backend.appendTo(this, viewport, bounds)
         }
     }
+
+    // PGF caches an installed fading by name. Reusing one fixed name makes later boards use the
+    // first board's text mask, so advance a TeX-side counter before declaring this board's mask.
+    return TEXT_MASK_COUNTER_STEP + picture
 }
 
 class TikZRenderingBackend(
-    private val backgroundColor: Color = Color.Transparent,
     private val rawLabels: Boolean = true,
     private val labelStyle: String = "",
 ) : RenderingBackend {
-    private val polygonCommands = mutableListOf<TikZPicture.() -> Unit>()
-    private val lineCommands = mutableListOf<TikZPicture.() -> Unit>()
-    private val textMaskCommands = mutableListOf<TikZPicture.() -> Unit>()
-    private val textCommands = mutableListOf<TikZPicture.() -> Unit>()
-    private var textBackgroundColor = backgroundColor
+    private val polygonCommands = mutableListOf<TikZCommand>()
+    private val lineCommands = mutableListOf<LineCommand>()
+    private val textMask = mutableListOf<TextMaskEntry>()
+    private val textCommands = mutableListOf<TikZCommand>()
 
-    fun appendTo(picture: TikZPicture) {
-        polygonCommands.forEach { picture.it() }
-        lineCommands.forEach { picture.it() }
-        textMaskCommands.forEach { picture.it() }
-        textCommands.forEach { picture.it() }
+    private data class LineCommand(val from: Point, val to: Point, val stroke: Stroke)
+    private data class TextMaskEntry(val point: Point, val command: TikZCommand)
+
+    fun appendTo(picture: TikZPicture, viewport: TikZPath, bounds: BoundingBox) {
+        picture.append(polygonCommands)
+        val fadingOptions = picture.declareTextFading(bounds)
+
+        picture.scope {
+            clip(viewport)
+            lineCommands.forEach { line -> drawLinePart(line.from, line.to, line.stroke, fadingOptions) }
+        }
+        picture.append(textCommands)
     }
 
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
         fun addLine(value: Stroke) {
-            lineCommands += {
-                if (from == to) {
-                    circle(
-                        from.tikz,
-                        value.width * CSS_PIXEL_IN_BP / 2.0,
-                        listOf(
-                            "fill=${value.color.tikzColor()}",
-                            "fill opacity=${value.color.opacity()}",
-                            "draw=none",
-                        ),
-                    )
-                } else {
-                    line(from.tikz, to.tikz, value.strokeOptions())
-                }
-            }
+            lineCommands += LineCommand(from, to, value)
         }
 
         if (outline != null) addLine(Stroke(outline.color, stroke.width + outline.width))
@@ -89,12 +90,6 @@ class TikZRenderingBackend(
     }
 
     override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) {
-        textBackgroundColor = when (color.alpha) {
-            0 -> backgroundColor
-            255 -> color
-            else -> textBackgroundColor
-        }
-
         val polygon = shape.toPath(borderRadius).toTikZPath()
         polygonCommands += {
             path(polygon, color.fillOptions() + outline.strokeOptions())
@@ -109,47 +104,31 @@ class TikZRenderingBackend(
         font: FontType,
         color: Color,
     ) {
+        val effectiveSize = fittedFontSize(text, maxWidth, fontSize, font)
         if (rawLabels) {
             drawRawLabel(point, text)
         } else {
-            drawGlyphLabel(point, text, maxWidth, fontSize, font, color)
+            drawGlyphLabel(point, text, effectiveSize, font, color)
         }
     }
 
     private fun drawRawLabel(point: Point, text: String) {
-        val styledText = text.withLabelStyle()
-        addMaskNode(point, styledText.rawMask(textBackgroundColor), TEXT_SPACING_OPTIONS)
-        addRawTextNode(point, styledText, TEXT_SPACING_OPTIONS)
+        textCommands += { nodeRaw(point.tikz, text.withLabelStyle(), TEXT_SPACING_OPTIONS) }
+        textMask += TextMaskEntry(point) {
+            nodeRaw(point.tikz, "{$labelStyle ${textMaskHaloContent(text)}}", TEXT_SPACING_OPTIONS)
+            nodeRaw(point.tikz, rawLabelMaskContent(text), TEXT_SPACING_OPTIONS)
+        }
     }
 
     private fun drawGlyphLabel(
         point: Point,
         text: String,
-        maxWidth: Double,
-        fontSize: Float,
+        effectiveSize: Float,
         font: FontType,
         color: Color,
     ) {
-        val estimatedWidth = font.estimateTextWidth(text) * fontSize
-        val effectiveSize = if (estimatedWidth > 0.0) {
-            fontSize * min(1.0, maxWidth / estimatedWidth).toFloat()
-        } else {
-            fontSize
-        }
-        val fontOption = when (font) {
-            FontType.SansSerifBold -> "\\sffamily\\bfseries"
-            FontType.MonospaceRegular -> "\\ttfamily\\mdseries"
-        }
-        val effectiveSizeBp = effectiveSize * CSS_PIXEL_IN_BP
-        val fontOptions = TEXT_SPACING_OPTIONS + listOf(
-            "font={$fontOption\\fontsize{${effectiveSizeBp.tikzNumber()}bp}{${effectiveSizeBp.tikzNumber()}bp}\\selectfont}",
-        )
+        val fontOptions = textOptions(effectiveSize, font)
 
-        addMaskNode(
-            point,
-            text.glyphMask(textBackgroundColor, effectiveSizeBp / GLYPH_MASK_WIDTH_FACTOR),
-            fontOptions + "text opacity=0.8",
-        )
         textCommands += {
             node(
                 point.tikz,
@@ -160,16 +139,97 @@ class TikZRenderingBackend(
                 ),
             )
         }
+        addGlyphLabelMask(point, text, effectiveSize, font)
     }
 
     private fun String.withLabelStyle() = if (labelStyle.isEmpty()) this else "{$labelStyle $this}"
 
-    private fun addMaskNode(point: Point, content: String, options: List<String>) {
-        textMaskCommands += { nodeRaw(point.tikz, content, options) }
+    private fun addGlyphLabelMask(point: Point, text: String, effectiveSize: Float, font: FontType) {
+        val fontOption = fontOption(effectiveSize, font)
+        textMask += TextMaskEntry(point) {
+            nodeRaw(point.tikz, textMaskHaloContent(escapeTikZ(text)), TEXT_SPACING_OPTIONS + fontOption)
+            node(point.tikz, text, TEXT_SPACING_OPTIONS + listOf("text=transparent", fontOption))
+        }
     }
 
-    private fun addRawTextNode(point: Point, content: String, options: List<String>) {
-        textCommands += { nodeRaw(point.tikz, content, options) }
+    private fun textMaskHaloContent(text: String): String {
+        val color = TEXT_MASK_HALO_COLOR
+        val stroke = "${color.red / 255.0} ${color.green / 255.0} ${color.blue / 255.0}"
+        val literal = { value: String ->
+            "\\ifdefined\\pdfextension\\pdfextension literal{$value}\\else\\pdfliteral{$value}\\fi"
+        }
+        return "\\pgfsetlinewidth{\\dimexpr\\fontdimen6\\font/5\\relax}" +
+            literal("q 2 Tr $stroke RG 1 J 1 j") + " " +
+            text +
+            literal("0 Tr Q")
+    }
+
+    private fun rawLabelMaskContent(text: String) = "{$labelStyle \\color{transparent} $text}"
+
+    private fun TikZPicture.declareTextFading(bounds: BoundingBox): List<String> {
+        if (textMask.isEmpty()) return emptyList()
+
+        declareFading(TEXT_MASK_NAME, PICTURE_SCALE_OPTIONS) {
+            val halfExtent = textMaskHalfExtent(bounds)
+            path(
+                rectangleTikZPath(Point(-halfExtent, -halfExtent), Point(halfExtent, halfExtent)),
+                Color.rgb(0xffffff).fillOptions(),
+            )
+            textMask.forEach { it.command(this) }
+        }
+        return TEXT_FADING_OPTIONS
+    }
+
+    // PGF centers a fading picture on its origin. A symmetric background prevents the fading from
+    // shifting while still covering the viewport and every text node that can cut into a line.
+    private fun textMaskHalfExtent(bounds: BoundingBox): Double {
+        var halfExtent = maxOf(abs(bounds.minX), abs(bounds.maxX), abs(bounds.minY), abs(bounds.maxY))
+        textMask.forEach { entry ->
+            halfExtent = max(halfExtent, max(abs(entry.point.x), abs(entry.point.y)))
+        }
+        return halfExtent + TEXT_MASK_MARGIN
+    }
+}
+
+private typealias TikZCommand = TikZPicture.() -> Unit
+private fun TikZPicture.append(commands: List<TikZCommand>) {
+    commands.forEach { it() }
+}
+
+private fun FontType.tikzOption() = when (this) {
+    FontType.SansSerifBold -> "\\sffamily\\bfseries"
+    FontType.MonospaceRegular -> "\\ttfamily\\mdseries"
+}
+
+private fun fontOption(fontSize: Float, font: FontType): String {
+    val sizeBp = fontSize * CSS_PIXEL_IN_BP
+    return "font={${font.tikzOption()}\\fontsize{${sizeBp.tikzNumber()}bp}{${sizeBp.tikzNumber()}bp}\\selectfont}"
+}
+
+private fun textOptions(fontSize: Float, font: FontType) = TEXT_SPACING_OPTIONS + fontOption(fontSize, font)
+
+private fun fittedFontSize(text: String, maxWidth: Double, fontSize: Float, font: FontType): Float {
+    val estimatedWidth = font.estimateTextWidth(text) * fontSize
+    return if (estimatedWidth > 0.0) {
+        fontSize * min(1.0, maxWidth / estimatedWidth).toFloat()
+    } else {
+        fontSize
+    }
+}
+
+private fun TikZPicture.drawLinePart(from: Point, to: Point, stroke: Stroke, fadingOptions: List<String> = emptyList()) {
+    if (from == to) {
+        circle(
+            from.tikz,
+            stroke.width * CSS_PIXEL_IN_BP / 2.0,
+            listOf(
+                "fill=${stroke.color.tikzColor()}",
+                "fill opacity=${stroke.color.opacity()}",
+                "draw=none",
+            ) + fadingOptions,
+        )
+    } else {
+        line(from.tikz, to.tikz, stroke.strokeOptions() + fadingOptions)
     }
 }
 
@@ -185,37 +245,22 @@ private fun rectangleTikZPath(topLeft: Point, bottomRight: Point) = TikZPath(
     closed = true,
 )
 
-private fun PolygonPath.toTikZPath() = TikZPath(
-    start.tikz,
-    segments.map {
-        when (it) {
-            is PolygonPath.Segment.Line -> TikZPathSegment.Line(it.to.tikz)
-            is PolygonPath.Segment.QuadraticCurve -> TikZPathSegment.QuadraticCurve(it.control.tikz, it.to.tikz)
+private fun PolygonPath.toTikZPath(): TikZPath {
+    var current = start
+    val tikzSegments = segments.map { segment ->
+        when (segment) {
+            is PolygonPath.Segment.Line -> TikZPathSegment.Line(segment.to.tikz).also { current = segment.to }
+            is PolygonPath.Segment.QuadraticCurve -> {
+                // TikZ's `controls ... and ...` is cubic. Convert the quadratic
+                // control point so rounded polygons retain their intended shape.
+                val control1 = current + (segment.control - current) * (2.0 / 3.0)
+                val control2 = segment.to + (segment.control - segment.to) * (2.0 / 3.0)
+                TikZPathSegment.CubicCurve(control1.tikz, control2.tikz, segment.to.tikz)
+                    .also { current = segment.to }
+            }
         }
-    },
-    closed = true,
-)
-
-private fun String.rawMask(color: Color) = buildString {
-    append("{\\definecolor{hexolabelbackground}{RGB}{")
-    append(color.rgbComponents())
-    append("}\\textpdfrender{")
-    append("TextRenderingMode=Stroke,")
-    append("LineWidth=\\hexolabelmaskwidth,")
-    append("StrokeColor=hexolabelbackground")
-    append("}{\\hexolabelwithoutcolor{")
-    append(this@rawMask)
-    append("}}}")
-}
-
-private fun String.glyphMask(color: Color, strokeWidth: Double) = buildString {
-    append("\\pdfextension literal page {q ")
-    append(color.pdfStrokeColor())
-    append(' ')
-    append(strokeWidth.tikzNumber())
-    append(" w 1 Tr}")
-    append(escapeTikZ(this@glyphMask))
-    append("\\pdfextension literal page {Q}")
+    }
+    return TikZPath(start.tikz, tikzSegments, closed = true)
 }
 
 private fun Stroke?.strokeOptions(): List<String> = this?.let {
@@ -233,16 +278,25 @@ private fun Color.fillOptions() = listOf(
     "fill opacity=${opacity()}",
 )
 
-private fun Color.rgbComponents() = "$red,$green,$blue"
-private fun Color.pdfStrokeColor() = "${red.pdfColorComponent()} ${green.pdfColorComponent()} ${blue.pdfColorComponent()} RG"
 private fun Color.tikzColor() = "{rgb,255:red,$red;green,$green;blue,$blue}"
 private fun Color.opacity() = (alpha / 255.0).tikzNumber()
-private fun Int.pdfColorComponent() = (this / 255.0).tikzNumber()
 
 private val TEXT_SPACING_OPTIONS = listOf(
     "anchor=center",
     "inner sep=0bp",
     "outer sep=0pt",
 )
-private const val GLYPH_MASK_WIDTH_FACTOR = 6.0
+private const val TEXT_MASK_NAME = "hexotextmask\\the\\hexotextmaskid"
+private const val TEXT_MASK_COUNTER_STEP =
+    "\\ifcsname hexotextmaskid\\endcsname" +
+        "\\global\\advance\\hexotextmaskid by1\\relax" +
+        "\\else\\newcount\\hexotextmaskid\\global\\hexotextmaskid=1\\relax\\fi\n"
+
+private val TEXT_MASK_HALO_COLOR = Color.rgb(0x333333)
+private const val TEXT_MASK_MARGIN = 64.0
 private const val CSS_PIXEL_IN_BP = 0.75
+private val PICTURE_SCALE_OPTIONS = listOf(
+    "x=${CSS_PIXEL_IN_BP.tikzNumber()}bp",
+    "y=-${CSS_PIXEL_IN_BP.tikzNumber()}bp",
+)
+private val TEXT_FADING_OPTIONS = listOf("path fading=$TEXT_MASK_NAME", "fit fading=false")

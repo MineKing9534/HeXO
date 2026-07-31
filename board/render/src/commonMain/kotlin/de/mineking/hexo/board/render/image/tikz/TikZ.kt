@@ -1,11 +1,5 @@
 package de.mineking.hexo.board.render.image.tikz
 
-/**
- * A deliberately small DSL for the subset of TikZ used by the board renderer.
- *
- * Coordinates are expressed in the surrounding picture's units. Options are
- * rendered in insertion order, which also makes generated output deterministic.
- */
 @DslMarker
 annotation class TikZDsl
 
@@ -15,7 +9,7 @@ data class TikZPoint(val x: Double, val y: Double) {
 
 sealed interface TikZPathSegment {
     data class Line(val point: TikZPoint) : TikZPathSegment
-    data class QuadraticCurve(val control: TikZPoint, val point: TikZPoint) : TikZPathSegment
+    data class CubicCurve(val control1: TikZPoint, val control2: TikZPoint, val point: TikZPoint) : TikZPathSegment
 }
 
 data class TikZPath(
@@ -27,6 +21,16 @@ data class TikZPath(
 @TikZDsl
 class TikZPicture internal constructor() {
     private val commands = mutableListOf<String>()
+    private val beforeCommands = mutableListOf<String>()
+
+    fun declareFading(name: String, options: List<String> = emptyList(), block: TikZPicture.() -> Unit) {
+        val fading = TikZPicture()
+        fading.block()
+        // The `%` comments out the line breaks around the nested `tikzpicture`. Without them the
+        // line breaks would turn into spaces inside the fading's box, which would widen the box
+        // asymmetrically and shift the whole fading off center.
+        beforeCommands += "\\pgfdeclarefading{$name}{%\n" + fading.render(options) + "%\n}"
+    }
 
     fun path(path: TikZPath, options: List<String> = emptyList()) = addPathCommand("\\path", path, options)
     fun line(from: TikZPoint, to: TikZPoint, options: List<String>) = path(TikZPath(from, listOf(TikZPathSegment.Line(to))), options)
@@ -67,6 +71,7 @@ class TikZPicture internal constructor() {
     }
 
     internal fun render(options: List<String>) = buildString {
+        beforeCommands.forEach { append(it).append('\n') }
         append("\\begin{tikzpicture}")
         appendOptions(options)
         append('\n')
@@ -107,8 +112,10 @@ private fun StringBuilder.appendPath(path: TikZPath) {
     path.segments.forEach { segment ->
         when (segment) {
             is TikZPathSegment.Line -> append(" -- ").append(segment.point)
-            is TikZPathSegment.QuadraticCurve -> append(" .. controls ")
-                .append(segment.control)
+            is TikZPathSegment.CubicCurve -> append(" .. controls ")
+                .append(segment.control1)
+                .append(" and ")
+                .append(segment.control2)
                 .append(" .. ")
                 .append(segment.point)
         }
