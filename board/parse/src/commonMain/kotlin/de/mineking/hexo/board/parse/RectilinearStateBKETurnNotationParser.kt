@@ -13,7 +13,7 @@ object RectilinearStateBKETurnNotationParser : BoardParser {
 
 @OptIn(InternalBoardApi::class)
 fun String.parseRectilinearStateBKETurnNotation(focusWinningRows: Boolean = true): Board {
-    val parts = split(",\\s*".toRegex(), limit = 2)
+    val parts = splitStateAndTurns()
 
     val board = if (parts.size == 1) {
         try {
@@ -35,4 +35,24 @@ fun String.parseRectilinearStateBKETurnNotation(focusWinningRows: Boolean = true
     }
 
     return board
+}
+
+private fun String.splitStateAndTurns(): List<String> {
+    var labelDepth = 0
+    var escaped = false
+    forEachIndexed { index, character ->
+        when {
+            escaped -> escaped = false
+            character == '\\' -> escaped = true
+            character == '[' -> labelDepth++
+            character == ']' && labelDepth > 0 -> labelDepth--
+            character == ',' && labelDepth == 0 -> {
+                return listOf(
+                    substring(0, index),
+                    substring(index + 1).trim(),
+                )
+            }
+        }
+    }
+    return listOf(this)
 }

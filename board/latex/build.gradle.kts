@@ -35,7 +35,6 @@ latexPackage {
 
     requirePackage("tikz")
     requirePackage("graphicx")
-    requirePackage("pdfrender")
 
     preamble("""
         \usetikzlibrary{calc,fadings}

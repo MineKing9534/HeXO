@@ -115,7 +115,11 @@ class TikZRenderingBackend(
     private fun drawRawLabel(point: Point, text: String) {
         textCommands += { nodeRaw(point.tikz, text.withLabelStyle(), TEXT_SPACING_OPTIONS) }
         textMask += TextMaskEntry(point) {
-            nodeRaw(point.tikz, "{$labelStyle ${textMaskHaloContent(text)}}", TEXT_SPACING_OPTIONS)
+            nodeRaw(
+                point.tikz,
+                "{$labelStyle ${textMaskHaloContent(text.withoutColor())}}",
+                TEXT_SPACING_OPTIONS,
+            )
             nodeRaw(point.tikz, rawLabelMaskContent(text), TEXT_SPACING_OPTIONS)
         }
     }
@@ -164,7 +168,10 @@ class TikZRenderingBackend(
             literal("0 Tr Q")
     }
 
-    private fun rawLabelMaskContent(text: String) = "{$labelStyle \\color{transparent} $text}"
+    private fun String.withoutColor() = "\\hexolabelwithoutcolor{$this}"
+
+    private fun rawLabelMaskContent(text: String) =
+        "{$labelStyle \\color{transparent} ${text.withoutColor()}}"
 
     private fun TikZPicture.declareTextFading(bounds: BoundingBox): List<String> {
         if (textMask.isEmpty()) return emptyList()
