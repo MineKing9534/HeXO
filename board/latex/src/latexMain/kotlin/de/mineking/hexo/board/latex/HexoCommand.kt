@@ -34,7 +34,7 @@ fun hexoCommand(
     val tikz = board.renderToTikZ(
         padding = padding.source.toInt(),
         visibleRadius = visibleRadius.source.toInt(),
-        theme = theme.parseTheme(),
+        theme = theme.parseThemeCached(),
         rawLabels = rawLabels.source.toBooleanStrict(),
         labelStyle = "\\hexolabelfont",
     )

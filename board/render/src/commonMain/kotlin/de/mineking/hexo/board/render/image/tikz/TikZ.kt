@@ -33,6 +33,19 @@ class TikZPicture internal constructor() {
     }
 
     fun path(path: TikZPath, options: List<String> = emptyList()) = addPathCommand("\\path", path, options)
+    fun paths(paths: List<TikZPath>, options: List<String> = emptyList()) {
+        require(paths.isNotEmpty())
+        addCommand {
+            append("\\path")
+            appendOptions(options)
+            paths.forEach { path ->
+                append(' ')
+                appendPath(path)
+            }
+            append(';')
+        }
+    }
+
     fun line(from: TikZPoint, to: TikZPoint, options: List<String>) = path(TikZPath(from, listOf(TikZPathSegment.Line(to))), options)
     fun clip(path: TikZPath) = addPathCommand("\\clip", path)
 

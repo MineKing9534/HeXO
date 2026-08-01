@@ -54,23 +54,26 @@ fun Board.renderToTikZ(
 
     // PGF caches an installed fading by name. Reusing one fixed name makes later boards use the
     // first board's text mask, so advance a TeX-side counter before declaring this board's mask.
-    return TEXT_MASK_COUNTER_STEP + picture
+    return if (backend.hasTextFading) TEXT_MASK_COUNTER_STEP + picture else picture
 }
 
 class TikZRenderingBackend(
     private val rawLabels: Boolean = true,
     private val labelStyle: String = "",
 ) : RenderingBackend {
-    private val polygonCommands = mutableListOf<TikZCommand>()
+    private val polygonCommands = mutableListOf<PolygonCommand>()
     private val lineCommands = mutableListOf<LineCommand>()
     private val textMask = mutableListOf<TextMaskEntry>()
     private val textCommands = mutableListOf<TikZCommand>()
 
     private data class LineCommand(val from: Point, val to: Point, val stroke: Stroke)
+    private data class PolygonCommand(val path: TikZPath, val options: List<String>)
     private data class TextMaskEntry(val point: Point, val command: TikZCommand)
 
+    val hasTextFading get() = lineCommands.isNotEmpty() && textMask.isNotEmpty()
+
     fun appendTo(picture: TikZPicture, viewport: TikZPath, bounds: BoundingBox) {
-        picture.append(polygonCommands)
+        picture.appendPolygons(polygonCommands)
         val fadingOptions = picture.declareTextFading(bounds)
 
         picture.scope {
@@ -91,9 +94,7 @@ class TikZRenderingBackend(
 
     override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) {
         val polygon = shape.toPath(borderRadius).toTikZPath()
-        polygonCommands += {
-            path(polygon, color.fillOptions() + outline.strokeOptions())
-        }
+        polygonCommands += PolygonCommand(polygon, color.fillOptions() + outline.strokeOptions())
     }
 
     override fun drawString(
@@ -174,7 +175,7 @@ class TikZRenderingBackend(
         "{$labelStyle \\color{transparent} ${text.withoutColor()}}"
 
     private fun TikZPicture.declareTextFading(bounds: BoundingBox): List<String> {
-        if (textMask.isEmpty()) return emptyList()
+        if (!hasTextFading) return emptyList()
 
         declareFading(TEXT_MASK_NAME, PICTURE_SCALE_OPTIONS) {
             val halfExtent = textMaskHalfExtent(bounds)
@@ -195,6 +196,18 @@ class TikZRenderingBackend(
             halfExtent = max(halfExtent, max(abs(entry.point.x), abs(entry.point.y)))
         }
         return halfExtent + TEXT_MASK_MARGIN
+    }
+
+    private fun TikZPicture.appendPolygons(commands: List<PolygonCommand>) {
+        var start = 0
+        while (start < commands.size) {
+            val options = commands[start].options
+            var end = start + 1
+            while (end < commands.size && commands[end].options == options) end++
+
+            paths(commands.subList(start, end).map { it.path }, options)
+            start = end
+        }
     }
 }
 
