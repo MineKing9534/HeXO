@@ -12,4 +12,7 @@ internal fun themeSpec(name: String, values: List<Latex>) = raw(values.joinToStr
 internal fun String.orDefault(default: Double) = if (isEmpty()) default else toDouble()
 internal fun String.orDefault(default: Color) = if (isEmpty()) default else Color.parse(this)
 
-internal fun Latex.parseThemeCached() = parsedThemes.getOrPut(source) { parseTheme() }
+internal fun Latex.parseThemeCached(): Theme {
+    val specification = raw(source.removeSurrounding("{", "}"))
+    return parsedThemes.getOrPut(specification.source) { specification.parseTheme() }
+}

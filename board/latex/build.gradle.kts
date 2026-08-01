@@ -35,13 +35,57 @@ latexPackage {
 
     requirePackage("tikz")
     requirePackage("graphicx")
+    requirePackage("currfile")
 
     preamble("""
-        \usetikzlibrary{calc,fadings}
+        \usetikzlibrary{calc,external,fadings}
+
+        \newif\ifhexoexternalization
+        \hexoexternalizationfalse
+        \NewDocumentCommand{\hexoexternalize}{O{} O{}}{%
+            \def\hexocacheprefix{#1}%
+            \def\hexoexternalsource{#2}%
+            \if\relax\detokenize{#2}\relax
+                \IfFileExists{\jobname.tex}{%
+                    \edef\hexoexternalsource{\jobname}%
+                }{%
+                    \IfFileExists{main.tex}{%
+                        \def\hexoexternalsource{main}%
+                    }{%
+                        \edef\hexoexternalsource{\currfilebase}%
+                    }%
+                }%
+            \fi
+            \edef\hexoexternalrealjob{\jobname}%
+            \edef\hexoexternalsystemcall{%
+                lualatex \noexpand\tikzexternalcheckshellescape -halt-on-error -interaction=batchmode
+                -jobname "\noexpand\image"
+                "\string\def\string\tikzexternalrealjob{\hexoexternalrealjob}\string\input{\hexoexternalsource}"%
+            }%
+            \tikzexternalize[prefix=#1]%
+            \tikzset{external/system call/.expand once=\hexoexternalsystemcall}%
+            \tikzexternaldisable
+            \hexoexternalizationtrue
+        }
+        \newcommand{\hexocacheversion}{1}
+        \newcommand{\hexopreparepicture}[1]{%
+            \ifhexoexternalization
+                \tikzsetnextfilename{hexo-#1}%
+                \IfFileExists{\hexocacheprefix hexo-#1.pdf}{%
+                    \tikzset{external/mode=only graphics}%
+                }{%
+                    \tikzset{external/mode=convert with system call}%
+                }%
+                \tikzexternalenable
+            \fi
+        }
+        \newcommand{\hexofinishpicture}{%
+            \ifhexoexternalization
+                \tikzexternaldisable
+            \fi
+        }
     
         \newcommand{\hexolabelfont}{\Huge\bfseries}
-        \newlength{\hexolabelmaskwidth}
-        \setlength{\hexolabelmaskwidth}{4pt}
         \newcommand{\hexolabelwithoutcolor}[1]{{\renewcommand{\color}[2][]{}#1}}
         
         \tikzfading[name=fade l,left color=transparent!100,right color=transparent!0]
