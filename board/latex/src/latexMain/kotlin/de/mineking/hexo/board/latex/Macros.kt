@@ -12,7 +12,7 @@ fun expandHexoMacros(
 ) = raw(
     notation.source
         .expandMacros(macros.source.parseMacroDefinitions())
-        .expandCrossCellLabels()
+        .expandCrossCellLabels(),
 )
 
 private fun String.expandCrossCellLabels() = buildString {

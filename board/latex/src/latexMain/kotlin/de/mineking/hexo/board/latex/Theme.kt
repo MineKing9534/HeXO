@@ -1,9 +1,9 @@
 package de.mineking.hexo.board.latex
 
-import de.mineking.kotlinlatex.Latex
-import de.mineking.kotlinlatex.raw
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.Theme
+import de.mineking.kotlinlatex.Latex
+import de.mineking.kotlinlatex.raw
 
 private val parsedThemes = mutableMapOf<String, Theme>()
 

@@ -11,7 +11,6 @@ import de.mineking.kotlinlatex.LatexCommand
 import de.mineking.kotlinlatex.raw
 import kotlinx.coroutines.runBlocking
 
-
 @OptIn(InternalBoardApi::class)
 @LatexCommand("hexo")
 fun hexoCommand(

@@ -43,14 +43,14 @@ fun Board.renderTikZDiagram(
     }
     val cacheKey = stableCacheKey(
         cacheVersion.source + SEPARATOR +
-                padding.source + SEPARATOR +
-                rawLabels.source + SEPARATOR +
-                visibleRadius.source + SEPARATOR +
-                width.source + SEPARATOR +
-                scale.source + SEPARATOR +
-                fading.source + SEPARATOR +
-                theme.source + SEPARATOR +
-                cache.joinToString(SEPARATOR)
+            padding.source + SEPARATOR +
+            rawLabels.source + SEPARATOR +
+            visibleRadius.source + SEPARATOR +
+            width.source + SEPARATOR +
+            scale.source + SEPARATOR +
+            fading.source + SEPARATOR +
+            theme.source + SEPARATOR +
+            cache.joinToString(SEPARATOR),
     )
 
     return raw("\\hexopreparepicture{$cacheKey}$rendered\\hexofinishpicture")
