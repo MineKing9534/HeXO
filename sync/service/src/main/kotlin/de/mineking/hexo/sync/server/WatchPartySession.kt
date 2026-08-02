@@ -180,10 +180,8 @@ internal class WatchPartySession private constructor(
         state: WatchPartyState,
         request: WatchPartyMoveCountRequest,
     ): WatchPartyState {
-        val target = state.target as? WatchPartyServerTarget.Session
-            ?: throw WatchPartyRequestException("invalid watchparty target")
-
-        return state.copy(target = target.copy(move = request.move))
+        if (state.target !is WatchPartyServerTarget.AbstractGameTarget) throw WatchPartyRequestException("invalid watchparty target")
+        return state.copy(target = state.target.copy(move = request.move))
     }
 
     private fun applyCellRequest(

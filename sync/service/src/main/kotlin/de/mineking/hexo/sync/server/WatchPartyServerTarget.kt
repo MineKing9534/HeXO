@@ -22,7 +22,8 @@ internal sealed interface WatchPartyServerTarget {
 
     abstract class AbstractGameTarget : WatchPartyServerTarget {
         abstract val overlay: WatchPartyOverlay
-        abstract fun copy(overlay: WatchPartyOverlay): AbstractGameTarget
+        abstract val move: Int
+        abstract fun copy(overlay: WatchPartyOverlay = this.overlay, move: Int = this.move): AbstractGameTarget
 
         override fun hasClearableHighlights(connectionId: WatchPartyConnectionId) = overlay.hasHighlightBy(connectionId)
         override fun clearHighlightsBy(connectionId: WatchPartyConnectionId) = copy(overlay = overlay.clearHighlightsBy(connectionId))
@@ -31,10 +32,10 @@ internal sealed interface WatchPartyServerTarget {
 
     data class Session(
         val sessionId: SessionId,
-        val move: Int,
+        override val move: Int,
         override val overlay: WatchPartyOverlay = WatchPartyOverlay(),
     ) : AbstractGameTarget() {
-        override fun copy(overlay: WatchPartyOverlay) = copy(overlay = overlay, move = move)
+        override fun copy(overlay: WatchPartyOverlay, move: Int) = copy(sessionId = sessionId, overlay = overlay, move = move)
 
         override fun toDto() = WatchPartyTarget.Session(
             sessionId = sessionId,
@@ -45,10 +46,10 @@ internal sealed interface WatchPartyServerTarget {
 
     data class Game(
         val gameId: GameId,
-        val move: Int,
+        override val move: Int,
         override val overlay: WatchPartyOverlay = WatchPartyOverlay(),
     ) : AbstractGameTarget() {
-        override fun copy(overlay: WatchPartyOverlay) = copy(overlay = overlay, move = move)
+        override fun copy(overlay: WatchPartyOverlay, move: Int) = copy(gameId = gameId, overlay = overlay, move = move)
 
         override fun toDto() = WatchPartyTarget.Game(
             gameId = gameId,
