@@ -16,20 +16,47 @@ import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
 import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
 import io.ktor.client.plugins.websocket.sendSerialized
 import io.ktor.websocket.close
+import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 data class WatchPartyCloseReason(val closedByServer: Boolean)
 
 class WatchParty internal constructor(
-    val data: StateFlow<WatchPartyData>,
-    private val wsSession: DefaultClientWebSocketSession,
+    private var wsSession: DefaultClientWebSocketSession,
+    data: WatchPartyData,
 ) {
     private val onClose = mutableListOf<(WatchPartyCloseReason) -> Unit>()
+    private var closed = false
+
+    val connected: StateFlow<Boolean>
+        field = MutableStateFlow(true)
+
+    val data: StateFlow<WatchPartyData>
+        field = MutableStateFlow(data)
+
+    internal val isClosed get() = closed
 
     val id get() = data.value.id
 
-    fun onClose(block: (WatchPartyCloseReason) -> Unit) {
-        onClose += block
+    internal fun onClosed(reason: WatchPartyCloseReason) {
+        closed = true
+        connected.value = false
+        onClose.forEach { it(reason) }
+        onClose.clear()
+    }
+
+    internal fun onDisconnected() {
+        connected.value = false
+    }
+
+    internal fun onReconnected(session: DefaultClientWebSocketSession, initial: WatchPartyData) {
+        wsSession = session
+        data.value = initial
+        connected.value = true
+    }
+
+    internal fun onData(data: WatchPartyData) {
+        this.data.value = data
     }
 
     private suspend fun request(request: WatchPartyRequest) {
@@ -64,13 +91,14 @@ class WatchParty internal constructor(
         request(WatchPartyMoveCountRequest(move))
     }
 
-    internal fun onClose(reason: WatchPartyCloseReason) {
-        onClose.forEach { it(reason) }
-        onClose.clear()
+    fun onClose(block: (WatchPartyCloseReason) -> Unit) {
+        onClose += block
     }
 
     suspend fun close() {
-        onClose(WatchPartyCloseReason(closedByServer = false))
+        closed = true
+        connected.value = false
+        onClosed(WatchPartyCloseReason(closedByServer = false))
         wsSession.close()
     }
 }

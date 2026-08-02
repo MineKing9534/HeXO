@@ -11,6 +11,7 @@ import de.mineking.hexo.sync.common.WatchPartyLineHighlightRequest
 import de.mineking.hexo.sync.common.WatchPartyMoveCountRequest
 import de.mineking.hexo.sync.common.WatchPartyNavigateRequest
 import de.mineking.hexo.sync.common.WatchPartyNavigateTarget
+import de.mineking.hexo.sync.common.WatchPartyPingRequest
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
 import de.mineking.hexo.utils.omissible.Omissible
@@ -137,6 +138,7 @@ internal class WatchPartySession private constructor(
             is WatchPartyCellRequest -> applyCellRequest(it, request, connectionId)
             is WatchPartyLineHighlightRequest -> applyLineHighlightRequest(it, request, connectionId)
             is WatchPartyClearHighlightsRequest -> applyClearHighlightsRequest(it, connectionId)
+            is WatchPartyPingRequest -> it
         }
     }
 

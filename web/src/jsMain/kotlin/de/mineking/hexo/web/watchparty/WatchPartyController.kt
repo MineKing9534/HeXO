@@ -12,7 +12,7 @@ import com.varabyte.kobweb.browser.storage.setItem
 import de.mineking.hexo.hds.model.EntityState
 import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.client.WatchPartyClient
-import de.mineking.hexo.sync.client.createSession
+import de.mineking.hexo.sync.client.createWatchParty
 import de.mineking.hexo.sync.common.WatchPartyId
 import de.mineking.hexo.web.onSet
 import de.mineking.hexo.web.settings.SettingsController
@@ -35,7 +35,10 @@ class WatchPartyController(host: String, private val settingsController: Setting
     var subscribedWatchParty by mutableStateOf<EntityState<WatchParty>?>(null).interceptWatchPartySubscriber()
         private set
 
-    private val watchPartyClient = WatchPartyClient(host)
+    val currentWatchParty get() = hostWatchParty
+        ?: (subscribedWatchParty as? EntityState.Data)?.value
+
+    private val watchPartyClient = WatchPartyClient(host, coroutineScope = GlobalScope)
 
     init {
         GlobalScope.launch {
@@ -57,7 +60,7 @@ class WatchPartyController(host: String, private val settingsController: Setting
     suspend fun startHost() {
         closeHost()
 
-        val session = watchPartyClient.createSession(detachOnClose = true, connectionId = connectionId)
+        val session = watchPartyClient.createWatchParty(detachOnClose = true, connectionId = connectionId)
         hostWatchParty = session
     }
 
@@ -91,26 +94,29 @@ class WatchPartyController(host: String, private val settingsController: Setting
         return subscribedWatchParty ?: EntityState.NotFound
     }
 
-    private fun MutableState<WatchParty?>.interceptWatchPartyHost() = onSet {
-        if (it == null) {
-            GlobalScope.launch { value?.close() }
+    private fun MutableState<WatchParty?>.interceptWatchPartyHost() = onSet { new ->
+        if (new == null) {
+            val current = value
+            GlobalScope.launch { current?.close() }
             settingsController[SettingsKey.HostWatchPartyId].value = null
         } else {
-            settingsController[SettingsKey.HostWatchPartyId].value = it.id
-            it.onClose { reason ->
-                if (reason.closedByServer) value = null
+            settingsController[SettingsKey.HostWatchPartyId].value = new.id
+            new.onClose { reason ->
+                if (reason.closedByServer && value === new) value = null
             }
         }
     }
 
-    private fun MutableState<EntityState<WatchParty>?>.interceptWatchPartySubscriber() = onSet {
+    private fun MutableState<EntityState<WatchParty>?>.interceptWatchPartySubscriber() = onSet { new ->
         val current = value
         if (current is EntityState.Data) {
             GlobalScope.launch { current.value.close() }
         }
 
-        if (it is EntityState.Data<WatchParty>) {
-            it.value.onClose { value = null }
+        if (new is EntityState.Data) {
+            new.value.onClose { reason ->
+                if (reason.closedByServer && value === new) value = EntityState.NotFound
+            }
         }
     }
 }

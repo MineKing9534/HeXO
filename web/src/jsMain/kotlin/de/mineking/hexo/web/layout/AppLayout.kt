@@ -5,6 +5,7 @@ package de.mineking.hexo.web.layout
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -14,9 +15,9 @@ import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.getValue
 import com.varabyte.kobweb.core.layout.Layout
 import com.varabyte.kobweb.navigation.BasePath
-import de.mineking.hexo.hds.model.EntityState
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.GitHubIcon
@@ -128,7 +129,7 @@ private fun NavBar(activePage: AppRoute?) {
                 }
             }
 
-            SessionSyncIndicator()
+            WatchPartyIndicator()
 
             Nav({
                 classes(
@@ -145,13 +146,15 @@ private fun NavBar(activePage: AppRoute?) {
 }
 
 @Composable
-private fun SessionSyncIndicator() {
+private fun WatchPartyIndicator() {
     val watchPartyController = rememberWatchPartyController()
+    val watchParty = watchPartyController.currentWatchParty ?: return
+    val connected by watchParty.connected.collectAsState()
 
     if (watchPartyController.hostWatchParty != null) {
         var open by remember { mutableStateOf(false) }
 
-        SessionHostIndicatorButton(onClick = { open = true })
+        SessionHostIndicatorButton(connected, onClick = { open = true })
 
         if (open) {
             Dialog(title = null, onClose = { open = false }) {
@@ -161,11 +164,11 @@ private fun SessionSyncIndicator() {
         return
     }
 
-    if (watchPartyController.subscribedWatchParty is EntityState.Data<*>) SessionSubscriptionIndicator()
+    SessionSubscriptionIndicator(connected)
 }
 
 @Composable
-private fun SessionSubscriptionIndicator() {
+private fun SessionSubscriptionIndicator(connected: Boolean) {
     Div({
         classes(
             "group", "inline-flex", "min-w-0", "max-w-72", "items-center", "gap-2.5", "rounded-lg",
@@ -175,34 +178,12 @@ private fun SessionSubscriptionIndicator() {
             "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-sky-400/60",
         )
     }) {
-        Span({
-            classes(
-                "relative", "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
-                "border-sky-400/40", "bg-slate-950/60", "text-sky-300", "transition",
-                "group-hover:border-sky-300/60", "group-hover:text-sky-100",
-            )
-        }) {
-            Span({
-                classes("absolute", "-right-0.5", "-top-0.5", "size-2.5", "rounded-full", "border", "border-slate-950", "bg-sky-300")
-            })
-            BroadcastIcon {
-                classes("size-4", "shrink-0")
-            }
-        }
-
-        Span({ classes("hidden", "min-w-0", "flex-col", "leading-tight", "sm:flex") }) {
-            Span({ classes("truncate", "text-xs", "font-bold", "text-sky-100") }) {
-                Text("Watching watch party")
-            }
-            Span({ classes("truncate", "text-[11px]", "font-medium", "text-sky-300/70") }) {
-                Text("Live sync enabled")
-            }
-        }
+        WatchPartyIndicatorContent(WatchPartyIndicatorStyle.Subscriber, connected)
     }
 }
 
 @Composable
-private fun SessionHostIndicatorButton(onClick: () -> Unit) {
+private fun SessionHostIndicatorButton(connected: Boolean, onClick: () -> Unit) {
     Button({
         classes(
             "group", "inline-flex", "min-w-0", "max-w-72", "items-center", "gap-2.5", "rounded-lg",
@@ -215,32 +196,72 @@ private fun SessionHostIndicatorButton(onClick: () -> Unit) {
 
         onClick { onClick() }
     }) {
-        Span({
-            classes(
-                "relative", "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
-                "border-emerald-400/40", "bg-slate-950/60", "text-emerald-300", "transition",
-                "group-hover:border-emerald-300/60", "group-hover:text-emerald-100",
-            )
-        }) {
-            Span({
-                classes("absolute", "-right-0.5", "-top-0.5", "size-2.5", "rounded-full", "border", "border-slate-950", "bg-emerald-400")
-            })
-            BroadcastIcon {
-                classes("size-4", "shrink-0")
-            }
-        }
-
-        Span({ classes("hidden", "min-w-0", "flex-col", "leading-tight", "sm:flex") }) {
-            Span({ classes("truncate", "text-xs", "font-bold", "text-emerald-100") }) {
-                Text("Hosting watch party")
-            }
-            Span({ classes("truncate", "text-[11px]", "font-medium", "text-emerald-300/70") }) {
-                Text("Host controls")
-            }
-        }
+        WatchPartyIndicatorContent(WatchPartyIndicatorStyle.Host, connected)
 
         ChevronRightIcon {
             classes("hidden", "size-4", "shrink-0", "text-emerald-300/70", "transition-transform", "group-hover:translate-x-0.5", "md:block")
+        }
+    }
+}
+
+private enum class WatchPartyIndicatorStyle(
+    val iconClasses: List<String>,
+    val statusClass: String,
+    val spinnerClass: String,
+    val titleClass: String,
+    val subtitleClass: String,
+    val title: String,
+    val subtitle: String,
+) {
+    Host(
+        iconClasses = listOf("border-emerald-400/40", "text-emerald-300", "group-hover:border-emerald-300/60", "group-hover:text-emerald-100"),
+        statusClass = "bg-emerald-400",
+        spinnerClass = "border-t-emerald-400!",
+        titleClass = "text-emerald-100",
+        subtitleClass = "text-emerald-300/70",
+        title = "Hosting watch party",
+        subtitle = "Host controls",
+    ),
+    Subscriber(
+        iconClasses = listOf("border-sky-400/40", "text-sky-300", "group-hover:border-sky-300/60", "group-hover:text-sky-100"),
+        statusClass = "bg-sky-300",
+        spinnerClass = "border-t-sky-300!",
+        titleClass = "text-sky-100",
+        subtitleClass = "text-sky-300/70",
+        title = "Watching watch party",
+        subtitle = "Live sync enabled",
+    ),
+}
+
+@Composable
+private fun WatchPartyIndicatorContent(style: WatchPartyIndicatorStyle, connected: Boolean) {
+    Span({
+        classes(
+            "relative", "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
+            "bg-slate-950/60", "transition",
+        )
+
+        classes(style.iconClasses)
+    }) {
+        Span({
+            classes(
+                "absolute", "-right-0.5", "-top-0.5", "size-2.5", "rounded-full", "border",
+                "border-slate-950", style.statusClass,
+            )
+        })
+        if (!connected) {
+            LoadingIndicator { classes("size-4", "border-2!", style.spinnerClass) }
+        } else {
+            BroadcastIcon { classes("size-4", "shrink-0") }
+        }
+    }
+
+    Span({ classes("hidden", "min-w-0", "flex-col", "leading-tight", "sm:flex") }) {
+        Span({ classes("truncate", "text-xs", "font-bold", style.titleClass) }) {
+            Text(if (!connected) "Reconnecting watch party" else style.title)
+        }
+        Span({ classes("truncate", "text-[11px]", "font-medium", style.subtitleClass) }) {
+            Text(if (!connected) "Connection interrupted" else style.subtitle)
         }
     }
 }
