@@ -254,8 +254,8 @@ private fun BoardScope.BoardControls(
             ResetViewIcon { classes("size-4") }
         }
 
-        BoardActionButton(onClick = { layout.setFullscreen(!layout.isFullscreen()) }) {
-            if (layout.isFullscreen()) {
+        BoardActionButton(onClick = { layout.fullscreen = !layout.fullscreen }) {
+            if (layout.fullscreen) {
                 ExitFullscreenIcon { classes("size-4") }
             } else {
                 EnterFullscreenIcon { classes("size-4") }

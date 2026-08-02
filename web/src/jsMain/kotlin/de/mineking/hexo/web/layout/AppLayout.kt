@@ -50,13 +50,11 @@ data class PageData(
 )
 
 class AppLayout(
-    private val fullscreen: MutableState<Boolean>,
+    fullscreen: MutableState<Boolean>,
+    pageStyle: MutableState<PageStyle>,
 ) {
-    fun isFullscreen() = fullscreen.value
-
-    fun setFullscreen(state: Boolean) {
-        fullscreen.value = state
-    }
+    var fullscreen by fullscreen
+    var pageStyle by pageStyle
 }
 
 private val LocalAppLayout = staticCompositionLocalOf<AppLayout> { error("layout not defined") }
@@ -70,17 +68,20 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
     val data = ctx.data.getValue<PageData>()
 
     val layout = remember(ctx.route.path) {
-        AppLayout(fullscreen = mutableStateOf("fullscreen" in ctx.route.queryParams))
+        AppLayout(
+            fullscreen = mutableStateOf("fullscreen" in ctx.route.queryParams),
+            pageStyle = mutableStateOf(data.style),
+        )
     }
 
     Div({ classes("flex", "h-full", "w-full", "flex-col", "overflow-hidden", "select-none") }) {
-        if (!layout.isFullscreen()) {
+        if (!layout.fullscreen) {
             NavBar(data.route)
         }
 
         Main({
             classes("min-h-0", "flex-1", "overflow-hidden")
-            classes(data.style.containerClasses)
+            classes(layout.pageStyle.containerClasses)
         }) {
             Div({
                 classes("mx-auto", "flex", "w-full", "flex-col", "h-full", "min-h-0", "overflow-hidden")
@@ -91,7 +92,7 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
             }
         }
 
-        if (!layout.isFullscreen()) {
+        if (!layout.fullscreen) {
             AppFooter()
         }
     }
