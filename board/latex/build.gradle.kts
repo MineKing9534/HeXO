@@ -1,6 +1,10 @@
+import de.mineking.kotlinlatex.gradle.latexMain
+
 plugins {
-    id("latex")
     id("kotlin-multiplatform")
+    id("kotlin-latex")
+    id("publish")
+
     alias(libs.plugins.ksp)
 }
 
@@ -25,6 +29,7 @@ kotlin {
             implementation(projects.board)
             implementation(projects.board.parse)
             implementation(projects.board.render)
+            implementation(libs.kotlin.coroutines.core)
         }
     }
 }

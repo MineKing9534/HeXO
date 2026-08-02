@@ -1,5 +1,7 @@
 plugins {
     id("kotlin-multiplatform")
+    id("kotlin-latex")
+
     alias(libs.plugins.kotlin.serialization)
 
     id("publish")
