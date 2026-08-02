@@ -1,12 +1,16 @@
 package de.mineking.hexo.web.audio
 
 import com.varabyte.kobweb.navigation.BasePath
+import de.mineking.hexo.web.settings.SettingsController
+import de.mineking.hexo.web.settings.SettingsKey
+import kotlinx.coroutines.flow.StateFlow
 import org.w3c.dom.HTMLAudioElement
+import kotlin.reflect.KProperty
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.milliseconds
 
 interface PlayableSoundEffect {
-    fun play(context: AudioContext)
+    fun play(context: AudioContext, volume: Float)
 }
 
 sealed interface SoundEffectSource {
@@ -24,8 +28,9 @@ sealed interface SoundEffectSource {
                 return audio
             }
 
-            override fun play(context: AudioContext) {
+            override fun play(context: AudioContext, volume: Float) {
                 template.currentTime = 0.0
+                template.volume = volume.toDouble()
                 template.play()
             }
         }
@@ -45,7 +50,7 @@ sealed interface SoundEffectSource {
             val gain: Float,
             val type: OscillatorType,
         ) : PlayableSoundEffect {
-            override fun play(context: AudioContext) {
+            override fun play(context: AudioContext, volume: Float) {
                 val oscillator = context.createOscillator()
                 val gainNode = context.createGain()
                 val toneStartTime = context.currentTime + 0.01
@@ -55,7 +60,7 @@ sealed interface SoundEffectSource {
                 oscillator.frequency.setValueAtTime(frequency, toneStartTime)
 
                 gainNode.gain.setValueAtTime(0.0001f, toneStartTime)
-                gainNode.gain.exponentialRampToValueAtTime(gain, toneStartTime + 0.01)
+                gainNode.gain.exponentialRampToValueAtTime(gain * volume, toneStartTime + 0.01)
                 gainNode.gain.exponentialRampToValueAtTime(0.0001f, toneEndTime)
 
                 oscillator.connect(gainNode)
@@ -92,14 +97,21 @@ enum class SoundEffect(val source: SoundEffectSource) {
     )),
 }
 
-class SoundPlayer {
+class SoundPlayer(settingsController: SettingsController) {
     private var audioContext: AudioContext? = null
     private val sounds = SoundEffect.entries.associateWith { it.source.load() }
+    private val volume by settingsController[SettingsKey.Volume]
 
     fun play(sound: SoundEffect) {
+        val volume = volume.coerceIn(0f, 1f)
+        if (volume == 0f) return
+
         val context = audioContext ?: AudioContext().also { audioContext = it }
         context.resume()
 
-        sounds[sound]?.play(context)
+        sounds[sound]?.play(context, volume)
     }
+
+    // We define this locally here instead of in Utils because using this e.g. in composable functions would break state management
+    private operator fun <T> StateFlow<T>.getValue(thisRef: SoundPlayer, property: KProperty<*>) = value
 }
