@@ -53,7 +53,7 @@ fun TextAreaInput(
 
 private fun AttrsScope<*>.fieldClasses(valid: Boolean?, monospace: Boolean) {
     classes(
-        "w-full", "rounded-lg", "border-3", "border-slate-700", "bg-slate-950", "p-3",
+        "w-full", "rounded-lg", "border-2", "border-slate-700", "bg-slate-950", "p-3",
         "text-sm", "text-slate-100", "placeholder-slate-500", "outline-none", "transition",
         "focus:bg-slate-800",
     )
