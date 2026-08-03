@@ -29,6 +29,21 @@ class RectilinearNotationParserTest {
     }
 
     @Test
+    fun `parse column notation`() {
+        val board = "cx-x/o.o//x".parseRectilinearNotation()
+        assertEquals(
+            mapOf(
+                CellCoordinate(0, 0) to Cell(CellOwner.X),
+                CellCoordinate(0, 3) to Cell(CellOwner.X),
+                CellCoordinate(1, 0) to Cell(CellOwner.O),
+                CellCoordinate(1, 2) to Cell(CellOwner.O),
+                CellCoordinate(3, 0) to Cell(CellOwner.X),
+            ),
+            board.cells,
+        )
+    }
+
+    @Test
     fun `parse compact with single digit`() {
         val board = "x2x/o1o//x".parseRectilinearNotation()
         assertEquals(
