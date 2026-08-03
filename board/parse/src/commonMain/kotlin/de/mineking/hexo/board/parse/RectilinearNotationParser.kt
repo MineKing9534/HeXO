@@ -19,15 +19,20 @@ object RectilinearNotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation.parseRectilinearNotation(focusWinningRows = false)
 }
 
+private const val COLUMN_NOTATION_PREFIX = "c"
+
 fun String.parseRectilinearNotation(focusWinningRows: Boolean = true): Board {
     val board = MutableBoard()
-    val cursor = Cursor(board)
+
+    val columnNotation = startsWith(COLUMN_NOTATION_PREFIX)
+    val cursor = Cursor(board, columnNotation)
 
     var state = ParserState.Normal
     val buffer = StringBuilder()
 
-    forEachIndexed { offset, ch ->
-        state = state.handleChar(ch, offset, cursor, buffer)
+    val contentOffset = if (columnNotation) COLUMN_NOTATION_PREFIX.length else 0
+    substring(contentOffset).forEachIndexed { offset, ch ->
+        state = state.handleChar(ch, offset + contentOffset, cursor, buffer)
     }
 
     state.handleEOF(cursor, buffer)
@@ -153,24 +158,23 @@ private enum class ParserState {
     open fun handleEOF(cursor: Cursor, buffer: StringBuilder) {}
 }
 
-private class Cursor(private val board: MutableBoard) {
-    companion object {
-        private val STEP_DIRECTION = CellCoordinate(1, 0)
-        private val NEWLINE_DIRECTION = CellCoordinate(0, 1)
-    }
+private class Cursor(private val board: MutableBoard, columnNotation: Boolean) {
+    private val stepDirection = if (columnNotation) Direction.BottomRight.direction else Direction.Right.direction
+    private val newlineDirection = if (columnNotation) Direction.Right.direction else Direction.BottomRight.direction
 
     var position = CellCoordinate.Zero
         private set
+    private var lineStart = position
 
-    val previousPosition get() = position - STEP_DIRECTION
+    val previousPosition get() = position - stepDirection
 
     fun configureCurrent(block: MutableCell.() -> Unit) {
         board[position].block()
     }
 
     fun configurePrevious(block: MutableCell.() -> Unit) {
-        requireHexo(position.q >= 1) { "This operations requires a cell in the current row!" }
-        board[position - STEP_DIRECTION].block()
+        requireHexo(position != lineStart) { "This operations requires a cell in the current row!" }
+        board[previousPosition].block()
     }
 
     fun highlightLine(origin: CellCoordinate, direction: Direction, length: Int, color: CellOwner?) {
@@ -178,11 +182,11 @@ private class Cursor(private val board: MutableBoard) {
     }
 
     fun step(n: Int = 1) {
-        position += STEP_DIRECTION * n
+        position += stepDirection * n
     }
 
     fun newRow() {
-        position += NEWLINE_DIRECTION
-        position = position.copy(q = 0)
+        lineStart += newlineDirection
+        position = lineStart
     }
 }
