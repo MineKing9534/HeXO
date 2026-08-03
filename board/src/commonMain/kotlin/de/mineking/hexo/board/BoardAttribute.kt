@@ -66,6 +66,9 @@ class MutableBoardAttributes(override val values: MutableMap<BoardAttribute<*>, 
 fun BoardAttributes.copy() = MutableBoardAttributes(this@copy.values.toMutableMap())
 
 operator fun BoardAttributes.plus(other: BoardAttributes) = MutableBoardAttributes((this@plus.values + other.values).toMutableMap())
+operator fun MutableBoardAttributes.plusAssign(other: BoardAttributes) {
+    values += other.values
+}
 
 internal object BoardAttributesSerializer : KSerializer<BoardAttributes> {
     private val delegate = ListSerializer(BoardAttributeValueSerializer)

@@ -118,23 +118,26 @@ fun Board.mutable() = when (this) {
 }
 
 operator fun Board.plus(other: Board) = merge(other)
-fun Board.merge(other: Board, overrideOwner: Boolean = false): MutableBoard {
-    val cells = mutableMapOf<CellCoordinate, MutableCell>()
-    this.cells.forEach { (coordinate, cell) -> cells[coordinate] = cell.copy() }
+operator fun MutableBoard.plusAssign(other: Board) = other.mergeInto(this)
 
-    other.cells.forEach { (coordinate, cell) ->
-        cells.merge(coordinate, cell.copy()) { old, new ->
+fun Board.merge(other: Board, overrideOwner: Boolean = false): MutableBoard {
+    val result = copy()
+    other.mergeInto(result, overrideOwner)
+    return result
+}
+
+fun Board.mergeInto(other: MutableBoard, overrideOwner: Boolean = false) {
+    other.lineHighlights += lineHighlights
+    other.attributes += attributes
+
+    cells.forEach { (coordinate, cell) ->
+        other.cells.merge(coordinate, cell.copy()) { old, new ->
             requireHexo(overrideOwner || old.owner == null || new.owner == null) {
                 "At $coordinate: Owner override is disabled but both cells have an owner defined"
             }
             old + new.toOverride()
         }
     }
-    return MutableBoard(
-        cells = cells,
-        lineHighlights = (this@merge.lineHighlights + other.lineHighlights).toMutableList(),
-        attributes = this@merge.attributes + other.attributes,
-    )
 }
 
 @IgnorableReturnValue
