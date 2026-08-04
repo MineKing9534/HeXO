@@ -117,23 +117,35 @@ fun Board.mutable() = when (this) {
     else -> copy()
 }
 
+enum class OwnerOverrideMode {
+    Allow,
+    AllowSame,
+    Deny,
+}
+
 operator fun Board.plus(other: Board) = merge(other)
 operator fun MutableBoard.plusAssign(other: Board) = other.mergeInto(this)
 
-fun Board.merge(other: Board, overrideOwner: Boolean = false): MutableBoard {
+fun Board.merge(other: Board, overrideMode: OwnerOverrideMode = OwnerOverrideMode.AllowSame): MutableBoard {
     val result = copy()
-    other.mergeInto(result, overrideOwner)
+    other.mergeInto(result, overrideMode)
     return result
 }
 
-fun Board.mergeInto(other: MutableBoard, overrideOwner: Boolean = false) {
+fun Board.mergeInto(other: MutableBoard, overrideMode: OwnerOverrideMode = OwnerOverrideMode.AllowSame) {
     other.lineHighlights += lineHighlights
     other.attributes += attributes
 
     cells.forEach { (coordinate, cell) ->
         other.cells.merge(coordinate, cell.copy()) { old, new ->
-            requireHexo(overrideOwner || old.owner == null || new.owner == null) {
-                "At $coordinate: Owner override is disabled but both cells have an owner defined"
+            when (overrideMode) {
+                OwnerOverrideMode.Allow -> {}
+                OwnerOverrideMode.AllowSame -> requireHexo(old.owner == null || new.owner == null || old.owner == new.owner) {
+                    "At $coordinate: Owner override mode is 'AllowSame' but owner differ"
+                }
+                OwnerOverrideMode.Deny -> requireHexo(old.owner == null || new.owner == null) {
+                    "At $coordinate: Owner override mode is 'Deny' but both cells have an owner defined"
+                }
             }
             old + new.toOverride()
         }
