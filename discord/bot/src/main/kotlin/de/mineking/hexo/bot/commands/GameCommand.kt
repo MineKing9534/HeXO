@@ -6,11 +6,11 @@ import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.replyMenu
 import de.mineking.hexo.bot.menus.GameMenuParameter
-import de.mineking.hexo.hds.game.GameId
+import de.mineking.hexo.hds.model.game.GameId
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
 
-fun gameCommand(gameMenu: MessageMenu<GameMenuParameter, *>) = localizedSlashCommand<GameCommandLocalization>("game") { localization ->
+fun gameCommand(gameMenu: MessageMenu<GameMenuParameter, *>) = localizedSlashCommand<GameCommandLocalization>("game") {
     integrationTypes(IntegrationType.ALL)
     interactionContextTypes(InteractionContextType.ALL)
 

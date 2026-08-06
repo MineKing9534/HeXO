@@ -8,6 +8,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.CanvasRenderingBackend
 import de.mineking.hexo.board.render.image.Point
@@ -19,7 +20,6 @@ import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
 import de.mineking.hexo.board.render.image.theme.withAlpha
-import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.solver.Defense
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult

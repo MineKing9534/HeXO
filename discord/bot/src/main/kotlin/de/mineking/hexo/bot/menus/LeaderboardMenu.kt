@@ -30,10 +30,10 @@ import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setup
 import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.effectiveLocale
-import de.mineking.hexo.hds.leaderboard.Leaderboard
-import de.mineking.hexo.hds.leaderboard.LeaderboardEntry
-import de.mineking.hexo.hds.leaderboard.LeaderboardRepository
-import de.mineking.hexo.hds.profile.ProfileId
+import de.mineking.hexo.hds.model.leaderboard.Leaderboard
+import de.mineking.hexo.hds.model.leaderboard.LeaderboardEntry
+import de.mineking.hexo.hds.model.leaderboard.LeaderboardRepository
+import de.mineking.hexo.hds.model.profile.ProfileId
 import de.mineking.hexo.link.AccountLinkRepository
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.Dispatchers

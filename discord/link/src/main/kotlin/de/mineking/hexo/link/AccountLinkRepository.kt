@@ -1,6 +1,6 @@
 package de.mineking.hexo.link
 
-import de.mineking.hexo.hds.profile.ProfileId
+import de.mineking.hexo.hds.model.profile.ProfileId
 import de.mineking.hexo.link.database.AccountLinkTable
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.inList

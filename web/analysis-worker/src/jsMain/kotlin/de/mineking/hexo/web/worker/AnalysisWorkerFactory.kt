@@ -5,7 +5,7 @@ import com.varabyte.kobweb.worker.OutputDispatcher
 import com.varabyte.kobweb.worker.WorkerFactory
 import com.varabyte.kobweb.worker.WorkerStrategy
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.solver.StrixWasmHexoSolver

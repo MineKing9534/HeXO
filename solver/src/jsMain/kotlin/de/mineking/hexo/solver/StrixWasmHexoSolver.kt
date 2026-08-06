@@ -15,8 +15,8 @@ import cc.tyto.jsBigInt
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isEmpty
-import de.mineking.hexo.core.CellOwner
 import kotlinx.coroutines.await
 import org.khronos.webgl.Int32Array
 import org.khronos.webgl.set

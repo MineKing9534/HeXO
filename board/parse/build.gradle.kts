@@ -7,7 +7,8 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             implementation(projects.board)
-            compileOnly(projects.hds)
+
+            implementation(libs.kotlin.serialization.core)
         }
     }
 

@@ -14,6 +14,8 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             implementation(projects.board)
+
+            implementation(libs.kotlin.serialization.core)
         }
     }
 

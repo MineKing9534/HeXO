@@ -11,9 +11,9 @@ import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.game.FinishedGame
-import de.mineking.hexo.hds.game.FinishedGameRepository
-import de.mineking.hexo.hds.game.Game
+import de.mineking.hexo.hds.model.game.FinishedGame
+import de.mineking.hexo.hds.model.game.FinishedGameRepository
+import de.mineking.hexo.hds.model.game.Game
 import de.mineking.hexo.web.board.Player
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
@@ -34,7 +34,7 @@ import de.mineking.hexo.web.icons.StarIcon
 import de.mineking.hexo.web.icons.TournamentIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
-import de.mineking.hexo.web.rememberHdsApiClient
+import de.mineking.hexo.web.rememberHdsRepositories
 import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
@@ -67,7 +67,7 @@ fun initLobbyListPage(ctx: InitRouteContext) {
 @Page
 @Composable
 fun GameHistoryPage(ctx: PageContext) {
-    val client = rememberHdsApiClient()
+    val client = rememberHdsRepositories()
     val initialPage = ctx.route.queryParams["page"]?.toIntOrNull()?.takeIf { it > 0 } ?: 1
     val initialFilter = RatedFilter.fromQuery(ctx.route.queryParams["rated"])
 

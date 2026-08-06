@@ -16,7 +16,7 @@ import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
-import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
@@ -48,7 +48,7 @@ enum class BoardUpdateCause {
 
 @Composable
 fun Sidebar(
-    client: HdsApiClient?,
+    repositories: HdsRepositoryContainer?,
     placementMode: MutableState<CellPlacementMode>,
     board: Board,
     onBoardChange: (BoardUpdateCause, Board) -> Unit,
@@ -78,7 +78,7 @@ fun Sidebar(
         Div({ classes("flex", "flex-col", "gap-2") }) {
             val coroutineScope = rememberCoroutineScope()
             NotationField(
-                client = client,
+                repositories = repositories,
                 notation = notation,
                 parseError = parseError,
                 onChange = { cause, value ->
@@ -138,7 +138,7 @@ private fun ParseStatus(valid: Boolean) {
 
 @Composable
 private fun NotationField(
-    client: HdsApiClient?,
+    repositories: HdsRepositoryContainer?,
     notation: String,
     parseError: String?,
     onChange: (BoardUpdateCause, String) -> Unit,
@@ -155,7 +155,7 @@ private fun NotationField(
                     "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
                 )
             }) {
-                NotationActions(client, notation, onChange)
+                NotationActions(repositories, notation, onChange)
             }
         }
 
@@ -175,7 +175,7 @@ private fun NotationField(
 
 @Composable
 private fun NotationActions(
-    client: HdsApiClient?,
+    repositories: HdsRepositoryContainer?,
     notation: String,
     onChange: (BoardUpdateCause, String) -> Unit,
 ) {
@@ -206,15 +206,15 @@ private fun NotationActions(
             }
         }
 
-        if (client != null) {
+        if (repositories != null) {
             ActionButton("Import Position") { importDialogOpen = true }
         }
     }
 
-    if (importDialogOpen && client != null) {
+    if (importDialogOpen && repositories != null) {
         ImportDialog(
-            formationRepository = client.formationRepository,
-            finishedGameRepository = client.finishedGameRepository,
+            formationRepository = repositories.formationRepository,
+            finishedGameRepository = repositories.finishedGameRepository,
             onClose = { importDialogOpen = false },
             onConfirm = {
                 importDialogOpen = false

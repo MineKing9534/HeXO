@@ -10,6 +10,7 @@ kotlin {
         dependencies {
             implementation(projects.board)
 
+            implementation(libs.kotlin.serialization.core)
             implementation(libs.svg)
         }
     }

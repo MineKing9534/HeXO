@@ -30,7 +30,7 @@ import de.mineking.hexo.bot.menus.notationMenu
 import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.bot.utils.installErrorHandling
 import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
-import de.mineking.hexo.hds.HdsApiClient
+import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
@@ -54,7 +54,7 @@ internal val logger = KotlinLogging.logger {}
 val Manager.main get() = manager.bot as HeXODiscordBot
 
 class HeXODiscordBot(
-    private val client: HdsApiClient,
+    private val repositories: HdsRepositoryContainer,
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
     val notationParser: BoardParser,
@@ -85,15 +85,15 @@ class HeXODiscordBot(
             localize()
             installErrorHandling()
 
-            notationMenu = notationMenu(client.finishedGameRepository)
-            gameMenu = gameMenu(client.finishedGameRepository, notationMenu)
-            profileMenu = profileMenu(client.profileRepository, accountLinkRepository)
-            leaderboardMenu = leaderboardMenu(client.leaderboardRepository, accountLinkRepository, profileMenu)
+            notationMenu = notationMenu(repositories.finishedGameRepository)
+            gameMenu = gameMenu(repositories.finishedGameRepository, notationMenu)
+            profileMenu = profileMenu(repositories.profileRepository, accountLinkRepository)
+            leaderboardMenu = leaderboardMenu(repositories.leaderboardRepository, accountLinkRepository, profileMenu)
             if (discordUserAuthenticationRepository != null && accountLinkRepository != null) {
                 accountLinkMenu = accountLinkMenu(
                     discordAuthRepository = discordUserAuthenticationRepository,
                     accountLinkRepository = accountLinkRepository,
-                    profileRepository = client.profileRepository,
+                    profileRepository = repositories.profileRepository,
                 )
             }
         }
@@ -108,7 +108,7 @@ class HeXODiscordBot(
             +gameCommand(gameMenu)
             +leaderboardCommand(leaderboardMenu)
 
-            +profileCommand(accountLinkRepository, client.profileRepository, profileMenu)
+            +profileCommand(accountLinkRepository, repositories.profileRepository, profileMenu)
             if (accountLinkRepository != null) {
                 +profileUserCommand(accountLinkRepository, profileMenu)
             }

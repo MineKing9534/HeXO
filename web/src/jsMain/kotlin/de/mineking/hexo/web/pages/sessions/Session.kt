@@ -11,12 +11,12 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.session.LiveSession
-import de.mineking.hexo.hds.session.LobbySession
-import de.mineking.hexo.hds.session.Session
-import de.mineking.hexo.hds.session.SessionId
-import de.mineking.hexo.hds.session.SessionState
-import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.model.EntityState
+import de.mineking.hexo.hds.model.session.LiveSession
+import de.mineking.hexo.hds.model.session.LobbySession
+import de.mineking.hexo.hds.model.session.Session
+import de.mineking.hexo.hds.model.session.SessionId
+import de.mineking.hexo.hds.model.session.SessionState
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
@@ -26,7 +26,7 @@ import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
-import de.mineking.hexo.web.rememberHdsApiClient
+import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.session.LobbyOverlay
@@ -51,7 +51,7 @@ fun SessionPage(ctx: PageContext) {
 
 @Composable
 fun Session(id: SessionId, boardViewManager: GameBoardViewManager) {
-    val hdsClient = rememberHdsApiClient()
+    val hdsClient = rememberHdsRepositories()
     if (hdsClient == null) {
         LoadingState()
         return

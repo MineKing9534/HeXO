@@ -30,8 +30,8 @@ import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
-import de.mineking.hexo.hds.profile.ProfileId
-import de.mineking.hexo.hds.profile.ProfileRepository
+import de.mineking.hexo.hds.model.profile.ProfileId
+import de.mineking.hexo.hds.model.profile.ProfileRepository
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
 import dev.freya02.jda.emojis.unicode.Emojis

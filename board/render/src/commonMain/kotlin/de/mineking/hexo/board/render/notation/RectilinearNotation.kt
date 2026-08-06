@@ -3,10 +3,10 @@ package de.mineking.hexo.board.render.notation
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.render.BoardRenderer
-import de.mineking.hexo.core.CellOwner
 import kotlin.math.min
 
 enum class RectilinearNotationType(

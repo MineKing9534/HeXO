@@ -20,6 +20,8 @@ kotlin {
             implementation(projects.board.render)
 
             implementation(libs.bundles.compose.html)
+
+            implementation(libs.kotlin.serialization.core)
         }
     }
 }

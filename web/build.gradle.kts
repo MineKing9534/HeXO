@@ -1,9 +1,6 @@
-@file:OptIn(ExperimentalDistributionDsl::class)
-
 import com.github.gmazzo.buildconfig.BuildConfigValue.Expression
 import com.varabyte.kobweb.gradle.application.util.configAsKobwebApplication
 import kotlinx.html.link
-import org.jetbrains.kotlin.gradle.targets.js.dsl.ExperimentalDistributionDsl
 
 plugins {
     id("kotlin-common")
@@ -42,11 +39,13 @@ kotlin {
             implementation(projects.board.render.compose)
 
             implementation(projects.board.parse)
-            implementation(projects.hds)
+            implementation(projects.hds.implementation)
 
             implementation(projects.sync.client)
             implementation(projects.solver)
             implementation(projects.web.analysisWorker)
+
+            implementation(projects.utils.omissible)
 
             implementation(libs.kobweb.core)
             implementation(libs.bundles.compose.html)

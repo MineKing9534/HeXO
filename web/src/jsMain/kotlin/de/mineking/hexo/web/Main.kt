@@ -9,9 +9,10 @@ import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.init.InitKobweb
 import com.varabyte.kobweb.core.init.InitKobwebContext
 import com.varabyte.kobweb.core.isExporting
-import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.socket.SocketIOOptions
-import de.mineking.hexo.hds.socket.connectSocketClient
+import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.socket.SocketIOOptions
+import de.mineking.hexo.hds.implementation.socket.connectSocketClient
+import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.web.audio.SoundPlayer
 import de.mineking.hexo.web.pages.NotFoundPage
 import de.mineking.hexo.web.settings.SettingsControllerProvider
@@ -20,12 +21,12 @@ import de.mineking.hexo.web.web.BuildConfig
 import kotlinx.browser.localStorage
 import org.jetbrains.compose.web.dom.Main
 
-private val LocalHdsApiClient = staticCompositionLocalOf<HdsApiClient?> { null }
+private val LocalHdsApiRepositories = staticCompositionLocalOf<HdsRepositoryContainer?> { null }
 private val LocalSoundPlayer = staticCompositionLocalOf<SoundPlayer> { error("SoundPlayer not initialized!") }
 private val LocalWatchPartyController = staticCompositionLocalOf<WatchPartyController> { error("SessionSyncService not initialized!") }
 
 @Composable
-fun rememberHdsApiClient() = LocalHdsApiClient.current
+fun rememberHdsRepositories() = LocalHdsApiRepositories.current
 
 @Composable
 fun rememberSoundPlayer() = LocalSoundPlayer.current
@@ -58,7 +59,7 @@ fun App(content: @Composable () -> Unit) {
         val watchPartyController = remember { WatchPartyController(BuildConfig.TOOLS_API, settingsController) }
 
         CompositionLocalProvider(
-            LocalHdsApiClient provides hdsApiClient,
+            LocalHdsApiRepositories provides hdsApiClient,
             LocalSoundPlayer provides soundPlayer,
             LocalWatchPartyController provides watchPartyController,
         ) {

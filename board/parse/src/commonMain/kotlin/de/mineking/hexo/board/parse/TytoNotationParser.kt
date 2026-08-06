@@ -2,11 +2,11 @@ package de.mineking.hexo.board.parse
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.requireHexo
-import de.mineking.hexo.core.CellOwner
 import kotlin.experimental.and
 import kotlin.io.encoding.Base64
 

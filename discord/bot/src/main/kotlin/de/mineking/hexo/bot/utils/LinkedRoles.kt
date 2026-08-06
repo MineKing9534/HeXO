@@ -2,13 +2,11 @@ package de.mineking.hexo.bot.utils
 
 import de.mineking.discord.DiscordToolKit
 import de.mineking.discord.localization.LocalizationFile
-import de.mineking.hexo.hds.createCoroutineScope
-import de.mineking.hexo.hds.game.FinishedGameRepository
-import de.mineking.hexo.hds.game.GameId
-import de.mineking.hexo.hds.profile.ProfileId
-import de.mineking.hexo.hds.profile.ProfileRepository
-import de.mineking.hexo.hds.profile.RichProfile
-import de.mineking.hexo.hds.utils.awaitBothOrNull
+import de.mineking.hexo.hds.model.game.FinishedGameRepository
+import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.hds.model.profile.ProfileId
+import de.mineking.hexo.hds.model.profile.ProfileRepository
+import de.mineking.hexo.hds.model.profile.RichProfile
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
@@ -17,6 +15,8 @@ import de.mineking.hexo.link.oauth2.LinkedRoleMetadataType
 import de.mineking.hexo.link.oauth2.OAuth2Tokens
 import de.mineking.hexo.link.oauth2.bindValue
 import de.mineking.hexo.link.oauth2.updateLinkedRoleMetadata
+import de.mineking.hexo.utils.coroutines.awaitBothOrNull
+import de.mineking.hexo.utils.coroutines.createCoroutineScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch

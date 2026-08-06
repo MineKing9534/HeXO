@@ -1,7 +1,7 @@
 package de.mineking.hexo.web.layout
 
-import de.mineking.hexo.hds.game.GameId
-import de.mineking.hexo.hds.session.SessionId
+import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.hds.model.session.SessionId
 import de.mineking.hexo.sync.common.WatchPartyId
 
 enum class NavBarEntry(val label: String, val route: AppRoute) {

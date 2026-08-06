@@ -10,11 +10,11 @@ import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.layout.Layout
-import de.mineking.hexo.hds.game.Player
-import de.mineking.hexo.hds.session.LobbySession
-import de.mineking.hexo.hds.session.SessionRepository
-import de.mineking.hexo.hds.session.hasStarted
-import de.mineking.hexo.hds.utils.TimeControl
+import de.mineking.hexo.hds.model.TimeControl
+import de.mineking.hexo.hds.model.game.Player
+import de.mineking.hexo.hds.model.session.LobbySession
+import de.mineking.hexo.hds.model.session.SessionRepository
+import de.mineking.hexo.hds.model.session.hasStarted
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
@@ -28,7 +28,7 @@ import de.mineking.hexo.web.icons.StarIcon
 import de.mineking.hexo.web.icons.TimeControlIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
-import de.mineking.hexo.web.rememberHdsApiClient
+import de.mineking.hexo.web.rememberHdsRepositories
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
@@ -43,7 +43,7 @@ fun initLobbyListPage(ctx: InitRouteContext) {
 @Page
 @Composable
 fun LobbyListPage() {
-    val client = rememberHdsApiClient()
+    val client = rememberHdsRepositories()
 
     if (client == null) {
         LoadingState()

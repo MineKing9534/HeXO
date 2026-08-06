@@ -1,6 +1,5 @@
 package de.mineking.hexo.board
 
-import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.Serializable
 
 @RequiresOptIn

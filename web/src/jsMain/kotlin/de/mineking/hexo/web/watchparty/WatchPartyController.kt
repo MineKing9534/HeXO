@@ -9,7 +9,7 @@ import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.browser.storage.StorageKey
 import com.varabyte.kobweb.browser.storage.getItem
 import com.varabyte.kobweb.browser.storage.setItem
-import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.model.EntityState
 import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.client.WatchPartyClient
 import de.mineking.hexo.sync.client.createSession

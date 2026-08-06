@@ -8,14 +8,14 @@ plugins {
 
 dependencies {
     implementation(projects.board)
-
     implementation(projects.board.parse)
     implementation(projects.board.render)
 
-    implementation(projects.hds)
+    implementation(projects.hds.model)
     implementation(projects.discord.link)
 
     implementation(projects.server.service)
+    implementation(projects.utils.coroutines)
 
     implementation(libs.kotlin.coroutines.core)
 
@@ -41,10 +41,10 @@ discordLocalization {
 
     import("kotlin.math.roundToInt")
 
-    import("de.mineking.hexo.hds.utils.TimeControl")
-    import("de.mineking.hexo.hds.game.FinishedGame")
-    import("de.mineking.hexo.hds.game.GameFinishReason")
-    import("de.mineking.hexo.hds.profile.RichProfile")
+    import("de.mineking.hexo.hds.model.TimeControl")
+    import("de.mineking.hexo.hds.model.game.FinishedGame")
+    import("de.mineking.hexo.hds.model.game.GameFinishReason")
+    import("de.mineking.hexo.hds.model.profile.RichProfile")
 
     import("kotlin.time.toJavaInstant")
     import("net.dv8tion.jda.api.utils.TimeFormat")

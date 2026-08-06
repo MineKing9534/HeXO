@@ -5,12 +5,11 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.hds.game.GameFinishReason
-import de.mineking.hexo.hds.game.Player
-import de.mineking.hexo.hds.session.LiveSession
-import de.mineking.hexo.hds.session.LiveSessionPlayer
-import de.mineking.hexo.hds.session.SessionPlayerEloAdjustment
-import de.mineking.hexo.hds.session.SessionState
+import de.mineking.hexo.hds.model.game.GameFinishReason
+import de.mineking.hexo.hds.model.game.Player
+import de.mineking.hexo.hds.model.session.LiveSession
+import de.mineking.hexo.hds.model.session.LiveSessionPlayer
+import de.mineking.hexo.hds.model.session.SessionState
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
@@ -376,7 +375,7 @@ private fun LiveSessionPlayer.eloAdjustmentColor(winner: Player?) = when (winner
 
 private fun LiveSessionPlayer.eloAdjustmentLabel(
     winner: Player?,
-    eloAdjustment: SessionPlayerEloAdjustment,
+    eloAdjustment: LiveSessionPlayer.EloAdjustment,
 ) = when (winner) {
     this -> "+${eloAdjustment.eloGain}"
     null -> "0"

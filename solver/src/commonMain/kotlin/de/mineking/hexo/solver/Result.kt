@@ -1,7 +1,7 @@
 package de.mineking.hexo.solver
 
 import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.board.CellOwner
 import kotlinx.serialization.Serializable
 
 @Serializable

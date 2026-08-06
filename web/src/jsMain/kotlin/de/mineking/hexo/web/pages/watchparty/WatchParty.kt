@@ -9,7 +9,7 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.model.EntityState
 import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.common.WatchPartyId
 import de.mineking.hexo.sync.common.WatchPartyTarget
@@ -40,7 +40,7 @@ fun WatchPartyPage(ctx: PageContext) {
     when (val state = watchPartyController.rememberWatchParty(ctx.route.watchPartyId)) {
         is EntityState.Loading -> LoadingState()
         is EntityState.NotFound -> NotFoundState()
-        is EntityState.Data -> WatchPartyContent(state.value)
+        is EntityState.Data<WatchParty> -> WatchPartyContent(state.value)
     }
 }
 

@@ -3,6 +3,7 @@ package de.mineking.hexo.board.parse
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
@@ -13,7 +14,6 @@ import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
-import de.mineking.hexo.core.CellOwner
 
 object RectilinearNotationParser : BoardParser {
     override suspend fun parse(notation: String) = notation.parseRectilinearNotation(focusWinningRows = false)

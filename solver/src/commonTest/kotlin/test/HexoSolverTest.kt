@@ -1,10 +1,10 @@
 package test
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findWinningRows
-import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.solver.HexoSolver
