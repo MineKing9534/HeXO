@@ -5,15 +5,16 @@ package de.mineking.hexo.launcher
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.parse.cached
 import de.mineking.hexo.board.parse.focusWinningRows
-import de.mineking.hexo.board.render.cached
+import de.mineking.hexo.board.parse.hds.createWithHdsSupport
+import de.mineking.hexo.board.render.caching
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
 import de.mineking.hexo.board.render.image.outputPngBytes
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.web.LinkedRolesRedirectWebService
-import de.mineking.hexo.hds.HdsApiClient
-import de.mineking.hexo.hds.caching.CachingRepositoryWrapper
+import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.caching.CachingRepositoryWrapper
 import de.mineking.hexo.launcher.web.OAUth2CallbackWebService
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.HexoDatabaseManager
@@ -40,11 +41,11 @@ fun main() {
     val accountLinkRepository = database?.let { AccountLinkRepository(it) }
     val linkedRoles = createLinkedRoles(client, accountLinkRepository, discordUserAuthenticationRepository)
 
-    val parser = BoardParser.createWithHdsSupport(client).focusWinningRows().cached()
-    val pngRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().cached()
+    val parser = BoardParser.createWithHdsSupport(client.finishedGameRepository, client.formationRepository).focusWinningRows().cached()
+    val pngRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().caching()
 
     val bot = HeXODiscordBot(
-        client = client,
+        repositories = client,
         accountLinkRepository = accountLinkRepository,
         discordUserAuthenticationRepository = discordUserAuthenticationRepository,
         notationParser = parser,

@@ -1,7 +1,7 @@
 package de.mineking.hexo.solver
 
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.core.CellOwner
+import de.mineking.hexo.board.CellOwner
 
 interface HexoSolver {
     suspend fun findWin(board: Board, player: CellOwner, remaining: Int = 2): FindWinResult

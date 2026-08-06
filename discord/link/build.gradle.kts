@@ -4,7 +4,7 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.hds)
+    implementation(projects.hds.model)
 
     implementation(libs.jda)
     implementation(libs.dtk)

@@ -3,6 +3,7 @@ package de.mineking.hexo.board.parse
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
@@ -10,7 +11,6 @@ import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
-import de.mineking.hexo.core.CellOwner
 
 private const val MOVE_PATTERN = /*language=regexp*/ """[A-Z](?:[0-5]\.)?\d+"""
 private const val TURN_PATTERN = /*language=regexp*/ """[xo](?:\s+$MOVE_PATTERN)+"""

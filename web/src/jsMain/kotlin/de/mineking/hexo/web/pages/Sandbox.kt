@@ -16,6 +16,7 @@ import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.focusWinningRows
@@ -23,8 +24,7 @@ import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
-import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.core.present
+import de.mineking.hexo.utils.omissible.present
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.BoardPane
 import de.mineking.hexo.web.board.SandboxBoardViewManager
@@ -36,7 +36,7 @@ import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.layout.PageStyle
-import de.mineking.hexo.web.rememberHdsApiClient
+import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.sandbox.BoardUpdateCause
@@ -96,7 +96,7 @@ enum class CellPlacementMode {
 
 @Composable
 fun Sandbox(boardViewManager: SandboxBoardViewManager) {
-    val client = rememberHdsApiClient()
+    val repositories = rememberHdsRepositories()
 
     var viewport by remember { mutableStateOf<BoardViewport?>(null) }
     var board by boardViewManager.board
@@ -139,7 +139,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
             }
         }
         Sidebar(
-            client = client,
+            repositories = repositories,
             placementMode = placementMode,
             board = transformedBoard,
             onBoardChange = { cause, updated ->

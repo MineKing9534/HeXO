@@ -8,11 +8,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.hds.asBoard
-import de.mineking.hexo.hds.formation.FormationId
-import de.mineking.hexo.hds.formation.FormationRepository
-import de.mineking.hexo.hds.game.FinishedGameRepository
-import de.mineking.hexo.hds.game.GameId
+import de.mineking.hexo.hds.model.asBoard
+import de.mineking.hexo.hds.model.formation.FormationId
+import de.mineking.hexo.hds.model.formation.FormationRepository
+import de.mineking.hexo.hds.model.game.FinishedGameRepository
+import de.mineking.hexo.hds.model.game.GameId
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog

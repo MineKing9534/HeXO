@@ -9,7 +9,7 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.sync.common)
-            implementation(projects.hds)
+            implementation(projects.hds.model)
 
             implementation(libs.bundles.ktor.client)
             implementation(libs.ktor.client.websockets)

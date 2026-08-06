@@ -19,7 +19,7 @@ menu.profile:
     **Streak:** ${profile.statistics.rankedGames.currentWinStreak} (Longest ${profile.statistics.rankedGames.longestWinStreak})
 
   # Internal helper to avoid duplication
-  stats.game: !<stats:de.mineking.hexo.hds.profile.ProfileStatistics.GameStatistics> |-
+  stats.game: !<stats:de.mineking.hexo.hds.model.profile.ProfileStatistics.GameStatistics> |-
     **Games Played:** ${stats.played}
     **Games Won:** ${stats.won}${
       if (stats.played == 0) ""

@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.render.image.theme
 
 import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.endInclusive
 import de.mineking.hexo.board.render.image.Point
@@ -10,7 +11,6 @@ import de.mineking.hexo.board.render.image.SQRT3
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.minus
 import de.mineking.hexo.board.render.image.plus
-import de.mineking.hexo.core.CellOwner
 
 data class HTTTXTheme(
     override val gap: Double,

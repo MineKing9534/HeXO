@@ -12,9 +12,9 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.game.FinishedGame
-import de.mineking.hexo.hds.game.GameId
-import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.model.EntityState
+import de.mineking.hexo.hds.model.game.FinishedGame
+import de.mineking.hexo.hds.model.game.GameId
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
@@ -23,7 +23,7 @@ import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
-import de.mineking.hexo.web.rememberHdsApiClient
+import de.mineking.hexo.web.rememberHdsRepositories
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
@@ -44,7 +44,7 @@ fun GamePage(ctx: PageContext) {
 
 @Composable
 fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
-    val hdsClient = rememberHdsApiClient()
+    val hdsClient = rememberHdsRepositories()
     if (hdsClient == null) {
         LoadingState()
         return

@@ -1,9 +1,9 @@
 package de.mineking.hexo.web.session
 
 import androidx.compose.runtime.Composable
-import de.mineking.hexo.hds.game.Player
-import de.mineking.hexo.hds.session.LobbySession
-import de.mineking.hexo.hds.utils.TimeControl
+import de.mineking.hexo.hds.model.TimeControl
+import de.mineking.hexo.hds.model.game.Player
+import de.mineking.hexo.hds.model.session.LobbySession
 import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color

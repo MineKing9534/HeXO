@@ -4,6 +4,7 @@ package de.mineking.hexo.board.render.notation
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.distanceTo
@@ -11,7 +12,6 @@ import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.times
-import de.mineking.hexo.core.CellOwner
 
 object RectilinearStateBKETurnNotationBoardRenderer : BoardRenderer<Unit, String> {
     override suspend fun render(board: Board, param: Unit) = board.renderRectilinearStateBKETurnNotation()

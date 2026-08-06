@@ -10,8 +10,8 @@ import cc.tyto.Stone
 import cc.tyto.StrixSolverLib
 import cc.tyto.ThreatContainer
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isEmpty
-import de.mineking.hexo.core.CellOwner
 import kotlinx.serialization.json.Json
 
 class StrixNativeHexoSolver : HexoSolver {

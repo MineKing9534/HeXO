@@ -2,8 +2,8 @@ package de.mineking.hexo.board.parse.test
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.parse.parseTytoNotation
-import de.mineking.hexo.core.CellOwner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

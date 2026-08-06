@@ -3,7 +3,6 @@ package de.mineking.hexo.sync.server
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.plusAssign
-import de.mineking.hexo.core.Omissible
 import de.mineking.hexo.sync.common.WatchPartyCellRequest
 import de.mineking.hexo.sync.common.WatchPartyClearHighlightsRequest
 import de.mineking.hexo.sync.common.WatchPartyData
@@ -14,6 +13,7 @@ import de.mineking.hexo.sync.common.WatchPartyNavigateRequest
 import de.mineking.hexo.sync.common.WatchPartyNavigateTarget
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
+import de.mineking.hexo.utils.omissible.Omissible
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

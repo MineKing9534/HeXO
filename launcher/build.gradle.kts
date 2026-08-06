@@ -7,14 +7,16 @@ plugins {
 }
 
 dependencies {
-    implementation(projects.hds)
     implementation(projects.discord.bot)
     implementation(projects.discord.link)
     implementation(projects.server)
 
     implementation(projects.board)
     implementation(projects.board.parse)
+    implementation(projects.board.parse.hds)
     implementation(projects.board.render)
+
+    implementation(projects.hds.implementation)
 
     implementation(projects.sync.service)
 

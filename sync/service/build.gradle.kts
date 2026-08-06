@@ -5,8 +5,10 @@ plugins {
 dependencies {
     implementation(projects.sync.common)
 
-    implementation(projects.hds)
+    implementation(projects.hds.model)
     implementation(projects.server.service)
+
+    implementation(projects.utils.omissible)
 
     implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.serialization.json)

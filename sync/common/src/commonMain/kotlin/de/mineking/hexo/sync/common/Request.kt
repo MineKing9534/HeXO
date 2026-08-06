@@ -4,8 +4,8 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.hds.game.GameId
-import de.mineking.hexo.hds.session.SessionId
+import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.hds.model.session.SessionId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 

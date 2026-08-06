@@ -8,13 +8,12 @@ import de.mineking.hexo.board.HexoNotationFormatException
 import de.mineking.hexo.board.InternalBoardApi
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.mutable
-import de.mineking.hexo.hds.HdsApiClient
 
 interface BoardParser {
     suspend fun parse(notation: String): Board
 
     companion object {
-        internal object None : BoardParser {
+        object None : BoardParser {
             override suspend fun parse(notation: String) = throw NotImplementedError()
         }
 
@@ -22,11 +21,6 @@ interface BoardParser {
             .or(TytoLinkParser)
             .or(HTTTXNotationParser.allowTurnLabels())
             .or(RectilinearStateBKETurnNotationParser)
-
-        fun createWithHdsSupport(client: HdsApiClient) = None
-            .or(HdsGameLinkParser(client.finishedGameRepository).allowTurnLabels())
-            .or(HdsSandboxLinkParser(client.formationRepository).allowTurnLabels())
-            .or(Default)
     }
 }
 

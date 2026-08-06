@@ -2,11 +2,11 @@ package de.mineking.hexo.solver
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.minus
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.times
-import de.mineking.hexo.core.CellOwner
 
 private fun Board.transform(offset: CellCoordinate, flip: Boolean): Board = MutableBoard().apply {
     cells += this@transform.cells.mapNotNull { (coordinate, cell) ->

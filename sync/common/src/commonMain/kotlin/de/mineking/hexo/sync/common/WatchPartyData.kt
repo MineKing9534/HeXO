@@ -1,8 +1,8 @@
 package de.mineking.hexo.sync.common
 
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.hds.game.GameId
-import de.mineking.hexo.hds.session.SessionId
+import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.hds.model.session.SessionId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline

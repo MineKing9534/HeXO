@@ -9,17 +9,17 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.image.div
-import de.mineking.hexo.core.CellOwner
-import de.mineking.hexo.hds.game.FinishedGamePlayer
-import de.mineking.hexo.hds.game.Game
-import de.mineking.hexo.hds.game.Move
-import de.mineking.hexo.hds.game.Player
-import de.mineking.hexo.hds.session.LiveSessionPlayer
-import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.model.EntityState
+import de.mineking.hexo.hds.model.Move
+import de.mineking.hexo.hds.model.game.FinishedGamePlayer
+import de.mineking.hexo.hds.model.game.Game
+import de.mineking.hexo.hds.model.game.Player
+import de.mineking.hexo.hds.model.session.LiveSessionPlayer
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
@@ -70,7 +70,7 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
         viewport.value = null
 
         // Don't clear highlights when subscribed to a watch party
-        if (watchPartyController.subscribedWatchParty !is EntityState.Data) {
+        if (watchPartyController.subscribedWatchParty !is EntityState.Data<*>) {
             boardViewManager.clearHighlights()
         }
     }

@@ -9,9 +9,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
-import de.mineking.hexo.core.CellOwner
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.coroutines.DelicateCoroutinesApi

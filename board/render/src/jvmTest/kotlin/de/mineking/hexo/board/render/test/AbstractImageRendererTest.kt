@@ -3,6 +3,7 @@ package de.mineking.hexo.board.render.test
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.copy
@@ -12,7 +13,6 @@ import de.mineking.hexo.board.parse.parseTytoNotation
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
-import de.mineking.hexo.core.CellOwner
 import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.params.ParameterizedTest

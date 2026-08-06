@@ -194,4 +194,4 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
     }
 }
 
-private val Color.awt get() = AwtColor(rgba, true)
+val Color.awt get() = AwtColor(rgba, true)

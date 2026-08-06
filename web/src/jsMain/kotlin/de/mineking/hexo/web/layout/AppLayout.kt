@@ -14,7 +14,7 @@ import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.getValue
 import com.varabyte.kobweb.core.layout.Layout
 import com.varabyte.kobweb.navigation.BasePath
-import de.mineking.hexo.hds.utils.EntityState
+import de.mineking.hexo.hds.model.EntityState
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.icons.BroadcastIcon
@@ -161,7 +161,7 @@ private fun SessionSyncIndicator() {
         return
     }
 
-    if (watchPartyController.subscribedWatchParty is EntityState.Data) SessionSubscriptionIndicator()
+    if (watchPartyController.subscribedWatchParty is EntityState.Data<*>) SessionSubscriptionIndicator()
 }
 
 @Composable

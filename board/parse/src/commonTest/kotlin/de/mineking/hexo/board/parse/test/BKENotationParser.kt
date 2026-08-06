@@ -2,10 +2,10 @@ package de.mineking.hexo.board.parse.test
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.parse.Chirality
 import de.mineking.hexo.board.parse.parseBKENotation
-import de.mineking.hexo.core.CellOwner
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

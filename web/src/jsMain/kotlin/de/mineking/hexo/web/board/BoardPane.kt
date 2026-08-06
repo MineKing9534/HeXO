@@ -14,8 +14,8 @@ import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
-import de.mineking.hexo.hds.AbstractGamePosition
-import de.mineking.hexo.hds.asBoard
+import de.mineking.hexo.hds.model.AbstractGamePosition
+import de.mineking.hexo.hds.model.asBoard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.settings.SettingsKey
