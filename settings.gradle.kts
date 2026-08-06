@@ -28,6 +28,9 @@ include(":hds:implementation:processor")
 
 include(":solver")
 
+include(":database")
+include(":database:processor")
+
 include(":discord:link")
 include(":discord:bot")
 

@@ -16,6 +16,7 @@ dependencies {
     implementation(projects.board.parse.hds)
     implementation(projects.board.render)
 
+    implementation(projects.database)
     implementation(projects.hds.implementation)
 
     implementation(projects.sync.service)
