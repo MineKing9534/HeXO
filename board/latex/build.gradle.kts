@@ -13,6 +13,7 @@ dependencies {
 }
 
 ksp {
+    arg("registerThemesLatexCommandName", "registerhexodefaultthemes")
     arg(
         "themes",
         listOf(

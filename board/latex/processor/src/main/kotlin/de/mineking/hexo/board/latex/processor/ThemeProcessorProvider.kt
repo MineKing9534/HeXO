@@ -7,10 +7,12 @@ class ThemeProcessorProvider : SymbolProcessorProvider {
     override fun create(environment: SymbolProcessorEnvironment) = ThemeProcessor(
         codeGenerator = environment.codeGenerator,
         logger = environment.logger,
+        registerThemesCommandName = environment.options["registerThemesLatexCommandName"]
+            ?: error("Missing required argument 'registerThemesLatexCommandName'"),
         themes = environment.options["themes"]
             ?.split(",")
             ?.map { it.trim() }
             ?.filter { it.isNotEmpty() }
-            .orEmpty(),
+            ?: error("Missing required argument 'themes'"),
     )
 }

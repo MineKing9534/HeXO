@@ -25,7 +25,7 @@ fun Board.renderTikZDiagram(
     val tikz = renderToTikZ(
         padding = padding.source.toInt(),
         visibleRadius = visibleRadius.source.toInt(),
-        theme = theme.parseThemeCached(),
+        theme = theme.parseTheme(),
         rawLabels = rawLabels.source.toBooleanStrict(),
         labelStyle = "\\hexolabelfont",
     )
