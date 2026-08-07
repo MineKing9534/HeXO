@@ -1,4 +1,4 @@
-package de.mineking.hexo.board.render.image.tikz
+package de.mineking.hexo.board.render.tikz
 
 @DslMarker
 annotation class TikZDsl

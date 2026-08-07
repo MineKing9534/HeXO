@@ -25,11 +25,16 @@ ksp {
 }
 
 kotlin {
+    sourceSets.commonMain {
+        dependencies {
+            implementation(projects.board.render)
+        }
+    }
+
     sourceSets.latexMain {
         dependencies {
             implementation(projects.board)
             implementation(projects.board.parse)
-            implementation(projects.board.render)
             implementation(libs.kotlin.coroutines.core)
         }
     }

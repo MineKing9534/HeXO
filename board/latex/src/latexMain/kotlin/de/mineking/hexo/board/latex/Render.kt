@@ -2,7 +2,7 @@ package de.mineking.hexo.board.latex
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
-import de.mineking.hexo.board.render.image.tikz.renderToTikZ
+import de.mineking.hexo.board.render.tikz.renderToTikZ
 import de.mineking.kotlinlatex.ExpandLatex
 import de.mineking.kotlinlatex.Latex
 import de.mineking.kotlinlatex.LatexExport

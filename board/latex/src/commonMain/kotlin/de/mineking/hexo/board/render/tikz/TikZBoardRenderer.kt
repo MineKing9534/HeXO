@@ -1,4 +1,4 @@
-package de.mineking.hexo.board.render.image.tikz
+package de.mineking.hexo.board.render.tikz
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.BoardRenderer
