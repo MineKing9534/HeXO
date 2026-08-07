@@ -13,11 +13,11 @@ import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.web.LinkedRolesRedirectWebService
+import de.mineking.hexo.database.HexoDatabaseManager
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.caching.CachingRepositoryWrapper
 import de.mineking.hexo.launcher.web.OAUth2CallbackWebService
 import de.mineking.hexo.link.AccountLinkRepository
-import de.mineking.hexo.link.HexoDatabaseManager
 import de.mineking.hexo.link.oauth2.AESTokenTransform
 import de.mineking.hexo.link.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository

@@ -1,7 +1,7 @@
 package de.mineking.hexo.link.oauth2
 
+import de.mineking.hexo.database.HexoDatabaseManager
 import de.mineking.hexo.link.DiscordUserId
-import de.mineking.hexo.link.HexoDatabaseManager
 import de.mineking.hexo.link.database.DiscordUserTokensTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq

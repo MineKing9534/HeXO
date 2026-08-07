@@ -32,7 +32,7 @@ fun <T : Any> LinkedRoleMetadataKey<T>.bindValue(value: T?) = LinkedRoleMetadata
 
 suspend inline fun <reified L : LocalizationFile> DiscordToolKit<*>.updateLinkedRoleMetadata(vararg data: LinkedRoleMetadataKey<*>) {
     val localization = localizationManager.read<L>()
-    jda.updateLinkedRoleMetadata(localization, *data)
+    jda.updateLinkedRoleMetadata(localization, data = data)
 }
 
 @PublishedApi
