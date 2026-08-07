@@ -15,6 +15,10 @@ value class WatchPartyId(val value: String)
 sealed interface WatchPartyResponse
 
 @Serializable
+@SerialName("pong")
+data object WatchPartyPongResponse : WatchPartyResponse
+
+@Serializable
 sealed interface WatchPartyTarget {
     @Serializable
     @SerialName("session")

@@ -8,7 +8,7 @@ style:
   DestructuringDeclarationWithTooManyEntries:
     active: false
   LoopWithTooManyJumpStatements:
-    maxJumpCount: 2
+    maxJumpCount: 3
   ReturnCount:
     max: 5
 

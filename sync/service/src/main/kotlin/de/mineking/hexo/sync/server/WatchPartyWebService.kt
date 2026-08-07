@@ -3,6 +3,8 @@ package de.mineking.hexo.sync.server
 import de.mineking.hexo.sever.service.ApiWebService
 import de.mineking.hexo.sync.common.WatchPartyErrorResponse
 import de.mineking.hexo.sync.common.WatchPartyId
+import de.mineking.hexo.sync.common.WatchPartyPingRequest
+import de.mineking.hexo.sync.common.WatchPartyPongResponse
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyResponse
 import de.mineking.hexo.sync.common.WatchPartyWebsocketCodes
@@ -16,7 +18,9 @@ import io.ktor.server.routing.route
 import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.WebSockets
 import io.ktor.server.websocket.converter
+import io.ktor.server.websocket.pingPeriod
 import io.ktor.server.websocket.sendSerialized
+import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.CloseReason
 import io.ktor.websocket.close
@@ -75,6 +79,8 @@ class WatchPartyWebService : ApiWebService() {
 
     override fun Application.setup() {
         install(WebSockets) {
+            pingPeriod = 30.seconds
+            timeout = 15.seconds
             contentConverter = KotlinxWebsocketSerializationConverter(Json {
                 allowStructuredMapKeys = true
             })
@@ -128,7 +134,11 @@ class WatchPartyWebService : ApiWebService() {
             for (frame in incoming) {
                 try {
                     val request = converter!!.deserialize<WatchPartyRequest>(frame)
-                    session.apply(request, connectionId)
+                    if (request is WatchPartyPingRequest) {
+                        sendSerialized<WatchPartyResponse>(WatchPartyPongResponse)
+                    } else {
+                        session.apply(request, connectionId)
+                    }
                 } catch (e: SerializationException) {
                     sendSerialized<WatchPartyResponse>(WatchPartyErrorResponse(e.message ?: "Invalid request"))
                 } catch (e: WatchPartyRequestException) {

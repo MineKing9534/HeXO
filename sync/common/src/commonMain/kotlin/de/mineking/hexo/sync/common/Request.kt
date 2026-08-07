@@ -13,6 +13,10 @@ import kotlinx.serialization.Serializable
 sealed interface WatchPartyRequest
 
 @Serializable
+@SerialName("ping")
+data object WatchPartyPingRequest : WatchPartyRequest
+
+@Serializable
 sealed interface WatchPartyNavigateTarget {
     @Serializable
     @SerialName("sandbox")

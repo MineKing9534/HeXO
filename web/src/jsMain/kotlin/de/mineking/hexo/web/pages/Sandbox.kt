@@ -1,6 +1,7 @@
 package de.mineking.hexo.web.pages
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -36,6 +37,7 @@ import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.layout.PageStyle
+import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
@@ -96,6 +98,13 @@ enum class CellPlacementMode {
 
 @Composable
 fun Sandbox(boardViewManager: SandboxBoardViewManager) {
+    val appLayout = rememberAppLayout()
+    DisposableEffect(appLayout) {
+        val previousStyle = appLayout.pageStyle
+        appLayout.pageStyle = PageStyle.Raw
+        onDispose { appLayout.pageStyle = previousStyle }
+    }
+
     val repositories = rememberHdsRepositories()
 
     var viewport by remember { mutableStateOf<BoardViewport?>(null) }

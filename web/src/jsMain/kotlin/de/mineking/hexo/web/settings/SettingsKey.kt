@@ -27,6 +27,7 @@ class SettingsKey<out T> private constructor(val name: String, val type: KType, 
         }
 
         val SessionViewTimerSounds by key(true)
+        val Volume by key(1f)
         val ReadOnlyBoardHoverIndicator by key(true)
         val SessionAnalyzer by key(true)
         val Theme by key(DefaultTheme.HDS)

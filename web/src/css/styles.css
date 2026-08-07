@@ -22,4 +22,46 @@
     .hexo-checkbox:focus-visible {
         @apply ring-2 ring-emerald-400/60 ring-offset-2 ring-offset-slate-950;
     }
+
+    .hexo-slider {
+        @apply h-5 w-full cursor-pointer appearance-none bg-transparent outline-none;
+
+        background-image: linear-gradient(
+            to right,
+            var(--color-emerald-500) 0 var(--hexo-slider-progress),
+            var(--color-slate-700) var(--hexo-slider-progress) 100%
+        );
+        background-position: center;
+        background-repeat: no-repeat;
+        background-size: 100% 0.375rem;
+        border-radius: 9999px;
+    }
+
+    .hexo-slider::-webkit-slider-thumb {
+        @apply size-3 appearance-none rounded-full border-0 bg-emerald-400 transition-colors;
+
+        box-shadow: 0 0 0 1px var(--color-slate-950), 0 0 0 2px color-mix(in srgb, var(--color-emerald-400) 40%, transparent);
+    }
+
+    .hexo-slider::-moz-range-thumb {
+        @apply size-3 rounded-full border-0 bg-emerald-400 transition-colors;
+
+        box-shadow: 0 0 0 1px var(--color-slate-950), 0 0 0 2px color-mix(in srgb, var(--color-emerald-400) 40%, transparent);
+    }
+
+    .hexo-slider:hover::-webkit-slider-thumb {
+        @apply bg-emerald-300;
+    }
+
+    .hexo-slider:hover::-moz-range-thumb {
+        @apply bg-emerald-300;
+    }
+
+    .hexo-slider:focus-visible::-webkit-slider-thumb {
+        @apply ring-2 ring-emerald-400/70 ring-offset-2 ring-offset-slate-950;
+    }
+
+    .hexo-slider:focus-visible::-moz-range-thumb {
+        @apply ring-2 ring-emerald-400/70 ring-offset-2 ring-offset-slate-950;
+    }
 }

@@ -55,7 +55,7 @@ private fun rememberSharedHdsApiClient(): HdsApiClient? {
 fun App(content: @Composable () -> Unit) {
     SettingsControllerProvider(localStorage) { settingsController ->
         val hdsApiClient = rememberSharedHdsApiClient()
-        val soundPlayer = remember { SoundPlayer() }
+        val soundPlayer = remember(settingsController) { SoundPlayer(settingsController) }
         val watchPartyController = remember { WatchPartyController(BuildConfig.TOOLS_API, settingsController) }
 
         CompositionLocalProvider(
