@@ -15,7 +15,7 @@ import de.mineking.hexo.board.plusAssign
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.sync.client.WatchParty
 import de.mineking.hexo.sync.common.WatchPartyTarget
-import de.mineking.hexo.utils.omissible.present
+import de.mineking.hexo.utils.types.present
 import de.mineking.hexo.web.onSet
 import de.mineking.hexo.web.rememberWatchPartyController
 import kotlinx.coroutines.DelicateCoroutinesApi

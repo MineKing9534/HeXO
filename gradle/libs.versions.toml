@@ -7,8 +7,8 @@ kobweb = "0.24.0"
 
 ksp = "2.3.7"
 
-ktor = "3.5.0"
-exposed = "1.3.0"
+ktor = "3.5.2"
+exposed = "1.4.0"
 
 [libraries]
 build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
@@ -50,9 +50,12 @@ kobweb-core = { module = "com.varabyte.kobweb:kobweb-core", version.ref = "kobwe
 kobweb-worker = { module = "com.varabyte.kobweb:kobweb-worker", version.ref = "kobweb" }
 kobwebx-serialization-kotlinx = { module = "com.varabyte.kobwebx:kobwebx-serialization-kotlinx", version.ref = "kobweb" }
 
+exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 exposed-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 exposed-migration = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "exposed" }
+nanoid = { module = "io.viascom.nanoid:nanoid", version = "2.0.0" }
 
 postgres = { module = "org.postgresql:postgresql", version = "42.7.11" }
 
@@ -71,7 +74,7 @@ ktor-server = [ "ktor-server-core", "ktor-server-netty", "ktor-server-contentNeg
 
 compose-html = [ "compose-runtime", "compose-html-core" ]
 
-exposed = [ "exposed-jdbc", "exposed-datetime", "exposed-migration" ]
+exposed = [ "exposed-core", "exposed-jdbc", "exposed-json", "exposed-datetime" ]
 
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

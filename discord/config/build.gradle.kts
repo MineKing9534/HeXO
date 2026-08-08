@@ -1,23 +1,23 @@
 plugins {
     id("kotlin-jvm")
 
-    alias(libs.plugins.ksp)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.ksp)
 }
 
 dependencies {
     implementation(projects.discord.core)
-    implementation(projects.hds.model)
 
-    implementation(projects.utils.types)
+    implementation(projects.board)
+    implementation(projects.board.render)
 
     implementation(projects.database)
     ksp(projects.database.processor)
+
+    implementation(projects.utils.types)
 
     implementation(libs.jda)
     implementation(libs.dtk)
 
     implementation(libs.bundles.exposed)
-    implementation(libs.bundles.ktor.client)
-    implementation(libs.ktor.client.cio)
 }

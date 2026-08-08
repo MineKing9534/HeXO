@@ -1,6 +1,6 @@
 package de.mineking.hexo.link.oauth2
 
-import de.mineking.hexo.link.DiscordUserId
+import de.mineking.hexo.discord.core.DiscordUserId
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.engine.cio.CIO

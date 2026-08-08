@@ -25,7 +25,7 @@ import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
-import de.mineking.hexo.utils.omissible.present
+import de.mineking.hexo.utils.types.present
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.BoardPane
 import de.mineking.hexo.web.board.SandboxBoardViewManager

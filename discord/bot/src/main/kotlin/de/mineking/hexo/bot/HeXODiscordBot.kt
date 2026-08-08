@@ -30,9 +30,9 @@ import de.mineking.hexo.bot.menus.notationMenu
 import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.bot.utils.installErrorHandling
 import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
+import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.link.AccountLinkRepository
-import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging

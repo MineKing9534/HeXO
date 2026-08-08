@@ -11,6 +11,8 @@ style:
     maxJumpCount: 3
   ReturnCount:
     max: 5
+  ThrowsCount:
+    max: 3
 
 naming:
   FunctionNaming:

@@ -31,8 +31,10 @@ include(":solver")
 include(":database")
 include(":database:processor")
 
-include(":discord:link")
 include(":discord:bot")
+include(":discord:core")
+include(":discord:link")
+include(":discord:config")
 
 include(":server")
 include(":server:service")
@@ -43,4 +45,4 @@ include(":sync:common")
 include(":sync:client")
 
 include(":utils:coroutines")
-include(":utils:omissible")
+include(":utils:types")

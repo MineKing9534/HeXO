@@ -11,6 +11,7 @@ import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 
 @JvmInline
+@Serializable
 value class Color private constructor(val rgba: Int) {
     val alpha get() = (rgba shr 3 * 8 and 0xff).toUByte()
     val red get() = (rgba shr 2 * 8 and 0xff).toUByte()

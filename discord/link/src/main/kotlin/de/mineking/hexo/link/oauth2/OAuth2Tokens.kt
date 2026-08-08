@@ -1,6 +1,6 @@
 package de.mineking.hexo.link.oauth2
 
-import de.mineking.hexo.link.DiscordUserId
+import de.mineking.hexo.discord.core.DiscordUserId
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

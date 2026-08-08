@@ -14,13 +14,11 @@ interface Migration {
 
 context(_: Migration)
 fun JdbcTransaction.migrate(vararg tables: Table) {
-    tables.forEach { table ->
-        val statements = MigrationUtils.statementsRequiredForDatabaseMigration(table, withLogs = false)
+    val statements = MigrationUtils.statementsRequiredForDatabaseMigration(tables = tables, withLogs = false)
 
-        if (statements.isEmpty()) {
-            logger.debug { "No migration required for ${table.javaClass}" }
-        }
-
+    if (statements.isEmpty()) {
+        logger.debug { "No migration required" }
+    } else {
         statements.forEach {
             exec(it)
         }

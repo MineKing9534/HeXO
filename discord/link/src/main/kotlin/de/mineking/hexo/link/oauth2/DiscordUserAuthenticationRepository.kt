@@ -1,7 +1,8 @@
 package de.mineking.hexo.link.oauth2
 
 import de.mineking.hexo.database.HexoDatabaseManager
-import de.mineking.hexo.link.DiscordUserId
+import de.mineking.hexo.database.throwOnDatabaseError
+import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.link.database.DiscordUserTokensTable
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.eq
@@ -42,36 +43,38 @@ class DiscordUserAuthenticationRepository(
         val token = discordOAuth2Client.getUserTokens(code) ?: return null
         require(Scope.Identify in token.data.scopes)
 
-        database.transaction {
-            val _ = DiscordUserTokensTable.upsert {
+        val _ = database.transaction(readOnly = false) {
+            DiscordUserTokensTable.upsert {
                 it[this.id] = token.id
                 it.bindTokens(token)
             }
-        }
+        }.throwOnDatabaseError()
 
         return token
     }
 
-    suspend fun getAuthenticationStatus(discordUserId: DiscordUserId) = database.transaction {
-        DiscordUserTokensTable
-            .select(intLiteral(0))
-            .where(DiscordUserTokensTable.id eq discordUserId)
-            .firstOrNull() != null
+    suspend fun getAuthenticationStatus(discordUserId: DiscordUserId): Boolean {
+        return database.transaction(readOnly = true) {
+            DiscordUserTokensTable
+                .select(intLiteral(0))
+                .where(DiscordUserTokensTable.id eq discordUserId)
+                .firstOrNull() != null
+        }.throwOnDatabaseError()
     }
 
     suspend fun getUserTokens(discordUserId: DiscordUserId): OAuth2Tokens? {
-        val tokens = database.transaction {
+        val tokens = database.transaction(readOnly = true) {
             DiscordUserTokensTable
                 .selectAll()
                 .where(DiscordUserTokensTable.id eq discordUserId)
                 .firstOrNull()
                 ?.mapToTokens()
-        }
+        }.throwOnDatabaseError()
 
         if (tokens?.isExpired() != true) return tokens
         val updated = tokens.refresh()
 
-        return database.transaction {
+        return database.transaction(readOnly = true) {
             if (updated == null) {
                 DiscordUserTokensTable.deleteWhere { DiscordUserTokensTable.id eq discordUserId }
                 null
@@ -82,17 +85,17 @@ class DiscordUserAuthenticationRepository(
 
                 updated
             }
-        }
+        }.throwOnDatabaseError()
     }
 
     @IgnorableReturnValue
-    suspend fun removeUser(userId: DiscordUserId): Boolean {
-        val tokens = database.transaction {
+    suspend fun unauthenticateUser(userId: DiscordUserId): Boolean {
+        val tokens = database.transaction(readOnly = false) {
             DiscordUserTokensTable.deleteReturning(
                 returning = DiscordUserTokensTable.columns,
                 where = { DiscordUserTokensTable.id eq userId },
             ).firstOrNull()?.mapToTokens()
-        } ?: return false
+        }.throwOnDatabaseError() ?: return false
 
         tokens.revoke()
         return true

@@ -8,7 +8,7 @@ plugins {
 kotlin {
     sourceSets.commonMain {
         dependencies {
-            implementation(projects.utils.omissible)
+            implementation(projects.utils.types)
             implementation(libs.kotlin.serialization.core)
         }
     }
