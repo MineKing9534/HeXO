@@ -170,7 +170,7 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
     }
 
     context(user: DiscordUserId)
-    suspend fun updateCustomThemeById(id: CustomThemeSelector, theme: BaseTheme): Result<CustomTheme, CustomThemeUpdateError> {
+    suspend fun updateCustomThemeById(id: CustomThemeSelector, theme: Theme): Result<CustomTheme, CustomThemeUpdateError> {
         return database.transaction(readOnly = false) {
             val owner = getThemeOwner(id)
                 ?: return@transaction Result.Error(CustomThemeNotFoundError)

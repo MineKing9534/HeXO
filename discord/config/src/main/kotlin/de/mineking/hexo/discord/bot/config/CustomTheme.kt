@@ -37,7 +37,7 @@ sealed class ThemeOverrideValue {
     data class DoubleValue(override val value: Double) : ThemeOverrideValue()
 }
 
-class CustomTheme(
+data class CustomTheme(
     val id: CustomThemeId,
     val owner: DiscordUserId,
     val name: String,
@@ -54,8 +54,14 @@ class CustomTheme(
 
     override fun render(context: RenderingContext, middleLayer: () -> Unit) = delegate.render(context, middleLayer)
 
-    override fun equals(other: Any?) = other is CustomTheme && other.id == id
-    override fun hashCode() = Objects.hash(id, owner, name)
+    override fun equals(other: Any?) = other is CustomTheme &&
+        other.id == id &&
+        other.owner == owner &&
+        other.name == name &&
+        other.base == base &&
+        other.overrides == overrides
+
+    override fun hashCode() = Objects.hash(id, owner, name, base, overrides)
 }
 
 private fun DefaultTheme.createCopy(mapper: (KParameter) -> Omissible<*>): BaseTheme {

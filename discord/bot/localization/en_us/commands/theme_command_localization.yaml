@@ -31,6 +31,21 @@ menu.theme:
     label: Edit
     header.content: '# Theme Editor'
     back.label: Back
+    property.placeholder: Customize a property
+
+    color:
+      title: !<property:String> Customize ${property}
+      inputs:
+        value:
+          label: Color
+          description: The HEX code of the color to use
+
+    double:
+      title: !<property:String> Customize ${property}
+      inputs:
+        value:
+          label: Value
+          description: The value to use
 
 response.error:
   theme.change: Failed to change theme
