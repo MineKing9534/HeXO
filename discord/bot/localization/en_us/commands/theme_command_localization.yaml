@@ -1,0 +1,8 @@
+command.theme:
+  description: Configure your custom theme
+
+menu.theme:
+  header.content: '# Theme Configuration'
+
+response.error:
+  theme.change: Failed to change theme

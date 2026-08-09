@@ -69,3 +69,17 @@ private fun DefaultTheme.createCopy(mapper: (KParameter) -> Omissible<*>): BaseT
         property.get(theme)
     })
 }
+
+sealed interface ThemeContainer {
+    val theme: Theme
+
+    data class Custom(override val theme: CustomTheme) : ThemeContainer
+    data class Default(val default: DefaultTheme) : ThemeContainer {
+        override val theme = default.theme
+    }
+}
+
+fun ThemeContainer.toSelection() = when (this) {
+    is ThemeContainer.Default -> UserThemeSelection.Default(default)
+    is ThemeContainer.Custom -> UserThemeSelection.Custom(CustomThemeSelector.Id(theme.id))
+}

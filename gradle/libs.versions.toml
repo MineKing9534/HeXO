@@ -61,7 +61,7 @@ postgres = { module = "org.postgresql:postgresql", version = "42.7.11" }
 
 jda = { module = "net.dv8tion:JDA", version = "6.4.1" }
 jda-emoji = { module = "dev.freya02:jda-emojis", version = "4.1.0" }
-dtk = { module = "de.mineking:DiscordToolKit", version = "1.6.1" }
+dtk = { module = "de.mineking:DiscordToolKit", version = "1.6.2" }
 
 svg = { module = "dev.jamesyox:svg4k", version = "0.1.0-alpha.3" }
 

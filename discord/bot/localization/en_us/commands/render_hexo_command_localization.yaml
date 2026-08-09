@@ -6,10 +6,6 @@ command:
       input.description: The Rectilinear HeXO notation to render
       theme:
         description: "The theme to use for rendering [Default: HDS]"
-        choices:
-          HDS: hexo.did.science
-          HTTTX: explore.htttx.io
-          Tyto: hexo.tyto.cc
 
 response.error: |-
   ## Failed to parse the given input

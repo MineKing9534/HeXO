@@ -212,12 +212,3 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         .firstOrNull()
         ?.get(ThemeDataTable.owner)
 }
-
-private sealed interface ThemeContainer {
-    val theme: Theme
-
-    data class Custom(override val theme: CustomTheme) : ThemeContainer
-    data class Default(val default: DefaultTheme) : ThemeContainer {
-        override val theme = default.theme
-    }
-}
