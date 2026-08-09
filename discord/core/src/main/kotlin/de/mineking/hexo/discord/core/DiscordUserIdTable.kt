@@ -22,4 +22,5 @@ private class DiscordUserIdColumnType : ColumnType<DiscordUserId>() {
 
     override fun valueFromDB(value: Any) = DiscordUserId(DELEGATE.valueFromDB(value))
     override fun valueToDB(value: DiscordUserId?) = DELEGATE.valueToDB(value?.value)
+    override fun notNullValueToDB(value: DiscordUserId) = DELEGATE.notNullValueToDB(value.value)
 }

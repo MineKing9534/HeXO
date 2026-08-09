@@ -20,6 +20,6 @@ internal object ThemeDataTable : NanoIdTable<CustomThemeId>("theme_data") {
         uniqueIndex("theme_data_owner_name_unique", owner, name)
     }
 
-    override fun NanoId.wrapId() = CustomThemeId(this)
-    override fun CustomThemeId.unwrapId() = value
+    override fun NanoId.wrapId() = CustomThemeId(this.value)
+    override fun CustomThemeId.unwrapId() = NanoId(value)
 }

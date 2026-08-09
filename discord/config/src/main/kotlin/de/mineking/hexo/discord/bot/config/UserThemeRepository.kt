@@ -89,25 +89,25 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         this[ThemeDataTable.overrides] = overrides
     }
 
-    suspend fun listUserThemes(userId: DiscordUserId): List<CustomTheme> {
+    suspend fun listUserThemes(user: DiscordUserId): List<CustomTheme> {
         return database.transaction(readOnly = true) {
             ThemeDataTable.selectAll()
-                .where(ThemeDataTable.owner eq userId)
+                .where(ThemeDataTable.owner eq user)
                 .map { it.mapToCustomTheme() }
         }.throwOnDatabaseError()
     }
 
-    suspend fun getCurrentUserTheme(userId: DiscordUserId): CustomTheme? {
+    suspend fun getCurrentUserTheme(user: DiscordUserId): CustomTheme? {
         return database.transaction(readOnly = true) {
             UserThemeTable.rightJoin(ThemeDataTable, onColumn = { currentTheme }, otherColumn = { id })
                 .select(ThemeDataTable.columns)
-                .where(UserThemeTable.id eq userId)
+                .where(UserThemeTable.id eq user)
                 .firstOrNull()
                 ?.mapToCustomTheme()
         }.throwOnDatabaseError()
     }
 
-    suspend fun setCurrentUserTheme(userId: DiscordUserId, theme: CustomThemeSelector?): Result<CustomTheme?, CustomThemeQueryError> {
+    suspend fun setCurrentUserTheme(user: DiscordUserId, theme: CustomThemeSelector?): Result<CustomTheme?, CustomThemeQueryError> {
         return database.transaction(readOnly = false) {
             val theme =
                 if (theme == null) {
@@ -120,8 +120,8 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
                         ?: return@transaction Result.Error(CustomThemeNotFoundError)
                 }
 
-            UserThemeTable.upsert(where = { UserThemeTable.id eq userId }) {
-                it[UserThemeTable.id] = userId
+            UserThemeTable.upsert(where = { UserThemeTable.id eq user }) {
+                it[UserThemeTable.id] = user
                 it[UserThemeTable.currentTheme] = theme?.id
             }
 

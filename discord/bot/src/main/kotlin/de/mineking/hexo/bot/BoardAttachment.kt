@@ -2,9 +2,7 @@ package de.mineking.hexo.bot
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.BoardRenderer
-import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
-import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.utils.FileUpload
 import java.util.UUID
 
@@ -24,5 +22,3 @@ sealed interface BoardAttachment {
 fun <P> BoardRenderer<P, ByteArray>.outputBoardAttachment(extension: String) = object : BoardRenderer<P, BoardAttachment> {
     override suspend fun render(board: Board, param: P) = BoardAttachment.Upload(this@outputBoardAttachment.render(board, param), extension)
 }
-
-fun UserSnowflake.defaultHexoTheme() = DefaultTheme.HDS // TODO

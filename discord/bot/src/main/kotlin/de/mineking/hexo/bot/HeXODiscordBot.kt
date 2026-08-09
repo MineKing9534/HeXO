@@ -11,6 +11,7 @@ import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.render.BoardRenderer
+import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
@@ -30,6 +31,7 @@ import de.mineking.hexo.bot.menus.notationMenu
 import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.bot.utils.installErrorHandling
 import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
+import de.mineking.hexo.discord.bot.config.UserThemeRepository
 import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.link.AccountLinkRepository
@@ -57,6 +59,7 @@ class HeXODiscordBot(
     private val repositories: HdsRepositoryContainer,
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
+    val userThemeRepository: UserThemeRepository?,
     val notationParser: BoardParser,
     val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
     val publicUrl: String?,
@@ -129,6 +132,16 @@ class HeXODiscordBot(
         }
 
         jda.registerMessageDeleteListener()
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    suspend fun getUserTheme(user: DiscordUserId) = try {
+        userThemeRepository
+            ?.getCurrentUserTheme(user)
+            ?: DefaultTheme.HDS.theme
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to fetch user theme" }
+        DefaultTheme.HDS.theme
     }
 
     fun shutdown() {

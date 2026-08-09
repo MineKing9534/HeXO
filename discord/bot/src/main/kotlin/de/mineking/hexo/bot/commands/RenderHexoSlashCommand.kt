@@ -1,19 +1,16 @@
 package de.mineking.hexo.bot.commands
 
-import de.mineking.discord.commands.enumOption
 import de.mineking.discord.commands.localizedSlashCommand
-import de.mineking.discord.commands.orElse
 import de.mineking.discord.commands.requiredStringOption
 import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.LocalizationParameter
 import de.mineking.discord.localization.Localize
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.bot.HeXODiscordBot
-import de.mineking.hexo.bot.defaultHexoTheme
 import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.finalErrorResponse
+import de.mineking.hexo.bot.utils.themeOption
 import net.dv8tion.jda.api.components.mediagallery.MediaGallery
 import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.IntegrationType
@@ -26,8 +23,7 @@ fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoCommandLocalizati
     interactionContextTypes(InteractionContextType.ALL)
 
     val input = requiredStringOption("input")
-    val theme = enumOption<DefaultTheme>("theme")
-        .orElse { user.defaultHexoTheme() }
+    val theme = themeOption("theme")
 
     execute {
         val input = input()

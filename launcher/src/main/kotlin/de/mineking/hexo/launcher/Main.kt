@@ -14,6 +14,7 @@ import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.web.LinkedRolesRedirectWebService
 import de.mineking.hexo.database.HexoDatabaseManager
+import de.mineking.hexo.discord.bot.config.UserThemeRepository
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.caching.CachingRepositoryWrapper
 import de.mineking.hexo.launcher.web.OAUth2CallbackWebService
@@ -41,6 +42,8 @@ fun main() {
     val accountLinkRepository = database?.let { AccountLinkRepository(it) }
     val linkedRoles = createLinkedRoles(client, accountLinkRepository, discordUserAuthenticationRepository)
 
+    val userThemeRepository = database?.let { UserThemeRepository(it) }
+
     val parser = BoardParser.createWithHdsSupport(client.finishedGameRepository, client.formationRepository).focusWinningRows().cached()
     val pngRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().caching()
 
@@ -48,6 +51,7 @@ fun main() {
         repositories = client,
         accountLinkRepository = accountLinkRepository,
         discordUserAuthenticationRepository = discordUserAuthenticationRepository,
+        userThemeRepository = userThemeRepository,
         notationParser = parser,
         boardRenderer = pngRenderer.outputBoardAttachment("png"),
         publicUrl = config.server?.url,

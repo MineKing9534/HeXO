@@ -5,29 +5,32 @@ import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
-import de.mineking.hexo.database.NanoId
 import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.utils.types.Omissible
 import de.mineking.hexo.utils.types.isPresent
 import de.mineking.hexo.utils.types.omitted
 import de.mineking.hexo.utils.types.present
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import java.util.Objects
 import kotlin.reflect.KParameter
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 
 @JvmInline
-value class CustomThemeId(val value: NanoId)
+value class CustomThemeId(val value: String)
 
 @Serializable
 sealed class ThemeOverrideValue {
     abstract val value: Any?
 
     @Serializable
+    @SerialName("color")
     data class ColorValue(override val value: Color) : ThemeOverrideValue()
 
     @Serializable
+    @SerialName("double")
     data class DoubleValue(override val value: Double) : ThemeOverrideValue()
 }
 
@@ -40,13 +43,16 @@ class CustomTheme(
 ) : Theme() {
     private val delegate = base.createCopy {
         if (it.name !in overrides) return@createCopy omitted<Any?>()
-        overrides[it.name].present()
+        overrides[it.name]?.value.present()
     }
 
     override val gap = delegate.gap
     override val backgroundColor = delegate.backgroundColor
 
     override fun render(context: RenderingContext, middleLayer: () -> Unit) = delegate.render(context, middleLayer)
+
+    override fun equals(other: Any?) = other is CustomTheme && other.id == id
+    override fun hashCode() = Objects.hash(id, owner, name)
 }
 
 private fun DefaultTheme.createCopy(mapper: (KParameter) -> Omissible<*>): BaseTheme {

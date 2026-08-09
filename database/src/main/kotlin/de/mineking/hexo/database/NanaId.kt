@@ -44,4 +44,5 @@ private class NanoIdColumnType : ColumnType<NanoId>() {
 
     override fun valueFromDB(value: Any) = NanoId(value.toString())
     override fun valueToDB(value: NanoId?) = value?.value
+    override fun notNullValueToDB(value: NanoId) = value.value
 }
