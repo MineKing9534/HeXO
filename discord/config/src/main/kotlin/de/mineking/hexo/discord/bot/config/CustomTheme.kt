@@ -19,7 +19,10 @@ import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
 
 @JvmInline
+@Serializable
 value class CustomThemeId(val value: String)
+
+val Theme.base get() = DefaultTheme.entries.single { it.theme::class.isInstance(this) }
 
 @Serializable
 sealed class ThemeOverrideValue {
@@ -38,10 +41,10 @@ class CustomTheme(
     val id: CustomThemeId,
     val owner: DiscordUserId,
     val name: String,
-    base: DefaultTheme,
-    overrides: Map<String, ThemeOverrideValue>,
+    val base: DefaultTheme,
+    val overrides: Map<String, ThemeOverrideValue>,
 ) : Theme() {
-    private val delegate = base.createCopy {
+    val delegate = base.createCopy {
         if (it.name !in overrides) return@createCopy omitted<Any?>()
         overrides[it.name]?.value.present()
     }

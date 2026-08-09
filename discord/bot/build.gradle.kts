@@ -3,6 +3,7 @@ import de.mineking.discord.localization.gradle.import
 plugins {
     id("kotlin-jvm")
 
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.dtk.localization)
 }
 

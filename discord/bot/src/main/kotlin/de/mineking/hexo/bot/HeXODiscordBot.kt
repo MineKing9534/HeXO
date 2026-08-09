@@ -11,7 +11,6 @@ import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.render.BoardRenderer
-import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.bot.commands.accountLinkCommand
 import de.mineking.hexo.bot.commands.gameCommand
@@ -136,10 +135,10 @@ class HeXODiscordBot(
     suspend fun getUserTheme(user: DiscordUserId) = try {
         userThemeRepository
             ?.getCurrentUserTheme(user)
-            ?: DefaultTheme.HDS.theme
+            ?: Theme.Default
     } catch (e: Exception) {
         logger.error(e) { "Failed to fetch user theme" }
-        DefaultTheme.HDS.theme
+        Theme.Default
     }
 
     fun shutdown() {
@@ -163,7 +162,7 @@ private fun JDA.registerMessageDeleteListener() {
     }
 }
 
-inline fun <reified L : LocalizationFile> HeXODiscordBot.localization() = dtk.localizationManager.read<L>()
+inline fun <reified L : LocalizationFile> HeXODiscordBot.localization(): L = dtk.localizationManager.read<L>()
 val UserSnowflake.userId get() = DiscordUserId(idLong)
 
 fun String.escapeMarkdown() = MarkdownSanitizer.sanitize(this, MarkdownSanitizer.SanitizationStrategy.ESCAPE)

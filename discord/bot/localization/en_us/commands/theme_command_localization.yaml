@@ -4,5 +4,33 @@ command.theme:
 menu.theme:
   header.content: '# Theme Configuration'
 
+  select.label: Select
+  delete:
+    label: Delete
+    title: Confirm Theme Deletion
+    inputs:
+      confirm:
+        label: Confirm
+        description: The custom theme will be permanently deleted
+        options.value.label: !<name:String> I want to delete my theme '${name}'
+
+  create:
+    label: Create
+    title: Create Custom Theme
+    inputs:
+      name:
+        label: Name
+        description: The name of the theme
+        placeholder: My Theme
+
+      base:
+        label: Base Theme
+        description: The theme to use as a base
+
+  edit:
+    label: Edit
+    header.content: '# Theme Editor'
+    back.label: Back
+
 response.error:
   theme.change: Failed to change theme

@@ -31,7 +31,13 @@ private fun UIManager.renderHexoModal() = registerLocalizedModal<Interaction, Mo
     }
 
     val theme by +main.run {
-        themeSelect(fetchUserThemeData()).withLocalizedLabel().map { value ->
+        val (customThemes, default) = fetchUserThemeData()
+        themeSelect(
+            "theme",
+            customThemes = customThemes,
+            isSelected = { it == default },
+            isCurrent = { false },
+        ).withLocalizedLabel().map { value ->
             main.run {
                 value.single().parseTheme(terminate = ::terminateRender).theme
             }

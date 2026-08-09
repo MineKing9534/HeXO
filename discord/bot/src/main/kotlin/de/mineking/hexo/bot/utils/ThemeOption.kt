@@ -38,6 +38,8 @@ import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.callbacks.IReplyCallback
 
+val EMOJI_THEME_SELECTED = Emojis.WHITE_CHECK_MARK
+
 context(main: HeXODiscordBot)
 fun OptionConfig.themeOption(name: String) = stringOption(name) {
     val customThemes = main.userThemeRepository
@@ -73,7 +75,7 @@ suspend fun String.parseTheme(terminate: () -> Nothing): ThemeContainer {
 }
 
 context(main: HeXODiscordBot)
-suspend fun MenuConfig<out Interaction, *>.fetchUserThemeData() = renderValue(emptyList<CustomTheme>() to DefaultTheme.HDS.theme) {
+suspend fun MenuConfig<out Interaction, *>.fetchUserThemeData() = renderValue(emptyList<CustomTheme>() to Theme.Default) {
     val user = parameter({ error("") }, { it.user.userId }, { user.userId })
     coroutineScope {
         val themes = async { main.userThemeRepository?.listUserThemes(user).orEmpty() }
@@ -85,34 +87,40 @@ suspend fun MenuConfig<out Interaction, *>.fetchUserThemeData() = renderValue(em
 
 context(main: HeXODiscordBot)
 fun MenuConfig<out Interaction, *>.themeSelect(
-    themeData: Pair<List<CustomTheme>, Theme>,
+    name: String,
+    customThemes: List<CustomTheme>,
+    isSelected: (Theme) -> Boolean,
+    isCurrent: (Theme) -> Boolean,
     handler: StringSelectHandler? = null,
 ): SharedElement<StringSelectMenu, StringSelectInteractionEvent, List<String>> {
     val options = renderValue {
-        val (customThemes, default) = themeData
         val localization = main.localization<ThemeLocalization>()
 
         val customOptions = customThemes.map {
             selectOption(
                 value = it.id.value,
                 label = it.name,
-                default = it == default,
+                default = isSelected(it),
                 description = localization.themeCustomDescription(currentLocalizationConfig!!.locale, it.id.value),
-                emoji = Emojis.ART,
+                emoji = if (isCurrent(it)) EMOJI_THEME_SELECTED else Emojis.ART,
             )
         }
 
         val defaultOptions = DefaultTheme.entries.map {
             selectOption(
                 value = it.name,
-                default = it.theme == default,
+                default = isSelected(it.theme),
                 label = "theme.${it.name}.label".localize(),
                 description = "theme.default.description".localize(),
                 localization = main.localization<ThemeLocalization>(),
-                emoji = when (it) {
-                    DefaultTheme.HDS -> main.emojiManager[CustomEmoji.ThemeHDS]
-                    DefaultTheme.HTTTX -> main.emojiManager[CustomEmoji.ThemeHTTTX]
-                    DefaultTheme.Tyto -> main.emojiManager[CustomEmoji.ThemeTyto]
+                emoji = if (isCurrent(it.theme)) {
+                    EMOJI_THEME_SELECTED
+                } else {
+                    when (it) {
+                        DefaultTheme.HDS -> main.emojiManager[CustomEmoji.ThemeHDS]
+                        DefaultTheme.HTTTX -> main.emojiManager[CustomEmoji.ThemeHTTTX]
+                        DefaultTheme.Tyto -> main.emojiManager[CustomEmoji.ThemeTyto]
+                    }
                 },
             )
         }
@@ -121,7 +129,7 @@ fun MenuConfig<out Interaction, *>.themeSelect(
     }
 
     return stringSelect(
-        name = "theme",
+        name = name,
         placeholder = null,
         options = options.orEmpty(),
         handler = handler,

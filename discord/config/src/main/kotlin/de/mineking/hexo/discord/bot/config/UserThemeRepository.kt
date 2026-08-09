@@ -64,8 +64,10 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         is CustomThemeSelector.Name -> (ThemeDataTable.owner eq owner) and (ThemeDataTable.name eq name)
     }
 
-    private fun UpdateBuilder<*>.bindTheme(theme: BaseTheme) {
-        val base = DefaultTheme.entries.single { it.theme::class.isInstance(theme) }
+    private fun UpdateBuilder<*>.bindTheme(theme: Theme) {
+        val theme = if (theme is CustomTheme) theme.delegate else theme
+
+        val base = theme.base
         this[ThemeDataTable.base] = base
 
         val overrides = base.theme::class.primaryConstructor!!.parameters
@@ -75,7 +77,7 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
                 @Suppress("UNCHECKED_CAST")
                 val property = base.theme::class.memberProperties
                     .first { it.name == name }
-                    as KProperty1<BaseTheme, Any?>
+                    as KProperty1<Theme, Any?>
 
                 val defaultValue = property.get(base.theme)
                 val actual = property.get(theme)
@@ -151,7 +153,7 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         }.throwOnDatabaseError()
     }
 
-    suspend fun createCustomTheme(owner: DiscordUserId, name: String, theme: BaseTheme): Result<CustomTheme, CustomThemeCreateError> {
+    suspend fun createCustomTheme(owner: DiscordUserId, name: String, theme: Theme): Result<CustomTheme, CustomThemeCreateError> {
         return database.transaction(readOnly = false) {
             ThemeDataTable.insertReturning {
                 it[ThemeDataTable.owner] = owner
