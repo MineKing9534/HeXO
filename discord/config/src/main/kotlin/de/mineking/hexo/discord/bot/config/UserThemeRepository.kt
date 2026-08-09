@@ -3,6 +3,7 @@ package de.mineking.hexo.discord.bot.config
 import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
+import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.database.HexoDatabaseManager
 import de.mineking.hexo.database.UnexpectedDatabaseErrorException
 import de.mineking.hexo.database.UniqueViolationError
@@ -17,7 +18,7 @@ import de.mineking.hexo.utils.types.mapError
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.rightJoin
+import org.jetbrains.exposed.v1.core.leftJoin
 import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
 import org.jetbrains.exposed.v1.core.vendors.ForUpdateOption
 import org.jetbrains.exposed.v1.jdbc.deleteWhere
@@ -42,6 +43,11 @@ object MissingCustomThemePermissionError : CustomThemeUpdateError, CustomThemeDe
 sealed interface CustomThemeSelector {
     data class Id(val id: CustomThemeId) : CustomThemeSelector
     data class Name(val owner: DiscordUserId, val name: String) : CustomThemeSelector
+}
+
+sealed interface UserThemeSelection {
+    data class Custom(val selector: CustomThemeSelector) : UserThemeSelection
+    data class Default(val theme: DefaultTheme) : UserThemeSelection
 }
 
 class UserThemeRepository(private val database: HexoDatabaseManager) {
@@ -97,35 +103,51 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         }.throwOnDatabaseError()
     }
 
-    suspend fun getCurrentUserTheme(user: DiscordUserId): CustomTheme? {
+    suspend fun getCurrentUserTheme(user: DiscordUserId): Theme? {
         return database.transaction(readOnly = true) {
-            UserThemeTable.rightJoin(ThemeDataTable, onColumn = { currentTheme }, otherColumn = { id })
-                .select(ThemeDataTable.columns)
+            val result = UserThemeTable.leftJoin(ThemeDataTable, onColumn = { customTheme }, otherColumn = { id })
+                .selectAll()
                 .where(UserThemeTable.id eq user)
-                .firstOrNull()
-                ?.mapToCustomTheme()
+                .firstOrNull() ?: return@transaction null
+
+            val default = result[UserThemeTable.defaultTheme]
+            if (default != null) return@transaction default.theme
+
+            result.mapToCustomTheme()
         }.throwOnDatabaseError()
     }
 
-    suspend fun setCurrentUserTheme(user: DiscordUserId, theme: CustomThemeSelector?): Result<CustomTheme?, CustomThemeQueryError> {
+    suspend fun setCurrentUserTheme(user: DiscordUserId, theme: UserThemeSelection): Result<Theme?, CustomThemeQueryError> {
         return database.transaction(readOnly = false) {
-            val theme =
-                if (theme == null) {
-                    null
-                } else {
-                    ThemeDataTable.selectAll()
-                        .where(theme.toCondition())
+            val theme = when (theme) {
+                is UserThemeSelection.Custom -> {
+                    val theme = ThemeDataTable.selectAll()
+                        .where(theme.selector.toCondition())
                         .firstOrNull()
                         ?.mapToCustomTheme()
                         ?: return@transaction Result.Error(CustomThemeNotFoundError)
+
+                    ThemeContainer.Custom(theme)
                 }
+                is UserThemeSelection.Default -> ThemeContainer.Default(theme.theme)
+            }
 
             UserThemeTable.upsert(where = { UserThemeTable.id eq user }) {
                 it[UserThemeTable.id] = user
-                it[UserThemeTable.currentTheme] = theme?.id
+
+                when (theme) {
+                    is ThemeContainer.Default -> {
+                        it[UserThemeTable.defaultTheme] = theme.default
+                        it[UserThemeTable.customTheme] = null
+                    }
+                    is ThemeContainer.Custom -> {
+                        it[UserThemeTable.defaultTheme] = null
+                        it[UserThemeTable.customTheme] = theme.theme.id
+                    }
+                }
             }
 
-            Result.Success(theme)
+            Result.Success(theme.theme)
         }.throwOnDatabaseError()
     }
 
@@ -189,4 +211,13 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         .forUpdate(ForUpdateOption.ForUpdate)
         .firstOrNull()
         ?.get(ThemeDataTable.owner)
+}
+
+private sealed interface ThemeContainer {
+    val theme: Theme
+
+    data class Custom(override val theme: CustomTheme) : ThemeContainer
+    data class Default(val default: DefaultTheme) : ThemeContainer {
+        override val theme = default.theme
+    }
 }
