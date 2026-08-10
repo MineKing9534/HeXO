@@ -3,7 +3,6 @@ import org.jetbrains.kotlin.gradle.dsl.KotlinMultiplatformExtension
 
 repositories {
     mavenCentral()
-    mavenLocal()
     maven("https://maven.mineking.dev/releases")
     maven("https://maven.mineking.dev/snapshots")
 }
