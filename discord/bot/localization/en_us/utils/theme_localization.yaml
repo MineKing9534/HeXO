@@ -5,3 +5,6 @@ theme:
 
   custom.description: !<id:String> 'Custom Theme: ${id}'
   default.description: Default Theme
+
+  error:
+    not.found: Theme **${id}** not found

@@ -3,6 +3,7 @@ package de.mineking.hexo.bot.commands
 import de.mineking.discord.commands.localizedMenuCommand
 import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
+import de.mineking.discord.localization.LocalizationParameter
 import de.mineking.discord.localization.Localize
 import de.mineking.discord.ui.InitialMenuContext
 import de.mineking.discord.ui.builder.components.localizedTextDisplay
@@ -83,21 +84,21 @@ fun themeCommand() = localizedMenuCommand<ThemeCommandLocalization>("theme") { l
     localize(locale)
 
     val (themes, current) = fetchUserThemeData()
-    var selected by state(current.id)
+    var selected by state(current.themeId)
 
     +container {
         +localizedTextDisplay("header")
         +separator(spacing = Separator.Spacing.LARGE)
 
         val selectedTheme = when (context) {
-            is InitialMenuContext -> current.also { selected = it.id }
+            is InitialMenuContext -> current.also { selected = it.themeId }
             else -> when (val temp = selected) {
                 is ThemeId.Default -> temp.theme.theme
                 is ThemeId.Custom -> main.userThemeRepository!!
                     .getThemeById(CustomThemeSelector.Id(temp.id))
                     .let { it as? Result.Success }
                     ?.value
-                    ?: Theme.Default.also { selected = it.id }
+                    ?: current.also { selected = it.themeId }
             }
         }
 
@@ -107,7 +108,7 @@ fun themeCommand() = localizedMenuCommand<ThemeCommandLocalization>("theme") { l
         +actionRow(themeSelect(
             "theme",
             customThemes = themes,
-            isSelected = { it.id == selected },
+            isSelected = { it.themeId == selected },
             isCurrent = { it == current },
         ) {
             selected = event.values.single().toThemeId()
@@ -122,22 +123,22 @@ fun themeCommand() = localizedMenuCommand<ThemeCommandLocalization>("theme") { l
                 val result = main.userThemeRepository?.setCurrentUserTheme(user.userId, selected.toSelection()) ?: return@button
 
                 if (!result.isSuccess()) {
-                    respond(MessageColor.Error, localization.responseErrorThemeChange(userLocale))
+                    respond(MessageColor.Error, localization.responseErrorSelect(userLocale), forceNew = true)
                     terminateRender()
                 }
 
                 forceUpdate()
             }.enabledIf(selectedTheme != current)
 
-            +deleteButton(selectedTheme)
-            +editButton(selectedTheme)
-            +createButton(themes, selectedTheme)
+            +deleteButton(selectedTheme, localization)
+            +editButton(selectedTheme, localization)
+            +createButton(themes, selectedTheme, localization)
         }
     }
 }
 
 context(main: HeXODiscordBot)
-private fun MessageMenuConfig<*, *>.deleteButton(selected: Theme) = modalButton(
+private fun MessageMenuConfig<*, *>.deleteButton(selected: Theme, localization: ThemeCommandLocalization) = modalButton(
     "delete",
     color = ButtonColor.RED,
     emoji = Emojis.WASTEBASKET,
@@ -155,7 +156,7 @@ private fun MessageMenuConfig<*, *>.deleteButton(selected: Theme) = modalButton(
     } ?: return@modalButton
 
     if (!result.isSuccess()) {
-        // TODO
+        respond(MessageColor.Error, localization.responseErrorDelete(userLocale), forceNew = true)
         terminateRender()
     }
 }.enabledIf(selected is CustomTheme)
@@ -164,6 +165,7 @@ context(main: HeXODiscordBot)
 private fun MessageMenuConfig<out Interaction, *>.createButton(
     customThemes: List<CustomTheme>,
     selected: Theme,
+    localization: ThemeCommandLocalization,
 ) = modalButton("create", emoji = Emojis.MEMO, component = createModalComponent {
     val name by +textInput("name").withLocalizedLabel()
     val base by +main.run {
@@ -181,19 +183,25 @@ private fun MessageMenuConfig<out Interaction, *>.createButton(
         ?: return@modalButton
 
     if (!result.isSuccess()) {
-        // TODO
+        respond(MessageColor.Error, localization.responseErrorCreate(userLocale, name), forceNew = true)
+        terminateRender()
+    }
+
+    update {
+        // Select the newly created theme
+        push(result.value.themeId)
     }
 }
 
 context(main: HeXODiscordBot)
-private fun MessageMenuConfig<*, *>.editButton(selected: Theme) = menuButton(
+private fun MessageMenuConfig<*, *>.editButton(selected: Theme, localization: ThemeCommandLocalization) = menuButton(
     "edit",
     emoji = Emojis.SCREWDRIVER,
     color = ButtonColor.BLUE,
 ) { back ->
     val modals = mapOf(
-        "color" to themeParameterModal("color", selected) { ThemeOverrideValue.ColorValue(Color.parse(it)) },
-        "double" to themeParameterModal("double", selected) { ThemeOverrideValue.DoubleValue(it.toDouble()) },
+        "color" to themeParameterModal("color", localization, selected) { ThemeOverrideValue.ColorValue(Color.parse(it)) },
+        "double" to themeParameterModal("double", localization, selected) { ThemeOverrideValue.DoubleValue(it.toDouble()) },
     )
 
     +container {
@@ -244,6 +252,7 @@ private fun MessageMenuConfig<*, *>.editButton(selected: Theme) = menuButton(
 context(main: HeXODiscordBot)
 private fun MessageMenuConfig<*, *>.themeParameterModal(
     name: String,
+    localization: ThemeCommandLocalization,
     selected: Theme,
     parse: (String) -> ThemeOverrideValue,
 ) = modal(name) {
@@ -268,7 +277,8 @@ private fun MessageMenuConfig<*, *>.themeParameterModal(
             updateTheme(theme!!, property, value)
             switchMenu(menu.parent as MessageMenu<*, *>)
         } catch (e: IllegalArgumentException) {
-            // TODO
+            respond(MessageColor.Error, localization.responseErrorInvalidValue(userLocale, property, e.message), forceNew = true)
+            terminateRender()
         }
     }
 }
@@ -299,7 +309,20 @@ private suspend fun ModalContext<*>.updateTheme(
 
 interface ThemeCommandLocalization : LocalizationFile {
     @Localize
-    fun responseErrorThemeChange(@Locale locale: DiscordLocale): String
+    fun responseErrorSelect(@Locale locale: DiscordLocale): String
+
+    @Localize
+    fun responseErrorDelete(@Locale locale: DiscordLocale): String
+
+    @Localize
+    fun responseErrorCreate(@Locale locale: DiscordLocale, @LocalizationParameter name: String): String
+
+    @Localize
+    fun responseErrorInvalidValue(
+        @Locale locale: DiscordLocale,
+        @LocalizationParameter property: String,
+        @LocalizationParameter message: String?,
+    ): String
 }
 
 @Serializable
@@ -313,7 +336,7 @@ private sealed interface ThemeId {
     data class Default(val theme: DefaultTheme) : ThemeId
 }
 
-private val Theme.id get() = when (this) {
+private val Theme.themeId get() = when (this) {
     is CustomTheme -> ThemeId.Custom(id)
     else -> ThemeId.Default(base)
 }

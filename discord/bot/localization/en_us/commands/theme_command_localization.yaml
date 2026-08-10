@@ -48,4 +48,7 @@ menu.theme:
           description: The value to use
 
 response.error:
-  theme.change: Failed to change theme
+  select: Failed to change theme
+  delete: Failed to delete theme
+  create: You already have a custom theme with name **${name}**!
+  invalid.value: 'Invalid value for property **${property}**: ${message ?: "Unknown error"}'

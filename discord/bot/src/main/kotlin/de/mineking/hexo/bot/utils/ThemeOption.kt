@@ -67,7 +67,7 @@ suspend fun String.parseTheme(terminate: () -> Nothing): ThemeContainer {
         ?: return ThemeContainer.Default(DefaultTheme.HDS)
 
     if (!result.isSuccess()) {
-        // TODO
+        callback.respond(MessageColor.Error, main.localization<ThemeLocalization>().themeErrorNotFound(callback.userLocale, this), forceNew = true)
         terminate()
     }
 
@@ -139,4 +139,7 @@ fun MenuConfig<out Interaction, *>.themeSelect(
 interface ThemeLocalization : LocalizationFile {
     @Localize
     fun themeCustomDescription(@Locale locale: DiscordLocale, @LocalizationParameter id: String): String
+
+    @Localize
+    fun themeErrorNotFound(@Locale locale: DiscordLocale, @LocalizationParameter id: String): String
 }
