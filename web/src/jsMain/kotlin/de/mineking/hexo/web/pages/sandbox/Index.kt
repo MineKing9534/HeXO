@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.pages
+package de.mineking.hexo.web.pages.sandbox
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -43,8 +43,6 @@ import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
-import de.mineking.hexo.web.sandbox.BoardUpdateCause
-import de.mineking.hexo.web.sandbox.Sidebar
 import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.Div
 

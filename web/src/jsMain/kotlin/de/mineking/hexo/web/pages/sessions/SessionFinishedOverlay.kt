@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.session
+package de.mineking.hexo.web.pages.sessions
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue

@@ -15,8 +15,8 @@ import de.mineking.hexo.hds.implementation.socket.connectSocketClient
 import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.web.audio.SoundPlayer
 import de.mineking.hexo.web.pages.NotFoundPage
+import de.mineking.hexo.web.pages.watchparty.WatchPartyController
 import de.mineking.hexo.web.settings.SettingsControllerProvider
-import de.mineking.hexo.web.watchparty.WatchPartyController
 import de.mineking.hexo.web.web.BuildConfig
 import kotlinx.browser.localStorage
 import org.jetbrains.compose.web.dom.Main

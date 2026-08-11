@@ -18,8 +18,8 @@ import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
-import de.mineking.hexo.web.pages.Sandbox
 import de.mineking.hexo.web.pages.games.Game
+import de.mineking.hexo.web.pages.sandbox.Sandbox
 import de.mineking.hexo.web.pages.sessions.Session
 import de.mineking.hexo.web.rememberWatchPartyController
 import org.jetbrains.compose.web.dom.H1

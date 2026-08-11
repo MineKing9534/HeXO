@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.sandbox
+package de.mineking.hexo.web.pages.sandbox
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,7 +26,6 @@ import de.mineking.hexo.web.components.ResizableTrailingPanel
 import de.mineking.hexo.web.components.Select
 import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.components.TextInput
-import de.mineking.hexo.web.pages.CellPlacementMode
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType

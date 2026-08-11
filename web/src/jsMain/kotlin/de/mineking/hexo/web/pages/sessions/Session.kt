@@ -29,8 +29,6 @@ import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
-import de.mineking.hexo.web.session.LobbyOverlay
-import de.mineking.hexo.web.session.SessionFinishedOverlay
 import org.jetbrains.compose.web.dom.H1
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Text
