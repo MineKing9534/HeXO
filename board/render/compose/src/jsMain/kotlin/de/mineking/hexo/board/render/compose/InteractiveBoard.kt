@@ -26,20 +26,33 @@ import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.HTMLCanvasElement
 
-sealed interface BoardInteraction {
-    data class PlaceCell(val coordinate: CellCoordinate) : BoardInteraction
+sealed class BoardInteraction {
+    abstract val modifiers: BoardModifierKeys
 
-    sealed interface HighlightBoardInteraction : BoardInteraction {
-        fun apply(board: MutableBoard)
+    data class PlaceCell(
+        override val modifiers: BoardModifierKeys,
+        val coordinate: CellCoordinate,
+    ) : BoardInteraction()
+
+    sealed class HighlightBoardInteraction : BoardInteraction() {
+        abstract fun apply(board: MutableBoard)
     }
 
-    data class HighlightCell(val coordinate: CellCoordinate, val highlight: CellHighlight?) : HighlightBoardInteraction {
+    data class HighlightCell(
+        override val modifiers: BoardModifierKeys,
+        val coordinate: CellCoordinate,
+        val highlight: CellHighlight?,
+    ) : HighlightBoardInteraction() {
         override fun apply(board: MutableBoard) {
             board[coordinate].highlight = highlight
         }
     }
 
-    data class HighlightLine(val line: LineHighlight, val isRemove: Boolean) : HighlightBoardInteraction {
+    data class HighlightLine(
+        override val modifiers: BoardModifierKeys,
+        val line: LineHighlight,
+        val isRemove: Boolean,
+    ) : HighlightBoardInteraction() {
         override fun apply(board: MutableBoard) {
             if (!isRemove) {
                 board.lineHighlights += line
@@ -87,8 +100,8 @@ fun InteractiveBoard(
         theme = theme,
         cellHoverColor = cellHoverColor,
         renderingHook = renderingHook,
-        onCellClick = {
-            onBoardInteraction(BoardInteraction.PlaceCell(it))
+        onCellClick = { (coordinate, modifiers) ->
+            onBoardInteraction(BoardInteraction.PlaceCell(modifiers, coordinate))
         },
         onBoardRightClick = { (from, to, phase, modifiers) ->
             if (phase == BoardRightClickPhase.Abort) {
@@ -106,9 +119,9 @@ fun InteractiveBoard(
                 val line = board.findTopHighlightLineAt(to)
                 if (line == null) {
                     val highlight = if (board.cells[to]?.highlight == null) CellHighlight(color) else null
-                    onBoardInteraction(BoardInteraction.HighlightCell(to, highlight))
+                    onBoardInteraction(BoardInteraction.HighlightCell(modifiers, to, highlight))
                 } else {
-                    onBoardInteraction(BoardInteraction.HighlightLine(line, isRemove = true))
+                    onBoardInteraction(BoardInteraction.HighlightLine(modifiers, line, isRemove = true))
                 }
                 temporaryLine = null
             } else {
@@ -116,7 +129,7 @@ fun InteractiveBoard(
                 val line = LineHighlight(from, direction, length, color)
 
                 if (phase == BoardRightClickPhase.Commit) {
-                    onBoardInteraction(BoardInteraction.HighlightLine(line, isRemove = false))
+                    onBoardInteraction(BoardInteraction.HighlightLine(modifiers, line, isRemove = false))
                     temporaryLine = null
                 } else if (from != to) {
                     temporaryLine = line

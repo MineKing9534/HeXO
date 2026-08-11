@@ -15,6 +15,7 @@ import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.CellOwner
@@ -24,6 +25,7 @@ import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardInteraction
+import de.mineking.hexo.board.render.compose.BoardModifierKeys
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.utils.types.present
 import de.mineking.hexo.web.audio.SoundEffect
@@ -92,8 +94,79 @@ fun SandboxPage(ctx: PageContext) {
 }
 
 enum class CellPlacementMode {
-    State,
-    Turn,
+    Toggle {
+        override fun SandboxBoardViewManager.handle(
+            coordinate: CellCoordinate,
+            modifiers: BoardModifierKeys,
+            currentCell: Cell?,
+            board: Board,
+        ) {
+            if (currentCell?.turn != null) return
+            updateCell(coordinate, CellOverride(
+                owner = when (currentCell?.owner) {
+                    null -> CellOwner.X
+                    CellOwner.X -> CellOwner.O
+                    CellOwner.O -> null
+                }.present(),
+            ))
+        }
+    },
+    X {
+        override fun SandboxBoardViewManager.handle(
+            coordinate: CellCoordinate,
+            modifiers: BoardModifierKeys,
+            currentCell: Cell?,
+            board: Board,
+        ) {
+            if (currentCell?.turn != null) return
+            updateCell(coordinate, CellOverride(
+                owner = when (currentCell?.owner) {
+                    CellOwner.X -> null
+                    else -> CellOwner.X
+                }.present(),
+            ))
+        }
+    },
+    O {
+        override fun SandboxBoardViewManager.handle(
+            coordinate: CellCoordinate,
+            modifiers: BoardModifierKeys,
+            currentCell: Cell?,
+            board: Board,
+        ) {
+            if (currentCell?.turn != null) return
+            updateCell(coordinate, CellOverride(
+                owner = when (currentCell?.owner) {
+                    CellOwner.O -> null
+                    else -> CellOwner.O
+                }.present(),
+            ))
+        }
+    },
+    Turn {
+        override fun SandboxBoardViewManager.handle(
+            coordinate: CellCoordinate,
+            modifiers: BoardModifierKeys,
+            currentCell: Cell?,
+            board: Board,
+        ) {
+            if (currentCell?.owner != null) return
+
+            val (player, turn) = board.findNextTurn()
+            updateCell(coordinate, CellOverride(
+                owner = player.present(),
+                turn = turn.present(),
+            ))
+        }
+    },
+    ;
+
+    abstract fun SandboxBoardViewManager.handle(
+        coordinate: CellCoordinate,
+        modifiers: BoardModifierKeys,
+        currentCell: Cell?,
+        board: Board,
+    )
 }
 
 @Composable
@@ -118,7 +191,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
         mutableStateOf(
             when {
                 !board.isEmpty(includeHighlights = false) -> CellPlacementMode.Turn
-                else -> CellPlacementMode.State
+                else -> CellPlacementMode.Toggle
             },
         )
     }
@@ -127,25 +200,13 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
 
     Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "flex-col", "md:flex-row") }) {
         Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "p-3", "md:p-6") }) {
-            BoardPane(
+            SandboxBoardPane(
                 board = transformedBoard,
-                readOnly = false,
+                boardViewManager = boardViewManager,
+                placementMode = placementMode.value,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
-                onBoardInteraction = { interaction ->
-                    when (interaction) {
-                        is BoardInteraction.PlaceCell -> boardViewManager.placeCell(interaction.coordinate, placementMode.value)
-                        is BoardInteraction.HighlightBoardInteraction -> boardViewManager.apply(interaction)
-                    }
-                },
-            ) {
-                ActionButton(
-                    label = "Reset View",
-                    size = ButtonSize.Medium,
-                    attrs = { classes("absolute", "bottom-3", "right-3", "z-20", "shadow-lg") },
-                    onClick = { viewport = null },
-                )
-            }
+            )
         }
         Sidebar(
             repositories = repositories,
@@ -157,6 +218,39 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
                     viewport = null
                 }
             },
+        )
+    }
+}
+
+@Composable
+private fun SandboxBoardPane(
+    board: Board,
+    boardViewManager: SandboxBoardViewManager,
+    placementMode: CellPlacementMode,
+    viewport: BoardViewport?,
+    onViewportChange: (BoardViewport?) -> Unit,
+) {
+    BoardPane(
+        board = board,
+        readOnly = false,
+        viewport = viewport,
+        onViewportChange = onViewportChange,
+        onBoardInteraction = { interaction ->
+            when (interaction) {
+                is BoardInteraction.PlaceCell -> boardViewManager.placeCell(
+                    interaction.coordinate,
+                    interaction.modifiers,
+                    placementMode,
+                )
+                is BoardInteraction.HighlightBoardInteraction -> boardViewManager.apply(interaction)
+            }
+        },
+    ) {
+        ActionButton(
+            label = "Reset View",
+            size = ButtonSize.Medium,
+            attrs = { classes("absolute", "bottom-3", "right-3", "z-20", "shadow-lg") },
+            onClick = { onViewportChange(null) },
         )
     }
 }
@@ -179,7 +273,7 @@ fun SandboxSounds(board: Board) {
 
 private fun Board.getMaxTurn() = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
 
-private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, mode: CellPlacementMode) {
+private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, modifiers: BoardModifierKeys, mode: CellPlacementMode) {
     val board = board.value
     val maxTurn = board.getMaxTurn()
 
@@ -192,28 +286,8 @@ private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, mode: 
         return
     }
 
-    when (mode) {
-        CellPlacementMode.State if currentCell?.turn == null -> {
-            updateCell(coordinate, CellOverride(
-                owner = when (currentCell?.owner) {
-                    null -> CellOwner.X
-                    CellOwner.X -> CellOwner.O
-                    CellOwner.O -> null
-                }.present(),
-            ))
-        }
-
-        CellPlacementMode.Turn -> {
-            if (currentCell?.owner != null) return
-
-            val (player, turn) = board.findNextTurn()
-            updateCell(coordinate, CellOverride(
-                owner = player.present(),
-                turn = turn.present(),
-            ))
-        }
-
-        else -> {}
+    mode.run {
+        handle(coordinate, modifiers, currentCell, board)
     }
 }
 

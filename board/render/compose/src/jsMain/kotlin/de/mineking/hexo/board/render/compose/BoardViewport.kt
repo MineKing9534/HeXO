@@ -51,12 +51,21 @@ data class BoardViewport(val zoom: Double, val center: Point) {
     ) - center * zoom
 }
 
+sealed interface BoardClickEvent {
+    val modifiers: BoardModifierKeys
+}
+
+data class BoardLeftClickEvent(
+    val coordinate: CellCoordinate,
+    override val modifiers: BoardModifierKeys,
+) : BoardClickEvent
+
 data class BoardRightClickEvent(
     val from: CellCoordinate,
     val to: CellCoordinate,
     val phase: BoardRightClickPhase,
-    val modifiers: BoardModifierKeys,
-)
+    override val modifiers: BoardModifierKeys,
+) : BoardClickEvent
 
 data class BoardModifierKeys(
     val ctrlKey: Boolean = false,
@@ -78,7 +87,7 @@ internal fun BoardInteractions(
     onViewportChange: (BoardViewport) -> Unit,
     onDraggingChange: (Boolean) -> Unit,
     onCellHoverChange: (CellCoordinate?) -> Unit,
-    onCellClick: (CellCoordinate) -> Unit,
+    onCellClick: (BoardLeftClickEvent) -> Unit,
     onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
     val onViewportChange by rememberUpdatedState(onViewportChange)
@@ -122,7 +131,7 @@ private class BoardEventListeners(
     onViewportChange: (BoardViewport) -> Unit,
     private val onDraggingChange: (Boolean) -> Unit,
     private val onCellHoverChange: (CellCoordinate?) -> Unit,
-    private val onCellClick: (CellCoordinate) -> Unit,
+    private val onCellClick: (BoardLeftClickEvent) -> Unit,
     private val onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
     private val renderLayout by renderLayout
@@ -275,7 +284,10 @@ private class BoardEventListeners(
             return
         }
 
-        onCellClick(cellAt(event.position()))
+        onCellClick(BoardLeftClickEvent(
+            coordinate = cellAt(event.position()),
+            modifiers = currentModifierKeys,
+        ))
     }
 
     private fun wheel(event: Event) {
