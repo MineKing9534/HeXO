@@ -18,7 +18,7 @@ interface BoardParser {
         }
 
         val Default = None
-            .or(TytoLinkParser)
+            .or(TytoLinkParser.allowTurnLabels())
             .or(HTTTXNotationParser.allowTurnLabels())
             .or(RectilinearStateBKETurnNotationParser)
     }
