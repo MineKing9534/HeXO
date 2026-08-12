@@ -13,6 +13,7 @@ import de.mineking.hexo.board.render.image.Stroke
 data class HDSTheme(
     override val gap: Double,
     val borderThickness: Double,
+    val lineThickness: Double,
     override val backgroundColor: Color,
     val cellBorderColor: Color,
     val highlightColor: Color,
@@ -26,6 +27,7 @@ data class HDSTheme(
         val Default = HDSTheme(
             gap = 6.0,
             borderThickness = 2.0,
+            lineThickness = 16.0,
             backgroundColor = Color.rgb(0x0f172a),
             cellBorderColor = Color.rgb(0x232d43),
             highlightColor = Color.rgb(0xec6fb1),
@@ -51,6 +53,7 @@ class HDSRenderer(
     private val theme: HDSTheme,
 ) : BaseTheme.Renderer(context) {
     private val borderThickness = context.run { theme.borderThickness.relativeWidth() }
+    private val lineThickness = context.run { theme.lineThickness.relativeWidth() }
     private val labelPattern = """^(\s*#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
 
     override fun drawCell(point: Point, hex: Polygon, cell: Cell): Unit = context.run {
@@ -109,12 +112,11 @@ class HDSRenderer(
         val backgroundColor = theme.run { lineHighlight.color.color(default = highlightColor) }.withAlpha(240)
         val borderColor = theme.cellBorderColor.withAlpha(128)
 
-        val thickness = borderThickness * 8
         context.backend.drawLine(
             from = lineHighlight.start.toPixel(),
             to = lineHighlight.endInclusive.toPixel(),
-            stroke = Stroke(backgroundColor, thickness),
-            outline = Stroke(borderColor, thickness / 3),
+            stroke = Stroke(backgroundColor, lineThickness),
+            outline = Stroke(borderColor, lineThickness / 3),
         )
     }
 }
