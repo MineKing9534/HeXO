@@ -40,6 +40,7 @@ private const val MAX_SIDEBAR_WIDTH = 560
 private val boardParser = BoardParser.Default.focusWinningRows()
 
 enum class BoardUpdateCause {
+    VisualEditor,
     NotationInput,
     Import,
     RemoveTurnData,
@@ -50,6 +51,7 @@ fun Sidebar(
     repositories: HdsRepositoryContainer?,
     placementMode: MutableState<CellPlacementMode>,
     board: Board,
+    boardUpdateCause: BoardUpdateCause,
     onBoardChange: (BoardUpdateCause, Board) -> Unit,
 ) {
     ResizableTrailingPanel(
@@ -68,7 +70,9 @@ fun Sidebar(
         var notation by remember { mutableStateOf("") }
 
         LaunchedEffect(board) {
-            notation = board.renderRectilinearStateBKETurnNotation()
+            if (boardUpdateCause == BoardUpdateCause.VisualEditor) {
+                notation = board.renderRectilinearStateBKETurnNotation()
+            }
             parseError = null
         }
 

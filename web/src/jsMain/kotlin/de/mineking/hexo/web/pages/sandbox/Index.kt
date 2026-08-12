@@ -180,6 +180,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
 
     var viewport by remember { mutableStateOf<BoardViewport?>(null) }
     var board by boardViewManager.board
+    var boardUpdateCause by remember { mutableStateOf(BoardUpdateCause.VisualEditor) }
 
     val transformedBoard = remember(board) {
         board.copy().focusWinningRows()
@@ -204,13 +205,16 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
                 placementMode = placementMode.value,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
+                onBoardInteraction = { boardUpdateCause = BoardUpdateCause.VisualEditor },
             )
         }
         Sidebar(
             repositories = repositories,
             placementMode = placementMode,
             board = transformedBoard,
+            boardUpdateCause = boardUpdateCause,
             onBoardChange = { cause, updated ->
+                boardUpdateCause = cause
                 board = updated
                 if (cause == BoardUpdateCause.Import) {
                     viewport = null
@@ -227,6 +231,7 @@ private fun SandboxBoardPane(
     placementMode: CellPlacementMode,
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport?) -> Unit,
+    onBoardInteraction: () -> Unit,
 ) {
     BoardPane(
         board = board,
@@ -234,6 +239,7 @@ private fun SandboxBoardPane(
         viewport = viewport,
         onViewportChange = onViewportChange,
         onBoardInteraction = { interaction ->
+            onBoardInteraction()
             when (interaction) {
                 is BoardInteraction.PlaceCell -> boardViewManager.placeCell(
                     interaction.coordinate,
