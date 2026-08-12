@@ -333,5 +333,5 @@ private enum class InternalFontType(
 }
 
 private class SvgRgbaColor(color: Color) : SvgColor {
-    override val svgString = "rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha.toInt() / 255.0})"
+    override val svgString = "rgba(${color.red}, ${color.green}, ${color.blue}, ${color.alpha / 255.0})"
 }

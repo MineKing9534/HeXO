@@ -84,7 +84,11 @@ class HDSRenderer(
             drawColor = Color.parse(match.groupValues[1])
         } else {
             drawText = label
-            drawColor = theme.run { cell.owner.color(default = emptyCellLabelColor) { it.darker() } }
+            drawColor = theme.run {
+                cell.owner.color(default = emptyCellLabelColor) {
+                    if (it.isDark()) it.brighter() else it.darker()
+                }
+            }
         }
 
         context.backend.drawString(
