@@ -15,6 +15,7 @@ import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
@@ -166,6 +167,14 @@ enum class CellPlacementMode {
             board: Board,
         ) {
             if (currentCell?.owner != null) return
+
+            var board by this.board
+            if (board.attributes[BoardAttribute.ShowTurnNumbers] != true) {
+                board = board.copy().apply {
+                    cells.values.forEach { it.turn = null }
+                    attributes[BoardAttribute.ShowTurnNumbers] = true
+                }
+            }
 
             val (player, turn) = board.findNextTurn()
             updateCell(coordinate, CellOverride(

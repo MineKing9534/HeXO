@@ -1,13 +1,16 @@
 package de.mineking.hexo.board.render.test
 
+import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.MutableBoardAttributes
 import de.mineking.hexo.board.parse.parseRectilinearNotation
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.to
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -132,7 +135,7 @@ class IntegrationTest {
 
     @Test
     fun `bke origin is not placed on a bke move`() {
-        val board = MutableBoard()
+        val board = MutableBoard(attributes = MutableBoardAttributes(BoardAttribute.ShowTurnNumbers to true))
         board[0, 0].owner = CellOwner.X
         board[2, 0].apply {
             owner = CellOwner.O
@@ -151,7 +154,7 @@ class IntegrationTest {
 
     @Test
     fun `bke supports multi-letter rings`() {
-        val board = MutableBoard()
+        val board = MutableBoard(attributes = MutableBoardAttributes(BoardAttribute.ShowTurnNumbers to true))
         board[0, 0].apply {
             owner = CellOwner.X
             turn = 0
