@@ -12,7 +12,7 @@ import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
 
-private const val MOVE_PATTERN = /*language=regexp*/ """[A-Z](?:[0-5]\.)?\d+"""
+private const val MOVE_PATTERN = /*language=regexp*/ """[A-Z]+(?:[0-5]\.)?\d+"""
 private const val TURN_PATTERN = /*language=regexp*/ """[xo](?:\s+$MOVE_PATTERN)+"""
 private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+$TURN_PATTERN)*"""
 
@@ -156,17 +156,22 @@ private fun String.parsePlayer() = when (this) {
 }
 
 private fun String.parseRingOffset(): RingOffset {
-    requireHexo(length >= 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
-    val ring = first().also {
-        requireHexo(it in 'A'..'Z') { "Invalid ring `$it`" }
-    } - 'A' + 1
+    val ringLabel = takeWhile { it in 'A'..'Z' }
+    requireHexo(ringLabel.isNotEmpty() && ringLabel.length < length) {
+        "Invalid bke move `$this`, has to be in format `[A-Z]+<offset>`"
+    }
+    val ring = try {
+        ringLabel.toBKERing()
+    } catch (_: IllegalArgumentException) {
+        throw HexoNotationException("Invalid ring `$ringLabel`")
+    }
 
-    val offset = drop(1).let {
+    val offset = drop(ringLabel.length).let {
         val parts = it.split(".")
         if (parts.size == 1) {
             it.toInt()
         } else {
-            requireHexo(parts.size == 2) { "Invalid bke move `$this`, has to be in format `[A-Z]<offset>`" }
+            requireHexo(parts.size == 2) { "Invalid bke move `$this`, has to be in format `[A-Z]+<offset>`" }
             val (sector, offset) = parts
             sector.toInt() * ring + offset.toInt()
         }
@@ -185,4 +190,15 @@ private fun RingOffset.toCellCoordinate(origin: CellCoordinate, zeroOffsetLine: 
 
     val fullSides = (0 until sector).fold(CellCoordinate.Zero) { acc, i -> acc + zeroOffsetLine.ringDirection(i) * ring }
     return origin + zeroOffsetLine.direction * ring + fullSides + zeroOffsetLine.ringDirection(sector) * offset
+}
+
+private fun String.toBKERing(): Int {
+    require(isNotEmpty() && all { it in 'A'..'Z' }) { "Invalid BKE ring label `$this`" }
+
+    var ring = 0L
+    for (character in this) {
+        ring = ring * 26 + (character - 'A' + 1)
+        require(ring <= Int.MAX_VALUE) { "BKE ring label `$this` is too large" }
+    }
+    return ring.toInt()
 }

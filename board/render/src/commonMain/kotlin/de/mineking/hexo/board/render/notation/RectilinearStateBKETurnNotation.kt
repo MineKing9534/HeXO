@@ -66,7 +66,7 @@ private fun List<Pair<CellOwner, List<CellCoordinate>>>.renderBKETurns(origin: C
         append("${owner.symbol} ")
         cells.forEach { cell ->
             val (ring, sector, sectorOffset) = cell.ringOffset(layout.origin, layout.baseline)
-            append('A' + ring - 1)
+            append(ring.toBKERingLabel())
 
             if (ring == 1) {
                 append(sector)
@@ -144,4 +144,17 @@ private fun CellCoordinate.ringOffset(origin: CellCoordinate, baseline: Directio
     }
 
     error("Coordinate $relative is not on ring $ring")
+}
+
+private fun Int.toBKERingLabel(): String {
+    require(this > 0) { "BKE ring must be positive" }
+
+    var ring = this
+    return buildString {
+        while (ring > 0) {
+            ring--
+            append('A' + ring % 26)
+            ring /= 26
+        }
+    }.reversed()
 }
