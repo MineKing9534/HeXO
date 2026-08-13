@@ -34,7 +34,7 @@ tasks.named<Sync>("kobwebCopyWorkerJsOutput") {
     include("*.wasm")
 }
 
-val patchGeneratedWorkerBasePath by tasks.registering {
+val patchGeneratedWorkerBasePath = tasks.register("patchGeneratedWorkerBasePath") {
     val generatedWorker = layout.buildDirectory.file(
         "generated/ksp/js/jsMain/kotlin/de/mineking/hexo/web/worker/AnalysisWorker.kt",
     )
