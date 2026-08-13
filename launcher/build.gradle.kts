@@ -42,5 +42,9 @@ tasks.shadowJar {
         duplicatesStrategy = DuplicatesStrategy.INCLUDE
     }
 
+    filesMatching("META-INF/*.kotlin_module") {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+
     mergeServiceFiles()
 }

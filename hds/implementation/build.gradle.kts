@@ -21,7 +21,7 @@ kotlin {
     withSourcesJar(publish = true)
 
     sourceSets.commonMain {
-        generatedKotlin.srcDir(layout.buildDirectory.dir("generated/ksp"))
+        generatedKotlin.srcDir(layout.buildDirectory.dir("generated/ksp/metadata/commonMain/kotlin"))
         dependencies {
             api(projects.hds.model)
             implementation(projects.board)

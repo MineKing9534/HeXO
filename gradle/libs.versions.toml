@@ -1,18 +1,18 @@
 [versions]
-kotlin = "2.4.0"
+kotlin = "2.4.10"
 kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.11.0"
 compose = "1.11.1"
-kobweb = "0.24.0"
+kobweb = "0.25.0"
 
-ksp = "2.3.7"
+ksp = "2.3.11"
 
 ktor = "3.5.2"
 exposed = "1.4.0"
 
 [libraries]
 build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
-detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alpha.3" }
+detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alpha.6" }
 testlogger-gradle-plugin = { module = "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin", version = "4.0.0" }
 node-gradle-plugin = { module = "com.github.node-gradle:gradle-node-plugin", version = "7.1.0" }
 
@@ -27,7 +27,7 @@ kotlin-serialization-properties = { module = "org.jetbrains.kotlinx:kotlinx-seri
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutines" }
 
-cache = { module = "com.sksamuel.aedile:aedile-core", version = "3.0.3" }
+cache = { module = "com.sksamuel.aedile:aedile-core", version = "3.0.4" }
 
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -55,18 +55,18 @@ exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "e
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 exposed-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
 exposed-migration = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "exposed" }
-nanoid = { module = "io.viascom.nanoid:nanoid", version = "2.0.0" }
+nanoid = { module = "io.viascom.nanoid:nanoid", version = "2.0.1" }
 
-postgres = { module = "org.postgresql:postgresql", version = "42.7.11" }
+postgres = { module = "org.postgresql:postgresql", version = "42.7.12" }
 
-jda = { module = "net.dv8tion:JDA", version = "6.4.1" }
-jda-emoji = { module = "dev.freya02:jda-emojis", version = "4.1.0" }
+jda = { module = "net.dv8tion:JDA", version = "6.5.0" }
+jda-emoji = { module = "dev.freya02:jda-emojis", version = "4.3.0" }
 dtk = { module = "de.mineking:DiscordToolKit", version = "1.6.2" }
 
 svg = { module = "dev.jamesyox:svg4k", version = "0.1.0-alpha.3" }
 
-logging = { module = "io.github.oshai:kotlin-logging", version = "7.0.3" }
-logback = { module = "ch.qos.logback:logback-classic", version = "1.5.19" }
+logging = { module = "io.github.oshai:kotlin-logging", version = "8.0.4" }
+logback = { module = "ch.qos.logback:logback-classic", version = "1.6.1" }
 
 [bundles]
 ktor-client = [ "ktor-client-core", "ktor-client-contentNegotiation", "ktor-serialization-json" ]
@@ -78,11 +78,11 @@ exposed = [ "exposed-core", "exposed-jdbc", "exposed-json", "exposed-datetime" ]
 
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
-kotlin-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version = "0.32.1" }
+kotlin-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version = "0.33.0" }
 kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
 
-buildconfig = { id = "com.github.gmazzo.buildconfig", version = "6.0.9" }
-shadow = { id = "com.gradleup.shadow", version = "9.2.2" }
+buildconfig = { id = "com.github.gmazzo.buildconfig", version = "6.0.10" }
+shadow = { id = "com.gradleup.shadow", version = "9.6.1" }
 
 kobweb-application = { id = "com.varabyte.kobweb.application", version.ref = "kobweb" }
 kobweb-worker = { id = "com.varabyte.kobweb.worker", version.ref = "kobweb" }
