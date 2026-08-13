@@ -19,8 +19,8 @@ import org.w3c.dom.HTMLDivElement
 @Composable
 fun AnalyzerStatusDisplay(
     state: BoardAnalyzerState,
-    analyzedPlayer: Player,
-    otherPlayer: Player,
+    analyzedPlayer: GamePlayer,
+    otherPlayer: GamePlayer,
     attrs: AttrBuilderContext<HTMLDivElement>? = null,
     actions: @Composable () -> Unit,
 ) {
@@ -51,8 +51,8 @@ fun AnalyzerStatusDisplay(
 @Composable
 private fun AnalyzerResultDisplay(
     state: BoardAnalyzerState.Data,
-    analyzedPlayer: Player,
-    otherPlayer: Player,
+    analyzedPlayer: GamePlayer,
+    otherPlayer: GamePlayer,
 ) {
     if (state.threat is FindWinResult.Win) {
         AnalyzerNotificationCard(

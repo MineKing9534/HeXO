@@ -15,6 +15,7 @@ import de.mineking.hexo.hds.model.game.FinishedGame
 import de.mineking.hexo.hds.model.game.FinishedGameRepository
 import de.mineking.hexo.hds.model.game.Game
 import de.mineking.hexo.web.board.Player
+import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
@@ -229,7 +230,7 @@ private fun GameCard(game: FinishedGame) {
                                 Text("vs")
                             }
                         }
-                        Player(player) {
+                        Player(player.gamePlayer) {
                             classes("font-semibold")
                             if (player == game.result.winner) classes("text-emerald-300!")
                         }
