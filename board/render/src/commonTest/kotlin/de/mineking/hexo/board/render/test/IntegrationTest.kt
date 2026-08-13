@@ -148,4 +148,22 @@ class IntegrationTest {
         assertEquals("x, q @(2, -1) o A0 A1", rendered)
         assertEquals(board, rendered.parseRectilinearStateBKETurnNotation())
     }
+
+    @Test
+    fun `bke supports multi-letter rings`() {
+        val board = MutableBoard()
+        board[0, 0].apply {
+            owner = CellOwner.X
+            turn = 0
+        }
+        board[27, -27].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+
+        val rendered = board.renderRectilinearStateBKETurnNotation()
+
+        assertEquals("o AA0", rendered)
+        assertEquals(board, rendered.parseRectilinearStateBKETurnNotation())
+    }
 }

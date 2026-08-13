@@ -88,4 +88,13 @@ class BKENotationParser {
             board.cells,
         )
     }
+
+    @Test
+    fun `parse multi-letter rings`() {
+        val board = "x Z0 AA0 AB0".parseBKENotation(zeroOffsetLine = Direction.TopRight, origin = null)
+
+        assertEquals(CellOwner.X, board.cells[CellCoordinate(26, -26)]?.owner)
+        assertEquals(CellOwner.X, board.cells[CellCoordinate(27, -27)]?.owner)
+        assertEquals(CellOwner.X, board.cells[CellCoordinate(28, -28)]?.owner)
+    }
 }
