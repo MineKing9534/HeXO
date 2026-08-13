@@ -312,8 +312,8 @@ private const val TEXT_MASK_COUNTER_STEP =
         "\\global\\advance\\hexotextmaskid by1\\relax" +
         "\\else\\newcount\\hexotextmaskid\\global\\hexotextmaskid=1\\relax\\fi\n"
 
-private val TEXT_MASK_HALO_COLOR = Color.rgb(0x333333)
-private const val TEXT_MASK_MARGIN = 64.0
+private val TEXT_MASK_HALO_COLOR = Color.rgb(0x111111)
+private const val TEXT_MASK_MARGIN = 48.0
 private const val CSS_PIXEL_IN_BP = 0.75
 private val PICTURE_SCALE_OPTIONS = listOf(
     "x=${CSS_PIXEL_IN_BP.tikzNumber()}bp",
