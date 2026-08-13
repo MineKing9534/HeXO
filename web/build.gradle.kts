@@ -45,7 +45,7 @@ kotlin {
             implementation(projects.solver)
             implementation(projects.web.analysisWorker)
 
-            implementation(projects.utils.omissible)
+            implementation(projects.utils.types)
 
             implementation(libs.kobweb.core)
             implementation(libs.bundles.compose.html)

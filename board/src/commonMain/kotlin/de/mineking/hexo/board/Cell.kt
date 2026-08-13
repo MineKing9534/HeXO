@@ -1,10 +1,10 @@
 package de.mineking.hexo.board
 
-import de.mineking.hexo.utils.omissible.Omissible
-import de.mineking.hexo.utils.omissible.isPresent
-import de.mineking.hexo.utils.omissible.omitted
-import de.mineking.hexo.utils.omissible.omittedIf
-import de.mineking.hexo.utils.omissible.omittedIfNull
+import de.mineking.hexo.utils.types.Omissible
+import de.mineking.hexo.utils.types.isPresent
+import de.mineking.hexo.utils.types.omitted
+import de.mineking.hexo.utils.types.omittedIf
+import de.mineking.hexo.utils.types.omittedIfNull
 import kotlinx.serialization.Serializable
 import kotlin.math.abs
 

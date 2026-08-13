@@ -2,7 +2,7 @@ package de.mineking.hexo.bot.commands
 
 import de.mineking.discord.commands.localizedMessageCommand
 import de.mineking.hexo.bot.HeXODiscordBot
-import de.mineking.hexo.bot.defaultHexoTheme
+import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.replyRichHexoNotation
 import net.dv8tion.jda.api.interactions.IntegrationType
 import net.dv8tion.jda.api.interactions.InteractionContextType
@@ -13,6 +13,9 @@ fun renderHexoMessageCommand() = localizedMessageCommand<RenderHexoCommandLocali
     interactionContextTypes(InteractionContextType.ALL)
 
     execute {
-        replyRichHexoNotation(target.contentRaw, user.defaultHexoTheme())
+        deferReply().queue()
+
+        val theme = main.getUserTheme(user.userId)
+        replyRichHexoNotation(target.contentRaw, theme)
     }
 }

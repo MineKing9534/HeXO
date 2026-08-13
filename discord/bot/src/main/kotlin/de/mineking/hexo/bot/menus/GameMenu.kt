@@ -45,16 +45,17 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.BoardAttributes
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.notation.NotationType
 import de.mineking.hexo.board.to
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
+import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
+import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.hds.model.TimeControl
 import de.mineking.hexo.hds.model.asBoard
 import de.mineking.hexo.hds.model.game.FinishedGame
@@ -89,6 +90,7 @@ fun UIManager.gameMenu(
         move = it.move
     }
 
+    val user = parameter({ DiscordUserId(0) }, { it.event.user.userId }, { user.userId })
     val locale = parameter({ DiscordLocale.UNKNOWN }, { it.event.effectiveLocale }, { event.effectiveLocale })
     localize(locale) // Predefine locale for potential error handling
 
@@ -121,6 +123,7 @@ fun UIManager.gameMenu(
     +container {
         render {
             val (match, board) = matchData ?: return@render
+            val theme = main.getUserTheme(user)
 
             +section(
                 accessory = link("view", emoji = Emojis.GLOBE_WITH_MERIDIANS, url = match.url),
@@ -132,7 +135,7 @@ fun UIManager.gameMenu(
                 +match.gameDetails(localization, locale)
 
                 +separator(spacing = Separator.Spacing.LARGE)
-                +mediaGallery(board.asMediaGalleryItem(DefaultTheme.HDS))
+                +mediaGallery(board.asMediaGalleryItem(theme))
                 +separator(spacing = Separator.Spacing.LARGE)
             }
         }

@@ -14,7 +14,7 @@ import de.mineking.hexo.sync.common.WatchPartyNavigateTarget
 import de.mineking.hexo.sync.common.WatchPartyPingRequest
 import de.mineking.hexo.sync.common.WatchPartyRequest
 import de.mineking.hexo.sync.common.WatchPartyUpdateRequest
-import de.mineking.hexo.utils.omissible.Omissible
+import de.mineking.hexo.utils.types.Omissible
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay

@@ -1,4 +1,4 @@
-package de.mineking.hexo.utils.omissible
+package de.mineking.hexo.utils.types
 
 import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KSerializer

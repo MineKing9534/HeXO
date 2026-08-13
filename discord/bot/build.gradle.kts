@@ -3,19 +3,24 @@ import de.mineking.discord.localization.gradle.import
 plugins {
     id("kotlin-jvm")
 
+    alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.dtk.localization)
 }
 
 dependencies {
+    implementation(projects.discord.core)
+    implementation(projects.discord.config)
+    implementation(projects.discord.link)
+
     implementation(projects.board)
     implementation(projects.board.parse)
     implementation(projects.board.render)
 
     implementation(projects.hds.model)
-    implementation(projects.discord.link)
 
     implementation(projects.server.service)
     implementation(projects.utils.coroutines)
+    implementation(projects.utils.types)
 
     implementation(libs.kotlin.coroutines.core)
 

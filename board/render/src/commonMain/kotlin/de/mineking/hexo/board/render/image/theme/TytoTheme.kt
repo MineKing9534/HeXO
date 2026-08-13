@@ -93,7 +93,7 @@ class TytoRenderer(
         }
 
         focusedCells.forEach { (point, color) ->
-            val color = color.adjustBrightness(3.5)
+            val color = color.brighter(0.75)
             backend.drawPolygon(
                 shape = point.createHex(hexSize + borderThickness),
                 color = color.withAlpha(48),

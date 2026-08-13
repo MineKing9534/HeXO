@@ -91,7 +91,7 @@ fun <T, U> State<T>.map(transform: (T) -> U) = object : State<U> {
 @Composable
 fun rememberTheme() = SettingsKey.Theme.collectAsState().map { it.theme }
 
-private val Color.css get() = rgba(red.toInt(), green.toInt(), blue.toInt(), alpha.toInt())
+private val Color.css get() = rgba(red, green, blue, alpha)
 fun BaseTheme.playerCssColor(owner: CellOwner) = playerColor(owner).css
 fun BaseTheme.playerColor(owner: CellOwner) = when (owner) {
     CellOwner.X -> playerXColor

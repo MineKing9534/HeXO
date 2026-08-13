@@ -31,9 +31,9 @@ menu.link:
       To link your profile, enter your **[HeXO](https://hexo.did.science)** profile **id** or **url** below. After verifying that the profile belongs to you, your profile will be linked.
       You can remove that link later at any time.
     inputs.url:
-        label: Profile URL
-        description: Your hexo.did.science profile id or url
-        placeholder: https://hexo.did.science/profile/69bdd10f3a92bf78e1b6d7a0
+      label: Profile URL
+      description: Your hexo.did.science profile id or url
+      placeholder: https://hexo.did.science/profile/69bdd10f3a92bf78e1b6d7a0
 
   unlink:
     label: Unlink

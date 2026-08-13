@@ -20,6 +20,7 @@ import de.mineking.hexo.bot.commands.profileCommand
 import de.mineking.hexo.bot.commands.profileUserCommand
 import de.mineking.hexo.bot.commands.renderHexoMessageCommand
 import de.mineking.hexo.bot.commands.renderHexoSlashCommand
+import de.mineking.hexo.bot.commands.themeCommand
 import de.mineking.hexo.bot.menus.GameMenuParameter
 import de.mineking.hexo.bot.menus.NotationMenuParameter
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
@@ -30,9 +31,10 @@ import de.mineking.hexo.bot.menus.notationMenu
 import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.bot.utils.installErrorHandling
 import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
+import de.mineking.hexo.discord.bot.config.UserThemeRepository
+import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.link.AccountLinkRepository
-import de.mineking.hexo.link.DiscordUserId
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -57,6 +59,7 @@ class HeXODiscordBot(
     private val repositories: HdsRepositoryContainer,
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
+    val userThemeRepository: UserThemeRepository?,
     val notationParser: BoardParser,
     val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
     val publicUrl: String?,
@@ -109,13 +112,10 @@ class HeXODiscordBot(
             +leaderboardCommand(leaderboardMenu)
 
             +profileCommand(accountLinkRepository, repositories.profileRepository, profileMenu)
-            if (accountLinkRepository != null) {
-                +profileUserCommand(accountLinkRepository, profileMenu)
-            }
+            if (accountLinkRepository != null) +profileUserCommand(accountLinkRepository, profileMenu)
+            if (::accountLinkMenu.isInitialized) +accountLinkCommand(accountLinkMenu)
 
-            if (::accountLinkMenu.isInitialized) {
-                +accountLinkCommand(accountLinkMenu)
-            }
+            if (userThemeRepository != null) +themeCommand()
 
             updateCommands().queue()
         }
@@ -129,6 +129,16 @@ class HeXODiscordBot(
         }
 
         jda.registerMessageDeleteListener()
+    }
+
+    @Suppress("TooGenericExceptionCaught")
+    suspend fun getUserTheme(user: DiscordUserId) = try {
+        userThemeRepository
+            ?.getCurrentUserTheme(user)
+            ?: Theme.Default
+    } catch (e: Exception) {
+        logger.error(e) { "Failed to fetch user theme" }
+        Theme.Default
     }
 
     fun shutdown() {
@@ -152,7 +162,7 @@ private fun JDA.registerMessageDeleteListener() {
     }
 }
 
-inline fun <reified L : LocalizationFile> HeXODiscordBot.localization() = dtk.localizationManager.read<L>()
+inline fun <reified L : LocalizationFile> HeXODiscordBot.localization(): L = dtk.localizationManager.read<L>()
 val UserSnowflake.userId get() = DiscordUserId(idLong)
 
 fun String.escapeMarkdown() = MarkdownSanitizer.sanitize(this, MarkdownSanitizer.SanitizationStrategy.ESCAPE)

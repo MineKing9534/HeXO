@@ -8,6 +8,7 @@ plugins {
 
 dependencies {
     implementation(projects.discord.bot)
+    implementation(projects.discord.config)
     implementation(projects.discord.link)
     implementation(projects.server)
 
@@ -28,10 +29,18 @@ dependencies {
 
     implementation(libs.logging)
     runtimeOnly(libs.logback)
-
-    runtimeOnly(libs.postgres)
 }
 
 application {
     mainClass = "de.mineking.hexo.launcher.MainKt"
+}
+
+tasks.shadowJar {
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+
+    filesMatching("META-INF/services/**") {
+        duplicatesStrategy = DuplicatesStrategy.INCLUDE
+    }
+
+    mergeServiceFiles()
 }

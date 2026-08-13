@@ -34,6 +34,7 @@ import de.mineking.hexo.hds.model.profile.ProfileRepository
 import de.mineking.hexo.hds.model.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
+import de.mineking.hexo.utils.types.isSuccess
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -132,7 +133,7 @@ private fun MessageMenuConfig<out Interaction, *>.linkModalButton(
         terminateRender()
     }
 
-    if (!linkRepository.createLink(user.userId, profile.id)) {
+    if (!linkRepository.createLink(user.userId, profile.id).isSuccess()) {
         respond(MessageColor.Error, localization.responseErrorProfileLinkFailed(userLocale), forceNew = true)
         terminateRender()
     }
@@ -179,7 +180,7 @@ private fun MessageMenuConfig<*, *>.authRemoveConfirmModalButton(
     hook.deleteOriginal().await()
     respond(MessageColor.Success, localization.responseSuccessRevoke(userLocale), forceNew = true)
 
-    discordAuthRepository.removeUser(user.userId)
+    discordAuthRepository.unauthenticateUser(user.userId)
 }
 
 interface AccountLinkMenuLocalization : LocalizationFile {

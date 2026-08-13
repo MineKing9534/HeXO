@@ -10,6 +10,11 @@ import net.dv8tion.jda.api.components.ModalTopLevelComponent
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
 
+internal inline fun <reified T> MenuConfig<*, *>.bindLocalizationParameter(name: String, param: T) {
+    val config = currentLocalizationConfig ?: return
+    config.args += name to (param to typeOf<T>())
+}
+
 internal inline fun <C : ModalTopLevelComponent, reified T> ModalComponentBuilder<C, *>.bindLocalizationParameter(
     name: String,
     noinline param: () -> T,

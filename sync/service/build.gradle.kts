@@ -8,7 +8,7 @@ dependencies {
     implementation(projects.hds.model)
     implementation(projects.server.service)
 
-    implementation(projects.utils.omissible)
+    implementation(projects.utils.types)
 
     implementation(libs.ktor.server.websockets)
     implementation(libs.ktor.serialization.json)

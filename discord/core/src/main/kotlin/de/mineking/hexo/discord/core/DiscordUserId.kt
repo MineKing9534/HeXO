@@ -1,4 +1,4 @@
-package de.mineking.hexo.link
+package de.mineking.hexo.discord.core
 
 import kotlinx.serialization.Serializable
 import net.dv8tion.jda.api.entities.UserSnowflake

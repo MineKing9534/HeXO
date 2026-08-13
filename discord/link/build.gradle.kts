@@ -6,7 +6,10 @@ plugins {
 }
 
 dependencies {
+    implementation(projects.discord.core)
     implementation(projects.hds.model)
+
+    implementation(projects.utils.types)
 
     implementation(projects.database)
     ksp(projects.database.processor)
