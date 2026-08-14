@@ -40,6 +40,17 @@ class IntegrationTest {
     }
 
     @Test
+    fun `focused empty cells do not extend rectilinear notation`() {
+        val board = MutableBoard()
+        board[0, 0].owner = CellOwner.X
+        board[0, 3].focused = true
+
+        val rendered = board.renderRectilinearNotation(RectilinearNotationType.Compact)
+
+        assertEquals("x", rendered)
+    }
+
+    @Test
     fun `compact with highlight`() {
         val board = MutableBoard()
         board[0, 0].apply {
@@ -108,6 +119,21 @@ class IntegrationTest {
         board[0, 0].apply {
             owner = CellOwner.O
             turn = 1
+        }
+
+        val rendered = board.renderRectilinearStateBKETurnNotation()
+
+        assertEquals("x, > @(-5, 0) o A0", rendered)
+    }
+
+    @Test
+    fun `focused bke moves do not extend rectilinear state`() {
+        val board = MutableBoard()
+        board[4, 0].owner = CellOwner.X
+        board[0, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+            focused = true
         }
 
         val rendered = board.renderRectilinearStateBKETurnNotation()
