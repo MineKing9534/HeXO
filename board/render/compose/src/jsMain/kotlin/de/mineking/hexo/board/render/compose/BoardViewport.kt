@@ -26,6 +26,7 @@ private const val MIN_ZOOM = 0.07
 private const val MAX_ZOOM = 0.8
 private const val ZOOM_STEP = 1.1
 private const val PINCH_ZOOM_DEAD_ZONE = 0.025
+private const val MOUSE_DRAG_THRESHOLD = 4.0
 private const val LONG_PRESS_DELAY = 450
 private const val LONG_PRESS_MOVE_TOLERANCE = 12.0
 
@@ -161,6 +162,7 @@ private class BoardEventListeners(
 
     private var rightClickDrag: RightClickDrag? = null
     private var currentModifierKeys = BoardModifierKeys()
+    private var mouseDownPosition: Point? = null
     private var lastDragPosition: Point? = null
         set(value) {
             val wasDragging = field != null
@@ -206,7 +208,7 @@ private class BoardEventListeners(
         event.preventDefault()
 
         when {
-            lastDragPosition != null -> dragMouseTo(event.position())
+            mouseDownPosition != null -> dragMouseTo(event.position())
             rightClickDrag != null -> dragRightClickTo(event.position(), force = modifiersChanged)
             else -> hoveredCell = cellAt(event.position())
         }
@@ -364,8 +366,13 @@ private class BoardEventListeners(
     }
 
     private fun dragMouseTo(position: Point) {
-        val lastPosition = lastDragPosition ?: return
-        viewport = viewport.pan(position - lastPosition)
+        val startPosition = mouseDownPosition ?: return
+        val lastPosition = lastDragPosition
+
+        if (lastPosition == null && startPosition.distanceTo(position) <= MOUSE_DRAG_THRESHOLD) return
+
+        val from = lastPosition ?: startPosition
+        viewport = viewport.pan(position - from)
         suppressNextClick = true
         lastDragPosition = position
     }
@@ -483,6 +490,7 @@ private class BoardEventListeners(
     )
 
     private fun finishMouseInteractions() {
+        mouseDownPosition = null
         lastDragPosition = null
         rightClickDrag = null
     }
@@ -533,7 +541,8 @@ private class BoardEventListeners(
     }
 
     private fun beginDrag(event: MouseEvent) {
-        lastDragPosition = event.position()
+        mouseDownPosition = event.position()
+        lastDragPosition = null
         capturePointer(event)
     }
 
@@ -543,6 +552,7 @@ private class BoardEventListeners(
     }
 
     private fun finishDrag(event: Event) {
+        mouseDownPosition = null
         lastDragPosition = null
         releasePointer(event)
     }
