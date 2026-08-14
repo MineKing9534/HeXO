@@ -25,16 +25,14 @@ import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
-import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardModifierKeys
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.utils.types.present
 import de.mineking.hexo.web.audio.SoundEffect
-import de.mineking.hexo.web.board.BoardPane
+import de.mineking.hexo.web.board.AnalyzerTurn
+import de.mineking.hexo.web.board.MOVES_PER_TURN
 import de.mineking.hexo.web.board.SandboxBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
-import de.mineking.hexo.web.components.ActionButton
-import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.layout.AppRoute
@@ -182,8 +180,15 @@ enum class CellPlacementMode {
                 turn = turn.present(),
             ))
         }
+
+        override fun analyzerTurn(board: Board): AnalyzerTurn {
+            val turn = board.findNextTurn()
+            return AnalyzerTurn(turn.player, turn.placementsRemaining)
+        }
     },
     ;
+
+    open fun analyzerTurn(board: Board): AnalyzerTurn? = null
 
     abstract fun SandboxBoardViewManager.handle(
         coordinate: CellCoordinate,
@@ -251,41 +256,6 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
 }
 
 @Composable
-private fun SandboxBoardPane(
-    board: Board,
-    boardViewManager: SandboxBoardViewManager,
-    placementMode: CellPlacementMode,
-    viewport: BoardViewport?,
-    onViewportChange: (BoardViewport?) -> Unit,
-    onBoardInteraction: () -> Unit,
-) {
-    BoardPane(
-        board = board,
-        readOnly = false,
-        viewport = viewport,
-        onViewportChange = onViewportChange,
-        onBoardInteraction = { interaction ->
-            onBoardInteraction()
-            when (interaction) {
-                is BoardInteraction.PlaceCell -> boardViewManager.placeCell(
-                    interaction.coordinate,
-                    interaction.modifiers,
-                    placementMode,
-                )
-                is BoardInteraction.HighlightBoardInteraction -> boardViewManager.apply(interaction)
-            }
-        },
-    ) {
-        ActionButton(
-            label = "Reset View",
-            size = ButtonSize.Medium,
-            attrs = { classes("absolute", "bottom-3", "right-3", "z-20", "shadow-lg") },
-            onClick = { onViewportChange(null) },
-        )
-    }
-}
-
-@Composable
 fun SandboxSounds(board: Board) {
     val soundPlayer = rememberSoundPlayer()
     val moveCount = remember(board.cells) {
@@ -301,55 +271,44 @@ fun SandboxSounds(board: Board) {
     }
 }
 
-private fun Board.getMaxTurn() = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
+private data class Turn(val player: CellOwner, val turn: Int, val placementsRemaining: Int)
 
-private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, modifiers: BoardModifierKeys, mode: CellPlacementMode) {
-    val board = board.value
-    val maxTurn = board.getMaxTurn()
-
-    val currentCell = board.cells[coordinate]
-    if (currentCell?.turn != null && currentCell.turn == maxTurn) {
-        updateCell(coordinate, CellOverride(
-            owner = null.present(),
-            turn = null.present(),
-        ))
-        return
-    }
-
-    mode.run {
-        handle(coordinate, modifiers, currentCell, board)
-    }
-}
-
-private fun Board.findNextTurn(): Pair<CellOwner, Int> {
-    var hadPosition = false
+private fun Board.findNextTurn(): Turn {
+    var hasState = false
     var turn = 0
-    var isComplete = false
+    var placed = 0
     var player = CellOwner.X
 
     cells.values.forEach { cell ->
         val cellOwner = cell.owner ?: return@forEach
-        val cellTurn = cell.turn?.takeIf { it >= turn } ?: run {
-            hadPosition = true
+        val cellTurn = cell.turn ?: run {
+            hasState = true
             return@forEach
         }
 
-        if (cellTurn == turn) {
-            isComplete = true
-        } else {
+        if (cellTurn > turn) {
             turn = cellTurn
-            isComplete = false
             player = cellOwner
+            placed = 1
+        } else if (cellTurn == turn) {
+            placed++
         }
     }
 
-    if (turn == 0 && hadPosition) {
+    val movesPerTurn = MOVES_PER_TURN.takeIf { turn > 0 } ?: 1
+
+    if (turn == 0 && hasState) {
         turn = 1
         player = CellOwner.X
-    } else if (isComplete) {
+    } else if (placed >= movesPerTurn) {
         turn++
         player = player.other
+        placed = 0
     }
 
-    return player to turn
+    return Turn(
+        player = player,
+        turn = turn,
+        placementsRemaining = movesPerTurn - placed,
+    )
 }

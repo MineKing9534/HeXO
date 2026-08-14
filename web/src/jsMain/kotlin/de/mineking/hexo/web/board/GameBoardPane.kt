@@ -55,8 +55,6 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private const val MOVES_PER_TURN = 2
-
 @Composable
 fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewManager) {
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
@@ -80,7 +78,12 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
     val (effectiveTurnPlayer, effectivePlacementsRemaining) = game.effectiveTurn(move)
     val allowAnalyzerOverlay = !(isLive && game.options.rated)
 
-    val analyzerTurn = if (isLive || move < game.moveCount) AnalyzerTurn(effectiveTurnPlayer.color, effectivePlacementsRemaining) else null
+    val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
+    val analyzerTurn = if (shouldAnalyze && (isLive || move < game.moveCount)) {
+        AnalyzerTurn(effectiveTurnPlayer.color, effectivePlacementsRemaining)
+    } else {
+        null
+    }
 
     AnalysedBoardPane(
         board = board,
@@ -103,9 +106,9 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
 private fun Game.effectiveTurn(move: Int): Pair<Player, Int> {
     val move = move.coerceIn(0, moveCount) + 1
 
-    val index = (move / 2) % 2
+    val index = (move / MOVES_PER_TURN) % 2
     val player = players[index] // Game players are ordered by first placement
-    val remaining = 2 - (move % 2)
+    val remaining = MOVES_PER_TURN - (move % MOVES_PER_TURN)
 
     return player to remaining
 }

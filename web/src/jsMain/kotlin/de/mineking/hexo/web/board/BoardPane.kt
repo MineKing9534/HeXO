@@ -25,6 +25,8 @@ import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 
+const val MOVES_PER_TURN = 2
+
 @Composable
 fun AbstractGamePosition.rememberBoard(overlay: Board, move: Int): Board {
     val board = remember(move, this) { asBoard(move) }

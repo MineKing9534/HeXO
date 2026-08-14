@@ -26,7 +26,7 @@ fun SettingsView() {
             key = SettingsKey.SessionAnalyzer,
             title = "Session analyzer",
             description = {
-                Text("Analyzed sessions for forced-wins while watching (Powered by ")
+                Text("Analyzes sessions for forced-wins while watching (Powered by ")
                 A(href = "https://github.com/SootyOwl/hexo-strix", {
                     target(ATarget.Blank)
                     classes("font-bold", "text-sky-400")
@@ -86,7 +86,7 @@ private fun FloatSettingsField(
 }
 
 @Composable
-private fun BooleanSettingsField(
+fun BooleanSettingsField(
     key: SettingsKey<Boolean>,
     title: String,
     description: @Composable () -> Unit,

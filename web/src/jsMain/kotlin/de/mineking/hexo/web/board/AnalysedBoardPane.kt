@@ -15,8 +15,6 @@ import de.mineking.hexo.web.components.Tooltip
 import de.mineking.hexo.web.icons.AlertTriangleIcon
 import de.mineking.hexo.web.icons.EyeIcon
 import de.mineking.hexo.web.icons.EyeOffIcon
-import de.mineking.hexo.web.settings.SettingsKey
-import de.mineking.hexo.web.settings.collectAsState
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement
@@ -34,13 +32,7 @@ fun AnalysedBoardPane(
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
 ) {
-    val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
-    val analyzerState = if (shouldAnalyze && turn != null) {
-        rememberBoardAnalysis(board, turn)
-    } else {
-        null
-    }
-
+    val analyzerState = if (turn != null) rememberBoardAnalysis(board, turn) else null
     var showAnalyzerOverlay by remember { mutableStateOf(true) }
 
     BoardPane(

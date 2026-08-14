@@ -30,6 +30,7 @@ class SettingsKey<out T> private constructor(val name: String, val type: KType, 
         val Volume by key(1f)
         val ReadOnlyBoardHoverIndicator by key(true)
         val SessionAnalyzer by key(true)
+        val SandboxAnalyzer by key(false)
         val Theme by key(DefaultTheme.HDS)
 
         val HostWatchPartyId by key<WatchPartyId?>(null)

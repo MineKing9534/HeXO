@@ -2,7 +2,6 @@ package de.mineking.hexo.web.board
 
 import androidx.compose.runtime.Composable
 import com.varabyte.kobweb.compose.css.borderColor
-import de.mineking.hexo.hds.model.game.Player
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.web.components.LoadingIndicator

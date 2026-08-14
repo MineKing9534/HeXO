@@ -26,9 +26,14 @@ import de.mineking.hexo.web.components.ResizableTrailingPanel
 import de.mineking.hexo.web.components.Select
 import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.components.TextInput
+import de.mineking.hexo.web.settings.BooleanSettingsField
+import de.mineking.hexo.web.settings.SettingsKey
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.attributes.ATarget
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.target
+import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.url.URL
@@ -105,7 +110,29 @@ fun Sidebar(
         }
 
         PlacementMode(placementMode)
+
+        Div({ classes("grow") })
+
+        SandboxAnalyzerState()
     }
+}
+
+@Composable
+private fun SandboxAnalyzerState() {
+    BooleanSettingsField(
+        key = SettingsKey.SandboxAnalyzer,
+        title = "Sandbox analyzer",
+        description = {
+            Text("Analyzes the sandbox for forced-wins (Powered by ")
+            A(href = "https://github.com/SootyOwl/hexo-strix", {
+                target(ATarget.Blank)
+                classes("font-bold", "text-sky-400")
+            }) {
+                Text("Strix")
+            }
+            Text(").")
+        },
+    )
 }
 
 @Composable
