@@ -76,6 +76,19 @@ private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, modifi
     }
 
     mode.run {
+        if (currentCell?.turn == null) {
+            run keyboard@{
+                updateCell(coordinate, CellOverride(
+                    owner = when {
+                        modifiers.ctrlKey -> CellOwner.X
+                        modifiers.altKey || modifiers.shiftKey -> CellOwner.O
+                        else -> return@keyboard
+                    }.present(),
+                ))
+                return@run
+            }
+        }
+
         handle(coordinate, modifiers, currentCell, board)
     }
 }

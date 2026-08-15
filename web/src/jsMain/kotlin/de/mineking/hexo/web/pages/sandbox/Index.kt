@@ -108,23 +108,6 @@ enum class CellPlacementMode {
             ))
         }
     },
-    Keyboard {
-        override fun SandboxBoardViewManager.handle(
-            coordinate: CellCoordinate,
-            modifiers: BoardModifierKeys,
-            currentCell: Cell?,
-            board: Board,
-        ) {
-            if (currentCell?.turn != null) return
-            updateCell(coordinate, CellOverride(
-                owner = when {
-                    modifiers.ctrlKey -> CellOwner.X
-                    modifiers.altKey || modifiers.shiftKey -> CellOwner.O
-                    else -> null
-                }.present(),
-            ))
-        }
-    },
     X {
         override fun SandboxBoardViewManager.handle(
             coordinate: CellCoordinate,
