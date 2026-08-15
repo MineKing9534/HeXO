@@ -185,35 +185,51 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
 
         configure {
             fun drawLinePart(stroke: Stroke) {
-                // For some reason drawing a line with the same start and end point doesn't work properly
-                if (from == to) {
+                line {
+                    x1 = from.x.none
+                    y1 = from.y.none
+                    x2 = to.x.none
+                    y2 = to.y.none
+
+                    stroke(stroke.color.svg)
+                    strokeWidth = stroke.width.none
+                    strokeLinecap = StrokeLinecap.Round
+
+                    if (textMaskSize > 0) mask(textMaskId(textMaskSize))
+                }
+            }
+
+            // SVG does not render a zero-length line with a round cap consistently, so circles are
+            // represented explicitly. Keep the outline outside the fill: drawing a larger filled
+            // circle underneath would show through translucent fills and make them appear opaque.
+            if (from == to) {
+                if (outline != null) {
                     circle {
                         cx = from.x.none
                         cy = from.y.none
 
-                        fill(stroke.color.svg)
-                        r = (stroke.width / 2).none
-
-                        if (textMaskSize > 0) mask(textMaskId(textMaskSize))
-                    }
-                } else {
-                    line {
-                        x1 = from.x.none
-                        y1 = from.y.none
-                        x2 = to.x.none
-                        y2 = to.y.none
-
-                        stroke(stroke.color.svg)
-                        strokeWidth = stroke.width.none
-                        strokeLinecap = StrokeLinecap.Round
+                        fill(Color.Transparent.svg)
+                        stroke(outline.color.svg)
+                        strokeWidth = (outline.width / 2).none
+                        r = (stroke.width / 2 + outline.width / 4).none
 
                         if (textMaskSize > 0) mask(textMaskId(textMaskSize))
                     }
                 }
-            }
 
-            if (outline != null) drawLinePart(Stroke(outline.color, stroke.width + outline.width))
-            drawLinePart(stroke)
+                circle {
+                    cx = from.x.none
+                    cy = from.y.none
+
+                    fill(stroke.color.svg)
+                    r = (stroke.width / 2).none
+
+                    if (textMaskSize > 0) mask(textMaskId(textMaskSize))
+                }
+            } else {
+                if (outline != null) drawLinePart(Stroke(outline.color, stroke.width + outline.width))
+                drawLinePart(stroke)
+            }
         }
     }
 
