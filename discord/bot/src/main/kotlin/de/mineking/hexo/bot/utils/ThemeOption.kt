@@ -120,6 +120,7 @@ fun MenuConfig<out Interaction, *>.themeSelect(
                         DefaultTheme.HDS -> main.emojiManager[CustomEmoji.ThemeHDS]
                         DefaultTheme.HTTTX -> main.emojiManager[CustomEmoji.ThemeHTTTX]
                         DefaultTheme.Tyto -> main.emojiManager[CustomEmoji.ThemeTyto]
+                        DefaultTheme.Omok -> main.emojiManager[CustomEmoji.ThemeOmok]
                     }
                 },
             )

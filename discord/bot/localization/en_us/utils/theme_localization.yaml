@@ -2,6 +2,7 @@ theme:
   HDS.label: hexo.did.science
   HTTTX.label: explore.htttx.io
   Tyto.label: hexo.tyto.cc
+  Omok.label: Omok
 
   custom.description: !<id:String> 'Custom Theme: ${id}'
   default.description: Default Theme
