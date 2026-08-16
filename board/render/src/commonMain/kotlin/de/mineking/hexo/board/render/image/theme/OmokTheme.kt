@@ -21,7 +21,6 @@ data class OmokTheme(
     override val backgroundColor: Color,
     val cellBorderColor: Color,
     val highlightColor: Color,
-    val focusColor: Color,
     val emptyCellBackgroundColor: Color,
     val emptyCellLabelColor: Color,
     override val playerXColor: Color,
@@ -35,7 +34,6 @@ data class OmokTheme(
             backgroundColor = Color.rgb(0xcda577),
             cellBorderColor = Color.rgb(0x4c402c),
             highlightColor = Color.rgb(0xec6fb1),
-            focusColor = Color.rgb(0xffffff),
             emptyCellBackgroundColor = Color.Transparent,
             emptyCellLabelColor = Color.rgb(0xb1c1e0),
             playerXColor = Color.rgb(0xf3f3f3),
@@ -58,7 +56,6 @@ class OmokRenderer(
 ) : BaseTheme.Renderer(context) {
     private val borderThickness = context.run { theme.borderThickness.relativeWidth() }
     private val lineThickness = context.run { theme.lineThickness.relativeWidth() }
-    private val labelPattern = """^(\s*#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
 
     override fun drawCell(point: Point, hex: Polygon, cell: Cell) = context.run {
         val gridHex = point.createHex(layout.size.layoutRadius)
@@ -77,51 +74,26 @@ class OmokRenderer(
             stroke = Stroke(theme.run { cell.owner.color(default = emptyCellBackgroundColor) }, (hexSize * SQRT3).toFloat()),
         )
 
-        drawCellHighlight(cell, point)
-        drawLabel(point, cell)
+        drawCellHighlight(point, cell)
+
+        if (cell.highlight != null && cell.owner != null) {
+            backend.drawCircle(point, Stroke(cell.focusColor, borderThickness * 8))
+        }
     }
 
-    private fun drawCellHighlight(cell: Cell, point: Point): Unit = context.run {
+    private val Cell.focusColor get() = theme.run { owner?.other.color(default = Color.rgb(0xffffff)) }
+
+    private fun drawCellHighlight(point: Point, cell: Cell) = context.run {
         val color = when {
             cell.highlight != null -> theme.run { cell.highlight?.color.color(default = highlightColor) }
-            cell.focused || (maxTurn != null && cell.turn == maxTurn) -> theme.focusColor
-            else -> return
+            cell.focused || (maxTurn != null && cell.turn == maxTurn) -> cell.focusColor
+            else -> return@run
         }
 
-        val borderThickness = borderThickness * 3
         backend.drawCircle(
             point = point,
-            stroke = Stroke(color.withAlpha(128), (hexSize * SQRT3).toFloat()),
-            outline = Stroke(color, borderThickness),
-        )
-    }
-
-    private fun drawLabel(point: Point, cell: Cell) {
-        val label = cell.labelText(defaultShowTurnLabels = false) ?: return
-        val match = labelPattern.matchEntire(label)
-
-        val drawText: String
-        val drawColor: Color
-
-        if (match != null) {
-            drawText = match.groupValues[2]
-            drawColor = Color.parse(match.groupValues[1])
-        } else {
-            drawText = label
-            drawColor = theme.run {
-                cell.owner.color(default = emptyCellLabelColor) {
-                    if (it.isDark()) it.brighter() else it.darker()
-                }
-            }
-        }
-
-        context.backend.drawString(
-            point = point,
-            text = drawText,
-            maxWidth = context.hexSize * SQRT3 - 4 * borderThickness,
-            fontSize = context.hexSize.toFloat() * 0.7f,
-            font = FontType.SansSerifBold,
-            color = drawColor,
+            stroke = Stroke(color = color.withAlpha(if (cell.owner == null) 150 else 16), (hexSize * SQRT3).toFloat()),
+            outline = Stroke(color, borderThickness * 4),
         )
     }
 
