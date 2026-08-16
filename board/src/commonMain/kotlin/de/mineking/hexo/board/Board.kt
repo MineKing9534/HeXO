@@ -46,7 +46,11 @@ class MutableBoard(
         cells[coordinate] = cell
     }
 
-    override fun equals(other: Any?) = other is Board && cells == other.cells && lineHighlights == other.lineHighlights
+    override fun equals(other: Any?) = other is Board &&
+        cells == other.cells &&
+        lineHighlights == other.lineHighlights &&
+        other.attributes == attributes
+
     override fun hashCode(): Int {
         var result = lineHighlights.hashCode()
         result = 31 * result + cells.hashCode()

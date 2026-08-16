@@ -36,7 +36,12 @@ infix fun <T> BoardAttribute<T>.to(value: T) = BoardAttributeValue(this, value)
 
 fun BoardAttributes(
     vararg values: BoardAttributeValue<*>,
-): BoardAttributes = MutableBoardAttributes(values.associate { (key, value) -> Pair(key, value) }.toMutableMap())
+): BoardAttributes = MutableBoardAttributes(values = values)
+
+@Suppress("FunctionNaming")
+fun MutableBoardAttributes(
+    vararg values: BoardAttributeValue<*>,
+) = MutableBoardAttributes(values.associate { (key, value) -> Pair(key, value) }.toMutableMap())
 
 @Serializable(with = BoardAttributesSerializer::class)
 interface BoardAttributes {

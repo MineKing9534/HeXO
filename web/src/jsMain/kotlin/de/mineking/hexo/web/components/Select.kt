@@ -7,7 +7,7 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun <T> Select(entries: List<T>, current: T, onChange: (T) -> Unit) {
-    Div({ classes("flex", "gap-3") }) {
+    Div({ classes("flex", "flex-wrap", "gap-3") }) {
         entries.forEach { entry ->
             Button({
                 classes(

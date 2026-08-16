@@ -2,7 +2,6 @@ package de.mineking.hexo.web.board
 
 import androidx.compose.runtime.Composable
 import com.varabyte.kobweb.compose.css.borderColor
-import de.mineking.hexo.hds.model.game.Player
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.web.components.LoadingIndicator
@@ -19,8 +18,8 @@ import org.w3c.dom.HTMLDivElement
 @Composable
 fun AnalyzerStatusDisplay(
     state: BoardAnalyzerState,
-    analyzedPlayer: Player,
-    otherPlayer: Player,
+    analyzedPlayer: GamePlayer,
+    otherPlayer: GamePlayer,
     attrs: AttrBuilderContext<HTMLDivElement>? = null,
     actions: @Composable () -> Unit,
 ) {
@@ -51,8 +50,8 @@ fun AnalyzerStatusDisplay(
 @Composable
 private fun AnalyzerResultDisplay(
     state: BoardAnalyzerState.Data,
-    analyzedPlayer: Player,
-    otherPlayer: Player,
+    analyzedPlayer: GamePlayer,
+    otherPlayer: GamePlayer,
 ) {
     if (state.threat is FindWinResult.Win) {
         AnalyzerNotificationCard(

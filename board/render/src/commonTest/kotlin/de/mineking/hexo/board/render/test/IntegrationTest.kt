@@ -1,13 +1,16 @@
 package de.mineking.hexo.board.render.test
 
+import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.MutableBoardAttributes
 import de.mineking.hexo.board.parse.parseRectilinearNotation
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.to
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -34,6 +37,17 @@ class IntegrationTest {
     @Test
     fun `multiline integration test`() {
         integrationTest(RectilinearNotationType.Multiline)
+    }
+
+    @Test
+    fun `focused empty cells do not extend rectilinear notation`() {
+        val board = MutableBoard()
+        board[0, 0].owner = CellOwner.X
+        board[0, 3].focused = true
+
+        val rendered = board.renderRectilinearNotation(RectilinearNotationType.Compact)
+
+        assertEquals("x", rendered)
     }
 
     @Test
@@ -113,6 +127,21 @@ class IntegrationTest {
     }
 
     @Test
+    fun `focused bke moves do not extend rectilinear state`() {
+        val board = MutableBoard()
+        board[4, 0].owner = CellOwner.X
+        board[0, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+            focused = true
+        }
+
+        val rendered = board.renderRectilinearStateBKETurnNotation()
+
+        assertEquals("x, > @(-5, 0) o A0", rendered)
+    }
+
+    @Test
     fun `rectilinear state bke turn optimizes fixed origin direction`() {
         val board = MutableBoard()
         board[0, 0].owner = CellOwner.X
@@ -132,7 +161,7 @@ class IntegrationTest {
 
     @Test
     fun `bke origin is not placed on a bke move`() {
-        val board = MutableBoard()
+        val board = MutableBoard(attributes = MutableBoardAttributes(BoardAttribute.ShowTurnNumbers to true))
         board[0, 0].owner = CellOwner.X
         board[2, 0].apply {
             owner = CellOwner.O
@@ -151,7 +180,7 @@ class IntegrationTest {
 
     @Test
     fun `bke supports multi-letter rings`() {
-        val board = MutableBoard()
+        val board = MutableBoard(attributes = MutableBoardAttributes(BoardAttribute.ShowTurnNumbers to true))
         board[0, 0].apply {
             owner = CellOwner.X
             turn = 0

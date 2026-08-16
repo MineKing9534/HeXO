@@ -49,7 +49,7 @@ fun RawBoard(
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
     renderingHook: BoardRenderingHook? = null,
-    onCellClick: ((CellCoordinate) -> Unit)? = null,
+    onCellClick: ((BoardLeftClickEvent) -> Unit)? = null,
     onBoardRightClick: ((BoardRightClickEvent) -> Unit)? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     fallback: ContentBuilder<HTMLCanvasElement>? = null,

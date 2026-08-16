@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.watchparty
+package de.mineking.hexo.web.pages.watchparty
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect

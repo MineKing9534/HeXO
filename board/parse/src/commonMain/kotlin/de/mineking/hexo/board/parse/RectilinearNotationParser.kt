@@ -38,14 +38,11 @@ fun String.parseRectilinearNotation(focusWinningRows: Boolean = true): Board {
     state.handleEOF(cursor, buffer)
 
     requireHexo(buffer.isEmpty()) { "Unterminated symbol at end of input: `$buffer`" }
-
-    if (focusWinningRows) {
-        board.focusWinningRows()
-    }
-
     requireHexo(!board.isEmpty(includeHighlights = true)) { "Cannot parse an empty board" }
 
-    return board
+    return board.apply {
+        if (focusWinningRows) focusWinningRows()
+    }
 }
 
 private enum class ParserState {

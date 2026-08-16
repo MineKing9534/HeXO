@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.sandbox
+package de.mineking.hexo.web.pages.sandbox
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -26,10 +26,14 @@ import de.mineking.hexo.web.components.ResizableTrailingPanel
 import de.mineking.hexo.web.components.Select
 import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.components.TextInput
-import de.mineking.hexo.web.pages.CellPlacementMode
+import de.mineking.hexo.web.settings.BooleanSettingsField
+import de.mineking.hexo.web.settings.SettingsKey
 import kotlinx.browser.window
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.attributes.ATarget
 import org.jetbrains.compose.web.attributes.InputType
+import org.jetbrains.compose.web.attributes.target
+import org.jetbrains.compose.web.dom.A
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.url.URL
@@ -41,6 +45,7 @@ private const val MAX_SIDEBAR_WIDTH = 560
 private val boardParser = BoardParser.Default.focusWinningRows()
 
 enum class BoardUpdateCause {
+    VisualEditor,
     NotationInput,
     Import,
     RemoveTurnData,
@@ -51,6 +56,7 @@ fun Sidebar(
     repositories: HdsRepositoryContainer?,
     placementMode: MutableState<CellPlacementMode>,
     board: Board,
+    boardUpdateCause: BoardUpdateCause,
     onBoardChange: (BoardUpdateCause, Board) -> Unit,
 ) {
     ResizableTrailingPanel(
@@ -69,7 +75,9 @@ fun Sidebar(
         var notation by remember { mutableStateOf("") }
 
         LaunchedEffect(board) {
-            notation = board.renderRectilinearStateBKETurnNotation()
+            if (boardUpdateCause == BoardUpdateCause.VisualEditor) {
+                notation = board.renderRectilinearStateBKETurnNotation()
+            }
             parseError = null
         }
 
@@ -102,7 +110,29 @@ fun Sidebar(
         }
 
         PlacementMode(placementMode)
+
+        Div({ classes("grow") })
+
+        SandboxAnalyzerState()
     }
+}
+
+@Composable
+private fun SandboxAnalyzerState() {
+    BooleanSettingsField(
+        key = SettingsKey.SandboxAnalyzer,
+        title = "Sandbox analyzer",
+        description = {
+            Text("Analyzes the sandbox for forced-wins (Powered by ")
+            A(href = "https://github.com/SootyOwl/hexo-strix", {
+                target(ATarget.Blank)
+                classes("font-bold", "text-sky-400")
+            }) {
+                Text("Strix")
+            }
+            Text(").")
+        },
+    )
 }
 
 @Composable

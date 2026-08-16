@@ -55,7 +55,7 @@ fun Cell.isEmpty(includeHighlights: Boolean): Boolean {
     if (owner != null) return false
     if (!includeHighlights) return true
 
-    return !focused && highlight == null && label.isBlank()
+    return highlight == null && label.isBlank()
 }
 
 fun Cell.toOverride() = CellOverride(

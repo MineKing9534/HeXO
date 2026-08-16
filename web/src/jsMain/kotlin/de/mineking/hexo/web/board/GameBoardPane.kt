@@ -24,15 +24,11 @@ import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
-import de.mineking.hexo.web.components.Tooltip
-import de.mineking.hexo.web.icons.AlertTriangleIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.ClearHighlightsIcon
 import de.mineking.hexo.web.icons.EnterFullscreenIcon
 import de.mineking.hexo.web.icons.ExitFullscreenIcon
-import de.mineking.hexo.web.icons.EyeIcon
-import de.mineking.hexo.web.icons.EyeOffIcon
 import de.mineking.hexo.web.icons.ResetViewIcon
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.playerCssColor
@@ -59,8 +55,6 @@ import kotlin.time.Clock
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
-private const val MOVES_PER_TURN = 2
-
 @Composable
 fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewManager) {
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
@@ -82,101 +76,39 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
     )
 
     val (effectiveTurnPlayer, effectivePlacementsRemaining) = game.effectiveTurn(move)
+    val allowAnalyzerOverlay = !(isLive && game.options.rated)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
-    val analyzerState = if (shouldAnalyze && (isLive || move < game.moveCount)) {
-        val turn = AnalyzerTurn(effectiveTurnPlayer.color, effectivePlacementsRemaining)
-        rememberBoardAnalysis(board, turn)
+    val analyzerTurn = if (shouldAnalyze && (isLive || move < game.moveCount)) {
+        AnalyzerTurn(effectiveTurnPlayer.color, effectivePlacementsRemaining)
     } else {
         null
     }
 
-    val allowAnalyzerOverlay = !(isLive && game.options.rated)
-    var showAnalyzerOverlay by remember { mutableStateOf(true) }
-
-    BoardPane(
+    AnalysedBoardPane(
         board = board,
         readOnly = true,
+        allowAnalyzerOverlay = allowAnalyzerOverlay,
+        turn = analyzerTurn,
+        players = game.players.associate { it.color to it.gamePlayer },
         viewport = viewport.value,
         onViewportChange = { viewport.value = it },
-        renderingHook = analyzerState?.takeIf { showAnalyzerOverlay && allowAnalyzerOverlay }?.renderingHook(),
         onBoardInteraction = { interaction ->
-            if (interaction !is BoardInteraction.HighlightBoardInteraction) return@BoardPane
+            if (interaction !is BoardInteraction.HighlightBoardInteraction) return@AnalysedBoardPane
             boardViewManager.apply(interaction)
         },
     ) {
         TurnIndicator(game, isLive, effectiveTurnPlayer, effectivePlacementsRemaining)
         BoardControls(game, boardViewManager, viewport)
-
-        if (analyzerState != null) {
-            AnalyzerStatusDisplay(
-                state = analyzerState,
-                allowAnalyzerOverlay = allowAnalyzerOverlay,
-                showAnalyzerOverlay = showAnalyzerOverlay,
-                onShowAnalyzerOverlayChange = { showAnalyzerOverlay = it },
-                effectiveTurnPlayer = effectiveTurnPlayer,
-                otherPlayer = game.players.first { it != effectiveTurnPlayer },
-            )
-        }
-    }
-}
-
-@Composable
-private fun AnalyzerStatusDisplay(
-    state: BoardAnalyzerState,
-    allowAnalyzerOverlay: Boolean,
-    showAnalyzerOverlay: Boolean,
-    onShowAnalyzerOverlayChange: (Boolean) -> Unit,
-    effectiveTurnPlayer: Player,
-    otherPlayer: Player,
-) {
-    AnalyzerStatusDisplay(
-        state = state,
-        analyzedPlayer = effectiveTurnPlayer,
-        otherPlayer = otherPlayer,
-        attrs = { classes("absolute", "right-4", "top-4") },
-    ) {
-        if (allowAnalyzerOverlay) {
-            ActionButton(
-                onClick = { onShowAnalyzerOverlayChange(!showAnalyzerOverlay) },
-                attrs = { classes("flex-0") },
-            ) {
-                if (showAnalyzerOverlay) {
-                    EyeOffIcon { classes("size-4") }
-                } else {
-                    EyeIcon { classes("size-4") }
-                }
-            }
-        } else {
-            Tooltip(
-                text = "The forced-win overlay is disabled for live rated games",
-                tooltipAttrs = {
-                    classes("right-11", "top-1/2", "w-max", "max-w-72", "-translate-y-1/2")
-                },
-            ) {
-                Div({
-                    classes(
-                        "size-9", "rounded-md", "border", "shadow-lg", "backdrop-blur-xs", "grid", "place-items-center",
-                        "border-amber-400/50", "bg-slate-900/90", "text-amber-300",
-                    )
-                    attr("role", "img")
-                    attr("aria-label", "The forced-win overlay is disabled for live rated games")
-                    attr("tabindex", "0")
-                    onMouseDown { it.preventDefault() }
-                }) {
-                    AlertTriangleIcon { classes("size-4") }
-                }
-            }
-        }
     }
 }
 
 private fun Game.effectiveTurn(move: Int): Pair<Player, Int> {
     val move = move.coerceIn(0, moveCount) + 1
 
-    val index = (move / 2) % 2
+    val index = (move / MOVES_PER_TURN) % 2
     val player = players[index] // Game players are ordered by first placement
-    val remaining = 2 - (move % 2)
+    val remaining = MOVES_PER_TURN - (move % MOVES_PER_TURN)
 
     return player to remaining
 }
@@ -369,7 +301,7 @@ private fun TurnIndicator(
                     classes("bg-slate-500/20", "border-slate-500/50")
                 }
             }) {
-                Player(player)
+                Player(player.gamePlayer)
                 if (player is LiveSessionPlayer && isLive) PlayerTimer(player, isCurrentTurn)
             }
             if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
@@ -406,7 +338,7 @@ private fun RatedInfoCard(game: Game) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Player(player)
+                    Player(player.gamePlayer)
                     Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
                         Text("Elo ${player.elo}")
 
@@ -456,7 +388,7 @@ private fun TournamentInfoCard(game: Game) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Player(player)
+                    Player(player.gamePlayer)
                     Span({ classes("shrink-0", "tabular-nums") }) {
                         Span({
                             classes("font-bold", "text-sm")
@@ -474,9 +406,12 @@ private fun TournamentInfoCard(game: Game) {
     }
 }
 
+data class GamePlayer(val displayName: String, val color: CellOwner)
+val Player.gamePlayer get() = GamePlayer(displayName, color)
+
 @Composable
 fun Player(
-    player: Player,
+    player: GamePlayer,
     attrs: AttrBuilderContext<HTMLSpanElement>? = null,
 ) {
     val theme by rememberTheme()

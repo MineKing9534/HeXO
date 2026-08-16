@@ -1,4 +1,4 @@
-package de.mineking.hexo.web.session
+package de.mineking.hexo.web.pages.sessions
 
 import androidx.compose.runtime.Composable
 import de.mineking.hexo.hds.model.TimeControl
