@@ -31,6 +31,7 @@ private const val LONG_PRESS_DELAY = 450
 private const val LONG_PRESS_MOVE_TOLERANCE = 12.0
 
 private const val PRIMARY_BUTTON = 0
+private const val MIDDLE_BUTTON = 1
 private const val SECONDARY_BUTTON = 2
 
 data class BoardViewport(val zoom: Double, val center: Point) {
@@ -195,7 +196,7 @@ private class BoardEventListeners(
         hoveredCell = null
 
         when (event.button.toInt()) {
-            PRIMARY_BUTTON -> beginMouseDrag(event)
+            PRIMARY_BUTTON, MIDDLE_BUTTON -> beginMouseDrag(event)
             SECONDARY_BUTTON -> beginRightClickDrag(event)
         }
     }
