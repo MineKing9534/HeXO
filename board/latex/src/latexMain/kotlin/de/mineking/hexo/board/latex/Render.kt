@@ -15,6 +15,7 @@ fun Board.renderTikZDiagram(
     cache: List<String>,
     padding: Latex = raw("32"),
     rawLabels: Latex = raw("true"),
+    compact: Latex = raw("true"),
     visibleRadius: Latex = raw("$DEFAULT_VISIBLE_RADIUS"),
     width: Latex = raw("none"),
     scale: Latex = raw("none"),
@@ -27,6 +28,7 @@ fun Board.renderTikZDiagram(
         visibleRadius = visibleRadius.source.toInt(),
         theme = theme.parseTheme(),
         rawLabels = rawLabels.source.toBooleanStrict(),
+        compact = compact.source.toBooleanStrict(),
         labelStyle = "\\hexolabelfont",
     )
 
@@ -45,6 +47,7 @@ fun Board.renderTikZDiagram(
         cacheVersion.source + SEPARATOR +
             padding.source + SEPARATOR +
             rawLabels.source + SEPARATOR +
+            compact.source + SEPARATOR +
             visibleRadius.source + SEPARATOR +
             width.source + SEPARATOR +
             scale.source + SEPARATOR +

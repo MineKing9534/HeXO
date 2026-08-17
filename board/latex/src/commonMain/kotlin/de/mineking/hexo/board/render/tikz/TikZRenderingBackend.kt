@@ -33,11 +33,16 @@ fun Board.renderToTikZ(
     theme: Theme = Theme.Default,
     renderingHook: BoardRenderingHook? = null,
     rawLabels: Boolean = true,
+    compact: Boolean = true,
     labelStyle: String = "",
 ): String {
     require(cells.isNotEmpty())
 
-    val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
+    val layout = createRenderLayout(
+        layoutRadius = layoutRadius,
+        bounds = if (compact) BoardRenderBounds.Compact else BoardRenderBounds.IncludeSurroundings,
+        visibleRadius = visibleRadius,
+    )
     val bounds = layout.boundingBox.pad(padding)
     val backend = TikZRenderingBackend(rawLabels, labelStyle)
     backend.drawBoard(layout.copy(boundingBox = bounds), theme, renderingHook)
