@@ -80,7 +80,7 @@ data class BoardRenderLayout(
     }
 }
 
-const val DEFAULT_VISIBLE_RADIUS = 7
+const val DEFAULT_VISIBLE_RADIUS = 8
 
 fun Board.createRenderLayout(
     layoutRadius: Double,
