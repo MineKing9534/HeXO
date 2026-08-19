@@ -278,7 +278,9 @@ private fun Board.findNextTurn(): Turn {
         }
     }
 
-    val movesPerTurn = MOVES_PER_TURN.takeIf { turn > 0 } ?: 1
+    val movesPerTurn = MOVES_PER_TURN
+        .takeIf { turn > 0 || hasState }
+        ?: 1
 
     if (turn == 0 && hasState) {
         turn = 1
