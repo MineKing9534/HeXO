@@ -1,7 +1,7 @@
 command:
   renderMessage.description: Render HeXO notation in message
   hexo:
-    description: Renders the given Rectilinear HeXO notation
+    description: Renders the given HeXO notation
     options:
       input.description: The Rectilinear HeXO notation to render
       theme:

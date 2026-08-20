@@ -1,7 +1,7 @@
 command:
   viewProfile.description: View HeXO Profile
   profile:
-    description: Displays information about a hexi.did.science profile
+    description: Displays information about a hexo.did.science profile
     options:
       name.description: The profile name, id or url to view
 
