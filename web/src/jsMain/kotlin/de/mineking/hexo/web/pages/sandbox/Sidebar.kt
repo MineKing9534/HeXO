@@ -44,20 +44,13 @@ private const val MAX_SIDEBAR_WIDTH = 560
 
 private val boardParser = BoardParser.Default.focusWinningRows()
 
-enum class BoardUpdateCause {
-    VisualEditor,
-    NotationInput,
-    Import,
-    RemoveTurnData,
-}
-
 @Composable
 fun Sidebar(
     repositories: HdsRepositoryContainer?,
     placementMode: MutableState<CellPlacementMode>,
     board: Board,
-    boardUpdateCause: BoardUpdateCause,
-    onBoardChange: (BoardUpdateCause, Board) -> Unit,
+    onBoardChange: (Board) -> Unit,
+    onImportPosition: () -> Unit,
 ) {
     ResizableTrailingPanel(
         defaultWidth = DEFAULT_SIDEBAR_WIDTH,
@@ -75,7 +68,13 @@ fun Sidebar(
         var notation by remember { mutableStateOf("") }
 
         LaunchedEffect(board) {
-            if (boardUpdateCause == BoardUpdateCause.VisualEditor) {
+            val notationBoard = try {
+                if (notation.isBlank()) Board.withTurnNumbers() else boardParser.parse(notation)
+            } catch (_: HexoNotationException) {
+                null
+            }
+
+            if (notationBoard != board) {
                 notation = board.renderRectilinearStateBKETurnNotation()
             }
             parseError = null
@@ -89,16 +88,17 @@ fun Sidebar(
                 repositories = repositories,
                 notation = notation,
                 parseError = parseError,
-                onChange = { cause, value ->
+                onImportPosition = onImportPosition,
+                onChange = { value ->
                     notation = value
                     if (value.isBlank()) {
-                        onBoardChange(cause, Board.withTurnNumbers())
+                        onBoardChange(Board.withTurnNumbers())
                         return@NotationField
                     }
 
                     coroutineScope.launch {
                         try {
-                            onBoardChange(cause, boardParser.parse(value))
+                            onBoardChange(boardParser.parse(value))
                             parseError = null
                         } catch (e: HexoNotationException) {
                             parseError = e.message
@@ -171,7 +171,8 @@ private fun NotationField(
     repositories: HdsRepositoryContainer?,
     notation: String,
     parseError: String?,
-    onChange: (BoardUpdateCause, String) -> Unit,
+    onImportPosition: () -> Unit,
+    onChange: (String) -> Unit,
 ) {
     Div({ classes("space-y-2") }) {
         Div({ classes("relative", "min-h-8", "overflow-hidden") }) {
@@ -185,7 +186,7 @@ private fun NotationField(
                     "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
                 )
             }) {
-                NotationActions(repositories, notation, onChange)
+                NotationActions(repositories, notation, onImportPosition, onChange)
             }
         }
 
@@ -198,7 +199,7 @@ private fun NotationField(
                 classes("min-h-32", "resize-y")
                 if (parseError != null) classes("border-rose-400!")
             },
-            onValueChange = { onChange(BoardUpdateCause.NotationInput, it) },
+            onValueChange = onChange,
         )
     }
 }
@@ -207,7 +208,8 @@ private fun NotationField(
 private fun NotationActions(
     repositories: HdsRepositoryContainer?,
     notation: String,
-    onChange: (BoardUpdateCause, String) -> Unit,
+    onImportPosition: () -> Unit,
+    onChange: (String) -> Unit,
 ) {
     var importDialogOpen by remember { mutableStateOf(false) }
     Div({ classes("flex", "max-w-full", "justify-end", "gap-2") }) {
@@ -248,14 +250,15 @@ private fun NotationActions(
             onClose = { importDialogOpen = false },
             onConfirm = {
                 importDialogOpen = false
-                onChange(BoardUpdateCause.Import, it.renderRectilinearNotation(RectilinearNotationType.Compact))
+                onChange(it.renderRectilinearNotation(RectilinearNotationType.Compact))
+                onImportPosition()
             },
         )
     }
 }
 
 @Composable
-private fun SidebarNotationInfo(board: Board, onBoardChange: (BoardUpdateCause, Board) -> Unit, parseError: String?) {
+private fun SidebarNotationInfo(board: Board, onBoardChange: (Board) -> Unit, parseError: String?) {
     Div({ classes("flex", "justify-between", "w-full", "h-6") }) {
         Div({
             classes("min-h-5", "text-sm", "leading-relaxed")
@@ -270,7 +273,7 @@ private fun SidebarNotationInfo(board: Board, onBoardChange: (BoardUpdateCause, 
 
         if (parseError == null && board.cells.any { it.value.turn != null }) {
             ActionButton("Remove Turn Data") {
-                onBoardChange(BoardUpdateCause.RemoveTurnData, board.copy().apply {
+                onBoardChange(board.copy().apply {
                     cells.values.forEach { it.turn = null }
                 })
             }

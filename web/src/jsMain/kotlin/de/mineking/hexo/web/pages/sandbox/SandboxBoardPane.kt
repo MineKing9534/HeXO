@@ -27,7 +27,6 @@ fun SandboxBoardPane(
     placementMode: CellPlacementMode,
     viewport: BoardViewport?,
     onViewportChange: (BoardViewport?) -> Unit,
-    onBoardInteraction: () -> Unit,
 ) {
     val shouldAnalyze by SettingsKey.SandboxAnalyzer.collectAsState()
 
@@ -40,7 +39,6 @@ fun SandboxBoardPane(
         viewport = viewport,
         onViewportChange = onViewportChange,
         onBoardInteraction = { interaction ->
-            onBoardInteraction()
             when (interaction) {
                 is BoardInteraction.PlaceCell -> boardViewManager.placeCell(
                     interaction.coordinate,
