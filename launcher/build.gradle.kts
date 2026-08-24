@@ -20,7 +20,7 @@ dependencies {
     implementation(projects.database)
     implementation(projects.hds.implementation)
 
-    implementation(projects.sync.service)
+    implementation(projects.watchparty.service)
 
     implementation(libs.ktor.server.html)
     implementation(libs.cache)

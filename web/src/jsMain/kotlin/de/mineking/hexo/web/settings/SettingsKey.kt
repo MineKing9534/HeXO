@@ -1,7 +1,7 @@
 package de.mineking.hexo.web.settings
 
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
-import de.mineking.hexo.sync.common.WatchPartyId
+import de.mineking.hexo.watchparty.common.WatchPartyId
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf

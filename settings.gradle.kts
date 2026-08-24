@@ -42,9 +42,9 @@ include(":server")
 include(":server:service")
 include(":launcher")
 
-include(":sync:service")
-include(":sync:common")
-include(":sync:client")
+include(":watchparty:service")
+include(":watchparty:common")
+include(":watchparty:client")
 
 include(":utils:coroutines")
 include(":utils:types")

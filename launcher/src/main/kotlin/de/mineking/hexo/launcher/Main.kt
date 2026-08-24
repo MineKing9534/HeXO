@@ -25,7 +25,7 @@ import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.link.oauth2.OAuth2Tokens
 import de.mineking.hexo.server.HttpServer
 import de.mineking.hexo.sever.service.WebService
-import de.mineking.hexo.sync.server.WatchPartyWebService
+import de.mineking.hexo.watchparty.server.WatchPartyWebService
 import javax.crypto.spec.SecretKeySpec
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.ExperimentalExtendedContracts
