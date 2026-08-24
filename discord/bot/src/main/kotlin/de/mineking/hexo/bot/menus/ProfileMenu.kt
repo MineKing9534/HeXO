@@ -30,8 +30,8 @@ import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
-import de.mineking.hexo.hds.model.profile.ProfileId
-import de.mineking.hexo.hds.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
 import dev.freya02.jda.emojis.unicode.Emojis
@@ -89,12 +89,12 @@ fun UIManager.profileMenu(
             +section(accessory = thumbnail(profile.image ?: FALLBACK_IMAGE_URL)) {
                 +buildTextDisplay {
                     +h1 {
-                        val rank = when (profile.statistics.worldRank) {
+                        val rank = when (profile.statistics.rating.worldRank) {
                             1 -> Emojis.FIRST_PLACE.formatted
                             2 -> Emojis.SECOND_PLACE.formatted
                             3 -> Emojis.THIRD_PLACE.formatted
                             null -> "[:question:]"
-                            else -> "[#${profile.statistics.worldRank}]"
+                            else -> "[#${profile.statistics.rating.worldRank}]"
                         }
 
                         append("$rank ")

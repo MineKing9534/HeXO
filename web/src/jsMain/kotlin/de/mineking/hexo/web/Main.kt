@@ -9,10 +9,10 @@ import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.init.InitKobweb
 import com.varabyte.kobweb.core.init.InitKobwebContext
 import com.varabyte.kobweb.core.isExporting
+import de.mineking.hexo.game.model.HdsRepositoryContainer
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.socket.SocketIOOptions
 import de.mineking.hexo.hds.implementation.socket.connectSocketClient
-import de.mineking.hexo.hds.model.HdsRepositoryContainer
 import de.mineking.hexo.web.audio.SoundPlayer
 import de.mineking.hexo.web.pages.NotFoundPage
 import de.mineking.hexo.web.pages.watchparty.WatchPartyController

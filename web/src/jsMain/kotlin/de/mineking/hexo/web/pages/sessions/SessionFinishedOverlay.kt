@@ -5,11 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.hds.model.game.GameFinishReason
-import de.mineking.hexo.hds.model.game.Player
-import de.mineking.hexo.hds.model.session.LiveSession
-import de.mineking.hexo.hds.model.session.LiveSessionPlayer
-import de.mineking.hexo.hds.model.session.SessionState
+import de.mineking.hexo.game.model.game.GameFinishReason
+import de.mineking.hexo.game.model.game.Player
+import de.mineking.hexo.game.model.session.LiveSession
+import de.mineking.hexo.game.model.session.LiveSessionPlayer
+import de.mineking.hexo.game.model.session.RatingAdjustment
+import de.mineking.hexo.game.model.session.SessionState
+import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
@@ -256,7 +258,7 @@ private fun SessionFinishedPlayerHeader(player: LiveSessionPlayer, winner: Playe
 
 @Composable
 private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, rated: Boolean) {
-    val eloAdjustment = player.eloAdjustment.takeIf { rated } ?: return
+    val eloAdjustment = player.ratingAdjustment.takeIf { rated } ?: return
 
     Badge(Color.Neutral) {
         Text("Elo ")
@@ -268,9 +270,8 @@ private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, 
 
 @Composable
 private fun SessionFinishedTournamentSummary(session: LiveSession, state: SessionState.Finished) {
-    val tournament = session.tournamentInfo ?: return
-    if (tournament.bestOf < 3) return
-    val requiredWins = tournament.bestOf / 2 + 1
+    val tournament = session.tournament ?: return
+    if (tournament.matchInfo.bestOf < 3) return
 
     Div({
         classes("rounded-2xl", "border", "border-slate-700/70", "bg-slate-900/70", "px-4", "py-4")
@@ -281,17 +282,17 @@ private fun SessionFinishedTournamentSummary(session: LiveSession, state: Sessio
                     Text("Tournament")
                 }
                 P({ classes("mt-1", "truncate", "font-semibold", "text-slate-100") }) {
-                    Text(tournament.tournamentName)
+                    Text(tournament.tournamentInfo.name)
                 }
             }
             Badge(Color.Neutral, { classes("shrink-0") }) {
-                Text("Game ${tournament.currentGameNumber} of ${tournament.bestOf}")
+                Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")
             }
         }
 
         Div({ classes("grid", "gap-3") }) {
             session.players.forEach { player ->
-                SessionFinishedTournamentPlayer(player, state.result.winner, requiredWins)
+                SessionFinishedTournamentPlayer(player, state.result.winner, tournament.matchInfo.requiredWins)
             }
         }
     }
@@ -375,21 +376,21 @@ private fun LiveSessionPlayer.eloAdjustmentColor(winner: Player?) = when (winner
 
 private fun LiveSessionPlayer.eloAdjustmentLabel(
     winner: Player?,
-    eloAdjustment: LiveSessionPlayer.EloAdjustment,
+    ratingAdjustment: RatingAdjustment,
 ) = when (winner) {
-    this -> "+${eloAdjustment.eloGain}"
+    this -> "+${ratingAdjustment.eloGain}"
     null -> "0"
-    else -> "${eloAdjustment.eloLoss}"
+    else -> "${ratingAdjustment.eloLoss}"
 }
 
 private fun LiveSessionPlayer.finishedTournamentWins(winner: Player?) =
     tournamentMatchWins?.let { if (this == winner) it + 1 else it } ?: 0
 
 private val GameFinishReason.label get() = when (this) {
-    GameFinishReason.SixInARow -> "Six in a Row"
-    GameFinishReason.Timeout -> "Timeout"
-    GameFinishReason.Surrender -> "Surrender"
-    GameFinishReason.Disconnect -> "Disconnect"
-    GameFinishReason.DrawAgreement -> "Draw agreed"
-    GameFinishReason.Terminated -> "Terminated"
+    is GameFinishReason.Regular -> "Six in a Row"
+    is GameFinishReason.Timeout -> "Timeout"
+    is GameFinishReason.Surrender -> "Surrender"
+    is GameFinishReason.Disconnect -> "Disconnect"
+    is GameFinishReason.DrawAgreement -> "Draw agreed"
+    is GameFinishReason.Terminated -> "Terminated"
 }

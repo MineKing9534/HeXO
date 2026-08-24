@@ -29,9 +29,9 @@ import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.bindLocalizationParameter
 import de.mineking.hexo.bot.utils.respond
-import de.mineking.hexo.hds.model.profile.ProfileId
-import de.mineking.hexo.hds.model.profile.ProfileRepository
-import de.mineking.hexo.hds.model.profile.getProfileByName
+import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.utils.types.isSuccess

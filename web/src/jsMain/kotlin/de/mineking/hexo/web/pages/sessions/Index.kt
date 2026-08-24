@@ -10,11 +10,11 @@ import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.layout.Layout
-import de.mineking.hexo.hds.model.TimeControl
-import de.mineking.hexo.hds.model.game.Player
-import de.mineking.hexo.hds.model.session.LobbySession
-import de.mineking.hexo.hds.model.session.SessionRepository
-import de.mineking.hexo.hds.model.session.hasStarted
+import de.mineking.hexo.game.model.TimeControl
+import de.mineking.hexo.game.model.game.Player
+import de.mineking.hexo.game.model.session.LobbySession
+import de.mineking.hexo.game.model.session.SessionRepository
+import de.mineking.hexo.game.model.session.hasStarted
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
@@ -23,6 +23,7 @@ import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.ScrollableView
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
+import de.mineking.hexo.web.format
 import de.mineking.hexo.web.icons.CasualGameIcon
 import de.mineking.hexo.web.icons.StarIcon
 import de.mineking.hexo.web.icons.TimeControlIcon
@@ -197,10 +198,4 @@ private fun TimeControlBadge(timeControl: TimeControl) {
 private fun List<Player>.formatPlayers() = when (size) {
     1 -> first().displayName
     else -> joinToString(" vs ") { it.displayName }
-}
-
-private fun TimeControl.format() = when (this) {
-    TimeControl.Unlimited -> "Unlimited"
-    is TimeControl.Turn -> "Turn $turnTime"
-    is TimeControl.Match -> "Match $mainTime +$increment"
 }

@@ -11,9 +11,9 @@ import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.model.game.FinishedGame
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.Game
+import de.mineking.hexo.game.model.game.FinishedGame
+import de.mineking.hexo.game.model.game.FinishedGameRepository
+import de.mineking.hexo.game.model.game.Game
 import de.mineking.hexo.web.board.Player
 import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.components.ActionButton
@@ -104,7 +104,7 @@ private fun GameList(
 
     LaunchedEffect(finishedGameRepository, page, filter) {
         loading = true
-        games = finishedGameRepository.getFinishedGames(page, PAGE_SIZE, filter.rated)
+        games = finishedGameRepository.getHistory(page, PAGE_SIZE, filter.rated)
         loading = false
     }
 
@@ -255,13 +255,13 @@ private fun GameCard(game: FinishedGame) {
 private fun GameTypeBadge(game: Game) {
     Badge(
         when {
-            game.tournamentInfo != null -> Color.Sky
+            game.tournament != null -> Color.Sky
             game.options.rated -> Color.Yellow
             else -> Color.Neutral
         },
     ) {
         when {
-            game.tournamentInfo != null -> {
+            game.tournament != null -> {
                 TournamentIcon { classes("size-3.5") }
                 Text("Tournament")
             }

@@ -18,7 +18,7 @@ dependencies {
     implementation(projects.board.render)
 
     implementation(projects.database)
-    implementation(projects.hds.implementation)
+    implementation(projects.game.hds)
 
     implementation(projects.watchparty.service)
 

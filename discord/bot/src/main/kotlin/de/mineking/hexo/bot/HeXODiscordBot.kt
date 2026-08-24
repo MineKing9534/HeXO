@@ -33,7 +33,7 @@ import de.mineking.hexo.bot.utils.installErrorHandling
 import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
 import de.mineking.hexo.discord.bot.config.UserThemeRepository
 import de.mineking.hexo.discord.core.DiscordUserId
-import de.mineking.hexo.hds.model.HdsRepositoryContainer
+import de.mineking.hexo.game.model.HdsRepositoryContainer
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import dev.freya02.jda.emojis.unicode.Emojis

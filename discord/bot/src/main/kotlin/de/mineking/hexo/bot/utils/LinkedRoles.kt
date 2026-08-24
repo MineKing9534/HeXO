@@ -2,11 +2,11 @@ package de.mineking.hexo.bot.utils
 
 import de.mineking.discord.DiscordToolKit
 import de.mineking.discord.localization.LocalizationFile
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.GameId
-import de.mineking.hexo.hds.model.profile.ProfileId
-import de.mineking.hexo.hds.model.profile.ProfileRepository
-import de.mineking.hexo.hds.model.profile.RichProfile
+import de.mineking.hexo.game.model.game.FinishedGameRepository
+import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.ProfileWithStatistics
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
@@ -44,7 +44,7 @@ class LinkedRolesUpdateService(
             while (true) {
                 @Suppress("TooGenericExceptionCaught")
                 try {
-                    val finishedGames = finishedGameRepository.getFinishedGames(1, 20, rated = true)
+                    val finishedGames = finishedGameRepository.getHistory(1, 20, rated = true)
                         .takeWhile { it.id != lastSeenGame }
 
                     if (finishedGames.isNotEmpty()) {
@@ -92,7 +92,7 @@ class LinkedRolesUpdateService(
         }
     }
 
-    private suspend fun updateLinkedRoleData(profile: RichProfile, tokens: OAuth2Tokens) {
+    private suspend fun updateLinkedRoleData(profile: ProfileWithStatistics, tokens: OAuth2Tokens) {
         logger.info { "Updating linked role data for (discord=${tokens.id.value},hexo=${profile.id.value})" }
 
         @Suppress("TooGenericExceptionCaught")
@@ -100,8 +100,8 @@ class LinkedRolesUpdateService(
             discordUserAuthenticationRepository.discordOAuth2Client.updateLinkedRoleData(
                 user = tokens,
                 values = arrayOf(
-                    RankKey.bindValue(profile.statistics.worldRank),
-                    EloKey.bindValue(profile.statistics.elo),
+                    RankKey.bindValue(profile.statistics.rating.worldRank),
+                    EloKey.bindValue(profile.statistics.rating.elo),
                 ),
             )
         } catch (e: Exception) {

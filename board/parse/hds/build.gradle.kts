@@ -8,7 +8,7 @@ kotlin {
             implementation(projects.board)
             implementation(projects.board.parse)
 
-            implementation(projects.hds.model)
+            implementation(projects.game.model)
         }
     }
 }

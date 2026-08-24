@@ -1,8 +1,8 @@
 package de.mineking.hexo.watchparty.common
 
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.hds.model.game.GameId
-import de.mineking.hexo.hds.model.session.SessionId
+import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.game.model.session.SessionId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline

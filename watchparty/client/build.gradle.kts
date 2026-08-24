@@ -10,7 +10,7 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.watchparty.common)
-            implementation(projects.hds.model)
+            implementation(projects.game.model)
 
             implementation(libs.bundles.ktor.client)
             implementation(libs.ktor.client.websockets)

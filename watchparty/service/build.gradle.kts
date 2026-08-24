@@ -5,7 +5,7 @@ plugins {
 dependencies {
     implementation(projects.watchparty.common)
 
-    implementation(projects.hds.model)
+    implementation(projects.game.model)
     implementation(projects.server.service)
 
     implementation(projects.utils.types)

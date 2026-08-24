@@ -16,7 +16,7 @@ import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
-import de.mineking.hexo.hds.model.HdsRepositoryContainer
+import de.mineking.hexo.game.model.HdsRepositoryContainer
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color

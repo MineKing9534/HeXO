@@ -12,9 +12,10 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.model.EntityState
-import de.mineking.hexo.hds.model.game.FinishedGame
-import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.game.model.EntityState
+import de.mineking.hexo.game.model.game.FinishedGame
+import de.mineking.hexo.game.model.game.FinishedGameWithPosition
+import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
@@ -50,7 +51,7 @@ fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
         return
     }
 
-    var state by remember { mutableStateOf<EntityState<FinishedGame>>(EntityState.Loading) }
+    var state by remember { mutableStateOf<EntityState<FinishedGameWithPosition>>(EntityState.Loading) }
     LaunchedEffect(id) {
         state = EntityState.Loading
 

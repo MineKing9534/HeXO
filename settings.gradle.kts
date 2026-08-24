@@ -24,9 +24,9 @@ include(":board:render:compose")
 include(":web:analysis-worker")
 include(":web")
 
-include(":hds:model")
-include(":hds:implementation")
-include(":hds:implementation:processor")
+include(":game:model")
+include(":game:hds")
+include(":game:hds:processor")
 
 include(":solver")
 

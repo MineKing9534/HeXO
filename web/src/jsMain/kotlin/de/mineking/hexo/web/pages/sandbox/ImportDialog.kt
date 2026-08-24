@@ -8,11 +8,12 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.hds.model.asBoard
-import de.mineking.hexo.hds.model.formation.FormationId
-import de.mineking.hexo.hds.model.formation.FormationRepository
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.board.take
+import de.mineking.hexo.board.toBoard
+import de.mineking.hexo.game.model.formation.FormationId
+import de.mineking.hexo.game.model.formation.FormationRepository
+import de.mineking.hexo.game.model.game.FinishedGameRepository
+import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog
@@ -172,10 +173,13 @@ private suspend fun String.urlToBoard(
     val gameMatch = GAME_URL.matchEntire(this)
 
     return when {
-        formationMatch != null -> formationRepository.getFormation(FormationId(formationMatch.groupValues[1]))?.asBoard()
+        formationMatch != null -> formationRepository.getFormation(FormationId(formationMatch.groupValues[1]))?.position?.toBoard()
         gameMatch != null -> {
             val move = gameMatch.groupValues[2].takeIf { it.isNotEmpty() }?.toInt()
-            finishedGameRepository.getGame(GameId(gameMatch.groupValues[1]))?.asBoard(move ?: Int.MAX_VALUE)
+            finishedGameRepository.getGame(GameId(gameMatch.groupValues[1]))
+                ?.position
+                ?.take(move ?: Int.MAX_VALUE)
+                ?.toBoard()
         }
         else -> null
     }

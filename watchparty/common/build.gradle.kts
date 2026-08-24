@@ -9,7 +9,7 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.board)
-            implementation(projects.hds.model)
+            implementation(projects.game.model)
 
             implementation(libs.kotlin.serialization.core)
         }

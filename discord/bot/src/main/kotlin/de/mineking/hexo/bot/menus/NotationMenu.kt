@@ -22,12 +22,12 @@ import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.hexo.board.render.notation.NotationType
 import de.mineking.hexo.board.render.render
+import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.main
 import de.mineking.hexo.bot.utils.effectiveLocale
-import de.mineking.hexo.hds.model.asBoard
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.game.model.game.FinishedGameRepository
+import de.mineking.hexo.game.model.game.GameId
 import net.dv8tion.jda.api.components.separator.Separator.Spacing
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.interactions.DiscordLocale
@@ -60,7 +60,8 @@ fun UIManager.notationMenu(
 
     val notation = renderValue {
         gameRepository.getGame(gameId)
-            ?.asBoard()
+            ?.position
+            ?.toBoard()
             ?.let { notationType.renderer.render(it) }
     }
 

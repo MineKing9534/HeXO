@@ -45,8 +45,11 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.BoardAttributes
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.board.moves
 import de.mineking.hexo.board.render.notation.NotationType
+import de.mineking.hexo.board.take
 import de.mineking.hexo.board.to
+import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
@@ -56,13 +59,13 @@ import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.discord.core.DiscordUserId
-import de.mineking.hexo.hds.model.TimeControl
-import de.mineking.hexo.hds.model.asBoard
-import de.mineking.hexo.hds.model.game.FinishedGame
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.GameFinishReason
-import de.mineking.hexo.hds.model.game.GameId
-import de.mineking.hexo.hds.model.game.isGuest
+import de.mineking.hexo.game.model.TimeControl
+import de.mineking.hexo.game.model.game.FinishedGame
+import de.mineking.hexo.game.model.game.FinishedGameRepository
+import de.mineking.hexo.game.model.game.FinishedGameWithPosition
+import de.mineking.hexo.game.model.game.GameFinishReason
+import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.game.model.game.isGuest
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow
@@ -73,7 +76,7 @@ import kotlin.math.absoluteValue
 import kotlin.time.Duration.Companion.seconds
 
 data class GameMenuParameter(val event: IReplyCallback, val id: GameId, val move: Int)
-private data class MatchData(val game: FinishedGame, val board: Board)
+private data class MatchData(val game: FinishedGameWithPosition, val board: Board)
 
 fun UIManager.gameMenu(
     gameRepository: FinishedGameRepository,
@@ -96,8 +99,7 @@ fun UIManager.gameMenu(
 
     val matchData by lazy(default = null) {
         val match = gameRepository.getGame(id) ?: return@lazy null
-        val board = match.asBoard(
-            maxMoves = move,
+        val board = match.position.take(move).toBoard(
             focusWinningRows = true,
             attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to showTurnNumbers.value),
         )
@@ -117,7 +119,7 @@ fun UIManager.gameMenu(
             bindParameter("game", matchData.game)
         }
 
-        move = move.coerceIn(0, matchData.game.moves.size)
+        move = move.coerceIn(0, matchData.game.position.moves.size)
     }
 
     +container {
@@ -140,7 +142,7 @@ fun UIManager.gameMenu(
             }
         }
 
-        +moveSelector("move", matchData?.game?.moves?.size ?: Int.MAX_VALUE, moveState)
+        +moveSelector("move", matchData?.game?.position?.moves?.size ?: Int.MAX_VALUE, moveState)
         +additionalActions(main, id, notationMenu, showTurnNumbers)
     }
 }
@@ -168,9 +170,9 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
 
     +line()
     +line {
-        +code("${Emojis.HOURGLASS.formatted} ${result.duration.inWholeSeconds.seconds}")
+        +code("${Emojis.TIMER_CLOCK.formatted} ${result.duration.inWholeSeconds.seconds}")
         append("\u2003")
-        +code("${Emojis.TIMER_CLOCK.formatted} ${localization.timeControl(locale, options.timeControl)}")
+        +code("${Emojis.HOURGLASS.formatted} ${localization.timeControl(locale, options.timeControl)}")
         append("\u2003")
         +code(result.reason.localize(locale, localization))
     }
@@ -202,12 +204,12 @@ private fun notationButton(
 
 private fun GameFinishReason.localize(locale: DiscordLocale, localization: GameMenuLocalization): String {
     val emoji = when (this) {
-        GameFinishReason.SixInARow -> Emojis.TRIANGULAR_RULER
-        GameFinishReason.Timeout -> Emojis.ALARM_CLOCK
-        GameFinishReason.Surrender -> Emojis.FLAG_WHITE
-        GameFinishReason.Disconnect -> Emojis.SATELLITE
-        GameFinishReason.DrawAgreement -> Emojis.HANDSHAKE
-        GameFinishReason.Terminated -> Emojis.NO_ENTRY
+        is GameFinishReason.Regular -> Emojis.TRIANGULAR_RULER
+        is GameFinishReason.Timeout -> Emojis.ALARM_CLOCK
+        is GameFinishReason.Surrender -> Emojis.FLAG_WHITE
+        is GameFinishReason.Disconnect -> Emojis.SATELLITE
+        is GameFinishReason.DrawAgreement -> Emojis.HANDSHAKE
+        is GameFinishReason.Terminated -> Emojis.NO_ENTRY
     }
 
     return "${emoji.formatted} ${localization.finishReason(locale, this)}"

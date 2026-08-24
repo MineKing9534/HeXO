@@ -7,8 +7,8 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.hasHighlights
-import de.mineking.hexo.hds.model.game.GameId
-import de.mineking.hexo.hds.model.session.SessionId
+import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.game.model.session.SessionId
 import de.mineking.hexo.watchparty.common.WatchPartyData
 import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.watchparty.common.WatchPartyTarget

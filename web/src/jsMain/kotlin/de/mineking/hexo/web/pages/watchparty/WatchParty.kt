@@ -9,7 +9,7 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.model.EntityState
+import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.watchparty.client.WatchParty
 import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.watchparty.common.WatchPartyTarget

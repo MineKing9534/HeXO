@@ -14,9 +14,9 @@ import de.mineking.discord.ui.message.replyMenu
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
 import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.finalErrorResponse
-import de.mineking.hexo.hds.model.profile.ProfileId
-import de.mineking.hexo.hds.model.profile.ProfileRepository
-import de.mineking.hexo.hds.model.profile.getProfileByName
+import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.DiscordLocale
