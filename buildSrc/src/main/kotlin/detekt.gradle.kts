@@ -18,7 +18,7 @@ detekt {
 
 pluginManager.withPlugin("org.jetbrains.kotlin.multiplatform") {
     detekt {
-        val languages = listOf("common", "js", "jvm")
+        val languages = listOf("common", "js", "jvm", "latex")
         val files = languages
             .flatMap { listOf("${it}Main", "${it}Test") }
             .map { "src/$it/kotlin" }

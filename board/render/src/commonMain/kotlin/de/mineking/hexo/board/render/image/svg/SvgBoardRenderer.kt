@@ -1,7 +1,8 @@
-package de.mineking.hexo.board.render.image
+package de.mineking.hexo.board.render.image.svg
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.render.BoardRenderer
+import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.theme.Theme
 
 class SvgBoardRenderer(

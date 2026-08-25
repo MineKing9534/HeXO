@@ -7,7 +7,6 @@ repositories {
     maven("https://maven.mineking.dev/snapshots")
 }
 
-
 pluginManager.withPlugin("org.jetbrains.kotlin.jvm") {
     extensions.configure<KotlinJvmProjectExtension>("kotlin") {
         jvmToolchain(CommonConfig.JAVA_VERSION)

@@ -51,7 +51,10 @@ private enum class ParserState {
             return when {
                 ch.isDigit() -> GapDigits.handleChar(ch, offset, cursor, buffer)
                 ch == '(' -> Highlight
-                ch == '[' -> Label
+                ch == '[' -> {
+                    cursor.beginLabel()
+                    Label
+                }
                 else -> {
                     cursor.handleNormalChar(ch, offset)
                     this
@@ -101,15 +104,15 @@ private enum class ParserState {
     },
     Label {
         override fun handleChar(ch: Char, offset: Int, cursor: Cursor, buffer: StringBuilder): ParserState {
-            if (ch == ']') {
+            if (cursor.consumeLabelDelimiter(ch, buffer)) {
                 cursor.configurePrevious { label = buffer.toString() }
                 buffer.clear()
 
                 return Normal
-            } else {
-                buffer.append(ch)
-                return this
             }
+
+            buffer.append(ch)
+            return this
         }
     },
     Highlight {
@@ -159,11 +162,31 @@ private class Cursor(private val board: MutableBoard, columnNotation: Boolean) {
     private val stepDirection = if (columnNotation) Direction.BottomRight.direction else Direction.Right.direction
     private val newlineDirection = if (columnNotation) Direction.Right.direction else Direction.BottomRight.direction
 
+    private var lineStart = CellCoordinate.Zero
+    val previousPosition get() = position - stepDirection
     var position = CellCoordinate.Zero
         private set
-    private var lineStart = position
 
-    val previousPosition get() = position - stepDirection
+    private var labelBracketDepth = 0
+
+    fun beginLabel() {
+        labelBracketDepth = 0
+    }
+
+    fun consumeLabelDelimiter(ch: Char, buffer: StringBuilder): Boolean {
+        if (ch != '[' && ch != ']') return false
+        if (buffer.isEscaped()) return false
+
+        if (ch == '[') {
+            labelBracketDepth++
+            return false
+        }
+        if (labelBracketDepth > 0) {
+            labelBracketDepth--
+            return false
+        }
+        return true
+    }
 
     fun configureCurrent(block: MutableCell.() -> Unit) {
         board[position].block()
@@ -186,4 +209,13 @@ private class Cursor(private val board: MutableBoard, columnNotation: Boolean) {
         lineStart += newlineDirection
         position = lineStart
     }
+}
+
+private fun CharSequence.isEscaped(): Boolean {
+    var backslashes = 0
+    for (index in indices.reversed()) {
+        if (this[index] != '\\') break
+        backslashes++
+    }
+    return backslashes % 2 != 0
 }
