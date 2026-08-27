@@ -1,6 +1,5 @@
 package de.mineking.hexo.hds.implementation.profile
 
-import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
@@ -19,9 +18,9 @@ internal class ProfileImpl(
     override suspend fun retrieveStatistics(forceUpdate: Boolean) = client.profileRepository.getProfileStatistics(id) ?: error("profile not found")
     override suspend fun withStatistics(forceUpdate: Boolean) = ProfileWithStatisticsImpl(client, dto, retrieveStatistics())
 
-    override suspend fun retrieveGames(page: Int, pageSize: Int, rated: Boolean?): List<FinishedGame> {
-        TODO("FIX BEFORE COMMIT")
-    }
+    override suspend fun retrieveGames(page: Int, pageSize: Int, rated: Boolean?) =
+        client.finishedGameRepository.getProfileHistory(id, page, pageSize, rated)
+            ?: error("profile not found")
 }
 
 internal class ProfileWithStatisticsImpl(

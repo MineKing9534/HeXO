@@ -5,6 +5,7 @@ import com.sksamuel.aedile.core.asCache
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
 import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.game.model.profile.ProfileId
 
 internal class CachingFinishedGameRepository(val delegate: FinishedGameRepository, cacheSize: Long) : FinishedGameRepository {
     private val cache = Caffeine.newBuilder()
@@ -13,4 +14,6 @@ internal class CachingFinishedGameRepository(val delegate: FinishedGameRepositor
 
     override suspend fun getGame(id: GameId) = cache.getOrNull(id) { delegate.getGame(it) }
     override suspend fun getHistory(page: Int, pageSize: Int, rated: Boolean?) = delegate.getHistory(page, pageSize, rated)
+    override suspend fun getProfileHistory(profile: ProfileId, page: Int, pageSize: Int, rated: Boolean?) =
+        delegate.getProfileHistory(profile, page, pageSize, rated)
 }
