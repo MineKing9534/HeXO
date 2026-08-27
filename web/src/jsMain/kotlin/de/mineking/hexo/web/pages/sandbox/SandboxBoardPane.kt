@@ -76,12 +76,14 @@ private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, modifi
     mode.run {
         if (currentCell?.turn == null) {
             run keyboard@{
+                val new = when {
+                    modifiers.ctrlKey -> CellOwner.X
+                    modifiers.altKey || modifiers.shiftKey -> CellOwner.O
+                    else -> return@keyboard
+                }
+
                 updateCell(coordinate, CellOverride(
-                    owner = when {
-                        modifiers.ctrlKey -> CellOwner.X
-                        modifiers.altKey || modifiers.shiftKey -> CellOwner.O
-                        else -> return@keyboard
-                    }.present(),
+                    owner = new.takeIf { it != currentCell?.owner }.present(),
                 ))
                 return@run
             }
