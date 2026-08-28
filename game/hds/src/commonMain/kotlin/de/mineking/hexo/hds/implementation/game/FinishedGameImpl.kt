@@ -3,6 +3,7 @@ package de.mineking.hexo.hds.implementation.game
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.toGamePosition
+import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.game.FinishedGameMove
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
@@ -10,7 +11,9 @@ import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.PlayerId
 import de.mineking.hexo.game.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.orThrow
 
 internal class FinishedGameImpl(
     private val client: HdsApiClient,
@@ -64,7 +67,12 @@ internal class FinishedGameImpl(
 internal abstract class PlayerImpl(
     private val repository: ProfileRepository,
 ) : Player {
-    override suspend fun fetchProfile() = profileId?.let { repository.getProfile(it) }
+    override suspend fun fetchProfile() = profileId
+        ?.let {
+            repository
+                .getProfileById(it)
+                .orThrow { EntityNotFoundException() }
+        }
 }
 
 internal class FinishedGamePlayerImpl(

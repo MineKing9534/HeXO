@@ -2,8 +2,10 @@ package de.mineking.hexo.hds.implementation.formation
 
 import de.mineking.hexo.game.model.formation.Formation
 import de.mineking.hexo.game.model.formation.FormationId
+import de.mineking.hexo.game.model.formation.FormationNotFoundError
 import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.ktor.client.call.body
 import io.ktor.http.isSuccess
 
@@ -16,4 +18,5 @@ internal class FormationRepositoryImpl(private val client: HdsApiClient) : Forma
     }
 
     override suspend fun getFormation(id: FormationId) = requester.fetch(id)
+        .successIfNotNullOrElse(FormationNotFoundError)
 }

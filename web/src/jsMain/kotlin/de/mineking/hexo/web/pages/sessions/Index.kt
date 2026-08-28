@@ -12,7 +12,7 @@ import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.layout.Layout
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.Player
-import de.mineking.hexo.game.model.session.LobbySession
+import de.mineking.hexo.game.model.session.Session
 import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.session.hasStarted
 import de.mineking.hexo.web.components.Anchor
@@ -65,9 +65,9 @@ private fun LoadingState() {
 
 @Composable
 private fun LobbyList(sessionRepository: SessionRepository) {
-    val lobbies by sessionRepository.lobbies.collectAsState()
+    val lobbies by sessionRepository.sessions.collectAsState()
     val sortedLobbies = lobbies.values.sortedWith(
-        compareByDescending<LobbySession> { it.hasStarted() }
+        compareByDescending<Session> { it.hasStarted() }
             .thenByDescending { it.createdAt },
     )
 
@@ -123,7 +123,7 @@ private fun EmptyLobbyState() {
 }
 
 @Composable
-private fun LobbyCard(lobby: LobbySession) {
+private fun LobbyCard(lobby: Session) {
     Anchor(AppRoute.Session(lobby.id), {
         classes("block")
     }) {
@@ -154,7 +154,7 @@ private fun LobbyCard(lobby: LobbySession) {
 }
 
 @Composable
-private fun StatusBadge(lobby: LobbySession) {
+private fun StatusBadge(lobby: Session) {
     val status = if (lobby.hasStarted()) "In game" else "Waiting"
 
     Badge(if (lobby.hasStarted()) Color.Sky else Color.Emerald, {

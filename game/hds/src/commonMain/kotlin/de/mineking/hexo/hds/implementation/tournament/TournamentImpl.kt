@@ -1,7 +1,9 @@
 package de.mineking.hexo.hds.implementation.tournament
 
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.game.GameReference
+import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.game.model.session.SessionReference
 import de.mineking.hexo.game.model.tournament.Tournament
 import de.mineking.hexo.game.model.tournament.TournamentInfo
@@ -13,6 +15,7 @@ import de.mineking.hexo.game.model.tournament.TournamentMatchState
 import de.mineking.hexo.game.model.tournament.TournamentParticipant
 import de.mineking.hexo.game.model.tournament.TournamentStanding
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.orThrow
 
 internal class TournamentImpl(
     private val client: HdsApiClient,
@@ -61,7 +64,9 @@ internal class TournamentParticipantImpl(
     override val registeredAt = dto.registeredAt
     override val seed = dto.seed
 
-    override suspend fun fetchProfile() = client.profileRepository.getProfile(profileId)
+    override suspend fun fetchProfile() = client.profileRepository
+        .getProfileById(profileId)
+        .orThrow { EntityNotFoundException() }
 }
 
 internal class TournamentMatchPlayerImpl(

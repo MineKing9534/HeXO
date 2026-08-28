@@ -1,6 +1,7 @@
 package de.mineking.hexo.game.model.profile
 
 import de.mineking.hexo.game.model.game.FinishedGame
+import de.mineking.hexo.utils.types.QueryResult
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
@@ -19,7 +20,7 @@ interface Profile {
     suspend fun retrieveStatistics(forceUpdate: Boolean = false): ProfileStatistics
     suspend fun withStatistics(forceUpdate: Boolean = false): ProfileWithStatistics
 
-    suspend fun retrieveGames(page: Int, pageSize: Int, rated: Boolean? = null): List<FinishedGame>
+    suspend fun retrieveGames(page: Int, pageSize: Int, rated: Boolean? = null): QueryResult<FinishedGame>
 }
 
 interface ProfileWithStatistics : Profile {

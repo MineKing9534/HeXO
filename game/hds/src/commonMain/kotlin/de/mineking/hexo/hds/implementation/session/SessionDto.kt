@@ -17,7 +17,7 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 
-internal interface AbstractSessionPlayer {
+internal interface AbstractSessionPlayerDto {
     val profileId: ProfileId?
     val displayName: String
     val elo: Int
@@ -28,7 +28,7 @@ internal data class LobbyPlayerDto(
     override val profileId: ProfileId?,
     override val displayName: String,
     override val elo: Int,
-) : AbstractSessionPlayer
+) : AbstractSessionPlayerDto
 
 @Serializable
 internal data class SessionPlayerDto(
@@ -38,7 +38,7 @@ internal data class SessionPlayerDto(
     val rating: Rating,
     val ratingAdjustment: RatingAdjustment?,
     val connection: SessionPlayerConnectionDto,
-) : AbstractSessionPlayer {
+) : AbstractSessionPlayerDto {
     override val elo = rating.eloScore
 
     @Serializable
@@ -83,25 +83,34 @@ internal data class SessionPlayerDto(
 @JsonClassDiscriminator("status")
 @OptIn(ExperimentalSerializationApi::class)
 internal sealed interface SessionStateDto {
+    val createdAt: Instant
+
     @Serializable
     @SerialName("lobby")
-    data object Lobby : SessionStateDto
+    data class Lobby(
+        override val createdAt: Instant,
+    ) : SessionStateDto
 
     sealed interface GameSessionState : SessionStateDto {
         val gameId: GameId
+        val startedAt: Instant
     }
 
     @Serializable
     @SerialName("in-game")
     data class InGame(
         override val gameId: GameId,
-        val startedAt: Instant,
+        override val createdAt: Instant,
+        override val startedAt: Instant,
     ) : GameSessionState
 
     @Serializable
     @SerialName("finished")
     data class Finished(
         override val gameId: GameId,
+        override val createdAt: Instant,
+        override val startedAt: Instant,
+        val finishedAt: Instant,
         val finishReason: GameFinishReason,
         val winningPlayerId: PlayerId?,
         val rematchAcceptedPlayerIds: List<PlayerId>,

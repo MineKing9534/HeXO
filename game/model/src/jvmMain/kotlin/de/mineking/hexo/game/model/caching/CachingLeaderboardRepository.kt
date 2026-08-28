@@ -1,4 +1,4 @@
-package de.mineking.hexo.hds.implementation.caching
+package de.mineking.hexo.game.model.caching
 
 import de.mineking.hexo.game.model.leaderboard.Leaderboard
 import de.mineking.hexo.game.model.leaderboard.LeaderboardRepository

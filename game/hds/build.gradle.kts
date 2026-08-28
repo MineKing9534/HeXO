@@ -38,7 +38,6 @@ kotlin {
 
     sourceSets.jvmMain {
         dependencies {
-            implementation(libs.cache)
             implementation(libs.ktor.client.cio)
 
             implementation("io.socket:socket.io-client:2.1.1")

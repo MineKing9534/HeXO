@@ -26,7 +26,6 @@ import de.mineking.discord.ui.builder.line
 import de.mineking.discord.ui.disabledIf
 import de.mineking.discord.ui.getValue
 import de.mineking.discord.ui.initialize
-import de.mineking.discord.ui.lazy
 import de.mineking.discord.ui.localize
 import de.mineking.discord.ui.message.MessageComponent
 import de.mineking.discord.ui.message.MessageMenu
@@ -38,6 +37,7 @@ import de.mineking.discord.ui.modal.map
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.render
+import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
@@ -66,6 +66,7 @@ import de.mineking.hexo.game.model.game.FinishedGameWithPosition
 import de.mineking.hexo.game.model.game.GameFinishReason
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.game.isGuest
+import de.mineking.hexo.utils.types.orElse
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow
@@ -76,7 +77,6 @@ import kotlin.math.absoluteValue
 import kotlin.time.Duration.Companion.seconds
 
 data class GameMenuParameter(val event: IReplyCallback, val id: GameId, val move: Int)
-private data class MatchData(val game: FinishedGameWithPosition, val board: Board)
 
 fun UIManager.gameMenu(
     gameRepository: FinishedGameRepository,
@@ -97,44 +97,40 @@ fun UIManager.gameMenu(
     val locale = parameter({ DiscordLocale.UNKNOWN }, { it.event.effectiveLocale }, { event.effectiveLocale })
     localize(locale) // Predefine locale for potential error handling
 
-    val matchData by lazy(default = null) {
-        val match = gameRepository.getGame(id) ?: return@lazy null
-        val board = match.position.take(move).toBoard(
-            focusWinningRows = true,
-            attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to showTurnNumbers.value),
-        )
-
-        MatchData(match, board)
-    }
-
-    render {
-        val matchData = matchData
+    data class GameData(val game: FinishedGameWithPosition, val board: Board)
+    val gameData = renderValue {
         val event = parameter({ error("") }, { it.event }, { event })
-        if (matchData == null) {
+        val game = gameRepository.getGame(id).orElse {
             event.respond(MessageColor.Error, localization.errorMatchNotFound(event.effectiveLocale, id))
             terminateRender()
         }
 
+        val board = game.position.take(move).toBoard(
+            focusWinningRows = true,
+            attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to showTurnNumbers.value),
+        )
+
+        move = move.coerceIn(0, game.position.moves.size)
         localize(locale) {
-            bindParameter("game", matchData.game)
+            bindParameter("game", game)
         }
 
-        move = move.coerceIn(0, matchData.game.position.moves.size)
+        GameData(game, board)
     }
 
     +container {
         render {
-            val (match, board) = matchData ?: return@render
+            val (game, board) = gameData ?: return@render
             val theme = main.getUserTheme(user)
 
             +section(
-                accessory = link("view", emoji = Emojis.GLOBE_WITH_MERIDIANS, url = match.url),
+                accessory = link("view", emoji = Emojis.GLOBE_WITH_MERIDIANS, url = game.url),
                 localizedTextDisplay("title"),
             )
             +separator(invisible = true)
 
             main.run {
-                +match.gameDetails(localization, locale)
+                +game.gameDetails(localization, locale)
 
                 +separator(spacing = Separator.Spacing.LARGE)
                 +mediaGallery(board.asMediaGalleryItem(theme))
@@ -142,7 +138,7 @@ fun UIManager.gameMenu(
             }
         }
 
-        +moveSelector("move", matchData?.game?.position?.moves?.size ?: Int.MAX_VALUE, moveState)
+        +moveSelector("move", gameData?.game?.position?.moves?.size ?: Int.MAX_VALUE, moveState)
         +additionalActions(main, id, notationMenu, showTurnNumbers)
     }
 }

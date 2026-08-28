@@ -46,7 +46,7 @@ private val collapsePositionTransition = listOf(
 )
 
 @Composable
-fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Finished) {
+fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Detailed.Finished) {
     var collapsed by remember(session.id, state) { mutableStateOf(false) }
 
     Card({
@@ -77,7 +77,7 @@ fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Finished) {
 @Composable
 private fun SessionFinishedOverlayHeader(
     collapsed: Boolean,
-    state: SessionState.Finished,
+    state: SessionState.Detailed.Finished,
     onExpandCollapse: () -> Unit,
 ) {
     val winner = state.result.winner
@@ -140,7 +140,7 @@ private fun SessionFinishedOverlayHeader(
 }
 
 @Composable
-private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession, state: SessionState.Finished) {
+private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession, state: SessionState.Detailed.Finished) {
     Div({
         classes("grid", "transition-all")
         classes(springTransition)
@@ -168,7 +168,7 @@ private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession,
 }
 
 @Composable
-private fun SessionFinishedResultSummary(session: LiveSession, state: SessionState.Finished) {
+private fun SessionFinishedResultSummary(session: LiveSession, state: SessionState.Detailed.Finished) {
     val winner = state.result.winner
 
     Div({
@@ -201,7 +201,7 @@ private fun SessionFinishedResultSummary(session: LiveSession, state: SessionSta
 }
 
 @Composable
-private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSession, state: SessionState.Finished) {
+private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSession, state: SessionState.Detailed.Finished) {
     val winner = state.result.winner
 
     SubCard({
@@ -269,7 +269,7 @@ private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, 
 }
 
 @Composable
-private fun SessionFinishedTournamentSummary(session: LiveSession, state: SessionState.Finished) {
+private fun SessionFinishedTournamentSummary(session: LiveSession, state: SessionState.Detailed.Finished) {
     val tournament = session.tournament ?: return
     if (tournament.matchInfo.bestOf < 3) return
 

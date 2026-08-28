@@ -2,11 +2,15 @@ package de.mineking.hexo.hds.implementation.profile
 
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileIdentifier
+import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.utils.coroutines.awaitBothOrNull
+import de.mineking.hexo.utils.coroutines.awaitBoth
+import de.mineking.hexo.utils.types.orElse
+import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.ktor.client.call.body
 import io.ktor.client.request.parameter
 import io.ktor.http.isSuccess
@@ -24,10 +28,15 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
     }
 
     private val requester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileWithStatistics> { id ->
-        val (profile, statistics) = awaitBothOrNull(
-            first = { client.request("/profiles/${id.value}").takeIf { it.status.isSuccess() }?.body<ProfileDto>() },
+        val (profile, statistics) = awaitBoth(
+            first = {
+                client.request("/profiles/${id.value}")
+                    .takeIf { it.status.isSuccess() }
+                    ?.body<ProfileDto>()
+                    .successIfNotNullOrElse(ProfileNotFoundError)
+            },
             second = { getProfileStatistics(id) },
-        ) ?: return@createEntityRequester null
+        ).orElse { return@createEntityRequester null }
 
         ProfileWithStatisticsImpl(client, profile, statistics)
     }
@@ -46,8 +55,13 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
         }
     }
 
-    override suspend fun getProfileStatistics(id: ProfileId) = statisticsRequester.fetch(id)
-    override suspend fun getProfile(id: ProfileId) = requester.fetch(id)
+    override suspend fun getProfileStatistics(id: ProfileId) = statisticsRequester.fetch(id).successIfNotNullOrElse(ProfileNotFoundError)
+    override suspend fun getProfile(id: ProfileIdentifier) = when (id) {
+        is ProfileIdentifier.Id -> requester.fetch(id.id)
+        is ProfileIdentifier.Name -> getProfilesByName(id.name)
+            .firstOrNull { it.displayName == id.name }
+            ?.withStatistics()
+    }.successIfNotNullOrElse(ProfileNotFoundError)
 
     override suspend fun getProfilesByName(name: String) = searchRequester.fetch(name) ?: emptyList()
 }

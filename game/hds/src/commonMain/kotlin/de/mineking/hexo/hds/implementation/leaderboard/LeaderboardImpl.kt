@@ -1,10 +1,13 @@
 package de.mineking.hexo.hds.implementation.leaderboard
 
+import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.leaderboard.Leaderboard
 import de.mineking.hexo.game.model.leaderboard.LeaderboardEntry
 import de.mineking.hexo.game.model.profile.ProfileGameStatistics
 import de.mineking.hexo.game.model.profile.ProfileRating
+import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.orThrow
 
 internal class LeaderboardImpl(
     private val client: HdsApiClient,
@@ -29,5 +32,7 @@ internal class LeaderboardEntryImpl(
     override val rating = ProfileRating(rank, dto.elo)
     override val totalGames = ProfileGameStatistics(dto.gamesPlayed, dto.gamesWon)
 
-    override suspend fun retrieveProfile() = client.profileRepository.getProfile(profileId)
+    override suspend fun retrieveProfile() = client.profileRepository
+        .getProfileById(profileId)
+        .orThrow { EntityNotFoundException() }
 }

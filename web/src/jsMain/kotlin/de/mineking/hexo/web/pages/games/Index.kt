@@ -14,6 +14,9 @@ import com.varabyte.kobweb.core.init.InitRouteContext
 import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.Game
+import de.mineking.hexo.game.model.game.rated
+import de.mineking.hexo.utils.types.Selector
+import de.mineking.hexo.utils.types.page
 import de.mineking.hexo.web.board.Player
 import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.components.ActionButton
@@ -104,7 +107,10 @@ private fun GameList(
 
     LaunchedEffect(finishedGameRepository, page, filter) {
         loading = true
-        games = finishedGameRepository.getHistory(page, PAGE_SIZE, filter.rated)
+        games = finishedGameRepository.getGlobalHistory(
+            Selector.page(page, PAGE_SIZE)
+                .rated(filter.rated),
+        ).entries
         loading = false
     }
 

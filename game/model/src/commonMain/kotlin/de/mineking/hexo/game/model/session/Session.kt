@@ -25,11 +25,22 @@ class SessionReference(
 }
 
 sealed interface SessionState {
-    data object Lobby : SessionState
+    sealed interface Live : Detailed
 
-    sealed interface LiveSessionState : SessionState
-    data class InGame(val currentTurn: SessionTurn) : LiveSessionState
-    data class Finished(val result: GameResult, val rematchAcceptedPlayers: List<LiveSessionPlayer>) : LiveSessionState
+    sealed interface Detailed : SessionState {
+        data class InGame(val currentTurn: SessionTurn) : SessionState.InGame, Live
+        data class Finished(val result: GameResult, val rematchAcceptedPlayers: List<LiveSessionPlayer>) : SessionState.Finished, Live
+    }
+
+    data object Lobby : Detailed
+
+    sealed interface InGame : SessionState {
+        companion object : InGame
+    }
+
+    sealed interface Finished : SessionState {
+        companion object : Finished
+    }
 }
 
 interface Session {
@@ -48,13 +59,18 @@ interface Session {
 
 fun Session.hasStarted() = startedAt != null
 
-interface LobbySession : Session {
+interface DetailedSession : Session {
+    override val state: SessionState.Detailed
+}
+
+interface LobbySession : DetailedSession {
+    override val state: SessionState.Lobby get() = SessionState.Lobby
     override val startedAt: Nothing? get() = null
 }
 
-interface LiveSession : Session {
+interface LiveSession : DetailedSession {
     override val players: List<LiveSessionPlayer>
-    override val state: SessionState.LiveSessionState
+    override val state: SessionState.Live
 
     override val startedAt: Instant
 

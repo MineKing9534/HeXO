@@ -5,6 +5,8 @@ import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.InvocationKind
 import kotlin.contracts.contract
 
+interface IError
+
 @Serializable
 sealed interface Result<out T, out E : IError> {
     @Serializable
@@ -14,7 +16,22 @@ sealed interface Result<out T, out E : IError> {
     data class Error<out E : IError>(val error: E) : Result<Nothing, E>
 }
 
-interface IError
+fun <T : Any, E : IError> T?.successIfNotNullOrElse(error: E) = when (this) {
+    null -> Result.Error(error)
+    else -> Result.Success(this)
+}
+
+@OptIn(ExperimentalContracts::class)
+inline fun <T, S, E : IError> Result<T, E>.flatMap(mapper: (T) -> Result<S, E>): Result<S, E> {
+    contract {
+        callsInPlace(mapper, InvocationKind.AT_MOST_ONCE)
+    }
+
+    return when {
+        isSuccess() -> mapper(this.value)
+        else -> this
+    }
+}
 
 @OptIn(ExperimentalContracts::class)
 inline fun <T, S, E : IError> Result<T, E>.map(mapper: (T) -> S): Result<S, E> {

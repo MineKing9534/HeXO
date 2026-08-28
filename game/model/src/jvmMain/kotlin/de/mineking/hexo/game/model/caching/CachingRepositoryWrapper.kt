@@ -1,12 +1,12 @@
-package de.mineking.hexo.hds.implementation.caching
+package de.mineking.hexo.game.model.caching
 
+import de.mineking.hexo.game.model.RepositoryWrapper
 import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.leaderboard.LeaderboardRepository
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.tournament.TournamentRepository
-import de.mineking.hexo.hds.implementation.RepositoryWrapper
 
 private const val DEFAULT_CACHE_SIZE = 16L
 
