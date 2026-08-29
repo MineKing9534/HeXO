@@ -9,6 +9,8 @@ import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.utils.types.Result
 
 internal class CachingFormationRepository(val delegate: FormationRepository, cacheSize: Long) : FormationRepository {
+    override val url by delegate::url
+
     private val cache = Caffeine.newBuilder()
         .maximumSize(cacheSize)
         .asCache<FormationId, Result<Formation, FormationQueryError>>()

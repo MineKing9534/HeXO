@@ -5,6 +5,7 @@ import de.mineking.hexo.game.model.game.rated
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
+import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.orThrow
@@ -15,7 +16,7 @@ internal class ProfileImpl(
     private val dto: ProfileDto,
 ) : Profile {
     override val id = dto.id
-    override val url = "${client.host}/profile/${id.value}"
+    override val url = client.profileRepository.urlOf(id)
     override val displayName = dto.username
     override val image = dto.image
     override val registeredAt = dto.registeredAt

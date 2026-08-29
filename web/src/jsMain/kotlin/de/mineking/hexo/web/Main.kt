@@ -9,7 +9,7 @@ import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.init.InitKobweb
 import com.varabyte.kobweb.core.init.InitKobwebContext
 import com.varabyte.kobweb.core.isExporting
-import de.mineking.hexo.game.model.HdsRepositoryContainer
+import de.mineking.hexo.game.model.RepositoryContainer
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.socket.SocketIOOptions
 import de.mineking.hexo.hds.implementation.socket.connectSocketClient
@@ -21,7 +21,7 @@ import de.mineking.hexo.web.web.BuildConfig
 import kotlinx.browser.localStorage
 import org.jetbrains.compose.web.dom.Main
 
-private val LocalHdsApiRepositories = staticCompositionLocalOf<HdsRepositoryContainer?> { null }
+private val LocalHdsApiRepositories = staticCompositionLocalOf<RepositoryContainer?> { null }
 private val LocalSoundPlayer = staticCompositionLocalOf<SoundPlayer> { error("SoundPlayer not initialized!") }
 private val LocalWatchPartyController = staticCompositionLocalOf<WatchPartyController> { error("SessionSyncService not initialized!") }
 

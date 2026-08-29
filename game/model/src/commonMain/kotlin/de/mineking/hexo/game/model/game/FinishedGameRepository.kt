@@ -1,5 +1,6 @@
 package de.mineking.hexo.game.model.game
 
+import de.mineking.hexo.game.model.EntityRepository
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileQueryError
 import de.mineking.hexo.utils.types.IError
@@ -17,7 +18,7 @@ fun FinishedGameSelector.rated(rated: Boolean?) = adjustFilter(::FinishedGameFil
 sealed interface GameQueryError : IError
 data object GameNotFoundError : GameQueryError
 
-interface FinishedGameRepository {
+interface FinishedGameRepository : EntityRepository<FinishedGame> {
     suspend fun getGame(id: GameId): Result<FinishedGameWithPosition, GameQueryError>
 
     suspend fun getGlobalHistory(selector: FinishedGameSelector = Selector): QueryResult<FinishedGame>

@@ -12,6 +12,7 @@ import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.PlayerId
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.getProfileById
+import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.utils.types.orThrow
 
@@ -53,7 +54,7 @@ internal class FinishedGameImpl(
 
     override val id = dto.id
     override val startedAt = dto.startedAt
-    override val url = "${client.host}/games/${dto.id.value}"
+    override val url = client.finishedGameRepository.urlOf(id)
     override val result = GameResult(
         winner = dto.result.winningPlayerId?.let { getPlayerById(it) },
         duration = dto.result.duration,

@@ -20,6 +20,7 @@ import de.mineking.hexo.game.model.session.SessionGame
 import de.mineking.hexo.game.model.session.SessionState
 import de.mineking.hexo.game.model.session.SessionTurn
 import de.mineking.hexo.game.model.session.hasStarted
+import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.Instant
 import de.mineking.hexo.hds.implementation.game.GameOptionsDto
@@ -30,6 +31,8 @@ import kotlin.time.Clock
 
 internal abstract class BaseSessionImpl : Session {
     internal abstract val client: HdsApiClient
+
+    override val url get() = client.sessionRepository.urlOf(id)
 
     override fun observe() = client.sessionRepository.observeSession(id)
 }

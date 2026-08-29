@@ -20,6 +20,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 
 internal class TournamentRepositoryImpl(private val client: HdsApiClient) : TournamentRepository {
+    override val url = "${client.host}/tournaments"
+
     init {
         client.socketClient?.listen<TournamentUpdate> { event ->
             client.coroutineScope.launch {

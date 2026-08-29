@@ -10,6 +10,8 @@ import io.ktor.client.call.body
 import io.ktor.http.isSuccess
 
 internal class FormationRepositoryImpl(private val client: HdsApiClient) : FormationRepository {
+    override val url = "${client.host}/sandbox"
+
     private val requester = client.entityRequesterFactory.createEntityRequester<FormationId, Formation> { id ->
         val response = client.request("/sandbox-positions/${id.value}")
 

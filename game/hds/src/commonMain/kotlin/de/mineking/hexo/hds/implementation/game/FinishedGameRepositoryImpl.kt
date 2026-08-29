@@ -17,6 +17,8 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 
 internal class FinishedGameRepositoryImpl(private val client: HdsApiClient) : FinishedGameRepository {
+    override val url = "${client.host}/games"
+
     private val requester = client.entityRequesterFactory.createEntityRequester<GameId, FinishedGameWithPosition> {
         val response = client.request("/finished-games/${it.value}")
 

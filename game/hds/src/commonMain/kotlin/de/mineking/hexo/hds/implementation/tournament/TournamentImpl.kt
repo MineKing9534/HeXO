@@ -14,6 +14,7 @@ import de.mineking.hexo.game.model.tournament.TournamentMatchResult
 import de.mineking.hexo.game.model.tournament.TournamentMatchState
 import de.mineking.hexo.game.model.tournament.TournamentParticipant
 import de.mineking.hexo.game.model.tournament.TournamentStanding
+import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.utils.types.orThrow
 
@@ -23,7 +24,7 @@ internal class TournamentImpl(
 ) : Tournament {
     override val info = TournamentInfo(
         id = dto.id,
-        url = "${client.host}/tournaments/${dto.id.value}",
+        url = client.tournamentRepository.urlOf(dto.id),
         name = dto.name,
     )
     override val description = dto.description

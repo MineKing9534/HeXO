@@ -9,7 +9,7 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.parse.hds.HdsBoardParser
+import de.mineking.hexo.board.parse.RemoteBoardParser
 import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.web.components.Badge
@@ -115,7 +115,7 @@ private fun ConfirmButton(
     val coroutineScope = rememberCoroutineScope()
     var loading by remember { mutableStateOf(false) }
 
-    val parser = remember { HdsBoardParser(formationRepository, finishedGameRepository) }
+    val parser = remember { RemoteBoardParser(formationRepository, finishedGameRepository) }
 
     Button({
         if (!valid) disabled()

@@ -3,9 +3,9 @@
 package de.mineking.hexo.launcher
 
 import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.RemoteBoardParser
 import de.mineking.hexo.board.parse.cached
 import de.mineking.hexo.board.parse.focusWinningRows
-import de.mineking.hexo.board.parse.hds.HdsBoardParser
 import de.mineking.hexo.board.parse.or
 import de.mineking.hexo.board.render.caching
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
@@ -45,7 +45,7 @@ fun main() {
 
     val userThemeRepository = database?.let { UserThemeRepository(it) }
 
-    val parser = (HdsBoardParser(client) or BoardParser.Default)
+    val parser = (RemoteBoardParser(client) or BoardParser.Default)
         .focusWinningRows()
         .cached()
 

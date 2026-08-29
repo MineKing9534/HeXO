@@ -4,6 +4,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.GamePosition
 import de.mineking.hexo.board.Move
+import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileId
@@ -18,7 +19,7 @@ import kotlin.time.Instant
 
 @JvmInline
 @Serializable
-value class GameId(val value: String)
+value class GameId(override val value: String) : EntityId
 
 class GameReference(
     private val repository: FinishedGameRepository,

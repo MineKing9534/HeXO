@@ -14,7 +14,6 @@ dependencies {
 
     implementation(projects.board)
     implementation(projects.board.parse)
-    implementation(projects.board.parse.hds)
     implementation(projects.board.render)
 
     implementation(projects.database)

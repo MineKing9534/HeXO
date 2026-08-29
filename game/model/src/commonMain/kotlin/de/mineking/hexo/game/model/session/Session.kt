@@ -1,6 +1,8 @@
 package de.mineking.hexo.game.model.session
 
 import de.mineking.hexo.board.moves
+import de.mineking.hexo.game.model.Entity
+import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.LiveDuration
 import de.mineking.hexo.game.model.game.GameOptions
@@ -15,7 +17,7 @@ import kotlin.time.Instant
 
 @JvmInline
 @Serializable
-value class SessionId(val value: String)
+value class SessionId(override val value: String) : EntityId
 
 class SessionReference(
     private val repository: SessionRepository,
@@ -43,8 +45,9 @@ sealed interface SessionState {
     }
 }
 
-interface Session {
-    val id: SessionId
+interface Session : Entity<SessionId> {
+    override val id: SessionId
+    override val url: String
     val gameOptions: GameOptions
     val tournament: TournamentMatchSnapshot?
 

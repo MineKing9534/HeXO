@@ -14,6 +14,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 internal class CachingTournamentRepository(val delegate: TournamentRepository, cacheSize: Long) : TournamentRepository {
+    override val url by delegate::url
+
     private val cache = Caffeine.newBuilder()
         .maximumSize(cacheSize)
         .asCache<TournamentId, Tournament>()

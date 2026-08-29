@@ -1,5 +1,7 @@
 package de.mineking.hexo.game.model.profile
 
+import de.mineking.hexo.game.model.Entity
+import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.utils.types.QueryResult
 import kotlinx.serialization.Serializable
@@ -8,11 +10,11 @@ import kotlin.time.Instant
 
 @JvmInline
 @Serializable
-value class ProfileId(val value: String)
+value class ProfileId(override val value: String) : EntityId
 
-interface Profile {
-    val id: ProfileId
-    val url: String
+interface Profile : Entity<ProfileId> {
+    override val id: ProfileId
+    override val url: String
     val displayName: String
     val image: String?
     val registeredAt: Instant

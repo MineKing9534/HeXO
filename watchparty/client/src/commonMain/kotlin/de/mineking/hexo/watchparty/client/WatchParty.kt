@@ -4,9 +4,11 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.game.model.Entity
 import de.mineking.hexo.watchparty.common.WatchPartyCellRequest
 import de.mineking.hexo.watchparty.common.WatchPartyClearHighlightsRequest
 import de.mineking.hexo.watchparty.common.WatchPartyData
+import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.watchparty.common.WatchPartyLineHighlightRequest
 import de.mineking.hexo.watchparty.common.WatchPartyMoveCountRequest
 import de.mineking.hexo.watchparty.common.WatchPartyNavigateRequest
@@ -22,9 +24,10 @@ import kotlinx.coroutines.flow.StateFlow
 data class WatchPartyCloseReason(val closedByServer: Boolean)
 
 class WatchParty internal constructor(
+    private val client: WatchPartyClient,
     private var wsSession: DefaultClientWebSocketSession,
     data: WatchPartyData,
-) {
+) : Entity<WatchPartyId> {
     private val onClose = mutableListOf<(WatchPartyCloseReason) -> Unit>()
     private var closed = false
 
@@ -36,7 +39,8 @@ class WatchParty internal constructor(
 
     internal val isClosed get() = closed
 
-    val id get() = data.value.id
+    override val id get() = data.value.id
+    override val url get() = "${client.host}/watchparty/${id.value}"
 
     internal fun onClosed(reason: WatchPartyCloseReason) {
         closed = true

@@ -1,6 +1,8 @@
 package de.mineking.hexo.game.model.tournament
 
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.game.model.Entity
+import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.GameReference
 import de.mineking.hexo.game.model.profile.Profile
@@ -9,11 +11,10 @@ import de.mineking.hexo.game.model.session.SessionReference
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
-import kotlin.uuid.Uuid
 
 @JvmInline
 @Serializable
-value class TournamentId(val value: Uuid)
+value class TournamentId(override val value: String) : EntityId
 
 @JvmInline
 @Serializable
@@ -25,8 +26,9 @@ data class TournamentInfo(
     val name: String,
 )
 
-interface Tournament {
-    val id get() = info.id
+interface Tournament : Entity<TournamentId> {
+    override val id get() = info.id
+    override val url get() = info.url
     val info: TournamentInfo
     val description: String?
     val format: TournamentFormat

@@ -7,7 +7,7 @@ import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.tournament.TournamentRepository
 
-interface HdsRepositoryContainer {
+interface RepositoryContainer {
     val formationRepository: FormationRepository
     val finishedGameRepository: FinishedGameRepository
     val leaderboardRepository: LeaderboardRepository

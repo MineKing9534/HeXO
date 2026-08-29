@@ -15,7 +15,6 @@ rootProject.name = "HeXO"
 
 include(":board")
 include(":board:parse")
-include(":board:parse:hds")
 include(":board:render")
 include(":board:latex")
 include(":board:latex:processor")

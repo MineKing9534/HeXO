@@ -1,6 +1,6 @@
 package de.mineking.hexo.hds.implementation
 
-import de.mineking.hexo.game.model.HdsRepositoryContainer
+import de.mineking.hexo.game.model.RepositoryContainer
 import de.mineking.hexo.game.model.RepositoryWrapper
 import de.mineking.hexo.hds.implementation.formation.FormationRepositoryImpl
 import de.mineking.hexo.hds.implementation.game.FinishedGameRepositoryImpl
@@ -46,7 +46,7 @@ class HdsApiClient(
     private val httpClient: HttpClient = createDefaultHttpClient(),
     internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope).logRequestErrors(),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
-) : HdsRepositoryContainer {
+) : RepositoryContainer {
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
         httpClient.request("$host/api$path", builder)
 

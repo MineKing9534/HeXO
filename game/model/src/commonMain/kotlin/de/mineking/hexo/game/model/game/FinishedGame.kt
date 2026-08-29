@@ -2,10 +2,11 @@ package de.mineking.hexo.game.model.game
 
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.GamePosition
+import de.mineking.hexo.game.model.Entity
 import kotlin.time.Instant
 
-interface FinishedGame : Game {
-    val url: String
+interface FinishedGame : Game, Entity<GameId> {
+    override val url: String
 
     override val result: GameResult
     override val players: List<FinishedGamePlayer>

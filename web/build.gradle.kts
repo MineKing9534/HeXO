@@ -39,7 +39,6 @@ kotlin {
             implementation(projects.board.render.compose)
 
             implementation(projects.board.parse)
-            implementation(projects.board.parse.hds)
             implementation(projects.game.hds)
 
             implementation(projects.watchparty.client)

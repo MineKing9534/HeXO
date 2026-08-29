@@ -16,7 +16,7 @@ import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
-import de.mineking.hexo.game.model.HdsRepositoryContainer
+import de.mineking.hexo.game.model.RepositoryContainer
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
@@ -46,7 +46,7 @@ private val boardParser = BoardParser.Default.focusWinningRows()
 
 @Composable
 fun Sidebar(
-    repositories: HdsRepositoryContainer?,
+    repositories: RepositoryContainer?,
     placementMode: MutableState<CellPlacementMode>,
     board: Board,
     onBoardChange: (Board) -> Unit,
@@ -168,7 +168,7 @@ private fun ParseStatus(valid: Boolean) {
 
 @Composable
 private fun NotationField(
-    repositories: HdsRepositoryContainer?,
+    repositories: RepositoryContainer?,
     notation: String,
     parseError: String?,
     onImportPosition: () -> Unit,
@@ -206,7 +206,7 @@ private fun NotationField(
 
 @Composable
 private fun NotationActions(
-    repositories: HdsRepositoryContainer?,
+    repositories: RepositoryContainer?,
     notation: String,
     onImportPosition: () -> Unit,
     onChange: (String) -> Unit,

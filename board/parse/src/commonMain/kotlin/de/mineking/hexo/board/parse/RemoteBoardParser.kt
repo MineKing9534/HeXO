@@ -1,29 +1,26 @@
-package de.mineking.hexo.board.parse.hds
+package de.mineking.hexo.board.parse
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.parse.BoardParser
-import de.mineking.hexo.board.parse.LinkParser
-import de.mineking.hexo.board.parse.allowTurnLabels
-import de.mineking.hexo.board.parse.or
 import de.mineking.hexo.board.take
 import de.mineking.hexo.board.toBoard
-import de.mineking.hexo.game.model.HdsRepositoryContainer
+import de.mineking.hexo.game.model.RepositoryContainer
 import de.mineking.hexo.game.model.formation.FormationId
 import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.utils.types.map
 import de.mineking.hexo.utils.types.orThrow
 
-class HdsBoardParser(
+class RemoteBoardParser(
     formationRepository: FormationRepository,
     gameRepository: FinishedGameRepository,
-) : BoardParser by (HdsGameLinkParser(gameRepository) or HdsSandboxLinkParser(formationRepository)).allowTurnLabels() {
-    constructor(repositories: HdsRepositoryContainer) : this(repositories.formationRepository, repositories.finishedGameRepository)
+) : BoardParser by (GameLinkBoardParser(gameRepository) or FormationLinkBoardParser(formationRepository)).allowTurnLabels() {
+    constructor(repositories: RepositoryContainer) : this(repositories.formationRepository, repositories.finishedGameRepository)
 }
 
-class HdsSandboxLinkParser(private val repository: FormationRepository) : LinkParser(prefix = "https://hexo.did.science/sandbox/") {
+class FormationLinkBoardParser(private val repository: FormationRepository) : LinkParser(prefix = repository.urlOf(FormationId(""))) {
     override suspend fun parseLink(param: String): Board {
         return repository.getFormation(FormationId(param))
             .map {
@@ -34,7 +31,7 @@ class HdsSandboxLinkParser(private val repository: FormationRepository) : LinkPa
     }
 }
 
-class HdsGameLinkParser(private val repository: FinishedGameRepository) : LinkParser(prefix = "https://hexo.did.science/games/") {
+class GameLinkBoardParser(private val repository: FinishedGameRepository) : LinkParser(prefix = repository.urlOf(GameId(""))) {
     override suspend fun parseLink(param: String): Board {
         val (id, maxMoves) = param.parseGameLinkParameter()
         return repository.getGame(id)

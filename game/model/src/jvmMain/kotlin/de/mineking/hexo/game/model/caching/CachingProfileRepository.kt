@@ -13,6 +13,8 @@ import de.mineking.hexo.utils.types.Result
 import kotlin.time.Duration.Companion.minutes
 
 internal class CachingProfileRepository(val delegate: ProfileRepository, cacheSize: Long) : ProfileRepository {
+    override val url by delegate::url
+
     private val cache = Caffeine.newBuilder()
         .expireAfterWrite(3.minutes)
         .maximumSize(cacheSize)

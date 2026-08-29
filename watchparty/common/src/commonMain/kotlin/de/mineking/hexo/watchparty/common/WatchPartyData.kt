@@ -1,6 +1,7 @@
 package de.mineking.hexo.watchparty.common
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
 import kotlinx.serialization.SerialName
@@ -9,7 +10,7 @@ import kotlin.jvm.JvmInline
 
 @JvmInline
 @Serializable
-value class WatchPartyId(val value: String)
+value class WatchPartyId(override val value: String) : EntityId
 
 @Serializable
 sealed interface WatchPartyResponse

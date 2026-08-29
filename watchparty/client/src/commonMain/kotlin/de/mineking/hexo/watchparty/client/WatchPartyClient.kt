@@ -51,7 +51,7 @@ fun createDefaultHttpClient(
 }
 
 class WatchPartyClient(
-    private val host: String,
+    internal val host: String,
     private val httpClient: HttpClient = createDefaultHttpClient(),
     private val coroutineScope: CoroutineScope,
 ) {
@@ -105,7 +105,7 @@ class WatchPartyClient(
         connectionId: String? = null,
     ): WatchParty? {
         var connection = connect(id, detachOnClose, connectionId) as? ConnectResult.Connected ?: return null
-        val watchParty = WatchParty(connection.session, connection.initial)
+        val watchParty = WatchParty(this, connection.session, connection.initial)
         val reconnectId = watchParty.id
 
         coroutineScope.launch {

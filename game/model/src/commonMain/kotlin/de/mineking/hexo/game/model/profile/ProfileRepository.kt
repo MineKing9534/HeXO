@@ -1,5 +1,6 @@
 package de.mineking.hexo.game.model.profile
 
+import de.mineking.hexo.game.model.EntityRepository
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
 
@@ -11,7 +12,7 @@ sealed interface ProfileIdentifier {
     data class Name(val name: String) : ProfileIdentifier
 }
 
-interface ProfileRepository {
+interface ProfileRepository : EntityRepository<Profile> {
     suspend fun getProfileStatistics(id: ProfileId): Result<ProfileStatistics, ProfileQueryError>
     suspend fun getProfile(id: ProfileIdentifier): Result<ProfileWithStatistics, ProfileQueryError>
 

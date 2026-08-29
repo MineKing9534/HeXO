@@ -11,6 +11,8 @@ import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.utils.types.Result
 
 internal class CachingFinishedGameRepository(val delegate: FinishedGameRepository, cacheSize: Long) : FinishedGameRepository {
+    override val url by delegate::url
+
     private val cache = Caffeine.newBuilder()
         .maximumSize(cacheSize)
         .asCache<GameId, Result<FinishedGameWithPosition, GameQueryError>>()
