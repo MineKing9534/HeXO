@@ -60,7 +60,9 @@ internal class FinishedGameRepositoryImpl(private val client: HdsApiClient) : Fi
         require((offset == null) == (limit == null))
         val (page, pageSize) = if (offset != null && limit != null) {
             require(offset % limit == 0)
-            offset / limit to limit
+
+            val page = offset / limit + 1
+            page to limit
         } else {
             null to null
         }
