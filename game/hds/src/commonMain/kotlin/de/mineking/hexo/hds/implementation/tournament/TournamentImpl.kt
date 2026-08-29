@@ -56,7 +56,7 @@ internal class TournamentImpl(
 
 internal class TournamentParticipantImpl(
     private val client: HdsApiClient,
-    private val dto: TournamentParticipantDto,
+    dto: TournamentParticipantDto,
     override val standing: TournamentStanding,
 ) : TournamentParticipant {
     override val profileId = dto.profileId
@@ -71,7 +71,7 @@ internal class TournamentParticipantImpl(
 }
 
 internal class TournamentMatchPlayerImpl(
-    private val dto: TournamentMatchSlotDto,
+    dto: TournamentMatchSlotDto,
     override val participant: TournamentParticipant,
     override val wins: Int,
     override val currentColor: CellOwner,

@@ -113,19 +113,20 @@ private fun createPlayerList(
     players.mapIndexed { index, data ->
         LobbySessionPlayerImpl(
             client = client,
-            profileId = data.profileId,
-            displayName = data.displayName,
-            elo = data.elo,
+            dto = data,
             color = CellOwner.entries[index],
             tournamentMatchWins = null,
         )
     }
 } else {
     data class TournamentPlayer(
-        val profileId: ProfileId,
-        val displayName: String,
+        override val profileId: ProfileId,
+        override val displayName: String,
         val tournamentWins: Int,
-    )
+    ) : AbstractSessionPlayerDto {
+        override val playerId = PlayerId("")
+        override val elo = players.find { it.profileId == profileId }?.elo ?: -1
+    }
 
     listOf(
         TournamentPlayer(tournament.leftProfileId, tournament.leftDisplayName, tournament.leftWins),
@@ -133,9 +134,7 @@ private fun createPlayerList(
     ).mapIndexed { index, player ->
         LobbySessionPlayerImpl(
             client = client,
-            profileId = player.profileId,
-            displayName = player.displayName,
-            elo = players.find { it.profileId == player.profileId }?.elo ?: -1,
+            dto = player,
             color = CellOwner.entries[(index + tournament.currentGameNumber + 1) % 2],
             tournamentMatchWins = player.tournamentWins,
         )
@@ -144,19 +143,17 @@ private fun createPlayerList(
 
 internal class LobbySessionPlayerImpl(
     client: HdsApiClient,
-    override val profileId: ProfileId?,
-    override val displayName: String,
+    dto: AbstractSessionPlayerDto,
     override val color: CellOwner,
-    override val elo: Int,
     override val tournamentMatchWins: Int?,
-) : PlayerImpl(client.profileRepository) {
+) : PlayerImpl(client.profileRepository, dto) {
     override val playerId = PlayerId("")
 }
 
 internal class LiveSessionImpl(
     override val client: HdsApiClient,
     override val dto: SessionDto,
-    private val stateDto: SessionStateDto.GameSessionState,
+    stateDto: SessionStateDto.GameSessionState,
     override val gameState: SessionGameStateDto,
 ) : ObservedSessionImpl(), LiveSession {
     internal fun getPlayerById(id: PlayerId) = players.first { it.playerId == id }
@@ -229,16 +226,12 @@ internal class LiveSessionImpl(
 }
 
 internal class LiveSessionPlayerImpl(
-    private val client: HdsApiClient,
-    private val dto: SessionPlayerDto,
+    client: HdsApiClient,
+    dto: SessionPlayerDto,
     override val color: CellOwner,
     override val tournamentMatchWins: Int?,
     override val timeRemaining: LiveDuration?,
-) : LiveSessionPlayer, PlayerImpl(client.profileRepository) {
-    override val playerId = dto.id
-    override val profileId = dto.profileId
-    override val displayName = dto.displayName
-    override val elo = dto.rating.eloScore
+) : LiveSessionPlayer, PlayerImpl(client.profileRepository, dto) {
     override val ratingAdjustment = dto.ratingAdjustment?.let { RatingAdjustment(eloGain = it.eloGain, eloLoss = it.eloLoss) }
     override val connectionStatus = dto.connection.status
 }

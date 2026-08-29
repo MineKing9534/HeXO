@@ -86,14 +86,21 @@ internal data class MoveDto(
 @Serializable
 internal data class PlayerTile(val color: Color)
 
+internal interface AbstractPlayerDto {
+    val playerId: PlayerId
+    val profileId: ProfileId?
+    val displayName: String
+    val elo: Int
+}
+
 @Serializable
 internal data class PlayerDto(
-    val playerId: PlayerId,
-    val profileId: ProfileId,
-    val displayName: String,
-    val elo: Int,
+    override val playerId: PlayerId,
+    override val profileId: ProfileId,
+    override val displayName: String,
+    override val elo: Int,
     val eloChange: Int?,
-)
+) : AbstractPlayerDto
 
 @Serializable
 internal data class GameResultDto(

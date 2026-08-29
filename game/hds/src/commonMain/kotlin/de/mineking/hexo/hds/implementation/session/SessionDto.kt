@@ -9,6 +9,7 @@ import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
 import de.mineking.hexo.hds.implementation.Instant
 import de.mineking.hexo.hds.implementation.LiveDuration
 import de.mineking.hexo.hds.implementation.TimeControl
+import de.mineking.hexo.hds.implementation.game.AbstractPlayerDto
 import de.mineking.hexo.hds.implementation.game.GameOptionsDto
 import de.mineking.hexo.hds.implementation.game.PlayerTile
 import de.mineking.hexo.hds.implementation.game.TournamentMatchSnapshotDto
@@ -17,10 +18,10 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.JsonClassDiscriminator
 
-internal interface AbstractSessionPlayerDto {
-    val profileId: ProfileId?
-    val displayName: String
-    val elo: Int
+internal interface AbstractSessionPlayerDto : AbstractPlayerDto {
+    override val profileId: ProfileId?
+    override val displayName: String
+    override val elo: Int
 }
 
 @Serializable
@@ -28,7 +29,9 @@ internal data class LobbyPlayerDto(
     override val profileId: ProfileId?,
     override val displayName: String,
     override val elo: Int,
-) : AbstractSessionPlayerDto
+) : AbstractSessionPlayerDto {
+    override val playerId = PlayerId("")
+}
 
 @Serializable
 internal data class SessionPlayerDto(
@@ -39,6 +42,7 @@ internal data class SessionPlayerDto(
     val ratingAdjustment: RatingAdjustment?,
     val connection: SessionPlayerConnectionDto,
 ) : AbstractSessionPlayerDto {
+    override val playerId = id
     override val elo = rating.eloScore
 
     @Serializable

@@ -6,8 +6,8 @@ import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
 
 internal class FormationImpl(
-    private val client: HdsApiClient,
-    private val dto: FormationDto,
+    client: HdsApiClient,
+    dto: FormationDto,
 ) : Formation {
     override val id = dto.id
     override val url = client.formationRepository.urlOf(id)

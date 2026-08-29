@@ -67,7 +67,13 @@ internal class FinishedGameImpl(
 
 internal abstract class PlayerImpl(
     private val repository: ProfileRepository,
+    dto: AbstractPlayerDto,
 ) : Player {
+    override val playerId = dto.playerId
+    override val profileId = dto.profileId?.takeIf { it.value != playerId.value }
+    override val displayName = dto.displayName
+    override val elo = dto.elo
+
     override suspend fun fetchProfile() = profileId
         ?.let {
             repository
@@ -77,14 +83,10 @@ internal abstract class PlayerImpl(
 }
 
 internal class FinishedGamePlayerImpl(
-    private val client: HdsApiClient,
-    private val dto: PlayerDto,
+    client: HdsApiClient,
+    dto: PlayerDto,
     override val color: CellOwner,
     override val tournamentMatchWins: Int?,
-) : FinishedGamePlayer, PlayerImpl(client.profileRepository) {
-    override val playerId = dto.playerId
-    override val profileId = dto.profileId
-    override val displayName = dto.displayName
-    override val elo = dto.elo
+) : FinishedGamePlayer, PlayerImpl(client.profileRepository, dto) {
     override val eloChange = dto.eloChange
 }

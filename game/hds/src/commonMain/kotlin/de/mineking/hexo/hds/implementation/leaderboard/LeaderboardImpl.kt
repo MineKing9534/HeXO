@@ -11,7 +11,7 @@ import de.mineking.hexo.utils.types.orThrow
 
 internal class LeaderboardImpl(
     private val client: HdsApiClient,
-    private val dto: LeaderboardDto,
+    dto: LeaderboardDto,
 ) : Leaderboard {
     override val generatedAt = dto.generatedAt
     override val nextRefreshAt = dto.nextRefreshAt
@@ -23,7 +23,7 @@ internal class LeaderboardImpl(
 
 internal class LeaderboardEntryImpl(
     private val client: HdsApiClient,
-    private val dto: LeaderboardEntryDto,
+    dto: LeaderboardEntryDto,
     rank: Int,
 ) : LeaderboardEntry {
     override val profileId = dto.profileId
