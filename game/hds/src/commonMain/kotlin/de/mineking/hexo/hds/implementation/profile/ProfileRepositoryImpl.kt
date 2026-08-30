@@ -8,39 +8,41 @@ import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.utils.EntityRequestException
+import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.utils.coroutines.awaitBoth
-import de.mineking.hexo.utils.types.orElse
+import de.mineking.hexo.utils.types.map
+import de.mineking.hexo.utils.types.orNull
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.ktor.client.call.body
 import io.ktor.client.request.parameter
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 
 internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : ProfileRepository {
     override val url = "${client.host}/profile"
 
-    private val statisticsRequester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics> { id ->
+    private val statisticsRequester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics?> { id ->
         val response = client.request("/profiles/${id.value}/statistics")
 
         @Serializable
         data class Response(val statistics: ProfileStatisticsDto)
 
-        if (!response.status.isSuccess()) return@createEntityRequester null
-        response.body<Response>().statistics
+        response.parseBodyOrNull<Response, ProfileStatistics> { it.statistics }
     }
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileWithStatistics> { id ->
-        val (profile, statistics) = awaitBoth(
+    private val requester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileWithStatistics?> { id ->
+        awaitBoth(
             first = {
                 client.request("/profiles/${id.value}")
-                    .takeIf { it.status.isSuccess() }
-                    ?.body<ProfileDto>()
+                    .parseBodyOrNull<ProfileDto, ProfileDto> { it }
                     .successIfNotNullOrElse(ProfileNotFoundError)
             },
             second = { getProfileStatistics(id) },
-        ).orElse { return@createEntityRequester null }
-
-        ProfileWithStatisticsImpl(client, profile, statistics)
+        ).map { (profile, statistics) ->
+            ProfileWithStatisticsImpl(client, profile, statistics)
+        }.orNull()
     }
 
     private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<Profile>> { name ->
@@ -51,7 +53,7 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
         @Serializable
         data class Response(val users: List<ProfileDto>)
 
-        if (!response.status.isSuccess()) return@createEntityRequester null
+        if (!response.status.isSuccess()) throw EntityRequestException(response.bodyAsText())
         response.body<Response>().users.map {
             ProfileImpl(client, it)
         }
@@ -65,5 +67,5 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
             ?.withStatistics()
     }.successIfNotNullOrElse(ProfileNotFoundError)
 
-    override suspend fun getProfilesByName(name: String) = searchRequester.fetch(name) ?: emptyList()
+    override suspend fun getProfilesByName(name: String) = searchRequester.fetch(name)
 }

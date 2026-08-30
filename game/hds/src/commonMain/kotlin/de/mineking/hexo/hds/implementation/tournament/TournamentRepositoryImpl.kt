@@ -9,11 +9,10 @@ import de.mineking.hexo.game.model.tournament.isTerminal
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.socket.TournamentUpdate
 import de.mineking.hexo.hds.implementation.socket.listen
+import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
 import de.mineking.hexo.utils.types.isSuccess
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
-import io.ktor.client.call.body
-import io.ktor.http.isSuccess
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -33,11 +32,10 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
     private val cacheLock = SynchronizedObject()
     private val cache = mutableMapOf<TournamentId, MutableStateFlow<EntityState<Tournament>>>()
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament> { id ->
+    private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament?> { id ->
         val response = client.request("/tournaments/${id.value}")
-        val tournament = when {
-            response.status.isSuccess() -> TournamentImpl(client, response.body())
-            else -> null
+        val tournament = response.parseBodyOrNull<TournamentDto, Tournament> {
+            TournamentImpl(client, it)
         }
 
         cacheLock.withLock {

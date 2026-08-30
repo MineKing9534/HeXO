@@ -20,11 +20,11 @@ import de.mineking.hexo.hds.implementation.socket.SessionWatchStarted
 import de.mineking.hexo.hds.implementation.socket.SocketIOClient
 import de.mineking.hexo.hds.implementation.socket.SocketListener
 import de.mineking.hexo.hds.implementation.socket.listen
+import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
-import io.ktor.http.isSuccess
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -43,9 +43,10 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
     private val requester = client.entityRequesterFactory.createEntityRequester<SessionId, Session?> { id ->
         val response = client.request("/session/${id.value}")
-        if (!response.status.isSuccess()) return@createEntityRequester null
 
-        DetailedSessionImpl(client, response.body())
+        response.parseBodyOrNull<SessionDto, Session> {
+            DetailedSessionImpl(client, it)
+        }
     }
 
     init {

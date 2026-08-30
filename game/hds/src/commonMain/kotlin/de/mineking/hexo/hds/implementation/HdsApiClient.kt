@@ -10,7 +10,6 @@ import de.mineking.hexo.hds.implementation.session.SessionRepositoryImpl
 import de.mineking.hexo.hds.implementation.socket.SocketIOClient
 import de.mineking.hexo.hds.implementation.tournament.TournamentRepositoryImpl
 import de.mineking.hexo.hds.implementation.utils.EntityRequesterFactory
-import de.mineking.hexo.hds.implementation.utils.logRequestErrors
 import de.mineking.hexo.utils.coroutines.createCoroutineScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
@@ -44,7 +43,7 @@ class HdsApiClient(
     internal val host: String = DEFAULT_HOST,
     internal val socketClient: SocketIOClient?,
     private val httpClient: HttpClient = createDefaultHttpClient(),
-    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope).logRequestErrors(),
+    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
 ) : RepositoryContainer {
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =

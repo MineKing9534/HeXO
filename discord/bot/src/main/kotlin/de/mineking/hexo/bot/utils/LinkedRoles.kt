@@ -27,6 +27,8 @@ import de.mineking.hexo.utils.types.page
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.takeWhile
+import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
@@ -56,7 +58,7 @@ class LinkedRolesUpdateService(
                         Selector
                             .page(1, 20)
                             .rated(true),
-                    ).entries.takeWhile { it.id != lastSeenGame }
+                    ).takeWhile { it.id != lastSeenGame }.toList()
 
                     if (finishedGames.isNotEmpty()) {
                         finishedGames

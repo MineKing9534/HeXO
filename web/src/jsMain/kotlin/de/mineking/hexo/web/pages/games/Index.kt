@@ -40,6 +40,7 @@ import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsRepositories
 import kotlinx.browser.window
+import kotlinx.coroutines.flow.toList
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
@@ -110,7 +111,7 @@ private fun GameList(
         games = finishedGameRepository.getGlobalHistory(
             Selector.page(page, PAGE_SIZE)
                 .rated(filter.rated),
-        ).entries
+        ).toList()
         loading = false
     }
 
