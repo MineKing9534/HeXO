@@ -60,14 +60,14 @@ fun RawBoard(
     var hoveredCell by remember { mutableStateOf<CellCoordinate?>(null) }
 
     val zoom = viewport?.zoom ?: 0.2
-    val layout = remember(board, zoom) {
+    val layout = remember(board) {
         board.createRenderLayout(
-            layoutRadius = BOARD_LAYOUT_RADIUS * zoom,
+            layoutRadius = BOARD_LAYOUT_RADIUS,
             bounds = BoardRenderBounds.IncludeSurroundings,
             visibleRadius = DEFAULT_VISIBLE_RADIUS,
         )
     }
-    val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
+    val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center).also { onViewportChange(it) }
 
     val renderingHook by rememberUpdatedState(renderingHook)
 
@@ -141,13 +141,14 @@ private fun HTMLCanvasElement.drawBoard(
     cellHoverColor: Color?,
     renderingHook: BoardRenderingHook?,
 ) {
-    width = clientWidth
-    height = clientHeight
+    if (width != clientWidth) width = clientWidth
+    if (height != clientHeight) height = clientHeight
 
     drawBoard(
         layout = layout,
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this),
+        scale = viewport.zoom,
         theme = theme,
         renderingHook = renderingHook + BoardRenderingHook.middleLayer {
             if (hoveredCell == null || cellHoverColor == null) return@middleLayer
