@@ -74,7 +74,7 @@ class DiscordUserAuthenticationRepository(
         if (tokens?.isExpired() != true) return tokens
         val updated = tokens.refresh()
 
-        return database.transaction(readOnly = true) {
+        return database.transaction(readOnly = false) {
             if (updated == null) {
                 DiscordUserTokensTable.deleteWhere { DiscordUserTokensTable.id eq discordUserId }
                 null
