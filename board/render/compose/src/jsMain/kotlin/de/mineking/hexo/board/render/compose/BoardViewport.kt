@@ -18,7 +18,6 @@ import org.w3c.dom.events.KeyboardEvent
 import org.w3c.dom.events.MouseEvent
 import org.w3c.dom.events.WheelEvent
 import kotlin.math.sqrt
-import kotlin.reflect.KProperty
 
 internal const val BOARD_RENDER_PADDING = 128
 
@@ -105,7 +104,7 @@ internal fun BoardInteractions(
         val listeners = BoardEventListeners(
             canvas = canvas,
             renderLayout = { currentRenderLayout() },
-            viewport = { currentViewport() },
+            sourceViewport = { currentViewport() },
             onViewportChange = { onViewportChange(it) },
             onDraggingChange = { onDraggingChange(it) },
             onCellHoverChange = { onCellHoverChange(it) },
@@ -118,26 +117,19 @@ internal fun BoardInteractions(
     }
 }
 
-private operator fun <T> (() -> T).getValue(thisRef: Any?, property: KProperty<*>) = this()
-private data class MutableFunctionDelegate<T>(val get: () -> T, val set: (T) -> Unit) {
-    operator fun getValue(thisRef: Any?, property: KProperty<*>) = get()
-    operator fun setValue(thisRef: Any?, property: KProperty<*>, value: T) = set(value)
-}
-
-private fun <T> (() -> T).withSetter(set: (T) -> Unit) = MutableFunctionDelegate(this, set)
-
 private class BoardEventListeners(
     private val canvas: HTMLCanvasElement,
-    renderLayout: () -> BoardRenderLayout,
-    viewport: () -> BoardViewport,
-    onViewportChange: (BoardViewport) -> Unit,
+    private val renderLayout: () -> BoardRenderLayout,
+    private val sourceViewport: () -> BoardViewport,
+    private val onViewportChange: (BoardViewport) -> Unit,
     private val onDraggingChange: (Boolean) -> Unit,
     private val onCellHoverChange: (CellCoordinate?) -> Unit,
     private val onCellClick: (BoardLeftClickEvent) -> Unit,
     private val onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
-    private val renderLayout by renderLayout
-    private var viewport by viewport.withSetter(onViewportChange)
+    private var viewport: BoardViewport
+        get() = sourceViewport()
+        set(value) = onViewportChange(value)
 
     private val canvasListeners = listOf(
         ListenerRegistration("pointerdown", ::pointerDown),
@@ -587,8 +579,8 @@ private class BoardEventListeners(
         val rect = canvas.getBoundingClientRect()
 
         val canvasTopLeft = Point(rect.left + BOARD_RENDER_PADDING, rect.top + BOARD_RENDER_PADDING)
-        val point = position - canvasTopLeft - viewport.offset(canvas)
-        return renderLayout.run { point.toCoordinate() }
+        val point = (position - canvasTopLeft - viewport.offset(canvas)) / viewport.zoom
+        return renderLayout().run { point.toCoordinate() }
     }
 
     private fun MouseEvent.position() = Point(clientX.toDouble(), clientY.toDouble())
