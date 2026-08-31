@@ -11,20 +11,33 @@ import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
+import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
+import de.mineking.hexo.board.render.image.Point
+import de.mineking.hexo.board.render.image.center
+import de.mineking.hexo.board.render.image.isCloseTo
 import de.mineking.hexo.board.take
 import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.game.GameMove
 import de.mineking.hexo.game.model.game.GameWithPosition
+import de.mineking.hexo.web.components.ActionButton
+import de.mineking.hexo.web.components.ButtonSize
+import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.icons.ClearHighlightsIcon
+import de.mineking.hexo.web.icons.EnterFullscreenIcon
+import de.mineking.hexo.web.icons.ExitFullscreenIcon
+import de.mineking.hexo.web.icons.ResetViewIcon
+import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
+import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 
@@ -34,18 +47,39 @@ fun GameWithPosition.rememberPosition(move: Int): GamePosition<GameMove> {
 }
 
 @Composable
-fun GamePosition<*>.rememberBoard(overlay: Board): Board {
-    val board = remember(this) { toBoard() }
-    return remember(board, overlay) {
-        (board + overlay).focusWinningRows()
+fun BoardViewManager.transformBoard(key: Any, transform: (Board) -> Board): BoardViewManager {
+    val board = remember(board, key) { transform(board) }
+    return remember(board) {
+        object : BoardViewManager by this {
+            override val board = board
+        }
     }
 }
 
 @Composable
+fun BoardActionButton(
+    enabled: Boolean = true,
+    color: Color = Color.Neutral,
+    attrs: AttrBuilderContext<HTMLButtonElement>? = null,
+    onClick: () -> Unit,
+    content: @Composable () -> Unit,
+) = ActionButton(
+    enabled = enabled,
+    size = ButtonSize.Medium,
+    color = color,
+    attrs = {
+        classes("shadow-lg")
+        attrs?.invoke(this)
+    },
+    onClick = onClick,
+    content = content,
+)
+
+@Composable
 fun BoardPane(
-    board: Board,
+    boardViewManager: BoardViewManager,
     readOnly: Boolean,
-    viewport: BoardViewport?,
+    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
     renderingHook: BoardRenderingHook? = null,
@@ -73,7 +107,7 @@ fun BoardPane(
         )
     }) {
         InteractiveBoard(
-            board = board,
+            board = boardViewManager.board,
             viewport = viewport,
             onViewportChange = onViewportChange,
             onBoardInteraction = onBoardInteraction,
@@ -88,6 +122,7 @@ fun BoardPane(
             },
         ) {
             content?.invoke(this)
+            DefaultBoardControls(boardViewManager, viewport, onViewportChange)
         }
 
         @Composable
@@ -107,3 +142,43 @@ fun BoardPane(
         Edge { classes("inset-y-0", "right-0", "w-4", "bg-linear-to-l") }
     }
 }
+
+@Composable
+private fun BoardScope.DefaultBoardControls(
+    boardViewManager: BoardViewManager,
+    viewport: BoardViewport,
+    onViewportChange: (BoardViewport) -> Unit,
+) {
+    val layout = rememberAppLayout()
+
+    Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
+        if (boardViewManager.hasClearableHighlights) {
+            BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
+                ClearHighlightsIcon { classes("size-4") }
+            }
+        }
+
+        BoardActionButton(onClick = {
+            onViewportChange(nextHomeViewport(viewport))
+        }) {
+            ResetViewIcon { classes("size-4") }
+        }
+
+        BoardActionButton(onClick = { layout.fullscreen = !layout.fullscreen }) {
+            if (layout.fullscreen) {
+                ExitFullscreenIcon { classes("size-4") }
+            } else {
+                EnterFullscreenIcon { classes("size-4") }
+            }
+        }
+    }
+}
+
+private fun BoardScope.nextHomeViewport(viewport: BoardViewport) = BoardViewport(
+    zoom = viewport.zoom,
+    center = if (viewport.center.isCloseTo(Point.Zero)) {
+        renderLayout.boundingBox.center
+    } else {
+        Point.Zero
+    },
+)

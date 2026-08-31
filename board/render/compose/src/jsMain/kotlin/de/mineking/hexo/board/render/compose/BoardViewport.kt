@@ -21,7 +21,7 @@ import kotlin.math.sqrt
 
 internal const val BOARD_RENDER_PADDING = 128
 
-private const val MIN_ZOOM = 0.07
+private const val MIN_ZOOM = 0.04
 private const val MAX_ZOOM = 0.8
 private const val ZOOM_STEP = 1.1
 private const val PINCH_ZOOM_DEAD_ZONE = 0.025
@@ -33,7 +33,12 @@ private const val PRIMARY_BUTTON = 0
 private const val MIDDLE_BUTTON = 1
 private const val SECONDARY_BUTTON = 2
 
-data class BoardViewport(val zoom: Double, val center: Point) {
+const val DEFAULT_ZOOM = 0.4
+
+data class BoardViewport(
+    val zoom: Double = DEFAULT_ZOOM,
+    val center: Point = Point.Zero,
+) {
     internal fun pan(delta: Point) = copy(center = center - delta / zoom)
 
     internal fun zoomAt(value: Double, anchor: Point, canvas: HTMLCanvasElement): BoardViewport {

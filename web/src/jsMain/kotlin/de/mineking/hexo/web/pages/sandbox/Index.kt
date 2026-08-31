@@ -71,7 +71,7 @@ fun SandboxPage(ctx: PageContext) {
 
     val boardViewManager = rememberHostBoardViewManager<SandboxBoardViewManager>()
     LaunchedEffect(initialBoard) {
-        boardViewManager.board.value = initialBoard
+        boardViewManager.board = initialBoard
     }
 
     Sandbox(boardViewManager)
@@ -96,7 +96,6 @@ enum class CellPlacementMode {
             coordinate: CellCoordinate,
             modifiers: BoardModifierKeys,
             currentCell: Cell?,
-            board: Board,
         ) {
             if (currentCell?.turn != null) return
             updateCell(coordinate, CellOverride(
@@ -113,7 +112,6 @@ enum class CellPlacementMode {
             coordinate: CellCoordinate,
             modifiers: BoardModifierKeys,
             currentCell: Cell?,
-            board: Board,
         ) {
             if (currentCell?.turn != null) return
             updateCell(coordinate, CellOverride(
@@ -129,7 +127,6 @@ enum class CellPlacementMode {
             coordinate: CellCoordinate,
             modifiers: BoardModifierKeys,
             currentCell: Cell?,
-            board: Board,
         ) {
             if (currentCell?.turn != null) return
             updateCell(coordinate, CellOverride(
@@ -145,11 +142,9 @@ enum class CellPlacementMode {
             coordinate: CellCoordinate,
             modifiers: BoardModifierKeys,
             currentCell: Cell?,
-            board: Board,
         ) {
             if (currentCell?.owner != null) return
 
-            var board by this.board
             if (board.attributes[BoardAttribute.ShowTurnNumbers] != true) {
                 board = board.copy().apply {
                     cells.values.forEach { it.turn = null }
@@ -177,7 +172,6 @@ enum class CellPlacementMode {
         coordinate: CellCoordinate,
         modifiers: BoardModifierKeys,
         currentCell: Cell?,
-        board: Board,
     )
 }
 
@@ -192,41 +186,37 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
 
     val repositories = rememberHdsRepositories()
 
-    var viewport by remember { mutableStateOf<BoardViewport?>(null) }
-    var board by boardViewManager.board
-
-    val transformedBoard = remember(board) {
-        board.copy().focusWinningRows()
-    }
+    var viewport by remember { mutableStateOf(BoardViewport()) }
 
     val placementMode = remember {
         mutableStateOf(
             when {
-                !board.isEmpty(includeHighlights = false) -> CellPlacementMode.Turn
+                !boardViewManager.board.isEmpty(includeHighlights = false) -> CellPlacementMode.Turn
                 else -> CellPlacementMode.Toggle
             },
         )
     }
 
-    SandboxSounds(board)
+    SandboxSounds(boardViewManager.board)
 
     Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "flex-col", "md:flex-row") }) {
         Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "p-3", "md:p-6") }) {
             SandboxBoardPane(
-                board = transformedBoard,
                 boardViewManager = boardViewManager,
                 placementMode = placementMode.value,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
             )
         }
-        Sidebar(
-            repositories = repositories,
-            placementMode = placementMode,
-            board = transformedBoard,
-            onBoardChange = { board = it },
-            onImportPosition = { viewport = null },
-        )
+        if (!appLayout.fullscreen) {
+            Sidebar(
+                repositories = repositories,
+                placementMode = placementMode,
+                board = boardViewManager.board,
+                onBoardChange = { boardViewManager.board = it },
+                onImportPosition = { viewport = BoardViewport() },
+            )
+        }
     }
 }
 
