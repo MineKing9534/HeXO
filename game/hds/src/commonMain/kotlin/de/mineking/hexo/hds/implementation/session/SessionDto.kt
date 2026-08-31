@@ -1,6 +1,5 @@
 package de.mineking.hexo.hds.implementation.session
 
-import de.mineking.hexo.game.model.game.GameFinishReason
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.game.PlayerId
 import de.mineking.hexo.game.model.profile.ProfileId
@@ -10,6 +9,7 @@ import de.mineking.hexo.hds.implementation.Instant
 import de.mineking.hexo.hds.implementation.LiveDuration
 import de.mineking.hexo.hds.implementation.TimeControl
 import de.mineking.hexo.hds.implementation.game.AbstractPlayerDto
+import de.mineking.hexo.hds.implementation.game.GameFinishReasonDto
 import de.mineking.hexo.hds.implementation.game.GameOptionsDto
 import de.mineking.hexo.hds.implementation.game.PlayerTile
 import de.mineking.hexo.hds.implementation.game.TournamentMatchSnapshotDto
@@ -115,7 +115,7 @@ internal sealed interface SessionStateDto {
         override val createdAt: Instant,
         override val startedAt: Instant,
         val finishedAt: Instant,
-        val finishReason: GameFinishReason,
+        val finishReason: GameFinishReasonDto,
         val winningPlayerId: PlayerId?,
         val rematchAcceptedPlayerIds: List<PlayerId>,
     ) : GameSessionState

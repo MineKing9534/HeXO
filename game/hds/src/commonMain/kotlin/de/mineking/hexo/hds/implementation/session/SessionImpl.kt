@@ -216,7 +216,7 @@ internal class LiveSessionImpl(
             result = GameResult(
                 winner = stateDto.winningPlayerId?.let { getPlayerById(it) },
                 duration = stateDto.finishedAt - stateDto.startedAt,
-                reason = stateDto.finishReason,
+                reason = stateDto.finishReason.model,
             ),
             rematchAcceptedPlayers = stateDto.rematchAcceptedPlayerIds.map { getPlayerById(it) },
         )
