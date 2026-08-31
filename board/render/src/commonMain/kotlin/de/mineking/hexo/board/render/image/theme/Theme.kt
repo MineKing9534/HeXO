@@ -41,7 +41,7 @@ abstract class BaseTheme : Theme() {
     protected abstract fun renderer(context: RenderingContext): Renderer
 
     protected fun Renderer.render(context: RenderingContext, middleLayer: () -> Unit) = context.run {
-        context.layout.coordinates.forEach {
+        context.visibleCoordinates.forEach {
             val point = it.toPixel()
             val hex = point.createHex(context.hexSize)
 

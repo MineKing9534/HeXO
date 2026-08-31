@@ -55,6 +55,26 @@ data class BoardRenderLayout(
     val coordinates: Set<CellCoordinate>,
     val board: Board,
 ) {
+    val maxTurn = board.cells.values
+        .maxOfOrNull { it.turn ?: Int.MIN_VALUE }
+        ?.takeIf { it > Int.MIN_VALUE }
+
+    fun coordinatesIn(bounds: BoundingBox): Sequence<CellCoordinate> = sequence {
+        val radius = size.layoutRadius
+        val minR = floor((bounds.minY - radius) / (radius * 1.5)).toInt()
+        val maxR = ceil((bounds.maxY + radius) / (radius * 1.5)).toInt()
+
+        for (r in minR..maxR) {
+            val minQ = floor((bounds.minX - radius) / (radius * SQRT3) - r / 2.0).toInt()
+            val maxQ = ceil((bounds.maxX + radius) / (radius * SQRT3) - r / 2.0).toInt()
+
+            for (q in minQ..maxQ) {
+                val coordinate = CellCoordinate(q, r)
+                if (coordinate in coordinates) yield(coordinate)
+            }
+        }
+    }
+
     fun Point.toCoordinate(): CellCoordinate {
         val r = y / (size.layoutRadius * 1.5)
         val q = x / (size.layoutRadius * SQRT3) - r / 2.0
