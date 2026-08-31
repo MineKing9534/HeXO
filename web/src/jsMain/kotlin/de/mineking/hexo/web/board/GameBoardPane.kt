@@ -12,11 +12,14 @@ import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
 import de.mineking.hexo.board.Move
+import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.moves
+import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.image.div
+import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
 import de.mineking.hexo.game.model.game.Game
@@ -26,16 +29,8 @@ import de.mineking.hexo.game.model.game.playerWithColor
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.web.audio.SoundEffect
-import de.mineking.hexo.web.components.ActionButton
-import de.mineking.hexo.web.components.ButtonSize
-import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
-import de.mineking.hexo.web.icons.ClearHighlightsIcon
-import de.mineking.hexo.web.icons.EnterFullscreenIcon
-import de.mineking.hexo.web.icons.ExitFullscreenIcon
-import de.mineking.hexo.web.icons.ResetViewIcon
-import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.playerCssColor
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberTheme
@@ -48,7 +43,6 @@ import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLElement
 import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.events.EventListener
@@ -62,11 +56,11 @@ import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: GameBoardViewManager) {
-    val viewport = remember { mutableStateOf<BoardViewport?>(null) }
+    val viewport = remember { mutableStateOf(BoardViewport()) }
 
     val watchPartyController = rememberWatchPartyController()
     LaunchedEffect(game.id) {
-        viewport.value = null
+        viewport.value = BoardViewport()
 
         // Don't clear highlights when subscribed to a watch party
         if (watchPartyController.subscribedWatchParty !is EntityState.Data<*>) {
@@ -74,22 +68,22 @@ fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: Gam
         }
     }
 
-    val move by boardViewManager.currentMove
-    val position = game.rememberPosition(move)
-    val board = position.rememberBoard(overlay = boardViewManager.board.value)
-
+    val position = game.rememberPosition(boardViewManager.currentMove)
     val (effectiveTurnPlayer, effectivePlacementsRemaining) = position.nextTurn
     val allowAnalyzerOverlay = !(isLive && game.options.rated)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
-    val analyzerTurn = if (shouldAnalyze && (isLive || move < game.moveCount)) {
+    val analyzerTurn = if (shouldAnalyze && (isLive || boardViewManager.currentMove < game.moveCount)) {
         AnalyzerTurn(effectiveTurnPlayer, effectivePlacementsRemaining)
     } else {
         null
     }
 
     AnalysedBoardPane(
-        board = board,
+        boardViewManager = boardViewManager.transformBoard(game to boardViewManager.currentMove) { overlay ->
+            val board = game.position.toBoard(focusWinningRows = false)
+            (board + overlay).focusWinningRows()
+        },
         readOnly = true,
         allowAnalyzerOverlay = allowAnalyzerOverlay,
         turn = analyzerTurn,
@@ -107,99 +101,57 @@ fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: Gam
 }
 
 @Composable
-private fun BoardActionButton(
-    enabled: Boolean = true,
-    color: Color = Color.Neutral,
-    attrs: AttrBuilderContext<HTMLButtonElement>? = null,
-    onClick: () -> Unit,
-    content: @Composable () -> Unit,
-) = ActionButton(
-    enabled = enabled,
-    size = ButtonSize.Medium,
-    color = color,
-    attrs = {
-        classes("shadow-lg")
-        attrs?.invoke(this)
-    },
-    onClick = onClick,
-    content = content,
-)
-
-@Composable
 private fun BoardScope.BoardControls(
     game: GameWithPosition,
     boardViewManager: GameBoardViewManager,
-    viewport: MutableState<BoardViewport?>,
+    viewport: MutableState<BoardViewport>,
 ) {
-    val layout = rememberAppLayout()
     val totalMoves = game.moveCount
-    val hasClearableHighlights by boardViewManager.hasClearableHighlights
-    var currentMove by boardViewManager.currentMove
 
     MoveKeyboardShortcuts(
+        boardViewManager = boardViewManager,
         moves = game.position.moves,
-        move = boardViewManager.currentMove,
         viewport = viewport,
     )
 
     Div({ classes("absolute", "top-3", "left-3", "z-20") }) {
-        BoardActionButton(onClick = { currentMove = Int.MAX_VALUE }) {
-            Text("Move ${min(currentMove, totalMoves)}/$totalMoves")
+        BoardActionButton(onClick = { boardViewManager.currentMove = Int.MAX_VALUE }) {
+            Text("Move ${min(boardViewManager.currentMove, totalMoves)}/$totalMoves")
         }
     }
 
     Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
         BoardActionButton(
-            enabled = currentMove > 0,
+            enabled = boardViewManager.currentMove > 0,
             attrs = {
                 attr("aria-label", "Previous move")
                 attr("title", "Previous move")
             },
-            onClick = { currentMove = previousMove(currentMove, totalMoves) },
+            onClick = { boardViewManager.currentMove = previousMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronLeftIcon { classes("size-4") } }
 
         BoardActionButton(
-            enabled = currentMove < totalMoves,
+            enabled = boardViewManager.currentMove < totalMoves,
             attrs = {
                 attr("aria-label", "Next move")
                 attr("title", "Next move")
             },
-            onClick = { currentMove = nextMove(currentMove, totalMoves) },
+            onClick = { boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronRightIcon { classes("size-4") } }
-    }
-
-    Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
-        if (hasClearableHighlights) {
-            BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
-                ClearHighlightsIcon { classes("size-4") }
-            }
-        }
-
-        BoardActionButton(onClick = { viewport.value = null }) {
-            ResetViewIcon { classes("size-4") }
-        }
-
-        BoardActionButton(onClick = { layout.fullscreen = !layout.fullscreen }) {
-            if (layout.fullscreen) {
-                ExitFullscreenIcon { classes("size-4") }
-            } else {
-                EnterFullscreenIcon { classes("size-4") }
-            }
-        }
     }
 }
 
 @Composable
 private fun BoardScope.MoveKeyboardShortcuts(
+    boardViewManager: GameBoardViewManager,
     moves: List<Move>,
-    move: MutableState<Int>,
-    viewport: MutableState<BoardViewport?>,
+    viewport: MutableState<BoardViewport>,
 ) {
     val totalMoves by rememberUpdatedState(moves.size)
     val currentMoves by rememberUpdatedState(moves)
     val currentRenderLayout by rememberUpdatedState(renderLayout)
 
-    DisposableEffect(move) {
+    DisposableEffect(boardViewManager.currentMove) {
         val keyDown = EventListener { event ->
             if (event !is KeyboardEvent) return@EventListener
             if (event.altKey || event.ctrlKey || event.metaKey) return@EventListener
@@ -208,21 +160,21 @@ private fun BoardScope.MoveKeyboardShortcuts(
             when (event.key) {
                 "ArrowLeft" -> {
                     event.preventDefault()
-                    move.value = previousMove(move.value, totalMoves)
+                    boardViewManager.currentMove = previousMove(boardViewManager.currentMove, totalMoves)
                 }
                 "ArrowRight" -> {
                     event.preventDefault()
-                    move.value = nextMove(move.value, totalMoves)
+                    boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves)
                 }
                 in (1..9).map { "$it" } -> {
                     val shortcut = event.key.toInt()
-                    val max = move.value.coerceIn(0, currentMoves.size)
+                    val max = boardViewManager.currentMove.coerceIn(0, currentMoves.size)
                     if (shortcut > max) return@EventListener
 
                     val coordinate = currentMoves[max - shortcut].coordinate
                     val point = currentRenderLayout.size.run { coordinate.toPixel() }
 
-                    val current = viewport.value ?: return@EventListener
+                    val current = viewport.value
                     viewport.value = current.copy(center = point / current.zoom)
                 }
             }
