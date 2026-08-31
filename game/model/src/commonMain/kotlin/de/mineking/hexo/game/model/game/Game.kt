@@ -6,11 +6,9 @@ import de.mineking.hexo.board.GamePosition
 import de.mineking.hexo.board.Move
 import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.TimeControl
-import de.mineking.hexo.game.model.profile.Profile
-import de.mineking.hexo.game.model.profile.ProfileId
-import de.mineking.hexo.game.model.tournament.TournamentInfo
+import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.tournament.TournamentMatchInfo
-import de.mineking.hexo.game.model.tournament.TournamentRepository
+import de.mineking.hexo.game.model.tournament.TournamentReference
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -25,7 +23,7 @@ class GameReference(
     private val repository: FinishedGameRepository,
     val id: GameId,
 ) {
-    suspend fun retrieveGame() = repository.getGame(id)
+    suspend fun retrieve() = repository.getGame(id)
 }
 
 interface Game {
@@ -51,17 +49,15 @@ interface GameWithPosition : Game {
 value class PlayerId(val value: String)
 
 interface Player {
-    val playerId: PlayerId
-    val profileId: ProfileId?
+    val id: PlayerId
+    val profile: ProfileReference?
     val displayName: String
     val elo: Int
     val color: CellOwner
     val tournamentMatchWins: Int?
-
-    suspend fun fetchProfile(): Profile?
 }
 
-fun Player.isGuest() = profileId == null
+fun Player.isGuest() = profile == null
 
 @Serializable
 enum class GameVisibility {
@@ -99,10 +95,6 @@ open class GameMove(
 }
 
 class TournamentMatchSnapshot(
-    private val repository: TournamentRepository,
-    val tournamentInfo: TournamentInfo,
+    val tournament: TournamentReference,
     val matchInfo: TournamentMatchInfo,
-) {
-    suspend fun retrieveTournament() = repository.getTournament(tournamentInfo.id)
-    fun observeTournament() = repository.observeTournament(tournamentInfo.id)
-}
+)

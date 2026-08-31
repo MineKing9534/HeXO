@@ -5,8 +5,7 @@ import de.mineking.hexo.game.model.Entity
 import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.GameReference
-import de.mineking.hexo.game.model.profile.Profile
-import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.session.SessionReference
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -15,6 +14,14 @@ import kotlin.time.Instant
 @JvmInline
 @Serializable
 value class TournamentId(override val value: String) : EntityId
+
+class TournamentReference(
+    private val repository: TournamentRepository,
+    val info: TournamentInfo,
+) {
+    suspend fun retrieve() = repository.getTournament(info.id)
+    fun observe() = repository.observeTournament(info.id)
+}
 
 @JvmInline
 @Serializable
@@ -48,14 +55,12 @@ interface Tournament : Entity<TournamentId> {
 }
 
 interface TournamentParticipant {
-    val profileId: ProfileId
+    val profile: ProfileReference
     val displayName: String
     val image: String?
     val registeredAt: Instant
     val seed: Int?
     val standing: TournamentStanding
-
-    suspend fun fetchProfile(): Profile?
 }
 
 enum class TournamentStatus {
@@ -97,20 +102,18 @@ sealed interface TournamentMatchPlayer {
     val wins: Int
     val currentColor: CellOwner
 
-    val profileId: ProfileId?
+    val profile: ProfileReference?
 
     class Bye(
         override val wins: Int,
         override val currentColor: CellOwner,
     ) : TournamentMatchPlayer {
-        override val profileId = null
+        override val profile = null
     }
 
     interface Participant : TournamentMatchPlayer {
         val participant: TournamentParticipant
         val seed: Int
-
-        override val profileId get() = participant.profileId
     }
 }
 

@@ -146,8 +146,8 @@ internal class LobbySessionPlayerImpl(
     dto: AbstractSessionPlayerDto,
     override val color: CellOwner,
     override val tournamentMatchWins: Int?,
-) : PlayerImpl(client.profileRepository, dto) {
-    override val playerId = PlayerId("")
+) : PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
+    override val id = PlayerId("")
 }
 
 internal class LiveSessionImpl(
@@ -156,7 +156,7 @@ internal class LiveSessionImpl(
     stateDto: SessionStateDto.GameSessionState,
     override val gameState: SessionGameStateDto,
 ) : ObservedSessionImpl(), LiveSession {
-    internal fun getPlayerById(id: PlayerId) = players.first { it.playerId == id }
+    internal fun getPlayerById(id: PlayerId) = players.first { it.id == id }
 
     override val id = dto.id
     override val gameOptions = dto.gameOptions
@@ -231,7 +231,7 @@ internal class LiveSessionPlayerImpl(
     override val color: CellOwner,
     override val tournamentMatchWins: Int?,
     override val timeRemaining: LiveDuration?,
-) : LiveSessionPlayer, PlayerImpl(client.profileRepository, dto) {
+) : LiveSessionPlayer, PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
     override val ratingAdjustment = dto.ratingAdjustment?.let { RatingAdjustment(eloGain = it.eloGain, eloLoss = it.eloLoss) }
     override val connectionStatus = dto.connection.status
 }
@@ -243,7 +243,7 @@ internal class SessionGameImpl(
     override val startedAt = session.startedAt
     override val result = (session.state as? SessionState.Detailed.Finished)?.result
     override val options = session.dto.gameOptions
-    override val players = session.players.sortedBy { player -> session.gameState.cells?.indexOfFirst { it.occupiedBy == player.playerId } }
+    override val players = session.players.sortedBy { player -> session.gameState.cells?.indexOfFirst { it.occupiedBy == player.id } }
     override val tournament = session.tournament
     override val position = session.gameState.cells!!.map { move ->
         GameMove(

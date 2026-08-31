@@ -370,7 +370,7 @@ private fun TournamentInfoCard(game: Game) {
     }) {
         Div({ classes("mb-1.5", "flex", "items-center", "justify-between", "gap-3", "text-xs") }) {
             Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-200") }) {
-                Text(tournament.tournamentInfo.name)
+                Text(tournament.tournament.info.name)
             }
             Span({ classes("shrink-0", "font-medium", "text-slate-400") }) {
                 Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")

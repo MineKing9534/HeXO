@@ -57,7 +57,7 @@ private fun TournamentLobbyCard(session: LobbySession) {
                         Text("Tournament")
                     }
                     P({ classes("mt-1", "truncate", "font-semibold", "text-slate-100") }) {
-                        Text(tournament.tournamentInfo.name)
+                        Text(tournament.tournament.info.name)
                     }
                 }
                 Badge(Color.Neutral, { classes("shrink-0") }) {

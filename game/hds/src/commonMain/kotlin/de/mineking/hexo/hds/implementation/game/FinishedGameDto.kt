@@ -11,6 +11,7 @@ import de.mineking.hexo.game.model.tournament.TournamentId
 import de.mineking.hexo.game.model.tournament.TournamentInfo
 import de.mineking.hexo.game.model.tournament.TournamentMatchId
 import de.mineking.hexo.game.model.tournament.TournamentMatchInfo
+import de.mineking.hexo.game.model.tournament.TournamentReference
 import de.mineking.hexo.hds.implementation.Duration
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.Instant
@@ -59,11 +60,13 @@ internal data class TournamentMatchSnapshotDto(
 )
 
 internal fun TournamentMatchSnapshotDto.toModel(client: HdsApiClient) = TournamentMatchSnapshot(
-    repository = client.tournamentRepository,
-    tournamentInfo = TournamentInfo(
-        id = tournamentId,
-        url = "${client.host}/tournaments/${tournamentId.value}",
-        name = tournamentName,
+    tournament = TournamentReference(
+        repository = client.tournamentRepository,
+        info = TournamentInfo(
+            id = tournamentId,
+            url = "${client.host}/tournaments/${tournamentId.value}",
+            name = tournamentName,
+        ),
     ),
     matchInfo = TournamentMatchInfo(
         id = matchId,

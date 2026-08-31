@@ -3,24 +3,23 @@ package de.mineking.hexo.hds.implementation.game
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.toGamePosition
-import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.game.FinishedGameMove
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
+import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
 import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.PlayerId
+import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.profile.ProfileRepository
-import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.utils.types.orThrow
 
 internal class FinishedGameImpl(
     private val client: HdsApiClient,
     private val dto: FinishedGameDto,
 ) : FinishedGameWithPosition {
-    private fun getPlayerById(id: PlayerId) = players.first { it.playerId == id }
+    private fun getPlayerById(id: PlayerId) = players.first { it.id == id }
 
     override val players = dto.players.map { data ->
         val color = dto.playerTiles[data.playerId]?.color ?: error("Player tile for ${data.playerId} not defined")
@@ -42,7 +41,7 @@ internal class FinishedGameImpl(
                 }
             },
         )
-    }.sortedBy { player -> dto.moves.indexOfFirst { it.playerId == player.playerId } }
+    }.sortedBy { player -> dto.moves.indexOfFirst { it.playerId == player.id } }
 
     override val position = dto.moves.map {
         FinishedGameMove(
@@ -67,19 +66,16 @@ internal class FinishedGameImpl(
 
 internal abstract class PlayerImpl(
     private val repository: ProfileRepository,
+    private val gameRepository: FinishedGameRepository,
     dto: AbstractPlayerDto,
 ) : Player {
-    override val playerId = dto.playerId
-    override val profileId = dto.profileId?.takeIf { it.value != playerId.value }
+    override val id = dto.playerId
+    override val profile = dto.profileId
+        ?.takeIf { it.value != id.value }
+        ?.let { ProfileReference(repository, gameRepository, it) }
+
     override val displayName = dto.displayName
     override val elo = dto.elo
-
-    override suspend fun fetchProfile() = profileId
-        ?.let {
-            repository
-                .getProfileById(it)
-                .orThrow { EntityNotFoundException() }
-        }
 }
 
 internal class FinishedGamePlayerImpl(
@@ -87,6 +83,6 @@ internal class FinishedGamePlayerImpl(
     dto: PlayerDto,
     override val color: CellOwner,
     override val tournamentMatchWins: Int?,
-) : FinishedGamePlayer, PlayerImpl(client.profileRepository, dto) {
+) : FinishedGamePlayer, PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
     override val eloChange = dto.eloChange
 }

@@ -1,9 +1,8 @@
 package de.mineking.hexo.hds.implementation.tournament
 
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.game.GameReference
-import de.mineking.hexo.game.model.profile.getProfileById
+import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.session.SessionReference
 import de.mineking.hexo.game.model.tournament.Tournament
 import de.mineking.hexo.game.model.tournament.TournamentInfo
@@ -16,7 +15,6 @@ import de.mineking.hexo.game.model.tournament.TournamentParticipant
 import de.mineking.hexo.game.model.tournament.TournamentStanding
 import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.utils.types.orThrow
 
 internal class TournamentImpl(
     private val client: HdsApiClient,
@@ -59,24 +57,23 @@ internal class TournamentParticipantImpl(
     dto: TournamentParticipantDto,
     override val standing: TournamentStanding,
 ) : TournamentParticipant {
-    override val profileId = dto.profileId
+    override val profile = ProfileReference(client.profileRepository, client.finishedGameRepository, dto.profileId)
     override val displayName = dto.displayName
     override val image = dto.image
     override val registeredAt = dto.registeredAt
     override val seed = dto.seed
-
-    override suspend fun fetchProfile() = client.profileRepository
-        .getProfileById(profileId)
-        .orThrow { EntityNotFoundException() }
 }
 
 internal class TournamentMatchPlayerImpl(
+    client: HdsApiClient,
     dto: TournamentMatchSlotDto,
     override val participant: TournamentParticipant,
     override val wins: Int,
     override val currentColor: CellOwner,
 ) : TournamentMatchPlayer.Participant {
     override val seed = dto.seed!!
+    override val profile = dto.profileId
+        ?.let { ProfileReference(client.profileRepository, client.finishedGameRepository, it) }
 }
 
 internal class TournamentMatchImpl(
@@ -111,8 +108,9 @@ internal class TournamentMatchImpl(
         }
 
         TournamentMatchPlayerImpl(
+            client = client,
             dto = slot,
-            participant = participants.first { it.profileId == slot.profileId },
+            participant = participants.first { it.profile.id == slot.profileId },
             wins = wins,
             currentColor = currentColor,
         )
@@ -127,7 +125,7 @@ internal class TournamentMatchImpl(
                 type = dto.resultType!!.model,
                 winner = players
                     .filterIsInstance<TournamentMatchPlayer.Participant>()
-                    .first { it.profileId == dto.winnerProfileId }.participant,
+                    .first { it.profile?.id == dto.winnerProfileId }.participant,
             ),
         )
     }

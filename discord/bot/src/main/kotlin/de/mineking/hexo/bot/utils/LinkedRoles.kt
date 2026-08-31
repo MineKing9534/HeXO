@@ -63,7 +63,7 @@ class LinkedRolesUpdateService(
                     if (finishedGames.isNotEmpty()) {
                         finishedGames
                             .flatMapTo(mutableSetOf()) { it.players }
-                            .mapNotNull { it.profileId }
+                            .mapNotNull { it.profile?.id }
                             .toSet()
                             .forEach { scheduleLinkedRoleDataUpdate(it) }
 

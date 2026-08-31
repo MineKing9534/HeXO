@@ -13,7 +13,7 @@ menu.game:
         }
     } Game Review
     ${ game.tournament?.let { 
-      "-# Tournament: [${it.tournamentInfo.name}](${it.tournamentInfo.url})${if (it.matchInfo.bestOf > 1) ", G${it.matchInfo.currentGameNumber} (BO${it.matchInfo.bestOf})" else ""}"
+      "-# Tournament: [${it.tournament.info.name}](${it.tournament.info.url})${if (it.matchInfo.bestOf > 1) ", G${it.matchInfo.currentGameNumber} (BO${it.matchInfo.bestOf})" else ""}"
     } ?: "" }
 
   view.label: View in Browser

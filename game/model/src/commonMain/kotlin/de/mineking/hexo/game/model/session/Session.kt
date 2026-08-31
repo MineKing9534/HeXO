@@ -23,6 +23,7 @@ class SessionReference(
     private val repository: SessionRepository,
     val id: SessionId,
 ) {
+    suspend fun retrieve() = repository.getSession(id)
     fun observe() = repository.observeSession(id)
 }
 
