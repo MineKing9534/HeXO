@@ -16,6 +16,7 @@ import de.mineking.hexo.utils.types.QueryResultDto
 import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.ktor.client.request.parameter
+import io.ktor.http.HttpStatusCode
 import kotlinx.serialization.Serializable
 
 internal class FinishedGameRepositoryImpl(private val client: HdsApiClient) : FinishedGameRepository {
@@ -44,6 +45,8 @@ internal class FinishedGameRepositoryImpl(private val client: HdsApiClient) : Fi
 
         @Serializable
         data class Response(val games: List<FinishedGameDto>, val pagination: PaginationInfo)
+
+        if (response.status == HttpStatusCode.Unauthorized) return@createPaginated null
 
         response.parseBodyOrNull<Response, QueryResultDto<FinishedGame>> { result ->
             QueryResultDto(

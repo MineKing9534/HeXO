@@ -19,7 +19,7 @@ fun <C, E : Any, F : SelectorFilter<E>> EntityRequesterFactory.createPaginated(
     client: HdsApiClient,
     path: (C) -> String,
     config: HttpRequestBuilder.(F?) -> Unit = {},
-    parse: suspend (HttpResponse) -> QueryResultDto<E>,
+    parse: suspend (HttpResponse) -> QueryResultDto<E>?,
 ) = PaginatedEntityRequester<C, E, F>(createEntityRequester {
     val response = client.request(path(it.scope)) {
         parameter("page", it.page)
@@ -31,7 +31,7 @@ fun <C, E : Any, F : SelectorFilter<E>> EntityRequesterFactory.createPaginated(
 })
 
 class PaginatedEntityRequester<C, E : Any, F : SelectorFilter<E>>(
-    private val delegate: EntityRequester<PaginatedKey<C, E, F>, QueryResultDto<E>>,
+    private val delegate: EntityRequester<PaginatedKey<C, E, F>, QueryResultDto<E>?>,
 ) {
     suspend fun fetchPaginated(scope: C, selector: Selector<E, F>): QueryResult<E> {
         suspend fun fetchPage(page: Int) = delegate.fetch(PaginatedKey(scope, page, PAGE_SIZE, selector.filter))
@@ -41,6 +41,8 @@ class PaginatedEntityRequester<C, E : Any, F : SelectorFilter<E>>(
         val firstPage = offset / PAGE_SIZE + 1
 
         val (firstEntries, totalCount) = fetchPage(firstPage)
+            ?: return QueryResult.Empty
+
         val lastPage = lastPage(offset, limit ?: Int.MAX_VALUE, totalCount)
 
         val flow = flow {
@@ -58,7 +60,7 @@ class PaginatedEntityRequester<C, E : Any, F : SelectorFilter<E>>(
 
             for (page in (firstPage + 1)..lastPage) {
                 if (remaining == 0) break
-                emitAll(fetchPage(page).entries)
+                emitAll(fetchPage(page)?.entries ?: break)
             }
         }
 

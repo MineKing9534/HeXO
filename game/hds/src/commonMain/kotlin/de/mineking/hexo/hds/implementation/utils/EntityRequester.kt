@@ -55,6 +55,6 @@ class EntityRequestException(override val message: String) : RuntimeException(me
 
 suspend inline fun <reified D, T> HttpResponse.parseBodyOrNull(parse: (D) -> T) = when {
     status.isSuccess() -> parse(body())
-    status == HttpStatusCode.NotFound || status == HttpStatusCode.BadRequest -> null
+    status == HttpStatusCode.NotFound -> null
     else -> throw EntityRequestException(bodyAsText())
 }
