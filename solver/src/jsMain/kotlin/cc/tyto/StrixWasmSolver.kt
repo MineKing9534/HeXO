@@ -35,6 +35,7 @@ internal external class SolveOutcome private constructor() {
 internal sealed external class DefenseKind {
     object ThreatFound : DefenseKind
     object NoThreat : DefenseKind
+    object BudgetExceeded : DefenseKind
 }
 
 internal external class DefenseOutcome private constructor() {
@@ -42,6 +43,9 @@ internal external class DefenseOutcome private constructor() {
     val threat: SolveOutcome?
     val killers: Array<CoordW>
     @JsName("pair_anchors") val pairAnchors: Array<PairAnchor>
+    @JsName("counter_threats") val counterThreats: Array<PairAnchor>
+    @JsName("tactical_pairs") val tacticalPairs: Array<PairAnchor>
+    @JsName("unresolved") val unresolved: Array<CoordW>
     @JsName("best_delay") val bestDelay: CoordW?
 }
 

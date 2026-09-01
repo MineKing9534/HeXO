@@ -11,6 +11,8 @@ expect class StrixHexoSolver(
     nodeBudget: Int = 20_000,
     engine: StrixSolverEngine = StrixSolverEngine.IterativeDeepeningThreatTable,
 ) : HexoSolver {
+    // TODO test whether different engines actually work or whether they have different return types
+
     override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult
     override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult
 }

@@ -11,13 +11,15 @@ import cc.tyto.Stone
 import cc.tyto.StrixSolverLib
 import cc.tyto.ThreatContainer
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.solver.BoardTransformResult
-import de.mineking.hexo.solver.Defense
+import de.mineking.hexo.solver.DefenseResult
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.solver.HexoSolver
+import de.mineking.hexo.solver.PartialTurn
 import de.mineking.hexo.solver.Turn
 import de.mineking.hexo.solver.transform
 import kotlinx.serialization.json.Json
@@ -87,19 +89,56 @@ actual class StrixHexoSolver actual constructor(
         )
     }
 
-    private fun DefenseResponse.findDefenses() = killers
+    private fun createPartialTurns(
+        single: List<CellCoordinate>,
+        full: List<Pair<CellCoordinate, CellCoordinate>>,
+        counterThreats: List<Pair<CellCoordinate, CellCoordinate>>,
+    ) = single
         .takeIf { it.isNotEmpty() }
-        ?.map { Defense(it, null) }
-        ?: pairAnchors.map { (first, second) -> Defense(first, second) }
+        ?.map {
+            PartialTurn(
+                first = it,
+                second = null,
+                isCounterThreat = false,
+            )
+        } ?: full.map {
+        PartialTurn(
+            first = it.first,
+            second = it.second,
+            isCounterThreat = it in counterThreats,
+        )
+    }
+
+    private fun DefenseResponse.createDefense(transform: BoardTransformResult): DefenseResult {
+        val defenses = createPartialTurns(killers, pairAnchors, counterThreats)
+            .map { transform.transformBack(it) }
+
+        if (defenses.isNotEmpty()) return DefenseResult.Found(defenses)
+
+        val maybeDefenses = createPartialTurns(unresolved, tacticalPairs, emptyList())
+            .map { transform.transformBack(it) }
+
+        if (maybeDefenses.isNotEmpty()) return DefenseResult.BudgetExceeded(maybeDefenses)
+
+        return DefenseResult.Undefendable(
+            bestDelay?.let {
+                PartialTurn(
+                    first = transform.transformBack(it),
+                    second = null,
+                    isCounterThreat = false,
+                )
+            },
+        )
+    }
 
     @Suppress("TooGenericExceptionThrown")
     private fun DefenseResponse.toResult(transform: BoardTransformResult) = when (kind) {
         DefenseKind.NoThreat -> FindDefenseResult.NoThreat
+        DefenseKind.BudgetExceeded -> FindDefenseResult.Unknown
         DefenseKind.Error -> throw RuntimeException(error)
         DefenseKind.ThreatFound -> FindDefenseResult.Threat(
             threat = transform.transformBack(threat!!.toWinResult()),
-            defenses = findDefenses().map { transform.transformBack(it) },
-            bestDelay = bestDelay?.let { transform.transformBack(it) },
+            defense = createDefense(transform),
         )
     }
 

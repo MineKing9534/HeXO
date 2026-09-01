@@ -20,7 +20,7 @@ import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
 import de.mineking.hexo.board.render.image.theme.withAlpha
-import de.mineking.hexo.solver.Defense
+import de.mineking.hexo.solver.DefenseResult
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.web.icons.SHIELD_ICON_PATH
@@ -135,9 +135,18 @@ private fun RenderingContext.drawThreatOverlay(
     }
 }
 
+private enum class DefenseKind(val symbol: String) {
+    Found("+"),
+    BudgetExceeded("+?"),
+    BestDelay("~"),
+}
+
 private fun RenderingContext.drawDefenseOverlay(theme: BaseTheme, result: FindDefenseResult.Threat) {
-    val defense = result.defenses.firstOrNull()
-        ?: result.bestDelay?.let { Defense(it, null) }
+    val (defense, kind) = when (val temp = result.defense) {
+        is DefenseResult.Found -> temp.defenses.maxByOrNull { it.isCounterThreat }!! to DefenseKind.Found
+        is DefenseResult.BudgetExceeded -> temp.tacticalMoves.first() to DefenseKind.BudgetExceeded
+        is DefenseResult.Undefendable -> temp.bestDelay to DefenseKind.BestDelay
+    }
 
     val defenseCells = defense?.toSet().orEmpty()
 
@@ -153,7 +162,7 @@ private fun RenderingContext.drawDefenseOverlay(theme: BaseTheme, result: FindDe
             point = point,
             color = defenseOverlayColor,
             backgroundColor = theme.backgroundColor,
-            label = if (result.defenses.isEmpty()) "+?" else "+",
+            label = kind.symbol,
         )
     }
 }
@@ -184,6 +193,11 @@ private fun RenderingContext.drawOverlayTarget(
             size = hexSize * 0.5,
         )
         is CanvasRenderingBackend if label == "+?" -> backend.drawDelayIcon(
+            point = point,
+            color = color,
+            size = hexSize * 0.5,
+        )
+        is CanvasRenderingBackend if label == "~" -> backend.drawDelayIcon(
             point = point,
             color = color,
             size = hexSize * 0.5,

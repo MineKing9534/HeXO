@@ -68,6 +68,9 @@ internal data class DefenseResponse(
     val threat: Threat? = null,
     val killers: List<CellCoordinate> = emptyList(),
     @SerialName("pair_anchors") val pairAnchors: List<Pair<CellCoordinate, CellCoordinate>> = emptyList(),
+    @SerialName("counter_threats") val counterThreats: List<Pair<CellCoordinate, CellCoordinate>> = emptyList(),
+    @SerialName("tactical_pairs") val tacticalPairs: List<Pair<CellCoordinate, CellCoordinate>>,
+    @SerialName("unresolved") val unresolved: List<CellCoordinate>,
     @SerialName("best_delay") val bestDelay: CellCoordinate? = null,
     val error: String? = null,
 )
@@ -76,6 +79,7 @@ internal data class DefenseResponse(
 internal enum class DefenseKind {
     @SerialName("threat_found") ThreatFound,
     @SerialName("no_threat") NoThreat,
+    @SerialName("budget_exceeded") BudgetExceeded,
     @SerialName("error") Error,
 }
 
