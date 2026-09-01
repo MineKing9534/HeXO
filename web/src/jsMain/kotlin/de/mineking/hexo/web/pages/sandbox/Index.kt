@@ -44,6 +44,7 @@ import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
 import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.Div
+import org.w3c.dom.url.URL
 
 @InitRoute
 fun initSandboxPage(ctx: InitRouteContext) {
@@ -55,7 +56,11 @@ fun initSandboxPage(ctx: InitRouteContext) {
 fun SandboxPage(ctx: PageContext) {
     val (initialBoard, initialError) = remember {
         val initial = ctx.route.queryParams["position"]?.replace("_", "/") ?: ""
-        if (!AppGlobals.isExporting) window.history.replaceState(null, "", window.location.pathname)
+        if (!AppGlobals.isExporting) {
+            val url = URL(window.location.href)
+            url.searchParams.delete("position")
+            window.history.replaceState(null, "", url.toString())
+        }
 
         try {
             val board = when {
