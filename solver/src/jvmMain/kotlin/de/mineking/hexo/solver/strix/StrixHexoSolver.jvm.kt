@@ -1,4 +1,4 @@
-package de.mineking.hexo.solver
+package de.mineking.hexo.solver.strix
 
 import cc.tyto.DefenseKind
 import cc.tyto.DefenseResponse
@@ -6,20 +6,32 @@ import cc.tyto.Player
 import cc.tyto.SolveKind
 import cc.tyto.SolveRequest
 import cc.tyto.SolveResponse
+import cc.tyto.SolverEngine
 import cc.tyto.Stone
 import cc.tyto.StrixSolverLib
 import cc.tyto.ThreatContainer
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isEmpty
+import de.mineking.hexo.solver.BoardTransformResult
+import de.mineking.hexo.solver.Defense
+import de.mineking.hexo.solver.FindDefenseResult
+import de.mineking.hexo.solver.FindWinResult
+import de.mineking.hexo.solver.HexoSolver
+import de.mineking.hexo.solver.Turn
+import de.mineking.hexo.solver.transform
 import kotlinx.serialization.json.Json
 
-class StrixNativeHexoSolver : HexoSolver {
+actual class StrixHexoSolver actual constructor(
+    private val depthCap: Int,
+    private val nodeBudget: Int,
+    private val engine: StrixSolverEngine,
+) : HexoSolver {
     private val json = Json {
         ignoreUnknownKeys = true
     }
 
-    override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
+    actual override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
         if (board.isEmpty(includeHighlights = false)) return FindWinResult.NoWin
 
         val request = createRequest(board, player, remaining)
@@ -33,7 +45,7 @@ class StrixNativeHexoSolver : HexoSolver {
         }
     }
 
-    override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
+    actual override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
         if (board.isEmpty(includeHighlights = false)) return FindDefenseResult.NoThreat
 
         val transformed = board.transform()
@@ -54,8 +66,14 @@ class StrixNativeHexoSolver : HexoSolver {
         maxMoves = 300,
         toMove = player.strix,
         movesRemaining = remaining,
-        depthCap = 10,
-        nodeBudget = 20_000,
+        depthCap = depthCap,
+        nodeBudget = nodeBudget,
+        engine = when (engine) {
+            StrixSolverEngine.IterativeDeepeningThreatTable -> SolverEngine.Idtt
+            StrixSolverEngine.ProofNumberSearch -> SolverEngine.Pns
+            StrixSolverEngine.DepthFirstProofNumberSearch -> SolverEngine.Dfpn
+            StrixSolverEngine.ProofAndDisproofNumberSearch -> SolverEngine.Pdspn
+        },
         wide = true,
         stones = board.toStones(),
     )

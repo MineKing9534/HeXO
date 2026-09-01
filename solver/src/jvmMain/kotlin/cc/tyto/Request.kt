@@ -20,6 +20,14 @@ internal data class Stone(
 )
 
 @Serializable
+internal enum class SolverEngine {
+    @SerialName("idtt") Idtt,
+    @SerialName("pns") Pns,
+    @SerialName("dfpn") Dfpn,
+    @SerialName("pdspn") Pdspn,
+}
+
+@Serializable
 internal data class SolveRequest(
     @SerialName("win_length") val winLength: Int,
     @SerialName("placement_radius") val placementRadius: Int,
@@ -28,6 +36,7 @@ internal data class SolveRequest(
     @SerialName("moves_remaining") val movesRemaining: Int,
     @SerialName("depth_cap") val depthCap: Int,
     @SerialName("node_budget") val nodeBudget: Int,
+    val engine: SolverEngine,
     val wide: Boolean,
     val stones: List<Stone>,
 )

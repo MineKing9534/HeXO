@@ -1,4 +1,4 @@
-package de.mineking.hexo.solver
+package de.mineking.hexo.solver.strix
 
 import cc.tyto.CoordW
 import cc.tyto.DefenseKind
@@ -17,29 +17,43 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isEmpty
+import de.mineking.hexo.solver.BoardTransformResult
+import de.mineking.hexo.solver.Defense
+import de.mineking.hexo.solver.FindDefenseResult
+import de.mineking.hexo.solver.FindWinResult
+import de.mineking.hexo.solver.HexoSolver
+import de.mineking.hexo.solver.Turn
+import de.mineking.hexo.solver.transform
 import kotlinx.coroutines.await
 import org.khronos.webgl.Int32Array
 import org.khronos.webgl.set
 
-class StrixWasmHexoSolver : HexoSolver {
-    companion object {
-        @OptIn(ExperimentalWasmJsInterop::class)
-        // lazy so this is only called once the wasm backend is initialized
-        private val limits by lazy {
-            SolverLimits(
-                depthCap = 10,
-                nodeBudget = jsBigInt(20_000),
-                engine = SolverEngine.Idtt,
-            )
-        }
-    }
-
+actual class StrixHexoSolver actual constructor(
+    private val depthCap: Int,
+    private val nodeBudget: Int,
+    private val engine: StrixSolverEngine,
+) : HexoSolver {
     private val ready = init()
+
+    @OptIn(ExperimentalWasmJsInterop::class)
+    // lazy so this is only called once the wasm backend is initialized
+    private val limits by lazy {
+        SolverLimits(
+            depthCap = depthCap,
+            nodeBudget = jsBigInt(nodeBudget),
+            engine = when (engine) {
+                StrixSolverEngine.IterativeDeepeningThreatTable -> SolverEngine.Idtt
+                StrixSolverEngine.ProofNumberSearch -> SolverEngine.Pns
+                StrixSolverEngine.DepthFirstProofNumberSearch -> SolverEngine.Dfpn
+                StrixSolverEngine.ProofAndDisproofNumberSearch -> SolverEngine.Pdspn
+            },
+        )
+    }
 
     // lazy so this is only called once the wasm backend is initialized
     private val solver by lazy { StrixSolver() }
 
-    override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
+    actual override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
         if (board.isEmpty(includeHighlights = false)) return FindWinResult.NoWin
         ready.await()
 
@@ -49,7 +63,7 @@ class StrixWasmHexoSolver : HexoSolver {
         return outcome.toResult()
     }
 
-    override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
+    actual override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
         if (board.isEmpty(includeHighlights = false)) return FindDefenseResult.NoThreat
         ready.await()
 

@@ -51,7 +51,7 @@ internal external class PairAnchor private constructor() {
 }
 
 @JsName("SolverEngineEnum")
-internal sealed external class SolverEngine {
+sealed external class SolverEngine {
     object Idtt : SolverEngine
     object Pns : SolverEngine
     object Dfpn : SolverEngine
