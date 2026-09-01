@@ -1,4 +1,67 @@
-/* @ts-self-types="./hexo_wasm.d.ts" */
+/* @ts-self-types="./hexo_solver_wasm.d.ts" */
+
+/**
+ * Measurements recomputed by the independent all-defense certificate verifier.
+ */
+export class CertificateVerification {
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(CertificateVerification.prototype);
+        obj.__wbg_ptr = ptr;
+        CertificateVerificationFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        CertificateVerificationFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_certificateverification_free(ptr, 0);
+    }
+    /**
+     * @returns {bigint}
+     */
+    get dag_nodes() {
+        const ret = wasm.__wbg_get_certificateverification_dag_nodes(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * @returns {number}
+     */
+    get max_attacker_turns() {
+        const ret = wasm.__wbg_get_certificateverification_max_attacker_turns(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {bigint}
+     */
+    get proof_edges() {
+        const ret = wasm.__wbg_get_certificateverification_proof_edges(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set dag_nodes(arg0) {
+        wasm.__wbg_set_certificateverification_dag_nodes(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set max_attacker_turns(arg0) {
+        wasm.__wbg_set_certificateverification_max_attacker_turns(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set proof_edges(arg0) {
+        wasm.__wbg_set_certificateverification_proof_edges(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) CertificateVerification.prototype[Symbol.dispose] = CertificateVerification.prototype.free;
 
 export class CoordW {
     static __wrap(ptr) {
@@ -72,18 +135,15 @@ export const DefenseKind = Object.freeze({
      */
     ThreatFound: 0, "0": "ThreatFound",
     /**
-     * No proven opponent threat — nothing to defend. NOTE: this conflates "no
-     * threat" with "budget exceeded during the threat check" (`solve_defense`
-     * returns `None` for both); the caller cannot distinguish them from this
-     * enum alone. A larger `node_budget` disambiguates on re-query.
+     * PROVEN no opponent threat within `depth_cap` — nothing to defend.
+     * (Historically this also covered budget starvation; that case is now
+     * reported as `BudgetExceeded`.)
      */
     NoThreat: 1, "1": "NoThreat",
     /**
-     * Budget exceeded during the threat check. Currently UNREACHABLE: the
-     * `solve_defense` mapping produces only `ThreatFound`/`NoThreat` (the
-     * underlying `solve_defense` returns `None` for both no-threat and
-     * budget-exceeded, which maps to `NoThreat`). Reserved for a future revision
-     * where `solve_defense` distinguishes budget-exceeded from no-threat.
+     * The threat check exhausted `node_budget` (or the position was not
+     * analyzable: invalid turn shape / pathological coordinate spread) before
+     * proving anything. NOT a safety verdict — retry with a larger budget.
      */
     BudgetExceeded: 2, "2": "BudgetExceeded",
 });
@@ -114,6 +174,17 @@ export class DefenseOutcome {
     get best_delay() {
         const ret = wasm.__wbg_get_defenseoutcome_best_delay(this.__wbg_ptr);
         return ret === 0 ? undefined : CoordW.__wrap(ret);
+    }
+    /**
+     * Pair defenses that work by creating the mover's own forcing threat and
+     * taking initiative before the opponent can start its hypothetical line.
+     * @returns {PairAnchor[]}
+     */
+    get counter_threats() {
+        const ret = wasm.__wbg_get_defenseoutcome_counter_threats(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
     }
     /**
      * Single placements after which the threat is no longer provable (or which
@@ -156,14 +227,26 @@ export class DefenseOutcome {
         return v1;
     }
     /**
+     * Exact minimum-cover pairs for the immediate attack whose deeper
+     * whole-line verification remains inconclusive.
+     * @returns {PairAnchor[]}
+     */
+    get tactical_pairs() {
+        const ret = wasm.__wbg_get_defenseoutcome_tactical_pairs(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
      * The opponent's threat as a `SolveOutcome` (`kind: Win`), chunked into
      * turns the same way as `solve`: the threat is a fresh 2-placement turn
      * for the opponent, so the first turn has 2 cells. `None` when there is no
      * proven threat; always present under `ThreatFound`, but its `pv` may be
      * EMPTY when the PV re-derivation starved under `node_budget` (the win and
      * its `depth` are still proven — retry with a larger budget to recover the
-     * line; killers/pair_anchors/best_delay are empty in that case too, since
-     * defense candidates are drawn from the PV cells). `nodes` is 0 (the
+     * line. PV-blocking candidates may be unavailable in that case, but
+     * counter-threat pairs are generated independently from the real mover's
+     * position). `nodes` is 0 (the
      * sub-solve's node count is not surfaced by `solve_defense`).
      * @returns {SolveOutcome | undefined}
      */
@@ -181,6 +264,17 @@ export class DefenseOutcome {
         return ret;
     }
     /**
+     * Candidate replies whose deeper verification exhausted the work budget.
+     * They are not certified defenses, but remain tactically relevant.
+     * @returns {CoordW[]}
+     */
+    get unresolved() {
+        const ret = wasm.__wbg_get_defenseoutcome_unresolved(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
      * Max-delay fallback: the surviving candidate whose re-proven threat PV is
      * longest. `None` when the threat PV offers no legal candidate.
      * @param {CoordW | null} [arg0]
@@ -192,6 +286,16 @@ export class DefenseOutcome {
             ptr0 = arg0.__destroy_into_raw();
         }
         wasm.__wbg_set_defenseoutcome_best_delay(this.__wbg_ptr, ptr0);
+    }
+    /**
+     * Pair defenses that work by creating the mover's own forcing threat and
+     * taking initiative before the opponent can start its hypothetical line.
+     * @param {PairAnchor[]} arg0
+     */
+    set counter_threats(arg0) {
+        const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_defenseoutcome_counter_threats(this.__wbg_ptr, ptr0, len0);
     }
     /**
      * Single placements after which the threat is no longer provable (or which
@@ -230,14 +334,25 @@ export class DefenseOutcome {
         wasm.__wbg_set_defenseoutcome_pair_anchors(this.__wbg_ptr, ptr0, len0);
     }
     /**
+     * Exact minimum-cover pairs for the immediate attack whose deeper
+     * whole-line verification remains inconclusive.
+     * @param {PairAnchor[]} arg0
+     */
+    set tactical_pairs(arg0) {
+        const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_defenseoutcome_tactical_pairs(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
      * The opponent's threat as a `SolveOutcome` (`kind: Win`), chunked into
      * turns the same way as `solve`: the threat is a fresh 2-placement turn
      * for the opponent, so the first turn has 2 cells. `None` when there is no
      * proven threat; always present under `ThreatFound`, but its `pv` may be
      * EMPTY when the PV re-derivation starved under `node_budget` (the win and
      * its `depth` are still proven — retry with a larger budget to recover the
-     * line; killers/pair_anchors/best_delay are empty in that case too, since
-     * defense candidates are drawn from the PV cells). `nodes` is 0 (the
+     * line. PV-blocking candidates may be unavailable in that case, but
+     * counter-threat pairs are generated independently from the real mover's
+     * position). `nodes` is 0 (the
      * sub-solve's node count is not surfaced by `solve_defense`).
      * @param {SolveOutcome | null} [arg0]
      */
@@ -257,8 +372,139 @@ export class DefenseOutcome {
     set time_ms(arg0) {
         wasm.__wbg_set_defenseoutcome_time_ms(this.__wbg_ptr, arg0);
     }
+    /**
+     * Candidate replies whose deeper verification exhausted the work budget.
+     * They are not certified defenses, but remain tactically relevant.
+     * @param {CoordW[]} arg0
+     */
+    set unresolved(arg0) {
+        const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_defenseoutcome_unresolved(this.__wbg_ptr, ptr0, len0);
+    }
 }
 if (Symbol.dispose) DefenseOutcome.prototype[Symbol.dispose] = DefenseOutcome.prototype.free;
+
+/**
+ * One exact two-stone minimum cover after a fixed attacker turn.
+ */
+export class MinimumDefenseCover {
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(MinimumDefenseCover.prototype);
+        obj.__wbg_ptr = ptr;
+        MinimumDefenseCoverFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    static __unwrap(jsValue) {
+        if (!(jsValue instanceof MinimumDefenseCover)) {
+            return 0;
+        }
+        return jsValue.__destroy_into_raw();
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        MinimumDefenseCoverFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_minimumdefensecover_free(ptr, 0);
+    }
+    /**
+     * @returns {CoordW}
+     */
+    get first() {
+        const ret = wasm.__wbg_get_minimumdefensecover_first(this.__wbg_ptr);
+        return CoordW.__wrap(ret);
+    }
+    /**
+     * @returns {CoordW}
+     */
+    get second() {
+        const ret = wasm.__wbg_get_minimumdefensecover_second(this.__wbg_ptr);
+        return CoordW.__wrap(ret);
+    }
+    /**
+     * @param {CoordW} arg0
+     */
+    set first(arg0) {
+        _assertClass(arg0, CoordW);
+        var ptr0 = arg0.__destroy_into_raw();
+        wasm.__wbg_set_minimumdefensecover_first(this.__wbg_ptr, ptr0);
+    }
+    /**
+     * @param {CoordW} arg0
+     */
+    set second(arg0) {
+        _assertClass(arg0, CoordW);
+        var ptr0 = arg0.__destroy_into_raw();
+        wasm.__wbg_set_minimumdefensecover_second(this.__wbg_ptr, ptr0);
+    }
+}
+if (Symbol.dispose) MinimumDefenseCover.prototype[Symbol.dispose] = MinimumDefenseCover.prototype.free;
+
+/**
+ * Classification of the fixed attacker turn used by the replay defence prover.
+ * @enum {0 | 1 | 2}
+ */
+export const MinimumDefenseKind = Object.freeze({
+    Covers: 0, "0": "Covers",
+    AttackerWin: 1, "1": "AttackerWin",
+    NotForcing: 2, "2": "NotForcing",
+});
+
+export class MinimumDefenseOutcome {
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(MinimumDefenseOutcome.prototype);
+        obj.__wbg_ptr = ptr;
+        MinimumDefenseOutcomeFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        MinimumDefenseOutcomeFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_minimumdefenseoutcome_free(ptr, 0);
+    }
+    /**
+     * @returns {MinimumDefenseCover[]}
+     */
+    get covers() {
+        const ret = wasm.__wbg_get_minimumdefenseoutcome_covers(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {MinimumDefenseKind}
+     */
+    get kind() {
+        const ret = wasm.__wbg_get_minimumdefenseoutcome_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {MinimumDefenseCover[]} arg0
+     */
+    set covers(arg0) {
+        const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_minimumdefenseoutcome_covers(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * @param {MinimumDefenseKind} arg0
+     */
+    set kind(arg0) {
+        wasm.__wbg_set_minimumdefenseoutcome_kind(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) MinimumDefenseOutcome.prototype[Symbol.dispose] = MinimumDefenseOutcome.prototype.free;
 
 export class PairAnchor {
     static __wrap(ptr) {
@@ -440,6 +686,215 @@ export class Position {
 if (Symbol.dispose) Position.prototype[Symbol.dispose] = Position.prototype.free;
 
 /**
+ * Result of certificate-guided, depth-bounded PDS-PN optimization. `Win`
+ * means the adjacent lower/upper bounds certify the exact shortest attacker
+ * depth; `BudgetExceeded` can still carry useful verified bounds and a best PV.
+ */
+export class ShortestOutcome {
+    static __wrap(ptr) {
+        ptr = ptr >>> 0;
+        const obj = Object.create(ShortestOutcome.prototype);
+        obj.__wbg_ptr = ptr;
+        ShortestOutcomeFinalization.register(obj, obj.__wbg_ptr, obj);
+        return obj;
+    }
+    __destroy_into_raw() {
+        const ptr = this.__wbg_ptr;
+        this.__wbg_ptr = 0;
+        ShortestOutcomeFinalization.unregister(this);
+        return ptr;
+    }
+    free() {
+        const ptr = this.__destroy_into_raw();
+        wasm.__wbg_shortestoutcome_free(ptr, 0);
+    }
+    /**
+     * @returns {number}
+     */
+    get best_upper_depth() {
+        const ret = wasm.__wbg_get_shortestoutcome_best_upper_depth(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {bigint}
+     */
+    get certificate_edges() {
+        const ret = wasm.__wbg_get_shortestoutcome_certificate_edges(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * @returns {string}
+     */
+    get certificate_json() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.__wbg_get_shortestoutcome_certificate_json(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {number}
+     */
+    get certificate_max_attacker_turns() {
+        const ret = wasm.__wbg_get_shortestoutcome_certificate_max_attacker_turns(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {bigint}
+     */
+    get certificate_nodes() {
+        const ret = wasm.__wbg_get_shortestoutcome_certificate_nodes(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * @returns {number}
+     */
+    get depth() {
+        const ret = wasm.__wbg_get_shortestoutcome_depth(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {number}
+     */
+    get excluded_through_depth() {
+        const ret = wasm.__wbg_get_shortestoutcome_excluded_through_depth(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {SolveKind}
+     */
+    get kind() {
+        const ret = wasm.__wbg_get_shortestoutcome_kind(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @returns {bigint}
+     */
+    get nodes() {
+        const ret = wasm.__wbg_get_shortestoutcome_nodes(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * @returns {Turn[]}
+     */
+    get pv() {
+        const ret = wasm.__wbg_get_shortestoutcome_pv(this.__wbg_ptr);
+        var v1 = getArrayJsValueFromWasm0(ret[0], ret[1]).slice();
+        wasm.__wbindgen_free(ret[0], ret[1] * 4, 4);
+        return v1;
+    }
+    /**
+     * @returns {boolean}
+     */
+    get shortest_certified() {
+        const ret = wasm.__wbg_get_shortestoutcome_shortest_certified(this.__wbg_ptr);
+        return ret !== 0;
+    }
+    /**
+     * @returns {bigint}
+     */
+    get threshold_probes() {
+        const ret = wasm.__wbg_get_shortestoutcome_threshold_probes(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * @returns {number}
+     */
+    get time_ms() {
+        const ret = wasm.__wbg_get_shortestoutcome_time_ms(this.__wbg_ptr);
+        return ret;
+    }
+    /**
+     * @param {number} arg0
+     */
+    set best_upper_depth(arg0) {
+        wasm.__wbg_set_shortestoutcome_best_upper_depth(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set certificate_edges(arg0) {
+        wasm.__wbg_set_shortestoutcome_certificate_edges(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {string} arg0
+     */
+    set certificate_json(arg0) {
+        const ptr0 = passStringToWasm0(arg0, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_shortestoutcome_certificate_json(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set certificate_max_attacker_turns(arg0) {
+        wasm.__wbg_set_shortestoutcome_certificate_max_attacker_turns(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set certificate_nodes(arg0) {
+        wasm.__wbg_set_shortestoutcome_certificate_nodes(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set depth(arg0) {
+        wasm.__wbg_set_shortestoutcome_depth(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set excluded_through_depth(arg0) {
+        wasm.__wbg_set_shortestoutcome_excluded_through_depth(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {SolveKind} arg0
+     */
+    set kind(arg0) {
+        wasm.__wbg_set_shortestoutcome_kind(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set nodes(arg0) {
+        wasm.__wbg_set_shortestoutcome_nodes(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {Turn[]} arg0
+     */
+    set pv(arg0) {
+        const ptr0 = passArrayJsValueToWasm0(arg0, wasm.__wbindgen_malloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_shortestoutcome_pv(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * @param {boolean} arg0
+     */
+    set shortest_certified(arg0) {
+        wasm.__wbg_set_shortestoutcome_shortest_certified(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set threshold_probes(arg0) {
+        wasm.__wbg_set_shortestoutcome_threshold_probes(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set time_ms(arg0) {
+        wasm.__wbg_set_shortestoutcome_time_ms(this.__wbg_ptr, arg0);
+    }
+}
+if (Symbol.dispose) ShortestOutcome.prototype[Symbol.dispose] = ShortestOutcome.prototype.free;
+
+/**
  * @enum {0 | 1 | 2}
  */
 export const SolveKind = Object.freeze({
@@ -465,6 +920,44 @@ export class SolveOutcome {
     free() {
         const ptr = this.__destroy_into_raw();
         wasm.__wbg_solveoutcome_free(ptr, 0);
+    }
+    /**
+     * @returns {bigint}
+     */
+    get certificate_edges() {
+        const ret = wasm.__wbg_get_solveoutcome_certificate_edges(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * Pretty JSON for a replay-verified PDS-PN all-defense DAG; empty for other
+     * engines/verdicts or if optional reconstruction failed.
+     * @returns {string}
+     */
+    get certificate_json() {
+        let deferred1_0;
+        let deferred1_1;
+        try {
+            const ret = wasm.__wbg_get_solveoutcome_certificate_json(this.__wbg_ptr);
+            deferred1_0 = ret[0];
+            deferred1_1 = ret[1];
+            return getStringFromWasm0(ret[0], ret[1]);
+        } finally {
+            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
+        }
+    }
+    /**
+     * @returns {number}
+     */
+    get certificate_max_attacker_turns() {
+        const ret = wasm.__wbg_get_solveoutcome_certificate_max_attacker_turns(this.__wbg_ptr);
+        return ret >>> 0;
+    }
+    /**
+     * @returns {bigint}
+     */
+    get certificate_nodes() {
+        const ret = wasm.__wbg_get_solveoutcome_certificate_nodes(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
     }
     /**
      * @returns {number}
@@ -502,6 +995,34 @@ export class SolveOutcome {
     get time_ms() {
         const ret = wasm.__wbg_get_solveoutcome_time_ms(this.__wbg_ptr);
         return ret;
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set certificate_edges(arg0) {
+        wasm.__wbg_set_solveoutcome_certificate_edges(this.__wbg_ptr, arg0);
+    }
+    /**
+     * Pretty JSON for a replay-verified PDS-PN all-defense DAG; empty for other
+     * engines/verdicts or if optional reconstruction failed.
+     * @param {string} arg0
+     */
+    set certificate_json(arg0) {
+        const ptr0 = passStringToWasm0(arg0, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.__wbg_set_solveoutcome_certificate_json(this.__wbg_ptr, ptr0, len0);
+    }
+    /**
+     * @param {number} arg0
+     */
+    set certificate_max_attacker_turns(arg0) {
+        wasm.__wbg_set_solveoutcome_certificate_max_attacker_turns(this.__wbg_ptr, arg0);
+    }
+    /**
+     * @param {bigint} arg0
+     */
+    set certificate_nodes(arg0) {
+        wasm.__wbg_set_solveoutcome_certificate_nodes(this.__wbg_ptr, arg0);
     }
     /**
      * @param {number} arg0
@@ -560,6 +1081,8 @@ export class SolverLimits {
         wasm.__wbg_solverlimits_free(ptr, 0);
     }
     /**
+     * IDTT attacker-turn horizon. For DFPN/PDS-PN this only bounds fallback
+     * principal-variation recovery; their main proof is node-budget driven.
      * @returns {number}
      */
     get depth_cap() {
@@ -574,6 +1097,7 @@ export class SolverLimits {
         return ret;
     }
     /**
+     * Maximum engine work counter. Node meanings are engine-specific.
      * @returns {bigint}
      */
     get node_budget() {
@@ -581,6 +1105,17 @@ export class SolverLimits {
         return BigInt.asUintN(64, ret);
     }
     /**
+     * PDS-PN level-2 expansions per newly reached frontier. Ignored by the
+     * other engines. This is separate from the outer `node_budget`.
+     * @returns {bigint}
+     */
+    get pn2_nodes() {
+        const ret = wasm.__wbg_get_solverlimits_pn2_nodes(this.__wbg_ptr);
+        return BigInt.asUintN(64, ret);
+    }
+    /**
+     * IDTT attacker-turn horizon. For DFPN/PDS-PN this only bounds fallback
+     * principal-variation recovery; their main proof is node-budget driven.
      * @param {number} arg0
      */
     set depth_cap(arg0) {
@@ -593,10 +1128,19 @@ export class SolverLimits {
         wasm.__wbg_set_solverlimits_engine(this.__wbg_ptr, arg0);
     }
     /**
+     * Maximum engine work counter. Node meanings are engine-specific.
      * @param {bigint} arg0
      */
     set node_budget(arg0) {
         wasm.__wbg_set_solverlimits_node_budget(this.__wbg_ptr, arg0);
+    }
+    /**
+     * PDS-PN level-2 expansions per newly reached frontier. Ignored by the
+     * other engines. This is separate from the outer `node_budget`.
+     * @param {bigint} arg0
+     */
+    set pn2_nodes(arg0) {
+        wasm.__wbg_set_solverlimits_pn2_nodes(this.__wbg_ptr, arg0);
     }
     /**
      * @param {number} depth_cap
@@ -679,110 +1223,6 @@ export class Stone {
 }
 if (Symbol.dispose) Stone.prototype[Symbol.dispose] = Stone.prototype.free;
 
-export class StrixBot {
-    __destroy_into_raw() {
-        const ptr = this.__wbg_ptr;
-        this.__wbg_ptr = 0;
-        StrixBotFinalization.unregister(this);
-        return ptr;
-    }
-    free() {
-        const ptr = this.__destroy_into_raw();
-        wasm.__wbg_strixbot_free(ptr, 0);
-    }
-    /**
-     * Search for the best move. Position JSON per the crate README schema.
-     * NOTE: with disable_gumbel_noise + dirichlet off the search consumes NO
-     * randomness — the bot is fully deterministic and `seed` is currently INERT
-     * (reserved for future variety modes; documented in the README).
-     * @param {string} position_json
-     * @param {number} sims
-     * @param {number} m_actions
-     * @param {bigint} seed
-     * @returns {string}
-     */
-    best_move(position_json, sims, m_actions, seed) {
-        let deferred3_0;
-        let deferred3_1;
-        try {
-            const ptr0 = passStringToWasm0(position_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-            const len0 = WASM_VECTOR_LEN;
-            const ret = wasm.strixbot_best_move(this.__wbg_ptr, ptr0, len0, sims, m_actions, seed);
-            var ptr2 = ret[0];
-            var len2 = ret[1];
-            if (ret[3]) {
-                ptr2 = 0; len2 = 0;
-                throw takeFromExternrefTable0(ret[2]);
-            }
-            deferred3_0 = ptr2;
-            deferred3_1 = len2;
-            return getStringFromWasm0(ptr2, len2);
-        } finally {
-            wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
-        }
-    }
-    /**
-     * Raw net eval, no search: {"value": f, "policy": [{q,r,p}...]} (softmaxed prior).
-     * `policy` here is the RAW prior — best_move's `policy` is the search-improved
-     * distribution; same shape, different numbers.
-     * @param {string} position_json
-     * @returns {string}
-     */
-    evaluate(position_json) {
-        let deferred3_0;
-        let deferred3_1;
-        try {
-            const ptr0 = passStringToWasm0(position_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
-            const len0 = WASM_VECTOR_LEN;
-            const ret = wasm.strixbot_evaluate(this.__wbg_ptr, ptr0, len0);
-            var ptr2 = ret[0];
-            var len2 = ret[1];
-            if (ret[3]) {
-                ptr2 = 0; len2 = 0;
-                throw takeFromExternrefTable0(ret[2]);
-            }
-            deferred3_0 = ptr2;
-            deferred3_1 = len2;
-            return getStringFromWasm0(ptr2, len2);
-        } finally {
-            wasm.__wbindgen_free(deferred3_0, deferred3_1, 1);
-        }
-    }
-    /**
-     * Model metadata passthrough: model_config, train_steps, source_checkpoint,
-     * and (if present) the training game_config — clients should mirror it in
-     * their position `config`.
-     * @returns {string}
-     */
-    model_info() {
-        let deferred1_0;
-        let deferred1_1;
-        try {
-            const ret = wasm.strixbot_model_info(this.__wbg_ptr);
-            deferred1_0 = ret[0];
-            deferred1_1 = ret[1];
-            return getStringFromWasm0(ret[0], ret[1]);
-        } finally {
-            wasm.__wbindgen_free(deferred1_0, deferred1_1, 1);
-        }
-    }
-    /**
-     * @param {Uint8Array} weights
-     */
-    constructor(weights) {
-        const ptr0 = passArray8ToWasm0(weights, wasm.__wbindgen_malloc);
-        const len0 = WASM_VECTOR_LEN;
-        const ret = wasm.strixbot_new(ptr0, len0);
-        if (ret[2]) {
-            throw takeFromExternrefTable0(ret[1]);
-        }
-        this.__wbg_ptr = ret[0] >>> 0;
-        StrixBotFinalization.register(this, this.__wbg_ptr, this);
-        return this;
-    }
-}
-if (Symbol.dispose) StrixBot.prototype[Symbol.dispose] = StrixBot.prototype.free;
-
 export class StrixSolver {
     __destroy_into_raw() {
         const ptr = this.__wbg_ptr;
@@ -794,11 +1234,48 @@ export class StrixSolver {
         const ptr = this.__destroy_into_raw();
         wasm.__wbg_strixsolver_free(ptr, 0);
     }
+    /**
+     * Enumerate every exact minimum cover after an attacker turn that has
+     * already been placed. `position.to_move` identifies that attacker even
+     * though the historical game is now waiting for the defender's reply.
+     * @param {Position} position
+     * @param {boolean} wide
+     * @returns {MinimumDefenseOutcome}
+     */
+    minimum_defenses_after_attack(position, wide) {
+        _assertClass(position, Position);
+        const ret = wasm.strixsolver_minimum_defenses_after_attack(this.__wbg_ptr, position.__wbg_ptr, wide);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return MinimumDefenseOutcome.__wrap(ret[0]);
+    }
     constructor() {
         const ret = wasm.strixsolver_new();
         this.__wbg_ptr = ret >>> 0;
         StrixSolverFinalization.register(this, this.__wbg_ptr, this);
         return this;
+    }
+    /**
+     * Tighten a verified PDS-PN proof to the shortest attacker-turn bound by
+     * binary-searching horizons with depth-bounded PDS-PN. Runs synchronously;
+     * browser callers invoke it inside the cancellable solver Web Worker.
+     * @param {Position} position
+     * @param {SolverLimits} limits
+     * @param {string} certificate_json
+     * @param {boolean} wide
+     * @returns {ShortestOutcome}
+     */
+    optimize_certificate(position, limits, certificate_json, wide) {
+        _assertClass(position, Position);
+        _assertClass(limits, SolverLimits);
+        const ptr0 = passStringToWasm0(certificate_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.strixsolver_optimize_certificate(this.__wbg_ptr, position.__wbg_ptr, limits.__wbg_ptr, ptr0, len0, wide);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return ShortestOutcome.__wrap(ret[0]);
     }
     /**
      * @param {Position} position
@@ -818,8 +1295,11 @@ export class StrixSolver {
      * Defensive analysis for the side to move: detects the opponent's
      * flipped-perspective forcing threat and reports which placements refute it
      * (killers / pair anchors / best-delay fallback). Wraps
-     * `hexo_solver::solve_defense_from_position`, which delegates to the
-     * battle-tested `forcing::solve_defense`.
+     * `hexo_solver::solve_defense_verdict_from_position`, which delegates to
+     * the battle-tested `forcing::solve_defense_ex`. Uses the TIGHT generator;
+     * see `solve_defense_wide` for threats the tight generator cannot see.
+     * A starved threat check reports `kind: BudgetExceeded`, distinct from the
+     * proven `NoThreat`.
      *
      * `limits.engine` is INERT for defense: the analysis always uses the forcing
      * (idtt) solver internally (the candidate-verification pattern is
@@ -848,6 +1328,24 @@ export class StrixSolver {
         return DefenseOutcome.__wrap(ret[0]);
     }
     /**
+     * `solve_defense` with the wide (threat + quiet-builder) generator for the
+     * threat sighting AND every candidate/pair verification — sees threats the
+     * tight defense provably cannot (a forcing turn pairing a threat stone
+     * with a quiet build stone), at the known ~1.5-1.7x per-solve cost.
+     * @param {Position} position
+     * @param {SolverLimits} limits
+     * @returns {DefenseOutcome}
+     */
+    solve_defense_wide(position, limits) {
+        _assertClass(position, Position);
+        _assertClass(limits, SolverLimits);
+        const ret = wasm.strixsolver_solve_defense_wide(this.__wbg_ptr, position.__wbg_ptr, limits.__wbg_ptr);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return DefenseOutcome.__wrap(ret[0]);
+    }
+    /**
      * Opponent's forcing win if left unblocked: flip `to_move` and solve.
      * Does NOT call `forcing::solve_threat` (GameState-based); the flip +
      * re-solve IS the threat semantics.
@@ -859,6 +1357,22 @@ export class StrixSolver {
         _assertClass(position, Position);
         _assertClass(limits, SolverLimits);
         const ret = wasm.strixsolver_solve_threat(this.__wbg_ptr, position.__wbg_ptr, limits.__wbg_ptr);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return SolveOutcome.__wrap(ret[0]);
+    }
+    /**
+     * Wide-generator counterpart to `solve_threat`, used by Observatory's
+     * automatic per-position analysis.
+     * @param {Position} position
+     * @param {SolverLimits} limits
+     * @returns {SolveOutcome}
+     */
+    solve_threat_wide(position, limits) {
+        _assertClass(position, Position);
+        _assertClass(limits, SolverLimits);
+        const ret = wasm.strixsolver_solve_threat_wide(this.__wbg_ptr, position.__wbg_ptr, limits.__wbg_ptr);
         if (ret[2]) {
             throw takeFromExternrefTable0(ret[1]);
         }
@@ -877,6 +1391,25 @@ export class StrixSolver {
             throw takeFromExternrefTable0(ret[1]);
         }
         return SolveOutcome.__wrap(ret[0]);
+    }
+    /**
+     * Replay and verify a serialized PDS-PN all-defense certificate from
+     * scratch. This does not consult a search tree, proof numbers, or TT: every
+     * attacker action and the complete set of exact defender replies is
+     * recomputed by the shared forcing kernel.
+     * @param {Position} position
+     * @param {string} certificate_json
+     * @returns {CertificateVerification}
+     */
+    verify_certificate(position, certificate_json) {
+        _assertClass(position, Position);
+        const ptr0 = passStringToWasm0(certificate_json, wasm.__wbindgen_malloc, wasm.__wbindgen_realloc);
+        const len0 = WASM_VECTOR_LEN;
+        const ret = wasm.strixsolver_verify_certificate(this.__wbg_ptr, position.__wbg_ptr, ptr0, len0);
+        if (ret[2]) {
+            throw takeFromExternrefTable0(ret[1]);
+        }
+        return CertificateVerification.__wrap(ret[0]);
     }
 }
 if (Symbol.dispose) StrixSolver.prototype[Symbol.dispose] = StrixSolver.prototype.free;
@@ -969,6 +1502,14 @@ function __wbg_get_imports() {
             const ret = CoordW.__unwrap(arg0);
             return ret;
         },
+        __wbg_minimumdefensecover_new: function(arg0) {
+            const ret = MinimumDefenseCover.__wrap(arg0);
+            return ret;
+        },
+        __wbg_minimumdefensecover_unwrap: function(arg0) {
+            const ret = MinimumDefenseCover.__unwrap(arg0);
+            return ret;
+        },
         __wbg_pairanchor_new: function(arg0) {
             const ret = PairAnchor.__wrap(arg0);
             return ret;
@@ -1005,22 +1546,34 @@ function __wbg_get_imports() {
     };
     return {
         __proto__: null,
-        "./hexo_wasm_bg.js": import0,
+        "./hexo_solver_wasm_bg.js": import0,
     };
 }
 
+const CertificateVerificationFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_certificateverification_free(ptr >>> 0, 1));
 const CoordWFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_coordw_free(ptr >>> 0, 1));
 const DefenseOutcomeFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_defenseoutcome_free(ptr >>> 0, 1));
+const MinimumDefenseCoverFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_minimumdefensecover_free(ptr >>> 0, 1));
+const MinimumDefenseOutcomeFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_minimumdefenseoutcome_free(ptr >>> 0, 1));
 const PairAnchorFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_pairanchor_free(ptr >>> 0, 1));
 const PositionFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_position_free(ptr >>> 0, 1));
+const ShortestOutcomeFinalization = (typeof FinalizationRegistry === 'undefined')
+    ? { register: () => {}, unregister: () => {} }
+    : new FinalizationRegistry(ptr => wasm.__wbg_shortestoutcome_free(ptr >>> 0, 1));
 const SolveOutcomeFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_solveoutcome_free(ptr >>> 0, 1));
@@ -1030,9 +1583,6 @@ const SolverLimitsFinalization = (typeof FinalizationRegistry === 'undefined')
 const StoneFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_stone_free(ptr >>> 0, 1));
-const StrixBotFinalization = (typeof FinalizationRegistry === 'undefined')
-    ? { register: () => {}, unregister: () => {} }
-    : new FinalizationRegistry(ptr => wasm.__wbg_strixbot_free(ptr >>> 0, 1));
 const StrixSolverFinalization = (typeof FinalizationRegistry === 'undefined')
     ? { register: () => {}, unregister: () => {} }
     : new FinalizationRegistry(ptr => wasm.__wbg_strixsolver_free(ptr >>> 0, 1));
@@ -1099,13 +1649,6 @@ function isLikeNone(x) {
 function passArray32ToWasm0(arg, malloc) {
     const ptr = malloc(arg.length * 4, 4) >>> 0;
     getUint32ArrayMemory0().set(arg, ptr / 4);
-    WASM_VECTOR_LEN = arg.length;
-    return ptr;
-}
-
-function passArray8ToWasm0(arg, malloc) {
-    const ptr = malloc(arg.length * 1, 1) >>> 0;
-    getUint8ArrayMemory0().set(arg, ptr / 1);
     WASM_VECTOR_LEN = arg.length;
     return ptr;
 }
@@ -1271,7 +1814,7 @@ async function __wbg_init(module_or_path) {
     }
 
     if (module_or_path === undefined) {
-        module_or_path = new URL('hexo_wasm_bg.wasm', import.meta.url);
+        module_or_path = new URL('hexo_solver_wasm_bg.wasm', import.meta.url);
     }
     const imports = __wbg_get_imports();
 

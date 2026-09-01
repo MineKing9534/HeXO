@@ -55,7 +55,7 @@ class StrixWasmHexoSolver : HexoSolver {
 
         val transformed = board.transform()
         val position = transformed.board.toPosition(transformed.flipPlayer(player), remaining)
-        val outcome = solver.solveDefense(position, limits)
+        val outcome = solver.solveDefenseWide(position, limits)
 
         return outcome.toResult(transformed)
     }

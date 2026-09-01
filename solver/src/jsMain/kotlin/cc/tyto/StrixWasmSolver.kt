@@ -1,4 +1,4 @@
-@file:JsModule("HeXO-solver/kotlin/pkg/hexo_wasm.js")
+@file:JsModule("HeXO-solver/kotlin/pkg/hexo_solver_wasm.js")
 @file:JsNonModule
 
 package cc.tyto
@@ -77,8 +77,8 @@ internal external class StrixSolver {
     @JsName("solve_wide")
     fun solveWide(position: Position, limits: SolverLimits): SolveOutcome
 
-    @JsName("solve_defense")
-    fun solveDefense(position: Position, limits: SolverLimits): DefenseOutcome
+    @JsName("solve_defense_wide")
+    fun solveDefenseWide(position: Position, limits: SolverLimits): DefenseOutcome
 }
 
 @JsName("default")
