@@ -21,7 +21,7 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun LobbyOverlay(session: LobbySession) {
     ContentCard({
-        classes("flex", "flex-col", "gap-5", "p-6")
+        classes("flex", "flex-col", "gap-5", "p-6", "my-auto")
     }) {
         Div({ classes("flex", "flex-col", "items-center", "gap-3", "text-center") }) {
             H1({ classes("text-2xl", "font-extrabold", "text-slate-100") }) {

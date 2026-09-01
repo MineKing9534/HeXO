@@ -1,6 +1,7 @@
 package de.mineking.hexo.web.board
 
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.varabyte.kobweb.core.AppGlobals
@@ -149,8 +150,6 @@ private fun BoardScope.DefaultBoardControls(
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
 ) {
-    val layout = rememberAppLayout()
-
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
         if (boardViewManager.hasClearableHighlights) {
             BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
@@ -164,12 +163,26 @@ private fun BoardScope.DefaultBoardControls(
             ResetViewIcon { classes("size-4") }
         }
 
-        BoardActionButton(onClick = { layout.fullscreen = !layout.fullscreen }) {
-            if (layout.fullscreen) {
-                ExitFullscreenIcon { classes("size-4") }
-            } else {
-                EnterFullscreenIcon { classes("size-4") }
-            }
+        FullScreenButton()
+    }
+}
+
+@Composable
+private fun FullScreenButton() {
+    val layout = rememberAppLayout()
+
+    DisposableEffect(Unit) {
+        val previousSupportsFullScreen = layout.supportsFullScreen
+
+        layout.supportsFullScreen = true
+        onDispose { layout.supportsFullScreen = previousSupportsFullScreen }
+    }
+
+    BoardActionButton(onClick = { layout.fullscreen = !layout.fullscreen }) {
+        if (layout.fullscreen) {
+            ExitFullscreenIcon { classes("size-4") }
+        } else {
+            EnterFullscreenIcon { classes("size-4") }
         }
     }
 }
