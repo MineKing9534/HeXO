@@ -35,6 +35,7 @@ import de.mineking.hexo.web.icons.CasualGameIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.StarIcon
+import de.mineking.hexo.web.icons.TimeControlIcon
 import de.mineking.hexo.web.icons.TournamentIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
@@ -120,15 +121,9 @@ private fun GameList(
             "flex", "max-h-full", "min-h-0", "flex-col", "gap-4", "overflow-hidden", "p-4", "lg:max-h-[calc(100%-3rem)]",
         )
     }) {
-        Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
-            H2({ classes("text-lg", "font-bold", "text-slate-100") }) {
-                Text("Finished Games")
-            }
-
-            Select(RatedFilter.entries, filter) {
-                filter = it
-                page = 1
-            }
+        GameListHeader(filter) {
+            filter = it
+            page = 1
         }
 
         when {
@@ -137,8 +132,13 @@ private fun GameList(
             else -> {
                 Div({ classes("relative", "flex", "min-h-0", "flex-1", "flex-col", "gap-4") }) {
                     ScrollableView({ classes("flex-1", "pr-2") }) {
-                        Div({ classes("grid", "gap-3") }) {
-                            games.forEach { GameCard(it) }
+                        Div({
+                            classes(
+                                "overflow-hidden", "rounded-xl", "border", "border-slate-800/80", "bg-slate-950/35",
+                                "divide-y", "divide-slate-800/80",
+                            )
+                        }) {
+                            games.forEach { GameRow(it) }
                         }
                     }
 
@@ -163,6 +163,32 @@ private fun GameList(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
+    Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
+        Div({ classes("flex", "min-w-0", "items-center", "gap-3") }) {
+            Span({
+                classes(
+                    "grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "border",
+                    "border-sky-400/25", "bg-sky-400/10", "text-sky-300",
+                )
+            }) {
+                TimeControlIcon { classes("size-4", "fill-none", "stroke-current") }
+            }
+            Div({ classes("min-w-0") }) {
+                H2({ classes("text-lg", "font-bold", "uppercase", "leading-tight", "text-slate-100") }) {
+                    Text("Match history")
+                }
+                P({ classes("mt-0.5", "truncate", "text-xs", "text-slate-500") }) {
+                    Text("Review recently completed games")
+                }
+            }
+        }
+
+        Select(RatedFilter.entries, filter, onFilterChange)
     }
 }
 
@@ -209,49 +235,59 @@ private fun EmptyGameState(filter: RatedFilter, page: Int, onPrevious: () -> Uni
 }
 
 @Composable
-private fun GameCard(game: FinishedGame) {
-    Anchor(AppRoute.FinishedGame(game.id), { classes("block") }) {
-        SubCard({
-            classes(
-                "group", "grid", "gap-3", "p-3", "transition", "hover:border-slate-600/80",
-                "hover:bg-slate-700/80", "md:grid-cols-[1fr_auto]", "md:items-center",
-            )
-        }) {
-            Div({ classes("min-w-0") }) {
-                Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
-                    GameTypeBadge(game)
-                    Badge(attrs = {
-                        attr("title", game.startedAt.toString())
-                    }) {
-                        Text(Date(game.startedAt.toEpochMilliseconds().toDouble()).formatMinutePrecision())
-                    }
-                    Badge {
-                        Text(game.result.duration.formatCompact())
-                    }
-                }
-
-                Div({ classes("mt-2", "flex", "flex-wrap", "items-center", "gap-2") }) {
-                    game.players.forEachIndexed { index, player ->
-                        if (index > 0) {
-                            Span({ classes("text-xs", "font-medium", "text-slate-400") }) {
-                                Text("vs")
-                            }
-                        }
-                        Player(player.gamePlayer) {
-                            classes("font-semibold")
-                            if (player == game.result.winner) classes("text-emerald-300!")
+private fun GameRow(game: FinishedGame) {
+    Div({
+        classes(
+            "grid", "gap-4", "p-4", "transition-colors", "duration-200", "hover:bg-slate-800/20",
+            "md:grid-cols-[minmax(0,1fr)_auto]", "md:items-center",
+        )
+    }) {
+        Div({ classes("min-w-0") }) {
+            Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
+                game.players.forEachIndexed { index, player ->
+                    if (index > 0) {
+                        Span({ classes("text-xs", "font-medium", "text-slate-500") }) {
+                            Text("vs")
                         }
                     }
-                }
-                P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-500") }) {
-                    Text(game.id.value)
+                    Player(player.gamePlayer) {
+                        classes("font-semibold")
+                        if (player == game.result.winner) classes("text-emerald-300!")
+                    }
                 }
             }
+            P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-600") }) {
+                Text(game.id.value)
+            }
 
-            Div({ classes("flex", "items-center", "gap-3", "text-sm", "text-slate-400") }) {
-                Span { Text("${game.moveCount} moves") }
+            Div({ classes("mt-3", "flex", "flex-wrap", "items-center", "gap-2") }) {
+                GameTypeBadge(game)
+                Badge(attrs = {
+                    attr("title", game.startedAt.toString())
+                }) {
+                    Text(Date(game.startedAt.toEpochMilliseconds().toDouble()).formatMinutePrecision())
+                }
+                Badge {
+                    Text(game.result.duration.formatCompact())
+                }
+            }
+        }
+
+        Div({ classes("flex", "w-full", "items-center", "justify-between", "gap-4", "md:w-auto", "md:justify-end") }) {
+            Span({ classes("whitespace-nowrap", "text-xs", "font-medium", "text-slate-500") }) {
+                Text("${game.moveCount} moves")
+            }
+            Anchor(AppRoute.FinishedGame(game.id), {
+                classes(
+                    "group", "inline-flex", "shrink-0", "items-center", "justify-center", "gap-2", "rounded-lg",
+                    "border", "border-slate-700", "bg-slate-800/70", "px-4", "py-2", "text-sm", "font-semibold",
+                    "text-slate-300", "transition", "hover:border-slate-600", "hover:bg-slate-700/70",
+                    "hover:text-slate-100", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
+                )
+            }) {
+                Text("Review game")
                 ChevronRightIcon {
-                    classes("size-4", "transition-transform", "group-hover:translate-x-0.5")
+                    classes("size-4", "shrink-0", "transition-transform", "group-hover:translate-x-0.5")
                 }
             }
         }
