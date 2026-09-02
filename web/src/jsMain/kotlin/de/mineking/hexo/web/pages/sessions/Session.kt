@@ -66,7 +66,11 @@ fun Session(id: SessionId, boardViewManager: GameBoardViewManager) {
                 is LiveSession -> {
                     val state = session.state
 
-                    GameBoardPane(session.game, state is SessionState.InGame, boardViewManager)
+                    GameBoardPane(
+                        game = session.game,
+                        isLive = state is SessionState.InGame,
+                        boardViewManager = boardViewManager,
+                    )
                     if (state is SessionState.Detailed.Finished) SessionFinishedOverlay(session, state)
                 }
                 is LobbySession -> LobbyOverlay(session)

@@ -73,6 +73,7 @@ fun BoardActionButton(
 fun BoardPane(
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
+    plain: Boolean = false,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
@@ -116,7 +117,7 @@ fun BoardPane(
             },
         ) {
             content?.invoke(this)
-            DefaultBoardControls(boardViewManager, onViewportChange)
+            DefaultBoardControls(boardViewManager, plain, onViewportChange)
         }
 
         @Composable
@@ -140,6 +141,7 @@ fun BoardPane(
 @Composable
 private fun DefaultBoardControls(
     boardViewManager: BoardViewManager,
+    plain: Boolean,
     onViewportChange: (BoardViewport) -> Unit,
 ) {
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
@@ -155,7 +157,7 @@ private fun DefaultBoardControls(
             ResetViewIcon { classes("size-4") }
         }
 
-        FullScreenButton()
+        if (!plain) FullScreenButton()
     }
 }
 
