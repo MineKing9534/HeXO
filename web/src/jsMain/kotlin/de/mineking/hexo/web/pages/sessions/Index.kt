@@ -25,6 +25,8 @@ import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.format
 import de.mineking.hexo.web.icons.CasualGameIcon
+import de.mineking.hexo.web.icons.EyeIcon
+import de.mineking.hexo.web.icons.RightArrowIcon
 import de.mineking.hexo.web.icons.StarIcon
 import de.mineking.hexo.web.icons.TimeControlIcon
 import de.mineking.hexo.web.layout.AppRoute
@@ -76,19 +78,7 @@ private fun LobbyList(sessionRepository: SessionRepository) {
             "flex", "max-h-full", "min-h-0", "flex-col", "gap-4", "overflow-hidden", "p-4", "lg:max-h-[calc(100%-3rem)]",
         )
     }) {
-        Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
-            H2({ classes("text-lg", "font-bold", "text-slate-100") }) {
-                Text("Lobbies")
-            }
-            Span({ classes("text-sm", "text-slate-500") }) {
-                Span({ classes("font-semibold") }) {
-                    Text("${sortedLobbies.size} ")
-                }
-                Span {
-                    Text(if (sortedLobbies.size == 1) "lobby" else "lobbies")
-                }
-            }
-        }
+        LobbyListHeader(sortedLobbies.size)
 
         if (sortedLobbies.isEmpty()) {
             EmptyLobbyState()
@@ -96,11 +86,53 @@ private fun LobbyList(sessionRepository: SessionRepository) {
             ScrollableView({
                 classes("pr-2")
             }) {
-                Div({ classes("grid", "gap-4") }) {
+                Div({
+                    classes(
+                        "overflow-hidden", "rounded-xl", "border", "border-slate-800/80", "bg-slate-950/35",
+                        "divide-y", "divide-slate-800/80",
+                    )
+                }) {
                     sortedLobbies.forEach { lobby ->
-                        LobbyCard(lobby)
+                        LobbyRow(lobby)
                     }
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun LobbyListHeader(sessionCount: Int) {
+    Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
+        Div({ classes("flex", "min-w-0", "items-center", "gap-3") }) {
+            Span({
+                classes(
+                    "grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "border",
+                    "border-emerald-400/25", "bg-emerald-400/10", "text-emerald-300",
+                )
+            }) {
+                EyeIcon { classes("size-4") }
+            }
+            Div({ classes("min-w-0") }) {
+                H2({ classes("text-lg", "font-bold", "leading-tight", "text-slate-100", "uppercase") }) {
+                    Text("Live sessions")
+                }
+                P({ classes("mt-0.5", "truncate", "text-xs", "text-slate-500") }) {
+                    Text("Watch public games as they happen")
+                }
+            }
+        }
+        Span({
+            classes(
+                "shrink-0", "rounded-full", "border", "border-slate-700/70", "bg-slate-950/50",
+                "px-3", "py-1.5", "text-xs", "text-slate-500",
+            )
+        }) {
+            Span({ classes("mr-1", "font-bold", "text-slate-300") }) {
+                Text("$sessionCount")
+            }
+            Span {
+                Text(if (sessionCount == 1) "session" else "sessions")
             }
         }
     }
@@ -123,31 +155,44 @@ private fun EmptyLobbyState() {
 }
 
 @Composable
-private fun LobbyCard(lobby: Session) {
-    Anchor(AppRoute.Session(lobby.id), {
-        classes("block")
+private fun LobbyRow(lobby: Session) {
+    Div({
+        classes(
+            "grid", "gap-4", "p-4", "transition-colors", "duration-200", "hover:bg-slate-800/20",
+            "md:grid-cols-[minmax(0,1fr)_auto]", "md:items-center",
+        )
     }) {
-        SubCard({
+        Div({ classes("flex", "min-w-0", "flex-col", "gap-2.5") }) {
+            Div({ classes("min-w-0") }) {
+                H2({ classes("truncate", "text-base", "font-semibold", "text-slate-100") }) {
+                    Text(lobby.players.formatPlayers())
+                }
+                Div({ classes("mt-0.5", "flex", "min-w-0", "items-center", "gap-1.5", "text-xs", "text-slate-600") }) {
+                    Span { Text("Session") }
+                    Span { Text("·") }
+                    Span({ classes("truncate", "font-mono") }) { Text(lobby.id.value) }
+                }
+            }
+
+            Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
+                StatusBadge(lobby)
+                GameTypeBadge(lobby.gameOptions.rated)
+                TimeControlBadge(lobby.gameOptions.timeControl)
+            }
+        }
+
+        Anchor(AppRoute.Session(lobby.id), {
             classes(
-                "group", "grid", "gap-4", "p-3", "transition", "hover:border-slate-600/80",
-                "hover:bg-slate-700/80", "md:grid-cols-[1fr_auto]", "md:items-center",
+                "group", "inline-flex", "w-full", "shrink-0", "items-center", "justify-center", "gap-2",
+                "rounded-lg", "border", "border-slate-700", "bg-slate-800/70", "px-4", "py-2", "text-sm",
+                "font-semibold", "text-slate-300", "transition", "hover:border-slate-600", "hover:bg-slate-700/70",
+                "hover:text-slate-100", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
+                "md:w-auto",
             )
         }) {
-            Div({ classes("flex", "min-w-0", "flex-col", "gap-3") }) {
-                Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
-                    StatusBadge(lobby)
-                    GameTypeBadge(lobby.gameOptions.rated)
-                    TimeControlBadge(lobby.gameOptions.timeControl)
-                }
-
-                Div({ classes("min-w-0") }) {
-                    H2({ classes("truncate", "text-xl", "text-base", "font-semibold", "text-slate-100") }) {
-                        Text(lobby.players.formatPlayers())
-                    }
-                    P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-500") }) {
-                        Text(lobby.id.value)
-                    }
-                }
+            Text("Watch session")
+            RightArrowIcon {
+                classes("size-4", "shrink-0", "transition-transform", "group-hover:translate-x-0.5")
             }
         }
     }
