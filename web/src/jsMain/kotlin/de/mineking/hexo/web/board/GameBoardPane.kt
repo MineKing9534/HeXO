@@ -258,7 +258,7 @@ private fun TurnIndicator(
                     classes("bg-slate-500/20", "border-slate-500/50")
                 }
             }) {
-                Player(player.gamePlayer)
+                PlayerName(player.gamePlayer)
                 if (player is LiveSessionPlayer && isLive) PlayerTimer(player, isCurrentTurn)
             }
             if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
@@ -295,7 +295,7 @@ private fun RatedInfoCard(game: Game) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Player(player.gamePlayer)
+                    PlayerName(player.gamePlayer)
                     Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
                         Text("Elo ${player.elo}")
 
@@ -344,7 +344,7 @@ private fun TournamentInfoCard(game: Game) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
                 Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Player(player.gamePlayer)
+                    PlayerName(player.gamePlayer)
                     Span({ classes("shrink-0", "tabular-nums") }) {
                         Span({
                             classes("font-bold", "text-sm")
@@ -370,7 +370,7 @@ data class GamePlayer(val displayName: String, val color: CellOwner)
 val Player.gamePlayer get() = GamePlayer(displayName, color)
 
 @Composable
-fun Player(
+fun PlayerName(
     player: GamePlayer,
     attrs: AttrBuilderContext<HTMLSpanElement>? = null,
 ) {

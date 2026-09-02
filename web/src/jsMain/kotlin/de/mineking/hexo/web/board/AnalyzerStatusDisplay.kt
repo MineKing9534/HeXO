@@ -57,7 +57,7 @@ private fun AnalyzerResultDisplay(
     if (state.threat is FindWinResult.Win) {
         AnalyzerNotificationCard(
             title = {
-                Player(analyzedPlayer)
+                PlayerName(analyzedPlayer)
                 Text(" has a forced win")
             },
             color = "emerald-400",
@@ -69,7 +69,7 @@ private fun AnalyzerResultDisplay(
     if (state.defense is FindDefenseResult.Threat) {
         AnalyzerNotificationCard(
             title = {
-                Player(otherPlayer)
+                PlayerName(otherPlayer)
                 Text(" threatens a forced win")
             },
             color = "rose-400",
