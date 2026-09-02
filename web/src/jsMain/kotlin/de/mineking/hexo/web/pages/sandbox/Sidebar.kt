@@ -58,9 +58,9 @@ fun Sidebar(
         maxWidth = MAX_SIDEBAR_WIDTH,
         attrs = {
             classes(
-                "relative", "flex", "min-h-0", "max-h-[30dvh]", "w-full", "shrink-0", "flex-col", "gap-5",
-                "overflow-y-auto", "border-t", "border-slate-800", "bg-slate-900/80", "p-4", "shadow-2xl",
-                "md:max-h-none", "md:w-(--sidebar-width)", "md:gap-8", "md:border-l", "md:border-t-0", "md:p-6",
+                "relative", "flex", "min-h-0", "max-h-[38dvh]", "w-full", "shrink-0", "flex-col", "gap-4",
+                "overflow-y-auto", "border-t", "border-slate-800", "bg-slate-900/90", "p-4", "shadow-2xl",
+                "md:max-h-none", "md:w-(--sidebar-width)", "md:border-l", "md:border-t-0", "md:p-5",
             )
         },
     ) {
@@ -81,65 +81,94 @@ fun Sidebar(
         }
 
         SidebarHeader(parseError)
-
-        Div({ classes("flex", "flex-col", "gap-2") }) {
-            val coroutineScope = rememberCoroutineScope()
-            NotationField(
-                repositories = repositories,
-                notation = notation,
-                parseError = parseError,
-                onImportPosition = onImportPosition,
-                onChange = { value ->
-                    notation = value
-                    if (value.isBlank()) {
-                        onBoardChange(Board.withTurnNumbers())
-                        return@NotationField
-                    }
-
-                    coroutineScope.launch {
-                        try {
-                            onBoardChange(boardParser.parse(value))
-                            parseError = null
-                        } catch (e: HexoNotationException) {
-                            parseError = e.message
-                        }
-                    }
-                },
-            )
-            SidebarNotationInfo(board, onBoardChange, parseError)
-        }
+        SidebarNotationSection(
+            repositories = repositories,
+            board = board,
+            notation = notation,
+            parseError = parseError,
+            onNotationChange = { notation = it },
+            onParseErrorChange = { parseError = it },
+            onBoardChange = onBoardChange,
+            onImportPosition = onImportPosition,
+        )
 
         PlacementMode(placementMode)
 
-        Div({ classes("grow") })
+        Div({ classes("hidden", "grow", "md:block") })
 
         SandboxAnalyzerState()
     }
 }
 
 @Composable
-private fun SandboxAnalyzerState() {
-    BooleanSettingsField(
-        key = SettingsKey.SandboxAnalyzer,
-        title = "Sandbox analyzer",
-        description = {
-            Text("Analyzes the sandbox for forced-wins (Powered by ")
-            A(href = "https://github.com/SootyOwl/hexo-strix", {
-                target(ATarget.Blank)
-                classes("font-bold", "text-sky-400")
-            }) {
-                Text("Strix")
+private fun SidebarNotationSection(
+    repositories: RepositoryContainer?,
+    board: Board,
+    notation: String,
+    parseError: String?,
+    onNotationChange: (String) -> Unit,
+    onParseErrorChange: (String?) -> Unit,
+    onBoardChange: (Board) -> Unit,
+    onImportPosition: () -> Unit,
+) {
+    val coroutineScope = rememberCoroutineScope()
+    Div({
+        classes(
+            "flex", "flex-col", "gap-3", "rounded-xl", "border", "border-slate-800/80",
+            "bg-slate-950/35", "p-3",
+        )
+    }) {
+        NotationField(repositories, notation, parseError, onImportPosition) { value ->
+            onNotationChange(value)
+            if (value.isBlank()) {
+                onBoardChange(Board.withTurnNumbers())
+                return@NotationField
             }
-            Text(").")
-        },
-    )
+            coroutineScope.launch {
+                try {
+                    onBoardChange(boardParser.parse(value))
+                    onParseErrorChange(null)
+                } catch (e: HexoNotationException) {
+                    onParseErrorChange(e.message)
+                }
+            }
+        }
+        SidebarNotationInfo(board, onBoardChange, parseError)
+    }
+}
+
+@Composable
+private fun SandboxAnalyzerState() {
+    Div({ classes("space-y-2") }) {
+        Div({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
+            Text("Analysis")
+        }
+        BooleanSettingsField(
+            key = SettingsKey.SandboxAnalyzer,
+            title = "Sandbox analyzer",
+            description = {
+                Text("Analyzes the sandbox for forced-wins (Powered by ")
+                A(href = "https://github.com/SootyOwl/hexo-strix", {
+                    target(ATarget.Blank)
+                    classes("font-bold", "text-sky-400")
+                }) {
+                    Text("Strix")
+                }
+                Text(").")
+            },
+        )
+    }
 }
 
 @Composable
 private fun PlacementMode(placementMode: MutableState<CellPlacementMode>) {
     var placementMode by placementMode
-    Div({ classes("space-y-2") }) {
-        Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
+    Div({
+        classes(
+            "space-y-2", "rounded-xl", "border", "border-slate-800/80", "bg-slate-950/35", "p-3",
+        )
+    }) {
+        Div({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
             Text("Placement Mode")
         }
 
@@ -149,9 +178,14 @@ private fun PlacementMode(placementMode: MutableState<CellPlacementMode>) {
 
 @Composable
 private fun SidebarHeader(parseError: String?) {
-    Div({ classes("flex", "items-center", "justify-between") }) {
-        Div({ classes("text-lg", "font-semibold") }) {
-            Text("Board")
+    Div({ classes("flex", "items-start", "justify-between", "gap-3", "pb-1") }) {
+        Div({ classes("min-w-0") }) {
+            Div({ classes("text-lg", "font-bold", "text-slate-100") }) {
+                Text("Sandbox controls")
+            }
+            Div({ classes("mt-0.5", "text-xs", "text-slate-500") }) {
+                Text("Edit and analyze the current position")
+            }
         }
         ParseStatus(parseError == null)
     }
@@ -175,17 +209,11 @@ private fun NotationField(
     onChange: (String) -> Unit,
 ) {
     Div({ classes("space-y-2") }) {
-        Div({ classes("relative", "min-h-8", "overflow-hidden") }) {
-            Div({ classes("pt-1.5", "text-sm", "font-semibold", "uppercase", "text-slate-400") }) {
+        Div({ classes("flex", "flex-wrap", "items-center", "justify-between", "gap-2") }) {
+            Div({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
                 Text("Notation")
             }
-            Div({
-                classes(
-                    "absolute", "right-0", "top-0", "z-10", "max-w-full",
-                    "before:pointer-events-none", "before:absolute", "before:-left-5", "before:top-0", "before:h-full", "before:w-5",
-                    "before:bg-linear-to-r", "before:from-transparent", "before:to-slate-900/95", "before:content-['']",
-                )
-            }) {
+            Div({ classes("max-w-full") }) {
                 NotationActions(repositories, notation, onImportPosition, onChange)
             }
         }
