@@ -9,6 +9,7 @@ import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.SQRT3
 import de.mineking.hexo.board.render.image.Stroke
+import de.mineking.hexo.board.render.image.drawCircle
 import de.mineking.hexo.board.render.image.minus
 import de.mineking.hexo.board.render.image.plus
 
@@ -125,11 +126,7 @@ class HTTTXRenderer(
             }
             CellOwner.O -> {
                 fun drawCircle(radius: Double, color: Color) {
-                    backend.drawLine(
-                        from = point,
-                        to = point,
-                        stroke = Stroke(color, radius.toFloat()),
-                    )
+                    backend.drawCircle(point, Stroke(color, radius.toFloat()))
                 }
 
                 val radius = hexSize * 1.2

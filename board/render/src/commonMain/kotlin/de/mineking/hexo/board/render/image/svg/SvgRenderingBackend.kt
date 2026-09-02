@@ -126,11 +126,11 @@ fun Board.renderToSvg(
 class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
     companion object {
         private val FULL_MASK = SvgId("full-mask")
-        private val TEXT_MASK = SvgId("text-mask")
     }
 
     @Suppress("ContextReceiverMapping")
     private val textMask = mutableListOf<context(TagConsumer<*>, @SvgTagDSL Mask) () -> Unit>()
+    private val usedTextMaskSizes = mutableSetOf<Int>()
     @Suppress("ContextReceiverMapping")
     private val mainContent = mutableListOf<context(TagConsumer<*>, @SvgTagDSL Group) () -> Unit>()
 
@@ -166,8 +166,10 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
             }
 
             createMask(FULL_MASK)
-            createMask(TEXT_MASK) {
-                textMask.forEach { it() }
+            usedTextMaskSizes.forEach { size ->
+                createMask(textMaskId(size)) {
+                    textMask.take(size).forEach { it() }
+                }
             }
         }
 
@@ -177,20 +179,12 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
         }
     }
 
-    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) = configure {
-        fun drawLinePart(stroke: Stroke) {
-            // For some reason drawing a line with the same start and end point doesn't work properly
-            if (from == to) {
-                circle {
-                    cx = from.x.none
-                    cy = from.y.none
+    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
+        val textMaskSize = textMask.size
+        if (textMaskSize > 0) usedTextMaskSizes += textMaskSize
 
-                    fill(stroke.color.svg)
-                    r = (stroke.width / 2).none
-
-                    mask(TEXT_MASK)
-                }
-            } else {
+        configure {
+            fun drawLinePart(stroke: Stroke) {
                 line {
                     x1 = from.x.none
                     y1 = from.y.none
@@ -201,14 +195,45 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
                     strokeWidth = stroke.width.none
                     strokeLinecap = StrokeLinecap.Round
 
-                    mask(TEXT_MASK)
+                    if (textMaskSize > 0) mask(textMaskId(textMaskSize))
                 }
             }
-        }
 
-        if (outline != null) drawLinePart(Stroke(outline.color, stroke.width + outline.width))
-        drawLinePart(stroke)
+            // SVG does not render a zero-length line with a round cap consistently, so circles are
+            // represented explicitly. Keep the outline outside the fill: drawing a larger filled
+            // circle underneath would show through translucent fills and make them appear opaque.
+            if (from == to) {
+                if (outline != null) {
+                    circle {
+                        cx = from.x.none
+                        cy = from.y.none
+
+                        fill(Color.Transparent.svg)
+                        stroke(outline.color.svg)
+                        strokeWidth = (outline.width / 2).none
+                        r = (stroke.width / 2 + outline.width / 4).none
+
+                        if (textMaskSize > 0) mask(textMaskId(textMaskSize))
+                    }
+                }
+
+                circle {
+                    cx = from.x.none
+                    cy = from.y.none
+
+                    fill(stroke.color.svg)
+                    r = (stroke.width / 2).none
+
+                    if (textMaskSize > 0) mask(textMaskId(textMaskSize))
+                }
+            } else {
+                if (outline != null) drawLinePart(Stroke(outline.color, stroke.width + outline.width))
+                drawLinePart(stroke)
+            }
+        }
     }
+
+    private fun textMaskId(size: Int) = SvgId("text-mask-$size")
 
     override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) = configure {
         if (borderRadius <= 0f) {
