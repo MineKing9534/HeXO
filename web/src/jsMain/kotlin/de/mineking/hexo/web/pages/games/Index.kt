@@ -22,10 +22,10 @@ import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
-import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.Pagination
 import de.mineking.hexo.web.components.RatedFilter
 import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
@@ -33,7 +33,6 @@ import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.formatCompact
 import de.mineking.hexo.web.icons.CasualGameIcon
-import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.StarIcon
 import de.mineking.hexo.web.icons.TimeControlIcon
@@ -131,10 +130,9 @@ private fun GameList(
                     }
 
                     Pagination(
-                        page = page,
+                        currentPage = page,
                         hasNextPage = games.size == PAGE_SIZE,
-                        onPrevious = { page-- },
-                        onNext = { page++ },
+                        onPageChange = { page = it },
                     )
 
                     if (loading) {
@@ -312,34 +310,4 @@ private fun Date.formatMinutePrecision(): String {
     val hours = getHours().toString().padStart(2, '0')
     val minutes = getMinutes().toString().padStart(2, '0')
     return "${toLocaleDateString()}, $hours:$minutes"
-}
-
-@Composable
-private fun Pagination(
-    page: Int,
-    hasNextPage: Boolean,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-) {
-    Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
-        ActionButton(enabled = page > 1, size = ButtonSize.Medium, attrs = {
-            classes("inline-flex", "items-center", "gap-1")
-            attr("aria-label", "Previous page")
-        }, onClick = onPrevious) {
-            ChevronLeftIcon { classes("size-4") }
-            Text("Previous")
-        }
-
-        Span({ classes("text-sm", "font-semibold", "text-slate-400") }) {
-            Text("Page $page")
-        }
-
-        ActionButton(enabled = hasNextPage, size = ButtonSize.Medium, attrs = {
-            classes("inline-flex", "items-center", "gap-1")
-            attr("aria-label", "Next page")
-        }, onClick = onNext) {
-            Text("Next")
-            ChevronRightIcon { classes("size-4") }
-        }
-    }
 }
