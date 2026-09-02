@@ -119,6 +119,6 @@ private fun NotFoundState() {
         P({ classes("text-slate-400", "text-center") }) {
             Text("This live session does not exist anymore. It may have finished already, been closed, or the link may be incorrect.")
         }
-        BackLink(AppRoute.LobbyList, "Back to lobbies")
+        BackLink(AppRoute.SessionList, "Back to lobbies")
     }
 }

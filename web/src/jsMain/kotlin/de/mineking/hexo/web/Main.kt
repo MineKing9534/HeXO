@@ -63,7 +63,7 @@ fun App(content: @Composable () -> Unit) {
             LocalSoundPlayer provides soundPlayer,
             LocalWatchPartyController provides watchPartyController,
         ) {
-            Main({ classes("h-dvh", "w-screen", "overflow-hidden", "bg-slate-950", "font-sans", "text-slate-100") }) {
+            Main({ classes("hexo-app-background", "h-dvh", "w-screen", "overflow-hidden", "font-sans", "text-slate-100") }) {
                 content()
             }
         }

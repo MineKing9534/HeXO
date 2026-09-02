@@ -40,7 +40,7 @@ fun LobbyOverlay(session: LobbySession) {
         }
 
         Div({ classes("flex", "justify-center") }) {
-            BackLink(AppRoute.LobbyList, "Back to lobbies")
+            BackLink(AppRoute.SessionList, "Back to lobbies")
         }
     }
 }
