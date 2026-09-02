@@ -65,7 +65,7 @@ fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
         is EntityState.Loading -> LoadingState()
         is EntityState.NotFound -> NotFoundState()
         is EntityState.Data -> {
-            GameBoardPane(state.value, isLive = false, boardViewManager)
+            GameBoardPane(state.value, isLive = false, boardViewManager = boardViewManager)
         }
     }
 }

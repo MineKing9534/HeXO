@@ -15,6 +15,7 @@ import de.mineking.hexo.board.Move
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.moves
 import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
@@ -55,7 +56,13 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: GameBoardViewManager) {
+fun GameBoardPane(
+    game: GameWithPosition,
+    isLive: Boolean,
+    plain: Boolean = false,
+    boardViewManager: GameBoardViewManager,
+    content: BoardContentBuilder? = null,
+) {
     val viewport = remember { mutableStateOf(BoardViewport()) }
 
     val watchPartyController = rememberWatchPartyController()
@@ -85,6 +92,7 @@ fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: Gam
             (board + overlay).focusWinningRows()
         },
         readOnly = true,
+        plain = plain,
         allowAnalyzerOverlay = allowAnalyzerOverlay,
         turn = analyzerTurn,
         players = game.players.associate { it.color to it.gamePlayer },
@@ -95,8 +103,12 @@ fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: Gam
             boardViewManager.apply(interaction)
         },
     ) {
-        TurnIndicator(game, isLive, game.playerWithColor(effectiveTurnPlayer), effectivePlacementsRemaining)
-        BoardControls(game, boardViewManager, viewport)
+        content?.invoke(this)
+
+        if (!plain) {
+            TurnIndicator(game, isLive, game.playerWithColor(effectiveTurnPlayer), effectivePlacementsRemaining)
+            BoardControls(game, boardViewManager, viewport)
+        }
     }
 }
 
