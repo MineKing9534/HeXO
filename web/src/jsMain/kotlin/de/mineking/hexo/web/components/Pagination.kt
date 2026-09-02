@@ -20,7 +20,7 @@ fun Pagination(
 
     Div({
         classes(
-            "flex", "shrink-0", "items-center", "justify-center", "gap-1", "rounded-xl", "border",
+            "flex", "shrink-0", "items-center", "justify-center", "gap-5", "rounded-xl", "border",
             "border-slate-800", "bg-slate-950/60", "p-1",
         )
         attr("aria-label", "Pagination")
@@ -32,8 +32,12 @@ fun Pagination(
             }
         }
 
-        surroundingPages.forEach { page ->
-            PaginationPageButton(page, page == currentPage, onPageChange)
+        Div({
+            classes("flex", "shrink-0", "gap-1")
+        }) {
+            surroundingPages.forEach { page ->
+                PaginationPageButton(page, page == currentPage, onPageChange)
+            }
         }
 
         PaginationArrowButton("Next page", hasNextPage, { onPageChange(currentPage + 1) }) {
