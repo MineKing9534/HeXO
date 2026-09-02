@@ -22,13 +22,14 @@ import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.page
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
-import de.mineking.hexo.web.board.Player
+import de.mineking.hexo.web.board.PlayerName
 import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
+import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.Pagination
 import de.mineking.hexo.web.components.RatedFilter
@@ -51,12 +52,14 @@ import kotlinx.browser.window
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.HTMLSpanElement
 import org.w3c.dom.url.URL
 import kotlin.js.Date
 import kotlin.time.Duration.Companion.milliseconds
@@ -343,7 +346,7 @@ private fun GameRow(game: FinishedGame, previewing: Boolean, onPreview: () -> Un
                             Text("vs")
                         }
                     }
-                    Player(player.gamePlayer) {
+                    PlayerName(player.gamePlayer) {
                         classes("font-semibold")
                         if (player == game.result.winner) classes("font-bold", "text-emerald-200!")
                     }
@@ -488,19 +491,30 @@ private fun GamePreviewHeader(game: FinishedGame, onClose: () -> Unit) {
 }
 
 @Composable
-fun GameTypeBadge(options: GameOptions, tournament: TournamentMatchSnapshot?) {
-    Badge {
+fun GameTypeBadge(
+    options: GameOptions,
+    tournament: TournamentMatchSnapshot?,
+    attrs: AttrBuilderContext<HTMLSpanElement>? = null,
+) {
+    Badge(
+        color = when {
+            tournament != null -> Color.Sky
+            options.rated -> Color.Yellow
+            else -> Color.Emerald
+        },
+        attrs = attrs,
+    ) {
         when {
             tournament != null -> {
-                TournamentIcon { classes("size-3.5", "text-sky-300") }
+                TournamentIcon { classes("size-4", "text-current") }
                 Text("Tournament")
             }
             options.rated -> {
-                StarIcon { classes("size-3.5", "fill-current", "text-amber-300") }
+                StarIcon { classes("size-4", "text-amber-300") }
                 Text("Rated")
             }
             else -> {
-                CasualGameIcon { classes("size-3.5", "fill-none", "text-emerald-300") }
+                CasualGameIcon { classes("size-4", "text-current") }
                 Text("Casual")
             }
         }
