@@ -23,8 +23,11 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
 
     init {
         client.socketClient?.listen<TournamentUpdate> { event ->
-            client.coroutineScope.launch {
-                val _ = getTournament(event.tournamentId)
+            val isObserved = cacheLock.withLock { event.tournamentId in cache }
+            if (isObserved) {
+                client.coroutineScope.launch {
+                    val _ = getTournament(event.tournamentId)
+                }
             }
         }
     }
