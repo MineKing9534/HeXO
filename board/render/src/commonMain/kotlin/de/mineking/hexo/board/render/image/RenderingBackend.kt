@@ -30,6 +30,14 @@ interface RenderingBackend {
     fun drawString(point: Point, text: String, maxWidth: Double, fontSize: Float, font: FontType, color: Color)
 }
 
+fun RenderingBackend.drawCircle(
+    point: Point,
+    stroke: Stroke,
+    outline: Stroke? = null,
+) {
+    drawLine(from = point, to = point, stroke = stroke, outline = outline)
+}
+
 operator fun Point.plus(point: Point) = Point(x + point.x, y + point.y)
 operator fun Point.minus(point: Point) = Point(x - point.x, y - point.y)
 operator fun Point.times(value: Double) = Point(x * value, y * value)

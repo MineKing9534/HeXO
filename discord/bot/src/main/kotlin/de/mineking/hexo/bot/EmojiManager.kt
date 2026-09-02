@@ -27,6 +27,7 @@ enum class CustomEmoji(val path: String) {
     ThemeHDS("theme/hds"),
     ThemeHTTTX("theme/htttx"),
     ThemeTyto("theme/tyto"),
+    ThemeOmok("theme/omok"),
 }
 
 val CustomEmoji.discordName get() = name.lowercase()

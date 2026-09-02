@@ -16,6 +16,7 @@ import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.createHex
 import de.mineking.hexo.board.render.image.css
+import de.mineking.hexo.board.render.image.drawCircle
 import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
@@ -164,15 +165,13 @@ private fun RenderingContext.drawOverlayTarget(
     backgroundColor: Color,
     label: String,
 ) {
-    backend.drawLine(
-        from = point,
-        to = point,
+    backend.drawCircle(
+        point = point,
         stroke = Stroke(backgroundColor.withAlpha(220), (hexSize * 0.78).toFloat()),
     )
 
-    backend.drawLine(
-        from = point,
-        to = point,
+    backend.drawCircle(
+        point = point,
         stroke = Stroke(color.withAlpha(16), (hexSize * 0.78).toFloat()),
         outline = Stroke(color, 4.0.relativeWidth()),
     )
