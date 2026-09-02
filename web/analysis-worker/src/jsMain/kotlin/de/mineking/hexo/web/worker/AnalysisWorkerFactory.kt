@@ -8,7 +8,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
-import de.mineking.hexo.solver.StrixWasmHexoSolver
+import de.mineking.hexo.solver.strix.StrixHexoSolver
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -36,7 +36,7 @@ private val analysisJson = Json {
 
 internal class AnalysisWorkerFactory : WorkerFactory<AnalysisInput, AnalysisOutput> {
     override fun createStrategy(postOutput: OutputDispatcher<AnalysisOutput>): WorkerStrategy<AnalysisInput> {
-        val solver = StrixWasmHexoSolver()
+        val solver = StrixHexoSolver()
         val scope = CoroutineScope(Dispatchers.Default)
 
         return WorkerStrategy { input ->

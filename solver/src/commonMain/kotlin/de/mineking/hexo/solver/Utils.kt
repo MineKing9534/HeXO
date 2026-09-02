@@ -30,9 +30,10 @@ internal data class BoardTransformResult(
 
     fun transformBack(coordinate: CellCoordinate) = coordinate - offset
 
-    fun transformBack(defense: Defense) = Defense(
+    fun transformBack(defense: PartialTurn) = PartialTurn(
         first = transformBack(defense.first),
         second = defense.second?.let { transformBack(it) },
+        isCounterThreat = defense.isCounterThreat,
     )
 
     private fun transformBack(turn: Turn) = Turn(

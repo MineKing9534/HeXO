@@ -1,6 +1,6 @@
 package de.mineking.hexo.solver.test
 
-import de.mineking.hexo.solver.StrixWasmHexoSolver
+import de.mineking.hexo.solver.strix.StrixHexoSolver
 import test.HexoSolverTest
 
-class StrixWasmSolverTest : HexoSolverTest(StrixWasmHexoSolver())
+class StrixWasmSolverTest : HexoSolverTest(StrixHexoSolver())

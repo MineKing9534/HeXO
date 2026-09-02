@@ -1,8 +1,9 @@
-package de.mineking.hexo.solver
+package de.mineking.hexo.solver.strix
 
 import cc.tyto.CoordW
 import cc.tyto.DefenseKind
 import cc.tyto.DefenseOutcome
+import cc.tyto.PairAnchor
 import cc.tyto.Player
 import cc.tyto.Position
 import cc.tyto.SolveKind
@@ -17,29 +18,44 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isEmpty
+import de.mineking.hexo.solver.BoardTransformResult
+import de.mineking.hexo.solver.DefenseResult
+import de.mineking.hexo.solver.FindDefenseResult
+import de.mineking.hexo.solver.FindWinResult
+import de.mineking.hexo.solver.HexoSolver
+import de.mineking.hexo.solver.PartialTurn
+import de.mineking.hexo.solver.Turn
+import de.mineking.hexo.solver.transform
 import kotlinx.coroutines.await
 import org.khronos.webgl.Int32Array
 import org.khronos.webgl.set
 
-class StrixWasmHexoSolver : HexoSolver {
-    companion object {
-        @OptIn(ExperimentalWasmJsInterop::class)
-        // lazy so this is only called once the wasm backend is initialized
-        private val limits by lazy {
-            SolverLimits(
-                depthCap = 10,
-                nodeBudget = jsBigInt(20_000),
-                engine = SolverEngine.Idtt,
-            )
-        }
-    }
-
+actual class StrixHexoSolver actual constructor(
+    private val depthCap: Int,
+    private val nodeBudget: Int,
+    private val engine: StrixSolverEngine,
+) : HexoSolver {
     private val ready = init()
+
+    @OptIn(ExperimentalWasmJsInterop::class)
+    // lazy so this is only called once the wasm backend is initialized
+    private val limits by lazy {
+        SolverLimits(
+            depthCap = depthCap,
+            nodeBudget = jsBigInt(nodeBudget),
+            engine = when (engine) {
+                StrixSolverEngine.IterativeDeepeningThreatTable -> SolverEngine.Idtt
+                StrixSolverEngine.ProofNumberSearch -> SolverEngine.Pns
+                StrixSolverEngine.DepthFirstProofNumberSearch -> SolverEngine.Dfpn
+                StrixSolverEngine.ProofAndDisproofNumberSearch -> SolverEngine.Pdspn
+            },
+        )
+    }
 
     // lazy so this is only called once the wasm backend is initialized
     private val solver by lazy { StrixSolver() }
 
-    override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
+    actual override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
         if (board.isEmpty(includeHighlights = false)) return FindWinResult.NoWin
         ready.await()
 
@@ -49,13 +65,13 @@ class StrixWasmHexoSolver : HexoSolver {
         return outcome.toResult()
     }
 
-    override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
+    actual override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
         if (board.isEmpty(includeHighlights = false)) return FindDefenseResult.NoThreat
         ready.await()
 
         val transformed = board.transform()
         val position = transformed.board.toPosition(transformed.flipPlayer(player), remaining)
-        val outcome = solver.solveDefense(position, limits)
+        val outcome = solver.solveDefenseWide(position, limits)
 
         return outcome.toResult(transformed)
     }
@@ -94,17 +110,55 @@ class StrixWasmHexoSolver : HexoSolver {
         )
     }
 
-    private fun DefenseOutcome.findDefenses() = killers
+    @Suppress("Indentation")
+    private fun createPartialTurns(
+        single: Array<CoordW>,
+        full: Array<PairAnchor>,
+        counterThreats: Array<PairAnchor>,
+    ) = single
         .takeIf { it.isNotEmpty() }
-        ?.map { Defense(it.core, null) }
-        ?: pairAnchors.map { Defense(it.first.core, it.second.core) }
+        ?.map {
+            PartialTurn(
+                first = it.core,
+                second = null,
+                isCounterThreat = false,
+            )
+        } ?: full.map {
+            PartialTurn(
+                first = it.first.core,
+                second = it.second.core,
+                isCounterThreat = it in counterThreats,
+            )
+        }
+
+    private fun DefenseOutcome.createDefense(transform: BoardTransformResult): DefenseResult {
+        val defenses = createPartialTurns(killers, pairAnchors, counterThreats)
+            .map { transform.transformBack(it) }
+
+        if (defenses.isNotEmpty()) return DefenseResult.Found(defenses)
+
+        val maybeDefenses = createPartialTurns(unresolved, tacticalPairs, emptyArray())
+            .map { transform.transformBack(it) }
+
+        if (maybeDefenses.isNotEmpty()) return DefenseResult.BudgetExceeded(maybeDefenses)
+
+        return DefenseResult.Undefendable(
+            bestDelay?.core?.let {
+                PartialTurn(
+                    first = transform.transformBack(it),
+                    second = null,
+                    isCounterThreat = false,
+                )
+            },
+        )
+    }
 
     private fun DefenseOutcome.toResult(transform: BoardTransformResult) = when (kind) {
         DefenseKind.NoThreat -> FindDefenseResult.NoThreat
+        DefenseKind.BudgetExceeded -> FindDefenseResult.Unknown
         DefenseKind.ThreatFound -> FindDefenseResult.Threat(
             threat = transform.transformBack(threat!!.toResult() as FindWinResult.Win),
-            defenses = findDefenses().map { transform.transformBack(it) },
-            bestDelay = bestDelay?.core?.let { transform.transformBack(it) },
+            defense = createDefense(transform),
         )
     }
 }

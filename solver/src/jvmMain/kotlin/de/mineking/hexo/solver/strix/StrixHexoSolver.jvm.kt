@@ -1,4 +1,4 @@
-package de.mineking.hexo.solver
+package de.mineking.hexo.solver.strix
 
 import cc.tyto.DefenseKind
 import cc.tyto.DefenseResponse
@@ -6,20 +6,34 @@ import cc.tyto.Player
 import cc.tyto.SolveKind
 import cc.tyto.SolveRequest
 import cc.tyto.SolveResponse
+import cc.tyto.SolverEngine
 import cc.tyto.Stone
 import cc.tyto.StrixSolverLib
 import cc.tyto.ThreatContainer
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isEmpty
+import de.mineking.hexo.solver.BoardTransformResult
+import de.mineking.hexo.solver.DefenseResult
+import de.mineking.hexo.solver.FindDefenseResult
+import de.mineking.hexo.solver.FindWinResult
+import de.mineking.hexo.solver.HexoSolver
+import de.mineking.hexo.solver.PartialTurn
+import de.mineking.hexo.solver.Turn
+import de.mineking.hexo.solver.transform
 import kotlinx.serialization.json.Json
 
-class StrixNativeHexoSolver : HexoSolver {
+actual class StrixHexoSolver actual constructor(
+    private val depthCap: Int,
+    private val nodeBudget: Int,
+    private val engine: StrixSolverEngine,
+) : HexoSolver {
     private val json = Json {
         ignoreUnknownKeys = true
     }
 
-    override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
+    actual override suspend fun findWin(board: Board, player: CellOwner, remaining: Int): FindWinResult {
         if (board.isEmpty(includeHighlights = false)) return FindWinResult.NoWin
 
         val request = createRequest(board, player, remaining)
@@ -33,7 +47,7 @@ class StrixNativeHexoSolver : HexoSolver {
         }
     }
 
-    override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
+    actual override suspend fun findDefense(board: Board, player: CellOwner, remaining: Int): FindDefenseResult {
         if (board.isEmpty(includeHighlights = false)) return FindDefenseResult.NoThreat
 
         val transformed = board.transform()
@@ -54,8 +68,14 @@ class StrixNativeHexoSolver : HexoSolver {
         maxMoves = 300,
         toMove = player.strix,
         movesRemaining = remaining,
-        depthCap = 10,
-        nodeBudget = 20_000,
+        depthCap = depthCap,
+        nodeBudget = nodeBudget,
+        engine = when (engine) {
+            StrixSolverEngine.IterativeDeepeningThreatTable -> SolverEngine.Idtt
+            StrixSolverEngine.ProofNumberSearch -> SolverEngine.Pns
+            StrixSolverEngine.DepthFirstProofNumberSearch -> SolverEngine.Dfpn
+            StrixSolverEngine.ProofAndDisproofNumberSearch -> SolverEngine.Pdspn
+        },
         wide = true,
         stones = board.toStones(),
     )
@@ -69,19 +89,56 @@ class StrixNativeHexoSolver : HexoSolver {
         )
     }
 
-    private fun DefenseResponse.findDefenses() = killers
+    private fun createPartialTurns(
+        single: List<CellCoordinate>,
+        full: List<Pair<CellCoordinate, CellCoordinate>>,
+        counterThreats: List<Pair<CellCoordinate, CellCoordinate>>,
+    ) = single
         .takeIf { it.isNotEmpty() }
-        ?.map { Defense(it, null) }
-        ?: pairAnchors.map { (first, second) -> Defense(first, second) }
+        ?.map {
+            PartialTurn(
+                first = it,
+                second = null,
+                isCounterThreat = false,
+            )
+        } ?: full.map {
+        PartialTurn(
+            first = it.first,
+            second = it.second,
+            isCounterThreat = it in counterThreats,
+        )
+    }
+
+    private fun DefenseResponse.createDefense(transform: BoardTransformResult): DefenseResult {
+        val defenses = createPartialTurns(killers, pairAnchors, counterThreats)
+            .map { transform.transformBack(it) }
+
+        if (defenses.isNotEmpty()) return DefenseResult.Found(defenses)
+
+        val maybeDefenses = createPartialTurns(unresolved, tacticalPairs, emptyList())
+            .map { transform.transformBack(it) }
+
+        if (maybeDefenses.isNotEmpty()) return DefenseResult.BudgetExceeded(maybeDefenses)
+
+        return DefenseResult.Undefendable(
+            bestDelay?.let {
+                PartialTurn(
+                    first = transform.transformBack(it),
+                    second = null,
+                    isCounterThreat = false,
+                )
+            },
+        )
+    }
 
     @Suppress("TooGenericExceptionThrown")
     private fun DefenseResponse.toResult(transform: BoardTransformResult) = when (kind) {
         DefenseKind.NoThreat -> FindDefenseResult.NoThreat
+        DefenseKind.BudgetExceeded -> FindDefenseResult.Unknown
         DefenseKind.Error -> throw RuntimeException(error)
         DefenseKind.ThreatFound -> FindDefenseResult.Threat(
             threat = transform.transformBack(threat!!.toWinResult()),
-            defenses = findDefenses().map { transform.transformBack(it) },
-            bestDelay = bestDelay?.let { transform.transformBack(it) },
+            defense = createDefense(transform),
         )
     }
 

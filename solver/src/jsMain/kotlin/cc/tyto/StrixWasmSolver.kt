@@ -1,4 +1,4 @@
-@file:JsModule("HeXO-solver/kotlin/pkg/hexo_wasm.js")
+@file:JsModule("HeXO-solver/kotlin/pkg/hexo_solver_wasm.js")
 @file:JsNonModule
 
 package cc.tyto
@@ -35,6 +35,7 @@ internal external class SolveOutcome private constructor() {
 internal sealed external class DefenseKind {
     object ThreatFound : DefenseKind
     object NoThreat : DefenseKind
+    object BudgetExceeded : DefenseKind
 }
 
 internal external class DefenseOutcome private constructor() {
@@ -42,6 +43,9 @@ internal external class DefenseOutcome private constructor() {
     val threat: SolveOutcome?
     val killers: Array<CoordW>
     @JsName("pair_anchors") val pairAnchors: Array<PairAnchor>
+    @JsName("counter_threats") val counterThreats: Array<PairAnchor>
+    @JsName("tactical_pairs") val tacticalPairs: Array<PairAnchor>
+    @JsName("unresolved") val unresolved: Array<CoordW>
     @JsName("best_delay") val bestDelay: CoordW?
 }
 
@@ -51,7 +55,7 @@ internal external class PairAnchor private constructor() {
 }
 
 @JsName("SolverEngineEnum")
-internal sealed external class SolverEngine {
+sealed external class SolverEngine {
     object Idtt : SolverEngine
     object Pns : SolverEngine
     object Dfpn : SolverEngine
@@ -77,8 +81,8 @@ internal external class StrixSolver {
     @JsName("solve_wide")
     fun solveWide(position: Position, limits: SolverLimits): SolveOutcome
 
-    @JsName("solve_defense")
-    fun solveDefense(position: Position, limits: SolverLimits): DefenseOutcome
+    @JsName("solve_defense_wide")
+    fun solveDefenseWide(position: Position, limits: SolverLimits): DefenseOutcome
 }
 
 @JsName("default")

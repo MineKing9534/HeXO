@@ -4,6 +4,7 @@ import androidx.compose.runtime.Composable
 import com.varabyte.kobweb.compose.css.borderColor
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
+import de.mineking.hexo.solver.isDefendable
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.icons.ShieldIcon
 import de.mineking.hexo.web.icons.SwordIcon
@@ -76,7 +77,7 @@ private fun AnalyzerResultDisplay(
             detail = {
                 Text(when {
                     state.threat is FindWinResult.Win -> "The other player can win before this win takes effect"
-                    state.defense.defenses.isEmpty() -> "No defense found"
+                    !state.defense.isDefendable() -> "No defense found"
                     else -> "Potential defense highlighted"
                 })
             },
