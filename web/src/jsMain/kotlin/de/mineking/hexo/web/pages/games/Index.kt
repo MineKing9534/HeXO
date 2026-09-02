@@ -13,7 +13,8 @@ import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.game.model.game.FinishedGameRepository
-import de.mineking.hexo.game.model.game.Game
+import de.mineking.hexo.game.model.game.GameOptions
+import de.mineking.hexo.game.model.game.TournamentMatchSnapshot
 import de.mineking.hexo.game.model.game.rated
 import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.page
@@ -22,7 +23,6 @@ import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
-import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.Pagination
@@ -238,7 +238,7 @@ private fun GameRow(game: FinishedGame) {
                     }
                     Player(player.gamePlayer) {
                         classes("font-semibold")
-                        if (player == game.result.winner) classes("text-emerald-300!")
+                        if (player == game.result.winner) classes("font-bold", "text-emerald-200!")
                     }
                 }
             }
@@ -247,7 +247,7 @@ private fun GameRow(game: FinishedGame) {
             }
 
             Div({ classes("mt-3", "flex", "flex-wrap", "items-center", "gap-2") }) {
-                GameTypeBadge(game)
+                GameTypeBadge(game.options, game.tournament)
                 Badge(attrs = {
                     attr("title", game.startedAt.toString())
                 }) {
@@ -256,13 +256,13 @@ private fun GameRow(game: FinishedGame) {
                 Badge {
                     Text(game.result.duration.formatCompact())
                 }
+                Badge {
+                    Text("${game.moveCount} moves")
+                }
             }
         }
 
-        Div({ classes("flex", "w-full", "items-center", "justify-between", "gap-4", "md:w-auto", "md:justify-end") }) {
-            Span({ classes("whitespace-nowrap", "text-xs", "font-medium", "text-slate-500") }) {
-                Text("${game.moveCount} moves")
-            }
+        Div({ classes("flex", "w-full", "items-center", "justify-end", "md:w-auto") }) {
             Anchor(AppRoute.FinishedGame(game.id), {
                 classes(
                     "group", "inline-flex", "shrink-0", "items-center", "justify-center", "gap-2", "rounded-lg",
@@ -281,25 +281,19 @@ private fun GameRow(game: FinishedGame) {
 }
 
 @Composable
-private fun GameTypeBadge(game: Game) {
-    Badge(
+fun GameTypeBadge(options: GameOptions, tournament: TournamentMatchSnapshot?) {
+    Badge {
         when {
-            game.tournament != null -> Color.Sky
-            game.options.rated -> Color.Yellow
-            else -> Color.Neutral
-        },
-    ) {
-        when {
-            game.tournament != null -> {
-                TournamentIcon { classes("size-3.5") }
+            tournament != null -> {
+                TournamentIcon { classes("size-3.5", "text-sky-300") }
                 Text("Tournament")
             }
-            game.options.rated -> {
-                StarIcon { classes("size-3.5", "fill-current") }
+            options.rated -> {
+                StarIcon { classes("size-3.5", "fill-current", "text-amber-300") }
                 Text("Rated")
             }
             else -> {
-                CasualGameIcon { classes("size-3.5", "fill-none", "stroke-current") }
+                CasualGameIcon { classes("size-3.5", "fill-none", "text-emerald-300") }
                 Text("Casual")
             }
         }

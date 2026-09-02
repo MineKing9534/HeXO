@@ -29,13 +29,12 @@ import de.mineking.hexo.web.components.ScrollableView
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.format
-import de.mineking.hexo.web.icons.CasualGameIcon
 import de.mineking.hexo.web.icons.EyeIcon
 import de.mineking.hexo.web.icons.RightArrowIcon
-import de.mineking.hexo.web.icons.StarIcon
 import de.mineking.hexo.web.icons.TimeControlIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
+import de.mineking.hexo.web.pages.games.GameTypeBadge
 import de.mineking.hexo.web.rememberHdsRepositories
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
@@ -128,7 +127,6 @@ private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChan
             }
         }
         Div({ classes("flex", "items-center", "gap-2") }) {
-            RatedFilterControl(filter, onFilterChange)
             Span({
                 classes(
                     "shrink-0", "rounded-full", "border", "border-slate-700/70", "bg-slate-950/50",
@@ -142,6 +140,7 @@ private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChan
                     Text(if (sessionCount == 1) "session" else "sessions")
                 }
             }
+            RatedFilterControl(filter, onFilterChange)
         }
     }
 }
@@ -190,7 +189,7 @@ private fun LobbyRow(lobby: Session) {
 
             Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
                 StatusBadge(lobby)
-                GameTypeBadge(lobby.gameOptions.rated)
+                GameTypeBadge(lobby.gameOptions, lobby.tournament)
                 TimeControlBadge(lobby.gameOptions.timeControl)
             }
         }
@@ -214,33 +213,18 @@ private fun LobbyRow(lobby: Session) {
 
 @Composable
 private fun StatusBadge(lobby: Session) {
-    val status = if (lobby.hasStarted()) "In game" else "Waiting"
+    val isLive = lobby.hasStarted()
+    val status = if (isLive) "Live" else "Open"
 
-    Badge(if (lobby.hasStarted()) Color.Sky else Color.Emerald, {
+    Badge(if (isLive) Color.Sky else Color.Emerald, {
         classes("font-semibold")
     }) {
+        Span({
+            classes("size-1.5", "rounded-full", "bg-current")
+            if (isLive) classes("animate-pulse")
+            attr("aria-hidden", "true")
+        })
         Text(status)
-    }
-}
-
-@Composable
-private fun GameTypeBadge(rated: Boolean) {
-    Badge(if (rated) Color.Yellow else Color.Neutral) {
-        GameTypeIcon(rated)
-        Text(if (rated) "Rated" else "Casual")
-    }
-}
-
-@Composable
-private fun GameTypeIcon(rated: Boolean) {
-    if (rated) {
-        StarIcon {
-            classes("h-3.5", "w-3.5", "fill-current")
-        }
-    } else {
-        CasualGameIcon {
-            classes("h-3.5", "w-3.5", "fill-none", "stroke-current")
-        }
     }
 }
 
