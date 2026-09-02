@@ -6,26 +6,24 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.game.model.game.GameFinishReason
+import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.Player
+import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.game.model.session.LiveSession
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.session.RatingAdjustment
 import de.mineking.hexo.game.model.session.SessionState
-import de.mineking.hexo.game.model.tournament.requiredWins
+import de.mineking.hexo.web.board.PlayerName
+import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.formatCompact
+import de.mineking.hexo.web.icons.CheckIcon
 import de.mineking.hexo.web.icons.ChevronDownIcon
-import de.mineking.hexo.web.playerCssColor
-import de.mineking.hexo.web.rememberTheme
-import org.jetbrains.compose.web.css.backgroundColor
-import org.jetbrains.compose.web.css.percent
-import org.jetbrains.compose.web.css.width
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -53,15 +51,15 @@ fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Detailed.Fi
         classes(
             "fixed", "bottom-3", "left-1/2", "z-50", "w-[calc(100%-3rem)]", "-translate-x-1/2", "overflow-hidden",
             "transition-all", "sm:bottom-5",
-            "bg-slate-950/92!", "border-slate-700/80!", "backdrop-blur-md", "border",
+            "bg-slate-950/94!", "border-slate-700/80!", "backdrop-blur-md", "border",
             "shadow-2xl", "shadow-black/45", "ring-1", "ring-white/5",
         )
 
         if (collapsed) {
-            classes("max-w-xl", "max-h-16", "translate-y-0", "scale-95")
+            classes("max-w-xl", "translate-y-0", "scale-100")
             classes(collapsePositionTransition)
         } else {
-            classes("max-w-3xl", "max-h-[78vh]", "translate-y-[calc(50%-50vh+1rem)]", "scale-100")
+            classes("max-w-4xl", "max-h-[82vh]", "translate-y-[calc(50%-50vh+1rem)]", "scale-100")
             classes(expandPositionTransition)
         }
     }) {
@@ -80,8 +78,6 @@ private fun SessionFinishedOverlayHeader(
     state: SessionState.Detailed.Finished,
     onExpandCollapse: () -> Unit,
 ) {
-    val winner = state.result.winner
-
     Button({
         classes(springTransition)
         classes(
@@ -93,48 +89,75 @@ private fun SessionFinishedOverlayHeader(
         onClick { onExpandCollapse() }
 
         if (collapsed) {
-            classes("px-4", "py-3")
+            classes("px-4", "py-2.5")
         } else {
             classes("px-4", "pb-0", "pt-4", "sm:px-5", "sm:pt-5")
         }
     }) {
-        Div({ classes("min-w-0", "flex", "items-center", "gap-3", "text-left") }) {
-            Div({
-                classes(
-                    "grid", "size-10", "shrink-0", "place-items-center", "rounded-full", "border",
-                    "font-black", "shadow-lg",
-                )
-                classes(if (winner == null) "border-amber-300/40" else "border-emerald-300/40")
-                classes(if (winner == null) "bg-amber-300/15" else "bg-emerald-400/15")
-                classes(if (winner == null) "text-amber-200" else "text-emerald-200")
-            }) {
-                Text(if (winner == null) "=" else "1")
-            }
-
-            Div({ classes("min-w-0") }) {
-                Div({ classes("flex", "min-w-0", "items-center", "gap-2") }) {
-                    Span({ classes("truncate", "text-lg", "font-extrabold", "text-slate-100", "sm:text-xl") }) {
-                        Text(winner?.let { "${it.displayName} wins" } ?: "Draw")
-                    }
-                    if (!collapsed) {
-                        Badge(if (winner == null) Color.Yellow else Color.Emerald, { classes("hidden", "shrink-0", "sm:inline-flex") }) {
-                            Text(state.result.reason.label)
-                        }
-                    }
-                }
-                Span({ classes("block", "truncate", "text-xs", "font-semibold", "uppercase", "text-slate-500") }) {
-                    Text("Match finished")
-                }
-            }
-        }
+        if (collapsed) CollapsedFinishedTitle(state) else ExpandedFinishedTitle(state)
 
         ChevronDownIcon {
             classes(
-                "mr-0.5", "size-5", "shrink-0", "text-slate-400",
+                "size-5", "shrink-0", "rounded-md", "p-1", "box-content", "text-slate-400",
                 "transition-all", "group-hover:text-slate-100",
             )
             classes(springTransition)
-            if (collapsed) classes("rotate-180")
+            if (collapsed) {
+                classes("mr-0.5", "self-center", "rotate-180")
+            } else {
+                classes("absolute", "right-4", "top-4", "sm:right-5", "sm:top-5")
+            }
+        }
+    }
+}
+
+@Composable
+private fun CollapsedFinishedTitle(state: SessionState.Detailed.Finished) {
+    val winner = state.result.winner
+
+    Div({ classes("min-w-0", "flex", "items-center", "gap-3", "text-left") }) {
+        Div({
+            classes("grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "border")
+            if (winner == null) {
+                classes("border-amber-300/40", "bg-amber-300/15", "text-amber-200")
+            } else {
+                classes("border-emerald-300/40", "bg-emerald-400/15", "text-emerald-200")
+            }
+        }) {
+            if (winner == null) Text("=") else CheckIcon { classes("size-4") }
+        }
+        Div({ classes("min-w-0") }) {
+            Span({ classes("block", "truncate", "font-bold", "text-slate-100") }) {
+                Text(winner?.let { "${it.displayName} wins" } ?: "Game drawn")
+            }
+            Span({ classes("block", "truncate", "text-xs", "text-slate-500") }) {
+                Text(state.result.reason.label)
+            }
+        }
+    }
+}
+
+@Composable
+private fun ExpandedFinishedTitle(state: SessionState.Detailed.Finished) {
+    val winner = state.result.winner
+
+    Div({ classes("min-w-0", "pr-10", "text-left") }) {
+        Div({ classes("mb-2", "flex", "items-center", "gap-2") }) {
+            Span({ classes("size-2", "rounded-full", if (winner == null) "bg-amber-300" else "bg-emerald-300") })
+            Span({
+                classes(
+                    "text-xs", "font-bold", "tracking-widest",
+                    if (winner == null) "text-amber-300" else "text-emerald-300", "uppercase",
+                )
+            }) {
+                Text("Match complete")
+            }
+        }
+        Span({ classes("block", "truncate", "text-2xl", "font-extrabold", "text-slate-100", "sm:text-3xl") }) {
+            Text(winner?.let { "${it.displayName} wins" } ?: "Game drawn")
+        }
+        Span({ classes("mt-1.5", "block", "text-sm", "font-medium", "text-slate-500") }) {
+            Text("${state.result.reason.label} · ${state.result.duration.formatCompact()}")
         }
     }
 }
@@ -146,23 +169,43 @@ private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession,
         classes(springTransition)
 
         if (collapsed) {
-            classes("grid-rows-[0fr]", "opacity-0", "px-4", "pb-0")
+            classes("grid-rows-[0fr]", "opacity-0")
         } else {
             classes("grid-rows-[1fr]", "opacity-100", "px-4", "pb-4", "pt-4", "sm:px-5", "sm:pb-5")
         }
     }) {
         Div({ classes("min-h-0", "overflow-y-auto", "pr-1") }) {
             Div({ classes("grid", "gap-4") }) {
-                SessionFinishedResultSummary(session, state)
-
-                Div({ classes("grid", "gap-3", "sm:grid-cols-2") }) {
-                    session.players.forEach {
-                        SessionFinishedPlayerCard(it, session, state)
+                SubCard({ classes("overflow-hidden", "border-slate-700/60!", "bg-slate-900/50!") }) {
+                    Div({ classes("p-4", "sm:p-5") }) {
+                        Span({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
+                            Text("Final standings")
+                        }
+                        Div({ classes("mt-3") }) {
+                            SessionFinishedMatchup(session, state)
+                        }
                     }
+                    SessionFinishedResultSummary(session, state)
                 }
 
-                SessionFinishedTournamentSummary(session, state)
+                TournamentSummary(session.tournament, session.players) { player ->
+                    player.tournamentMatchWins?.let { if (player == state.result.winner) it + 1 else it } ?: 0
+                }
             }
+        }
+    }
+}
+
+@Composable
+private fun SessionFinishedMatchup(session: LiveSession, state: SessionState.Detailed.Finished) {
+    Div({ classes("grid", "items-stretch", "gap-2", "sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]", "sm:gap-3") }) {
+        session.players.forEachIndexed { index, player ->
+            if (index > 0) {
+                Div({ classes("flex", "items-center", "justify-center") }) {
+                    Span({ classes("text-xs", "font-bold", "text-slate-600", "uppercase") }) { Text("vs") }
+                }
+            }
+            SessionFinishedPlayerCard(player, session, state)
         }
     }
 }
@@ -173,29 +216,24 @@ private fun SessionFinishedResultSummary(session: LiveSession, state: SessionSta
 
     Div({
         classes(
-            "relative", "overflow-hidden", "rounded-2xl", "border", "px-4", "py-4", "text-center",
-            "bg-slate-900/75",
+            "grid", "border-t", "border-slate-800", "bg-slate-950/25",
+            "divide-y", "divide-slate-700/70", "sm:grid-cols-3", "sm:divide-x", "sm:divide-y-0",
         )
-        classes(if (winner == null) "border-amber-300/30" else "border-emerald-300/30")
     }) {
-        Div({ classes("relative", "flex", "flex-wrap", "items-center", "justify-center", "gap-2") }) {
-            Badge(if (winner == null) Color.Yellow else Color.Emerald) {
-                Text(state.result.reason.label)
-            }
-            Badge(Color.Neutral) {
-                Text(state.result.duration.formatCompact())
-            }
-            Badge(Color.Neutral) {
-                Text("${session.game.moveCount} moves")
-            }
+        ResultMetric("Result", state.result.reason.label, if (winner == null) "text-amber-300" else "text-emerald-300")
+        ResultMetric("Duration", state.result.duration.formatCompact())
+        ResultMetric("Moves played", session.game.moveCount.toString())
+    }
+}
+
+@Composable
+private fun ResultMetric(label: String, value: String, valueColor: String = "text-slate-100") {
+    Div({ classes("flex", "items-center", "justify-between", "gap-4", "px-4", "py-3.5", "sm:block", "sm:text-center") }) {
+        Span({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
+            Text(label)
         }
-        P({
-            classes("relative", "mt-3", "text-3xl", "font-black", "text-slate-50", "sm:text-4xl")
-        }) {
-            Text(winner?.let { "${it.displayName} wins" } ?: "Draw")
-        }
-        P({ classes("relative", "mt-1", "text-sm", "font-medium", "text-slate-400") }) {
-            Text(if (winner == null) "Both players split the result." else "Final result is recorded.")
+        P({ classes("font-bold", "tabular-nums", valueColor, "sm:mt-1", "sm:text-lg") }) {
+            Text(value)
         }
     }
 }
@@ -203,22 +241,26 @@ private fun SessionFinishedResultSummary(session: LiveSession, state: SessionSta
 @Composable
 private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSession, state: SessionState.Detailed.Finished) {
     val winner = state.result.winner
+    val showDetails = session.gameOptions.rated || player in state.rematchAcceptedPlayers
 
     SubCard({
-        classes("relative", "overflow-hidden", "p-4", "transition", "hover:-translate-y-0.5")
+        classes(
+            "relative", "h-full", "overflow-hidden", "p-3", "text-center", "transition",
+        )
         when (winner) {
-            null -> classes("bg-amber-300/10!", "border-amber-300/35!")
-            player -> classes("bg-emerald-500/14!", "border-emerald-400/45!", "shadow-emerald-950/30")
-            else -> classes("bg-rose-400/12!", "border-rose-400/35!")
+            player -> classes("border-emerald-400/80!", "bg-slate-700/25!")
+            else -> classes("border-slate-700!", "bg-slate-950/25!")
         }
     }) {
-        SessionFinishedPlayerHeader(player, winner)
+        SessionFinishedPlayerHeader(state.result, player)
 
-        Div({ classes("mt-4", "flex", "flex-wrap", "items-center", "gap-2") }) {
-            SessionFinishedEloBadge(player, winner, session.gameOptions.rated)
-            if (player in state.rematchAcceptedPlayers) {
-                Badge(Color.Sky) {
-                    Text("Rematch accepted")
+        if (showDetails) {
+            Div({ classes("mt-2", "flex", "flex-wrap", "items-center", "justify-center", "gap-1.5") }) {
+                SessionFinishedEloBadge(player, winner, session.gameOptions.rated)
+                if (player in state.rematchAcceptedPlayers) {
+                    Badge(Color.Sky) {
+                        Text("Rematch accepted")
+                    }
                 }
             }
         }
@@ -226,39 +268,29 @@ private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSe
 }
 
 @Composable
-private fun SessionFinishedPlayerHeader(player: LiveSessionPlayer, winner: Player?) {
-    Div({ classes("flex", "items-start", "justify-between", "gap-3") }) {
-        Div({ classes("min-w-0", "flex", "items-center", "gap-3") }) {
-            val theme by rememberTheme()
-            Div({
-                classes(
-                    "grid", "size-11", "shrink-0", "place-items-center", "rounded-full", "border",
-                    "bg-slate-950/60", "text-sm", "font-black", "text-slate-100", "shadow-md",
-                )
-                style { backgroundColor(theme.playerCssColor(player.color)) }
-            }) {
-                Text(player.displayName.take(1).uppercase())
-            }
+private fun SessionFinishedPlayerHeader(result: GameResult, player: LiveSessionPlayer) {
+    Div({ classes("flex", "min-w-0", "flex-col", "items-center", "gap-1.5") }) {
+        PlayerIcon(player)
 
-            Div({ classes("min-w-0") }) {
-                H2({ classes("truncate", "text-lg", "font-bold", "text-slate-100") }) {
-                    Text(player.displayName)
+        Div({ classes("w-full", "min-w-0") }) {
+            PlayerName(player.gamePlayer, attrs = {
+                classes("font-semibold")
+                if (player == result.winner) classes("text-emerald-200!")
+            })
+            Div({ classes("mt-0.5", "flex", "items-center", "justify-center", "gap-1.5", "text-xs") }) {
+                if (!player.isGuest()) {
+                    Span({ classes("text-slate-600") }) { Text("${player.elo} Elo") }
+                    Span({ classes("text-slate-700") }) { Text("·") }
                 }
-                P({ classes("mt-0.5", "text-sm", "font-medium", "text-slate-400") }) {
-                    Text("${player.elo} Elo")
-                }
+                PlayerConnectionStatus(player.connectionStatus)
             }
-        }
-
-        Badge(player.outcomeColor(winner), { classes("shrink-0") }) {
-            Text(player.outcomeLabel(winner))
         }
     }
 }
 
 @Composable
 private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, rated: Boolean) {
-    val eloAdjustment = player.ratingAdjustment.takeIf { rated } ?: return
+    val eloAdjustment = player.ratingAdjustment.takeIf { rated && !player.isGuest() } ?: return
 
     Badge(Color.Neutral) {
         Text("Elo ")
@@ -266,106 +298,6 @@ private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, 
             Text(player.eloAdjustmentLabel(winner, eloAdjustment))
         }
     }
-}
-
-@Composable
-private fun SessionFinishedTournamentSummary(session: LiveSession, state: SessionState.Detailed.Finished) {
-    val tournament = session.tournament ?: return
-    if (tournament.matchInfo.bestOf < 3) return
-
-    Div({
-        classes("rounded-2xl", "border", "border-slate-700/70", "bg-slate-900/70", "px-4", "py-4")
-    }) {
-        Div({ classes("mb-4", "flex", "items-start", "justify-between", "gap-3") }) {
-            Div({ classes("min-w-0") }) {
-                Span({ classes("text-xs", "font-semibold", "uppercase", "text-slate-500") }) {
-                    Text("Tournament")
-                }
-                P({ classes("mt-1", "truncate", "font-semibold", "text-slate-100") }) {
-                    Text(tournament.tournament.info.name)
-                }
-            }
-            Badge(Color.Neutral, { classes("shrink-0") }) {
-                Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")
-            }
-        }
-
-        Div({ classes("grid", "gap-3") }) {
-            session.players.forEach { player ->
-                SessionFinishedTournamentPlayer(player, state.result.winner, tournament.matchInfo.requiredWins)
-            }
-        }
-    }
-}
-
-@Composable
-private fun SessionFinishedTournamentPlayer(
-    player: LiveSessionPlayer,
-    winner: Player?,
-    requiredWins: Int,
-) {
-    val matchWins = player.finishedTournamentWins(winner)
-    val progress = (matchWins * 100 / requiredWins).coerceIn(0, 100)
-
-    Div({
-        classes(
-            "grid", "grid-cols-[minmax(0,1fr)_auto]", "items-center", "gap-3",
-            "rounded-xl", "border", "border-slate-800", "bg-slate-950/35", "p-3",
-        )
-    }) {
-        Div({ classes("min-w-0") }) {
-            SessionFinishedTournamentPlayerLabel(player)
-            Div({ classes("h-2", "overflow-hidden", "rounded-full", "bg-slate-950/80", "ring-1", "ring-white/5") }) {
-                Div({
-                    classes("h-full", "rounded-full", "transition-all", "duration-500")
-                    classes(if (matchWins > 0) "bg-emerald-400" else "bg-slate-700")
-                    style { width(progress.percent) }
-                })
-            }
-        }
-        SessionFinishedTournamentScore(matchWins, requiredWins)
-    }
-}
-
-@Composable
-private fun SessionFinishedTournamentPlayerLabel(player: LiveSessionPlayer) {
-    Div({ classes("mb-2", "flex", "items-center", "gap-2") }) {
-        val theme by rememberTheme()
-        Div({
-            classes("rounded-full", "size-2.5", "shrink-0")
-            style { backgroundColor(theme.playerCssColor(player.color)) }
-        })
-        Span({ classes("truncate", "text-sm", "font-semibold", "text-slate-200") }) {
-            Text(player.displayName)
-        }
-    }
-}
-
-@Composable
-private fun SessionFinishedTournamentScore(matchWins: Int, requiredWins: Int) {
-    Span({ classes("inline-flex", "w-14", "items-baseline", "justify-end", "font-semibold", "tabular-nums") }) {
-        Span({
-            classes("text-xl")
-            classes(if (matchWins == requiredWins) "text-emerald-300" else "text-slate-200")
-        }) {
-            Text(matchWins.toString())
-        }
-        Span({ classes("text-sm", "text-slate-500") }) {
-            Text("/$requiredWins")
-        }
-    }
-}
-
-private fun LiveSessionPlayer.outcomeColor(winner: Player?) = when (winner) {
-    null -> Color.Yellow
-    this -> Color.Emerald
-    else -> Color.Rose
-}
-
-private fun LiveSessionPlayer.outcomeLabel(winner: Player?) = when (winner) {
-    null -> "Draw"
-    this -> "Winner"
-    else -> "Lost"
 }
 
 private fun LiveSessionPlayer.eloAdjustmentColor(winner: Player?) = when (winner) {
@@ -383,11 +315,8 @@ private fun LiveSessionPlayer.eloAdjustmentLabel(
     else -> "${ratingAdjustment.eloLoss}"
 }
 
-private fun LiveSessionPlayer.finishedTournamentWins(winner: Player?) =
-    tournamentMatchWins?.let { if (this == winner) it + 1 else it } ?: 0
-
 private val GameFinishReason.label get() = when (this) {
-    is GameFinishReason.Regular -> "Six in a Row"
+    is GameFinishReason.Regular -> "$length in a Row"
     is GameFinishReason.Timeout -> "Timeout"
     is GameFinishReason.Surrender -> "Surrender"
     is GameFinishReason.Disconnect -> "Disconnect"
