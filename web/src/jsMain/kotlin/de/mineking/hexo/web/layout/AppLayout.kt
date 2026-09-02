@@ -118,45 +118,55 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
 private fun NavBar(activePage: AppRoute?) {
     Header({
         classes(
-            "shrink-0", "border-b", "border-slate-800/80", "bg-slate-950/95", "px-3", "py-2.5",
-            "shadow-lg", "shadow-black/10", "md:px-6", "lg:px-8",
+            "relative", "z-20", "shrink-0", "border-b", "border-white/8", "bg-slate-950/95", "px-3", "py-2.5",
+            "shadow-xl", "shadow-black/15", "md:px-6", "lg:px-8",
         )
     }) {
         Div({
-            classes("mx-auto", "flex", "w-full", "items-center", "justify-between", "gap-3")
+            classes(
+                "mx-auto", "grid", "w-full", "grid-cols-[1fr_auto]", "items-center", "gap-x-3", "gap-y-2",
+                "sm:grid-cols-[1fr_auto_1fr]",
+            )
         }) {
-            Anchor(AppRoute.LobbyList, {
+            Anchor(AppRoute.SessionList, {
                 classes(
-                    "group", "flex", "min-w-0", "items-center", "gap-2.5", "rounded-md", "px-1", "py-1",
+                    "group", "flex", "min-w-0", "justify-self-start", "items-center", "gap-2.5", "rounded-lg", "px-1", "py-1",
                     "transition", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
                 )
             }) {
                 Span({
                     classes(
-                        "grid", "size-8", "shrink-0", "place-items-center", "rounded-md", "border",
-                        "border-emerald-500/40", "bg-emerald-500/15", "group-hover:border-emerald-400/50", "transition",
+                        "grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "border",
+                        "border-emerald-400/30", "bg-emerald-400/10", "shadow-lg", "shadow-emerald-950/30",
+                        "transition", "group-hover:border-emerald-300/50", "group-hover:bg-emerald-400/15",
                     )
                 }) {
                     Img(BasePath.prependTo("/favicon.png"), "HeXO", {
-                        classes("size-full", "object-contain")
+                        classes("size-full", "object-contain", "p-0.5")
                     })
                 }
-                Span({ classes("truncate", "text-base", "font-bold", "text-xl", "text-slate-100", "hidden", "md:block") }) {
-                    Text("MineKing's HeXO Tools")
+                Span({ classes("hidden", "min-w-0", "flex-col", "leading-none", "md:flex") }) {
+                    Span({ classes("text-lg", "font-black", "tracking-tight", "text-slate-50") }) { Text("HeXO") }
+                    Span({ classes("mt-1", "text-[10px]", "font-semibold", "uppercase", "tracking-[0.18em]", "text-emerald-300/70") }) {
+                        Text("Play · Analyse · Connect")
+                    }
                 }
             }
 
-            WatchPartyIndicator()
-
             Nav({
                 classes(
-                    "flex", "items-center", "gap-2", "rounded-xl", "border", "border-slate-800",
-                    "bg-slate-900/70", "p-1", "shadow-inner", "shadow-black/20",
+                    "col-span-2", "row-start-2", "flex", "justify-self-center", "items-center", "gap-1.5", "rounded-xl",
+                    "border", "border-slate-700/60", "bg-slate-900/85", "p-1.5", "shadow-xl", "shadow-black/25",
+                    "sm:col-span-1", "sm:col-start-2", "sm:row-start-1",
                 )
             }) {
                 NavBarEntry.entries.forEach {
                     NavLink(it.label, it.route, activePage?.navBarEntry == it)
                 }
+            }
+
+            Div({ classes("col-start-2", "row-start-1", "flex", "min-w-0", "justify-self-end", "sm:col-start-3") }) {
+                WatchPartyIndicator()
             }
         }
     }
@@ -357,13 +367,16 @@ private fun AppFooter() {
 private fun NavLink(label: String, route: AppRoute, active: Boolean) {
     Anchor(route, {
         classes(
-            "rounded-lg", "border", "px-3", "py-1.5", "text-sm", "font-semibold", "transition",
-            "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60", "md:px-4",
+            "inline-flex", "items-center", "rounded-lg", "border", "px-3", "py-2", "text-[11px]", "font-bold",
+            "uppercase", "tracking-wider", "transition-all", "focus:outline-none", "focus-visible:ring-2",
+            "focus-visible:ring-emerald-400/60", "sm:px-3", "md:px-4", "md:text-xs",
         )
         if (active) {
-            classes("border-emerald-500/50", "bg-emerald-500/20", "text-emerald-200", "shadow-sm", "shadow-emerald-950/30")
+            classes(
+                "border-white/10", "bg-slate-800", "text-slate-50", "shadow-md", "shadow-black/20",
+            )
         } else {
-            classes("border-transparent", "text-slate-400", "hover:bg-slate-800", "hover:text-slate-100")
+            classes("border-transparent", "text-slate-500", "hover:bg-slate-800/60", "hover:text-slate-200")
         }
     }) {
         Span({ classes("whitespace-nowrap") }) {

@@ -38,7 +38,7 @@ import org.jetbrains.compose.web.dom.Text
 
 @InitRoute
 fun initLobbyListPage(ctx: InitRouteContext) {
-    ctx.data.add(PageData(AppRoute.LobbyList))
+    ctx.data.add(PageData(AppRoute.SessionList))
 }
 
 @Page
