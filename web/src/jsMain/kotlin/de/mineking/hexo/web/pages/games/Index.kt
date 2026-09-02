@@ -26,8 +26,9 @@ import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.RatedFilter
+import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
-import de.mineking.hexo.web.components.Select
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.formatCompact
@@ -51,19 +52,6 @@ import org.w3c.dom.url.URL
 import kotlin.js.Date
 
 private const val PAGE_SIZE = 10
-
-private enum class RatedFilter(val rated: Boolean?, val queryValue: String, private val label: String) {
-    All(null, "all", "All"),
-    Rated(true, "rated", "Rated"),
-    Casual(false, "casual", "Casual"),
-    ;
-
-    override fun toString() = label
-
-    companion object {
-        fun fromQuery(value: String?) = entries.find { it.queryValue == value } ?: All
-    }
-}
 
 @InitRoute
 fun initLobbyListPage(ctx: InitRouteContext) {
@@ -188,7 +176,7 @@ private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) ->
             }
         }
 
-        Select(RatedFilter.entries, filter, onFilterChange)
+        RatedFilterControl(filter, onFilterChange)
     }
 }
 
@@ -221,7 +209,7 @@ private fun EmptyGameState(filter: RatedFilter, page: Int, onPrevious: () -> Uni
             P({ classes("max-w-md", "text-sm", "leading-relaxed", "text-slate-500") }) {
                 Text(
                     if (page == 1 && filter != RatedFilter.All) {
-                        "No ${filter.toString().lowercase()} games have been recorded yet."
+                        "No ${filter.label.lowercase()} games have been recorded yet."
                     } else {
                         "There are no games to show on this page."
                     },

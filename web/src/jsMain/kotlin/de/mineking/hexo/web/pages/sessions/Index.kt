@@ -5,6 +5,9 @@ package de.mineking.hexo.web.pages.sessions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
@@ -20,6 +23,8 @@ import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.RatedFilter
+import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
@@ -67,21 +72,21 @@ private fun LoadingState() {
 
 @Composable
 private fun LobbyList(sessionRepository: SessionRepository) {
-    val lobbies by sessionRepository.sessions.collectAsState()
-    val sortedLobbies = lobbies.values.sortedWith(
-        compareByDescending<Session> { it.hasStarted() }
-            .thenByDescending { it.createdAt },
-    )
+    val sessions by sessionRepository.sessions.collectAsState()
+    var filter by remember { mutableStateOf(RatedFilter.All) }
+    val sortedLobbies = sessions.values
+        .filter { filter.rated == null || it.gameOptions.rated == filter.rated }
+        .sortedBy { it.hasStarted() }
 
     ContentCard({
         classes(
             "flex", "max-h-full", "min-h-0", "flex-col", "gap-4", "overflow-hidden", "p-4", "lg:max-h-[calc(100%-3rem)]",
         )
     }) {
-        LobbyListHeader(sortedLobbies.size)
+        LobbyListHeader(sortedLobbies.size, filter, onFilterChange = { filter = it })
 
         if (sortedLobbies.isEmpty()) {
-            EmptyLobbyState()
+            EmptyLobbyState(filter)
         } else {
             ScrollableView({
                 classes("pr-2")
@@ -102,8 +107,8 @@ private fun LobbyList(sessionRepository: SessionRepository) {
 }
 
 @Composable
-private fun LobbyListHeader(sessionCount: Int) {
-    Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
+private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
+    Div({ classes("flex", "shrink-0", "flex-wrap", "items-center", "justify-between", "gap-3") }) {
         Div({ classes("flex", "min-w-0", "items-center", "gap-3") }) {
             Span({
                 classes(
@@ -122,33 +127,42 @@ private fun LobbyListHeader(sessionCount: Int) {
                 }
             }
         }
-        Span({
-            classes(
-                "shrink-0", "rounded-full", "border", "border-slate-700/70", "bg-slate-950/50",
-                "px-3", "py-1.5", "text-xs", "text-slate-500",
-            )
-        }) {
-            Span({ classes("mr-1", "font-bold", "text-slate-300") }) {
-                Text("$sessionCount")
-            }
-            Span {
-                Text(if (sessionCount == 1) "session" else "sessions")
+        Div({ classes("flex", "items-center", "gap-2") }) {
+            RatedFilterControl(filter, onFilterChange)
+            Span({
+                classes(
+                    "shrink-0", "rounded-full", "border", "border-slate-700/70", "bg-slate-950/50",
+                    "px-3", "py-1.5", "text-xs", "text-slate-500",
+                )
+            }) {
+                Span({ classes("mr-1", "font-bold", "text-slate-300") }) {
+                    Text("$sessionCount")
+                }
+                Span {
+                    Text(if (sessionCount == 1) "session" else "sessions")
+                }
             }
         }
     }
 }
 
 @Composable
-private fun EmptyLobbyState() {
+private fun EmptyLobbyState(filter: RatedFilter) {
     SubCard({
         classes("grid", "min-h-64", "place-items-center", "border-dashed", "bg-slate-950/40", "p-6", "text-center")
     }) {
         Div({ classes("flex", "flex-col", "items-center", "gap-2") }) {
             H2({ classes("text-base", "font-semibold", "text-slate-200") }) {
-                Text("No open lobbies")
+                Text(if (filter == RatedFilter.All) "No open lobbies" else "No ${filter.label.lowercase()} sessions")
             }
             P({ classes("max-w-md", "text-sm", "leading-relaxed", "text-slate-500") }) {
-                Text("There are no public lobbies right now. The sandbox is still available for position analysis.")
+                Text(
+                    if (filter == RatedFilter.All) {
+                        "There are no public lobbies right now. The sandbox is still available for position analysis."
+                    } else {
+                        "There are no open ${filter.label.lowercase()} sessions right now. Try another filter."
+                    },
+                )
             }
         }
     }
