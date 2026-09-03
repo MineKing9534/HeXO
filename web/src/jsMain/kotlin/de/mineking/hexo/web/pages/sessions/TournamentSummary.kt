@@ -39,7 +39,7 @@ internal fun TournamentSummary(
 @Composable
 private fun TournamentHeader(tournament: TournamentMatchSnapshot) {
     Div({
-        classes("flex", "items-start", "justify-between", "gap-3", "p-4", "sm:px-5", "bg-slate-950/25")
+        classes("flex", "flex-wrap", "items-start", "justify-between", "gap-3", "p-4", "sm:px-5", "bg-slate-950/25")
     }) {
         Div({ classes("min-w-0") }) {
             SessionSectionLabel("Tournament")

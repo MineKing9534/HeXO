@@ -252,7 +252,7 @@ private fun LoadedGameList(
 
 @Composable
 private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
-    Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
+    Div({ classes("flex", "shrink-0", "flex-wrap", "items-center", "justify-between", "gap-3") }) {
         CardHeader(
             title = "Match history",
             supportingText = "Review recently completed games",
@@ -261,7 +261,9 @@ private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) ->
             TimeControlIcon { classes("size-4", "fill-none", "stroke-current") }
         }
 
-        RatedFilterControl(filter, onFilterChange)
+        Div({ classes("flex", "w-full", "justify-end", "sm:w-auto") }) {
+            RatedFilterControl(filter, onFilterChange)
+        }
     }
 }
 
@@ -384,7 +386,8 @@ private fun GameRowActions(game: FinishedGame, previewing: Boolean, onPreview: (
         }
         Button({
             classes(
-                "group", "inline-flex", "w-full", "cursor-pointer", "items-center", "justify-center", "gap-2",
+                "group", "hidden", "w-full", "cursor-pointer", "items-center", "justify-center", "gap-2",
+                "md:inline-flex",
                 "rounded-lg", "border", "px-4", "py-2", "text-sm", "font-semibold", "transition",
                 "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-sky-400/50",
             )
@@ -413,7 +416,7 @@ private fun GamePreview(
     onClose: () -> Unit,
 ) {
     Div({
-        classes("flex", "min-h-0", "min-w-0", "game-preview-enter")
+        classes("hidden", "min-h-0", "min-w-0", "game-preview-enter", "md:flex")
         if (closing) classes("game-preview-exit")
     }) {
         if (positionedGame == null) {

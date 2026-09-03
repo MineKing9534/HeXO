@@ -16,11 +16,15 @@ fun Dialog(
 ) {
     Div({
         onClick { onClose() }
-        classes("fixed", "inset-0", "z-50", "grid", "place-items-center", "bg-slate-950/70")
+        classes("fixed", "inset-0", "z-50", "grid", "place-items-center", "bg-slate-950/70", "p-3")
     }) {
         Div({
             onClick { it.stopPropagation() }
-            classes("relative", "w-full", "max-w-xl", "rounded-xl", "border", "border-slate-700", "bg-slate-900", "p-5", "pt-3", "shadow-2xl")
+            classes(
+                "relative", "max-h-[calc(100dvh-1.5rem)]", "w-full", "max-w-xl", "overflow-y-auto",
+                "rounded-xl", "border", "border-slate-700", "bg-slate-900", "p-4", "pt-3",
+                "shadow-2xl", "sm:p-5", "sm:pt-3",
+            )
         }) {
             Div({ classes("space-y-6") }) {
                 if (title != null) {

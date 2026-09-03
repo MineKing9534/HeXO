@@ -17,6 +17,7 @@ import com.varabyte.kobweb.core.layout.Layout
 import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Dialog
+import de.mineking.hexo.web.components.DropdownMenu
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.LoadingIndicatorSize
 import de.mineking.hexo.web.icons.BroadcastIcon
@@ -125,7 +126,7 @@ private fun NavBar(activePage: AppRoute?) {
     }) {
         Div({
             classes(
-                "mx-auto", "grid", "w-full", "grid-cols-[1fr_auto]", "items-center", "gap-x-3", "gap-y-2",
+                "mx-auto", "grid", "w-full", "grid-cols-[auto_minmax(0,1fr)_auto]", "items-center", "gap-x-2",
                 "sm:grid-cols-[1fr_auto_1fr]",
             )
         }) {
@@ -154,21 +155,56 @@ private fun NavBar(activePage: AppRoute?) {
                 }
             }
 
-            Nav({
-                classes(
-                    "col-span-2", "row-start-2", "flex", "justify-self-center", "items-center", "gap-1.5", "rounded-xl",
-                    "border", "border-slate-700/60", "bg-slate-900/85", "p-1.5", "shadow-xl", "shadow-black/25",
-                    "sm:col-span-1", "sm:col-start-2", "sm:row-start-1",
-                )
-            }) {
-                NavBarEntry.entries.forEach {
-                    NavLink(it.label, it.route, activePage?.navBarEntry == it)
-                }
-            }
+            MobileNavigation(activePage)
+            DesktopNavigation(activePage)
 
-            Div({ classes("col-start-2", "row-start-1", "flex", "min-w-0", "justify-self-end", "sm:col-start-3") }) {
+            Div({ classes("col-start-3", "row-start-1", "flex", "min-w-0", "justify-self-end") }) {
                 WatchPartyIndicator()
             }
+        }
+    }
+}
+
+@Composable
+private fun MobileNavigation(activePage: AppRoute?) {
+    val activeEntry = activePage?.navBarEntry
+
+    Div({ classes("col-start-2", "row-start-1", "min-w-0", "sm:hidden") }) {
+        DropdownMenu(label = { Text(activeEntry?.label ?: "Navigate") }) { close ->
+            Nav({ classes("grid", "gap-1") }) {
+                NavBarEntry.entries.forEach { entry ->
+                    MobileNavLink(entry, activeEntry == entry, close)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MobileNavLink(entry: NavBarEntry, active: Boolean, onNavigate: () -> Unit) {
+    Anchor(entry.route, {
+        classes("rounded-lg", "border", "px-3", "py-2.5", "text-sm", "font-semibold", "transition")
+        if (active) {
+            classes("border-white/10", "bg-slate-800", "text-slate-50")
+        } else {
+            classes("border-transparent", "text-slate-400", "hover:bg-slate-800/70", "hover:text-slate-100")
+        }
+        onClick { onNavigate() }
+    }) {
+        Text(entry.label)
+    }
+}
+
+@Composable
+private fun DesktopNavigation(activePage: AppRoute?) {
+    Nav({
+        classes(
+            "col-start-2", "row-start-1", "hidden", "items-center", "gap-1.5", "rounded-xl", "border",
+            "border-slate-700/60", "bg-slate-900/85", "p-1.5", "shadow-xl", "shadow-black/25", "sm:flex",
+        )
+    }) {
+        NavBarEntry.entries.forEach {
+            NavLink(it.label, it.route, activePage?.navBarEntry == it)
         }
     }
 }
@@ -200,7 +236,7 @@ private fun SessionSubscriptionIndicator(connected: Boolean) {
     Div({
         classes(
             "group", "inline-flex", "min-w-0", "max-w-72", "items-center", "gap-2.5", "rounded-lg",
-            "border", "border-sky-500/40", "bg-sky-500/10", "pr-2.5", "p-1.5", "text-left",
+            "border", "border-sky-500/40", "bg-sky-500/10", "p-1.5", "text-left", "sm:pr-2.5",
             "text-sky-100", "shadow-sm", "shadow-sky-950/20", "transition",
             "hover:border-sky-400/60", "hover:bg-sky-500/20", "hover:text-white",
             "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-sky-400/60",
@@ -215,7 +251,7 @@ private fun SessionHostIndicatorButton(connected: Boolean, onClick: () -> Unit) 
     Button({
         classes(
             "group", "inline-flex", "min-w-0", "max-w-72", "items-center", "gap-2.5", "rounded-lg",
-            "border", "border-emerald-500/40", "bg-emerald-500/10", "pr-2.5", "p-1.5", "text-left",
+            "border", "border-emerald-500/40", "bg-emerald-500/10", "p-1.5", "text-left", "sm:pr-2.5",
             "text-emerald-100", "shadow-sm", "shadow-emerald-950/20", "transition", "cursor-pointer",
             "hover:border-emerald-400/60", "hover:bg-emerald-500/20", "hover:text-white",
             "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
@@ -332,10 +368,11 @@ private fun AppFooter() {
         )
     }) {
         Div({
-            classes("mx-auto", "flex", "w-full", "items-center", "justify-between", "gap-3")
+            classes("mx-auto", "flex", "w-full", "items-center", "justify-between", "gap-2", "sm:gap-3")
         }) {
-            Span {
-                Text("Copyright © 2026 MineKing")
+            Span({ classes("min-w-0", "truncate") }) {
+                Span({ classes("sm:hidden") }) { Text("© 2026 MineKing") }
+                Span({ classes("hidden", "sm:inline") }) { Text("Copyright © 2026 MineKing") }
             }
 
             Span({ classes("flex", "gap-2") }) {
@@ -368,9 +405,10 @@ private fun AppFooter() {
 private fun NavLink(label: String, route: AppRoute, active: Boolean) {
     Anchor(route, {
         classes(
-            "inline-flex", "items-center", "rounded-lg", "border", "px-3", "py-2", "text-[11px]", "font-bold",
+            "inline-flex", "items-center", "justify-center", "rounded-lg", "border", "px-3", "py-2",
+            "text-[11px]", "font-bold",
             "uppercase", "tracking-wider", "transition-all", "focus:outline-none", "focus-visible:ring-2",
-            "focus-visible:ring-emerald-400/60", "sm:px-3", "md:px-4", "md:text-xs",
+            "focus-visible:ring-emerald-400/60", "md:px-4", "md:text-xs",
         )
         if (active) {
             classes(
