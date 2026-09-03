@@ -22,11 +22,10 @@ import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
-import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.RatedFilter
 import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
-import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.format
 import de.mineking.hexo.web.icons.EyeIcon
@@ -61,12 +60,7 @@ fun LobbyListPage() {
 
 @Composable
 private fun LoadingState() {
-    StatusCard {
-        LoadingIndicator { classes("size-9") }
-        P({ classes("font-semibold", "text-slate-200") }) {
-            Text("Connecting to lobby service...")
-        }
-    }
+    LoadingCard("Connecting to lobby service...")
 }
 
 @Composable

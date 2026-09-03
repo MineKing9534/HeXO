@@ -30,12 +30,12 @@ import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.Pagination
 import de.mineking.hexo.web.components.RatedFilter
 import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
-import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.formatCompact
 import de.mineking.hexo.web.icons.CasualGameIcon
@@ -121,12 +121,7 @@ fun GameHistoryPage(ctx: PageContext) {
 
 @Composable
 private fun LoadingState() {
-    StatusCard {
-        LoadingIndicator { classes("size-9") }
-        P({ classes("font-semibold", "text-slate-200") }) {
-            Text("Loading finished games...")
-        }
-    }
+    LoadingCard("Loading finished games...")
 }
 
 @Composable
