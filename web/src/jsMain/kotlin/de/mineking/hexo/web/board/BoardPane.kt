@@ -8,20 +8,13 @@ import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.GamePosition
-import de.mineking.hexo.board.focusWinningRows
-import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
-import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
-import de.mineking.hexo.board.render.image.Point
-import de.mineking.hexo.board.render.image.center
-import de.mineking.hexo.board.render.image.isCloseTo
 import de.mineking.hexo.board.take
-import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.game.GameMove
 import de.mineking.hexo.game.model.game.GameWithPosition
 import de.mineking.hexo.web.components.ActionButton
@@ -123,7 +116,7 @@ fun BoardPane(
             },
         ) {
             content?.invoke(this)
-            DefaultBoardControls(boardViewManager, viewport, onViewportChange)
+            DefaultBoardControls(boardViewManager, onViewportChange)
         }
 
         @Composable
@@ -145,9 +138,8 @@ fun BoardPane(
 }
 
 @Composable
-private fun BoardScope.DefaultBoardControls(
+private fun DefaultBoardControls(
     boardViewManager: BoardViewManager,
-    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
 ) {
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
@@ -158,7 +150,7 @@ private fun BoardScope.DefaultBoardControls(
         }
 
         BoardActionButton(onClick = {
-            onViewportChange(nextHomeViewport(viewport))
+            onViewportChange(BoardViewport())
         }) {
             ResetViewIcon { classes("size-4") }
         }
@@ -186,12 +178,3 @@ private fun FullScreenButton() {
         }
     }
 }
-
-private fun BoardScope.nextHomeViewport(viewport: BoardViewport) = BoardViewport(
-    zoom = viewport.zoom,
-    center = if (viewport.center.isCloseTo(Point.Zero)) {
-        renderLayout.boundingBox.center
-    } else {
-        Point.Zero
-    },
-)
