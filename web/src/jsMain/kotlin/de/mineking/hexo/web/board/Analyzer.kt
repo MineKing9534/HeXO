@@ -14,7 +14,6 @@ import de.mineking.hexo.board.render.image.CanvasRenderingBackend
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.Stroke
-import de.mineking.hexo.board.render.image.createHex
 import de.mineking.hexo.board.render.image.css
 import de.mineking.hexo.board.render.image.drawCircle
 import de.mineking.hexo.board.render.image.theme.BaseTheme
@@ -181,7 +180,7 @@ private fun RenderingContext.drawOverlayTarget(
 
     backend.drawCircle(
         point = point,
-        stroke = Stroke(color.withAlpha(16), (hexSize * 0.78).toFloat()),
+        stroke = Stroke(color.withAlpha(16), (hexSize * 0.78 - 4.0.relativeWidth()).toFloat()),
         outline = Stroke(color, 4.0.relativeWidth()),
     )
 
@@ -254,13 +253,14 @@ private fun RenderingContext.drawFirstThreatMoveHighlight(
 
     cells.forEach { coordinate ->
         val point = layout.run { coordinate.toPixel() }
-        val target = point.createHex(hexSize * 0.75)
-
-        backend.drawPolygon(
-            shape = target,
-            color = color.withAlpha(38),
-            outline = Stroke(color.withAlpha(210), 3.0.relativeWidth()),
-            borderRadius = 2.5.relativeWidth(),
-        )
+        theme.cellShape.run {
+            backend.drawCellShape(
+                point = point,
+                radius = hexSize * 0.75,
+                color = color.withAlpha(38),
+                outline = Stroke(color.withAlpha(210), 3.0.relativeWidth()),
+                borderRadius = 2.5.relativeWidth(),
+            )
+        }
     }
 }

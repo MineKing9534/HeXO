@@ -41,6 +41,7 @@ import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -127,9 +128,11 @@ private fun BoardScope.BoardControls(
     )
 
     Div({ classes("absolute", "top-3", "left-3", "z-20") }) {
-        BoardActionButton(onClick = { boardViewManager.currentMove = Int.MAX_VALUE }) {
-            Text("Move ${min(boardViewManager.currentMove, totalMoves)}/$totalMoves")
-        }
+        MoveIndicatorButton(
+            currentMove = min(boardViewManager.currentMove, totalMoves),
+            totalMoves = totalMoves,
+            onClick = { boardViewManager.currentMove = Int.MAX_VALUE },
+        )
     }
 
     Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
@@ -150,6 +153,38 @@ private fun BoardScope.BoardControls(
             },
             onClick = { boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronRightIcon { classes("size-4") } }
+    }
+}
+
+@Composable
+private fun MoveIndicatorButton(currentMove: Int, totalMoves: Int, onClick: () -> Unit) {
+    val reviewingHistory = currentMove < totalMoves
+    Button({
+        classes(
+            "inline-flex", "h-9", "cursor-pointer", "items-center", "gap-2", "rounded-lg", "border",
+            "bg-slate-950/75", "px-2.5", "shadow-md", "backdrop-blur-xs", "backdrop-saturate-0",
+            "transition-colors", "hover:bg-slate-900/85",
+        )
+        if (reviewingHistory) {
+            classes("border-amber-400/55", "hover:border-amber-300/75")
+            attr("title", "Return to latest move")
+        } else {
+            classes("border-slate-500/60", "hover:border-slate-400/75")
+            attr("title", "Latest move")
+        }
+        attr("aria-label", if (reviewingHistory) "Return to latest move" else "Latest move")
+        onClick { onClick() }
+    }) {
+        Span({ classes("text-[10px]", "font-semibold", "uppercase", "tracking-[0.16em]", "text-slate-400") }) {
+            Text("Move")
+        }
+        Span({ classes("flex", "items-baseline", "gap-1", "tabular-nums") }) {
+            Span({ classes("text-sm", "font-extrabold", if (reviewingHistory) "text-amber-200" else "text-slate-100") }) {
+                Text("$currentMove")
+            }
+            Span({ classes("text-[10px]", "font-medium", "text-slate-600") }) { Text("/") }
+            Span({ classes("text-xs", "font-semibold", "text-slate-400") }) { Text("$totalMoves") }
+        }
     }
 }
 
@@ -225,7 +260,7 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
     }
 
     Div({
-        classes("font-extrabold", "text-lg", "tabular-nums")
+        classes("font-extrabold", "text-lg", "leading-none", "tabular-nums")
         if (current) {
             classes("text-emerald-200")
         } else {
@@ -251,31 +286,35 @@ private fun TurnIndicator(
         val isCurrentTurn = player === currentPlayer
         Div({ classes("flex", "flex-col", "justify-center", "gap-2") }) {
             Div({
-                classes("rounded-md", "py-1", "px-3", "border", "flex", "items-center", "justify-between")
+                classes(
+                    "h-9", "min-w-0", "rounded-lg", "border-2", "px-2.5", "flex", "items-center", "justify-between", "gap-2",
+                    "bg-slate-900/75", "backdrop-blur-xs", "backdrop-saturate-0",
+                )
                 if (isCurrentTurn) {
-                    classes("bg-emerald-500/20", "border-emerald-500/50")
+                    classes("border-emerald-400/70", "shadow-[inset_0_0_18px_rgb(16_185_129/0.08)]")
                 } else {
-                    classes("bg-slate-500/20", "border-slate-500/50")
+                    classes("border-slate-500/60")
                 }
             }) {
-                PlayerName(player.gamePlayer)
+                PlayerName(player.gamePlayer) {
+                    classes(
+                        "min-w-0", "text-[11px]", "font-semibold", "uppercase", "tracking-[0.14em]",
+                        if (isCurrentTurn) "text-slate-100" else "text-slate-300",
+                    )
+                }
                 if (player is LiveSessionPlayer && isLive) PlayerTimer(player, isCurrentTurn)
             }
             if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
         }
     }
 
-    Div({ classes("pointer-events-none", "absolute", "top-3", "left-3", "right-3", "flex", "justify-center") }) {
-        Div({
-            classes("pointer-events-auto", "shadow-xl", "bg-slate-800/85", "rounded-lg", "p-3", "max-w-xl", "w-full", "backdrop-blur-xs")
-        }) {
-            if (game.tournament != null) TournamentInfoCard(game)
-            if (game.options.rated) RatedInfoCard(game)
+    Div({ classes("pointer-events-none", "absolute", "top-3", "left-3", "right-3", "mx-auto", "max-w-xl") }) {
+        if (game.tournament != null) TournamentInfoCard(game)
+        if (game.options.rated) RatedInfoCard(game)
 
-            Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
-                game.players.forEach {
-                    PlayerIndicator(it)
-                }
+        Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
+            game.players.forEach {
+                PlayerIndicator(it)
             }
         }
     }
