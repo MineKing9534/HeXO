@@ -28,15 +28,17 @@ import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
+import de.mineking.hexo.web.components.BadgeSize
 import de.mineking.hexo.web.components.Card
+import de.mineking.hexo.web.components.CardHeader
 import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.EmptyStateCard
 import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.Pagination
 import de.mineking.hexo.web.components.RatedFilter
 import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
-import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.formatCompact
 import de.mineking.hexo.web.icons.CasualGameIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
@@ -242,7 +244,7 @@ private fun LoadedGameList(
                 )
                 attr("aria-label", "Loading games")
             }) {
-                LoadingIndicator { classes("size-9") }
+                LoadingIndicator()
             }
         }
     }
@@ -251,23 +253,12 @@ private fun LoadedGameList(
 @Composable
 private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
     Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
-        Div({ classes("flex", "min-w-0", "items-center", "gap-3") }) {
-            Span({
-                classes(
-                    "grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "border",
-                    "border-sky-400/25", "bg-sky-400/10", "text-sky-300",
-                )
-            }) {
-                TimeControlIcon { classes("size-4", "fill-none", "stroke-current") }
-            }
-            Div({ classes("min-w-0") }) {
-                H2({ classes("text-lg", "font-bold", "uppercase", "leading-tight", "text-slate-100") }) {
-                    Text("Match history")
-                }
-                P({ classes("mt-0.5", "truncate", "text-xs", "text-slate-500") }) {
-                    Text("Review recently completed games")
-                }
-            }
+        CardHeader(
+            title = "Match history",
+            supportingText = "Review recently completed games",
+            iconAttrs = { classes("border-sky-400/25", "bg-sky-400/10", "text-sky-300") },
+        ) {
+            TimeControlIcon { classes("size-4", "fill-none", "stroke-current") }
         }
 
         RatedFilterControl(filter, onFilterChange)
@@ -287,33 +278,26 @@ private fun SyncGameListQueryParameters(page: Int, filter: RatedFilter) {
 @Composable
 private fun GamesLoadingState() {
     Div({ classes("grid", "min-h-64", "place-items-center") }) {
-        LoadingIndicator { classes("size-9") }
+        LoadingIndicator()
     }
 }
 
 @Composable
 private fun EmptyGameState(filter: RatedFilter, page: Int, onPrevious: () -> Unit) {
-    SubCard({
-        classes("grid", "min-h-64", "place-items-center", "border-dashed", "bg-slate-950/40", "p-6", "text-center")
-    }) {
-        Div({ classes("flex", "flex-col", "items-center", "gap-2") }) {
-            H2({ classes("text-base", "font-semibold", "text-slate-200") }) {
-                Text(if (page == 1) "No finished games" else "No more games")
-            }
-            P({ classes("max-w-md", "text-sm", "leading-relaxed", "text-slate-500") }) {
-                Text(
-                    if (page == 1 && filter != RatedFilter.All) {
-                        "No ${filter.label.lowercase()} games have been recorded yet."
-                    } else {
-                        "There are no games to show on this page."
-                    },
-                )
-            }
-            if (page > 1) {
-                ActionButton(label = "Previous page", onClick = onPrevious)
-            }
-        }
+    val description = if (page == 1 && filter != RatedFilter.All) {
+        "No ${filter.label.lowercase()} games have been recorded yet."
+    } else {
+        "There are no games to show on this page."
     }
+    EmptyStateCard(
+        title = if (page == 1) "No finished games" else "No more games",
+        description = description,
+        action = if (page > 1) {
+            @Composable { ActionButton(label = "Previous page", onClick = onPrevious) }
+        } else {
+            null
+        },
+    )
 }
 
 @Composable
@@ -440,7 +424,7 @@ private fun GamePreview(
                 )
                 attr("aria-label", "Loading game preview")
             }) {
-                LoadingIndicator { classes("size-9") }
+                LoadingIndicator()
                 GamePreviewHeader(game, onClose)
             }
         } else {
@@ -489,6 +473,7 @@ private fun GamePreviewHeader(game: FinishedGame, onClose: () -> Unit) {
 fun GameTypeBadge(
     options: GameOptions,
     tournament: TournamentMatchSnapshot?,
+    size: BadgeSize = BadgeSize.Small,
     attrs: AttrBuilderContext<HTMLSpanElement>? = null,
 ) {
     Badge(
@@ -498,6 +483,7 @@ fun GameTypeBadge(
             else -> Color.Emerald
         },
         attrs = attrs,
+        size = size,
     ) {
         when {
             tournament != null -> {

@@ -22,7 +22,7 @@ internal fun TournamentSummary(
 ) {
     tournament ?: return
 
-    SubCard({ classes("overflow-hidden", "border-slate-700/60!", "bg-slate-900/50!") }) {
+    SubCard({ classes("overflow-hidden") }) {
         TournamentHeader(tournament)
         Div({
             classes(
@@ -42,9 +42,7 @@ private fun TournamentHeader(tournament: TournamentMatchSnapshot) {
         classes("flex", "items-start", "justify-between", "gap-3", "p-4", "sm:px-5", "bg-slate-950/25")
     }) {
         Div({ classes("min-w-0") }) {
-            Span({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
-                Text("Tournament")
-            }
+            SessionSectionLabel("Tournament")
             P({ classes("mt-1", "truncate", "font-semibold", "text-slate-100") }) {
                 Text(tournament.tournament.info.name)
             }

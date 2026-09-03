@@ -88,7 +88,7 @@ fun BoardPane(
                 "bg-linear-to-br", "from-slate-900", "to-slate-900/30", "shadow-2xl", "shadow-black/30", "h-full",
             )
         }) {
-            LoadingIndicator { classes("size-9") }
+            LoadingIndicator()
         }
     }
 

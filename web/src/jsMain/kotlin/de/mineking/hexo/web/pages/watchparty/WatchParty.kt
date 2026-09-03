@@ -14,9 +14,9 @@ import de.mineking.hexo.watchparty.client.WatchParty
 import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.watchparty.common.WatchPartyTarget
 import de.mineking.hexo.web.board.rememberSubscriberBoardViewManager
+import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.LoadingIndicator
-import de.mineking.hexo.web.components.NotFoundBackLink
 import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.layout.AppRoute
@@ -71,7 +71,7 @@ private fun NotFoundState() {
         title = "Watch party not found",
         description = "This watch party may have been closed, or the link may be incorrect.",
     ) {
-        NotFoundBackLink(AppRoute.WatchPartyHome, "Back to watch parties")
+        BackLink(AppRoute.WatchPartyHome, "Back to watch parties")
     }
 }
 
@@ -82,7 +82,7 @@ private fun NoSessionState() {
             Text("No board attached")
         }
 
-        LoadingIndicator { classes("size-9") }
+        LoadingIndicator()
         P({ classes("font-semibold", "text-slate-200") }) {
             Text("Waiting for host to attach a session...")
         }
