@@ -68,7 +68,12 @@ private fun StandardLobby(session: LobbySession) {
         SubCard({ classes("overflow-hidden") }, SubCardVariant.Inset) {
             Div({ classes("p-4", "sm:p-5") }) {
                 SessionSectionLabel("Players")
-                Div({ classes("mt-3", "grid", "grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]", "items-center", "gap-3") }) {
+                Div({
+                    classes(
+                        "mt-3", "grid", "items-center", "gap-2",
+                        "sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]", "sm:gap-3",
+                    )
+                }) {
                     LobbySeat(session.players.getOrNull(0))
                     Span({ classes("text-xs", "font-bold", "text-slate-600", "uppercase") }) { Text("vs") }
                     LobbySeat(session.players.getOrNull(1))

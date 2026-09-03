@@ -109,7 +109,7 @@ private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChan
         ) {
             EyeIcon { classes("size-4") }
         }
-        Div({ classes("flex", "items-center", "gap-2") }) {
+        Div({ classes("flex", "w-full", "flex-wrap", "items-center", "justify-between", "gap-2", "sm:w-auto") }) {
             Span({
                 classes(
                     "shrink-0", "rounded-full", "border", "border-slate-700/70", "bg-slate-950/50",

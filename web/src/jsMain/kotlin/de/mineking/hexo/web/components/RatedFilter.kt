@@ -30,8 +30,9 @@ fun RatedFilterControl(current: RatedFilter, onChange: (RatedFilter) -> Unit) {
             Button({
                 attr("aria-pressed", (filter == current).toString())
                 classes(
-                    "cursor-pointer", "rounded-md", "border", "px-3", "py-1", "text-xs", "font-semibold",
+                    "cursor-pointer", "rounded-md", "border", "px-2", "py-1", "text-xs", "font-semibold",
                     "transition-colors", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-amber-300/50",
+                    "sm:px-3",
                 )
                 if (filter == current) {
                     classes("shadow-sm", "shadow-black/20")

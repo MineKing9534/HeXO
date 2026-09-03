@@ -85,13 +85,18 @@ fun StatusCard(
     compact: Boolean = false,
     content: ContentBuilder<HTMLDivElement>,
 ) {
-    Div({ classes("mx-6", "flex-1", "h-full", "flex", "flex-col") }) {
+    Div({
+        classes(
+            "mx-0", "flex-1", "h-full", "flex", "flex-col", "overflow-y-auto", "py-3",
+            "sm:mx-6", "sm:py-0",
+        )
+    }) {
         ContentCard({
-            classes("grid", "place-items-center", "my-auto")
+            classes("grid", "shrink-0", "place-items-center", "my-auto")
             if (compact) {
-                classes("min-h-64", "p-6", "lg:max-w-3xl")
+                classes("min-h-64", "p-4", "sm:p-6", "lg:max-w-3xl")
             } else {
-                classes("min-h-48", "p-8", "lg:max-w-3xl")
+                classes("min-h-48", "p-4", "sm:p-8", "lg:max-w-3xl")
             }
             attrs?.invoke(this)
         }) {

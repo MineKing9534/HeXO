@@ -133,8 +133,9 @@ private fun WatchPartyCard() {
         Div({ classes("flex", "max-w-2xl", "flex-col", "items-center", "gap-3", "text-center") }) {
             Span({
                 classes(
-                    "grid", "size-12", "place-items-center", "rounded-xl", "border", "border-emerald-400/40",
+                    "grid", "size-10", "place-items-center", "rounded-xl", "border", "border-emerald-400/40",
                     "bg-emerald-500/15", "text-emerald-300", "shadow-lg", "shadow-emerald-950/20",
+                    "sm:size-12",
                 )
             }) {
                 BroadcastIcon { classes("size-6") }
@@ -143,7 +144,7 @@ private fun WatchPartyCard() {
                 P({ classes("mb-1", "text-xs", "font-bold", "uppercase", "tracking-[0.2em]", "text-emerald-400") }) {
                     Text("Live board sync")
                 }
-                H1({ classes("text-3xl", "font-extrabold", "tracking-tight", "text-slate-100", "sm:text-4xl") }) {
+                H1({ classes("text-2xl", "font-extrabold", "tracking-tight", "text-slate-100", "sm:text-4xl") }) {
                     Text("Watch together")
                 }
             }
@@ -164,7 +165,7 @@ private fun JoinWatchPartyPanel() {
     Div({
         classes(
             "flex", "min-w-0", "flex-col", "gap-4", "rounded-xl", "border", "border-sky-500/30",
-            "bg-sky-500/5", "p-5", "text-left",
+            "bg-sky-500/5", "p-4", "text-left", "sm:p-5",
         )
     }) {
         Div {
@@ -187,7 +188,7 @@ private fun HostWatchPartyPanel() {
     Div({
         classes(
             "flex", "min-w-0", "flex-col", "gap-4", "rounded-xl", "border", "border-emerald-500/30",
-            "bg-emerald-500/5", "p-5", "text-left",
+            "bg-emerald-500/5", "p-4", "text-left", "sm:p-5",
         )
     }) {
         Div({ classes("flex-1") }) {
