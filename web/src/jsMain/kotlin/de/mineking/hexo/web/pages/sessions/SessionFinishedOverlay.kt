@@ -49,8 +49,8 @@ fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Detailed.Fi
 
     Card({
         classes(
-            "fixed", "bottom-3", "left-1/2", "z-50", "w-[calc(100%-3rem)]", "-translate-x-1/2", "overflow-hidden",
-            "transition-all", "sm:bottom-5",
+            "fixed", "bottom-2", "left-1/2", "z-50", "w-[calc(100%-1rem)]", "-translate-x-1/2", "overflow-hidden",
+            "transition-all", "sm:bottom-5", "sm:w-[calc(100%-3rem)]",
             "bg-slate-950/94!", "border-slate-700/80!", "backdrop-blur-md", "border",
             "shadow-2xl", "shadow-black/45", "ring-1", "ring-white/5",
         )

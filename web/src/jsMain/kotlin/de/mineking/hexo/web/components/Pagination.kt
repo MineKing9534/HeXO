@@ -20,8 +20,9 @@ fun Pagination(
 
     Div({
         classes(
-            "flex", "shrink-0", "items-center", "justify-center", "gap-5", "rounded-xl", "border",
+            "flex", "shrink-0", "items-center", "justify-center", "gap-1", "rounded-xl", "border",
             "border-slate-800", "bg-slate-950/60", "p-1",
+            "sm:gap-5",
         )
         attr("aria-label", "Pagination")
         attr("role", "navigation")
@@ -36,7 +37,7 @@ fun Pagination(
             classes("flex", "shrink-0", "gap-1")
         }) {
             surroundingPages.forEach { page ->
-                PaginationPageButton(page, page == currentPage, onPageChange)
+                PaginationPageButton(page, page == currentPage, page.minus(currentPage).absoluteValue, onPageChange)
             }
         }
 
@@ -74,7 +75,7 @@ private fun PaginationArrowButton(
 }
 
 @Composable
-private fun PaginationPageButton(page: Int, current: Boolean, onPageChange: (Int) -> Unit) {
+private fun PaginationPageButton(page: Int, current: Boolean, distance: Int, onPageChange: (Int) -> Unit) {
     if (current) {
         Span({
             classes(
@@ -94,6 +95,7 @@ private fun PaginationPageButton(page: Int, current: Boolean, onPageChange: (Int
                 "hover:bg-slate-800", "hover:text-slate-200", "focus:outline-none", "focus-visible:ring-2",
                 "focus-visible:ring-slate-500/60",
             )
+            if (distance > 1) classes("hidden", "sm:grid")
             attr("aria-label", "Go to page $page")
             onClick { onPageChange(page) }
         }) {
@@ -101,6 +103,8 @@ private fun PaginationPageButton(page: Int, current: Boolean, onPageChange: (Int
         }
     }
 }
+
+private val Int.absoluteValue get() = if (this < 0) -this else this
 
 private fun surroundingPages(currentPage: Int, surroundingPageCount: Int, hasNextPage: Boolean): IntRange {
     val firstPage = maxOf(1, currentPage - surroundingPageCount)
