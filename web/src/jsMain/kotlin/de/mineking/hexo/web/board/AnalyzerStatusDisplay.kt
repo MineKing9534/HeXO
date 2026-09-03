@@ -6,6 +6,7 @@ import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.solver.isDefendable
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.LoadingIndicatorSize
 import de.mineking.hexo.web.icons.ShieldIcon
 import de.mineking.hexo.web.icons.SwordIcon
 import org.jetbrains.compose.web.css.Color
@@ -35,7 +36,7 @@ fun AnalyzerStatusDisplay(
                 title = { Text("Analysing position...") },
                 color = "slate-400",
                 icon = {
-                    LoadingIndicator { classes("size-4", "border-2!", "border-t-slate-300!") }
+                    LoadingIndicator(LoadingIndicatorSize.Tiny) { classes("border-t-slate-300!") }
                 },
                 detail = { Text("Searching for forced wins") },
             )

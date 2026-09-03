@@ -20,13 +20,14 @@ import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.session.hasStarted
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
+import de.mineking.hexo.web.components.CardHeader
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
+import de.mineking.hexo.web.components.EmptyStateCard
 import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.RatedFilter
 import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
-import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.format
 import de.mineking.hexo.web.icons.EyeIcon
 import de.mineking.hexo.web.icons.RightArrowIcon
@@ -37,7 +38,6 @@ import de.mineking.hexo.web.pages.games.GameTypeBadge
 import de.mineking.hexo.web.rememberHdsRepositories
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
-import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
@@ -102,23 +102,12 @@ private fun LobbyList(sessionRepository: SessionRepository) {
 @Composable
 private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
     Div({ classes("flex", "shrink-0", "flex-wrap", "items-center", "justify-between", "gap-3") }) {
-        Div({ classes("flex", "min-w-0", "items-center", "gap-3") }) {
-            Span({
-                classes(
-                    "grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "border",
-                    "border-emerald-400/25", "bg-emerald-400/10", "text-emerald-300",
-                )
-            }) {
-                EyeIcon { classes("size-4") }
-            }
-            Div({ classes("min-w-0") }) {
-                H2({ classes("text-lg", "font-bold", "leading-tight", "text-slate-100", "uppercase") }) {
-                    Text("Live sessions")
-                }
-                P({ classes("mt-0.5", "truncate", "text-xs", "text-slate-500") }) {
-                    Text("Watch public games as they happen")
-                }
-            }
+        CardHeader(
+            title = "Live sessions",
+            supportingText = "Watch public games as they happen",
+            iconAttrs = { classes("border-emerald-400/25", "bg-emerald-400/10", "text-emerald-300") },
+        ) {
+            EyeIcon { classes("size-4") }
         }
         Div({ classes("flex", "items-center", "gap-2") }) {
             Span({
@@ -141,24 +130,13 @@ private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChan
 
 @Composable
 private fun EmptyLobbyState(filter: RatedFilter) {
-    SubCard({
-        classes("grid", "min-h-64", "place-items-center", "border-dashed", "bg-slate-950/40", "p-6", "text-center")
-    }) {
-        Div({ classes("flex", "flex-col", "items-center", "gap-2") }) {
-            H2({ classes("text-base", "font-semibold", "text-slate-200") }) {
-                Text(if (filter == RatedFilter.All) "No open lobbies" else "No ${filter.label.lowercase()} sessions")
-            }
-            P({ classes("max-w-md", "text-sm", "leading-relaxed", "text-slate-500") }) {
-                Text(
-                    if (filter == RatedFilter.All) {
-                        "There are no public lobbies right now. The sandbox is still available for position analysis."
-                    } else {
-                        "There are no open ${filter.label.lowercase()} sessions right now. Try another filter."
-                    },
-                )
-            }
-        }
+    val title = if (filter == RatedFilter.All) "No open lobbies" else "No ${filter.label.lowercase()} sessions"
+    val description = if (filter == RatedFilter.All) {
+        "There are no public lobbies right now. The sandbox is still available for position analysis."
+    } else {
+        "There are no open ${filter.label.lowercase()} sessions right now. Try another filter."
     }
+    EmptyStateCard(title, description)
 }
 
 @Composable
