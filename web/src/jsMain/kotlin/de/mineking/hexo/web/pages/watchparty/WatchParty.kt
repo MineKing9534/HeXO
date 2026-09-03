@@ -14,7 +14,10 @@ import de.mineking.hexo.watchparty.client.WatchParty
 import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.watchparty.common.WatchPartyTarget
 import de.mineking.hexo.web.board.rememberSubscriberBoardViewManager
+import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.NotFoundBackLink
+import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
@@ -59,23 +62,16 @@ fun WatchPartyContent(watchParty: WatchParty) {
 
 @Composable
 private fun LoadingState() {
-    StatusCard {
-        LoadingIndicator { classes("size-9") }
-        P({ classes("font-semibold", "text-slate-200") }) {
-            Text("Connecting to watch party...")
-        }
-    }
+    LoadingCard("Connecting to watch party...")
 }
 
 @Composable
 private fun NotFoundState() {
-    StatusCard {
-        H1({ classes("text-slate-100", "font-extrabold", "text-3xl", "uppercase") }) {
-            Text("Watch party not found")
-        }
-        P({ classes("text-slate-400", "text-center") }) {
-            Text("This synchronization session doesn't exist. It may have been closed or the link may be correct.")
-        }
+    NotFoundCard(
+        title = "Watch party not found",
+        description = "This watch party may have been closed, or the link may be incorrect.",
+    ) {
+        NotFoundBackLink(AppRoute.WatchPartyHome, "Back to watch parties")
     }
 }
 

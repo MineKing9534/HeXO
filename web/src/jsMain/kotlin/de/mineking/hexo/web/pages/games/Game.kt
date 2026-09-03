@@ -20,15 +20,12 @@ import de.mineking.hexo.utils.types.orElse
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
-import de.mineking.hexo.web.components.BackLink
-import de.mineking.hexo.web.components.LoadingIndicator
-import de.mineking.hexo.web.components.StatusCard
+import de.mineking.hexo.web.components.LoadingCard
+import de.mineking.hexo.web.components.NotFoundBackLink
+import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsRepositories
-import org.jetbrains.compose.web.dom.H1
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
 
 private val RouteInfo.gameId get() = GameId(params["id"]!!)
 
@@ -72,23 +69,15 @@ fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
 
 @Composable
 private fun LoadingState() {
-    StatusCard {
-        LoadingIndicator { classes("size-9") }
-        P({ classes("font-semibold", "text-slate-200") }) {
-            Text("Loading game...")
-        }
-    }
+    LoadingCard("Loading game...")
 }
 
 @Composable
 private fun NotFoundState() {
-    StatusCard {
-        H1({ classes("text-slate-100", "font-extrabold", "text-3xl", "uppercase") }) {
-            Text("Game not found")
-        }
-        P({ classes("text-slate-400", "text-center") }) {
-            Text("The queried game wasn't found.")
-        }
-        BackLink(AppRoute.FinishedGameList, "Back to games")
+    NotFoundCard(
+        title = "Game not found",
+        description = "This game does not exist, may have been removed, or the link may be incorrect.",
+    ) {
+        NotFoundBackLink(AppRoute.FinishedGameList, "Back to games")
     }
 }
