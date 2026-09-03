@@ -19,12 +19,12 @@ import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.SubCard
+import de.mineking.hexo.web.components.SubCardVariant
 import de.mineking.hexo.web.formatCompact
 import de.mineking.hexo.web.icons.CheckIcon
 import de.mineking.hexo.web.icons.ChevronDownIcon
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
-import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 
@@ -176,11 +176,9 @@ private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession,
     }) {
         Div({ classes("min-h-0", "overflow-y-auto", "pr-1") }) {
             Div({ classes("grid", "gap-4") }) {
-                SubCard({ classes("overflow-hidden", "border-slate-700/60!", "bg-slate-900/50!") }) {
+                SubCard({ classes("overflow-hidden") }) {
                     Div({ classes("p-4", "sm:p-5") }) {
-                        Span({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
-                            Text("Final standings")
-                        }
+                        SessionSectionLabel("Final standings")
                         Div({ classes("mt-3") }) {
                             SessionFinishedMatchup(session, state)
                         }
@@ -220,21 +218,11 @@ private fun SessionFinishedResultSummary(session: LiveSession, state: SessionSta
             "divide-y", "divide-slate-700/70", "sm:grid-cols-3", "sm:divide-x", "sm:divide-y-0",
         )
     }) {
-        ResultMetric("Result", state.result.reason.label, if (winner == null) "text-amber-300" else "text-emerald-300")
-        ResultMetric("Duration", state.result.duration.formatCompact())
-        ResultMetric("Moves played", session.game.moveCount.toString())
-    }
-}
-
-@Composable
-private fun ResultMetric(label: String, value: String, valueColor: String = "text-slate-100") {
-    Div({ classes("flex", "items-center", "justify-between", "gap-4", "px-4", "py-3.5", "sm:block", "sm:text-center") }) {
-        Span({ classes("text-xs", "font-semibold", "tracking-wide", "text-slate-500", "uppercase") }) {
-            Text(label)
+        SessionMetric("Result", if (winner == null) "text-amber-300" else "text-emerald-300") {
+            Text(state.result.reason.label)
         }
-        P({ classes("font-bold", "tabular-nums", valueColor, "sm:mt-1", "sm:text-lg") }) {
-            Text(value)
-        }
+        SessionMetric("Duration") { Text(state.result.duration.formatCompact()) }
+        SessionMetric("Moves played") { Text(session.game.moveCount.toString()) }
     }
 }
 
@@ -247,11 +235,7 @@ private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSe
         classes(
             "relative", "h-full", "overflow-hidden", "p-3", "text-center", "transition",
         )
-        when (winner) {
-            player -> classes("border-emerald-400/80!", "bg-slate-700/25!")
-            else -> classes("border-slate-700!", "bg-slate-950/25!")
-        }
-    }) {
+    }, if (winner == player) SubCardVariant.Highlighted else SubCardVariant.Deep) {
         SessionFinishedPlayerHeader(state.result, player)
 
         if (showDetails) {
@@ -270,20 +254,14 @@ private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSe
 @Composable
 private fun SessionFinishedPlayerHeader(result: GameResult, player: LiveSessionPlayer) {
     Div({ classes("flex", "min-w-0", "flex-col", "items-center", "gap-1.5") }) {
-        PlayerIcon(player)
+        SessionPlayerIcon(player)
 
         Div({ classes("w-full", "min-w-0") }) {
             PlayerName(player.gamePlayer, attrs = {
                 classes("font-semibold")
                 if (player == result.winner) classes("text-emerald-200!")
             })
-            Div({ classes("mt-0.5", "flex", "items-center", "justify-center", "gap-1.5", "text-xs") }) {
-                if (!player.isGuest()) {
-                    Span({ classes("text-slate-600") }) { Text("${player.elo} Elo") }
-                    Span({ classes("text-slate-700") }) { Text("·") }
-                }
-                PlayerConnectionStatus(player.connectionStatus)
-            }
+            SessionPlayerMeta(player)
         }
     }
 }

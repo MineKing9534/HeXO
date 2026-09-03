@@ -14,6 +14,7 @@ import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.CopyButton
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.LoadingIndicatorSize
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.TextInput
 import de.mineking.hexo.web.icons.BroadcastIcon
@@ -229,7 +230,7 @@ private fun CreateWatchPartyButton(loading: Boolean, onClick: () -> Unit) {
         onClick { if (!loading) onClick() }
     }) {
         if (loading) {
-            LoadingIndicator { classes("size-5", "border-4!") }
+            LoadingIndicator(LoadingIndicatorSize.Small)
             Text("Creating...")
         } else {
             PlusIcon { classes("size-4", "shrink-0") }

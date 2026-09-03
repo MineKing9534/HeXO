@@ -18,6 +18,7 @@ import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.LoadingIndicatorSize
 import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.GitHubIcon
@@ -277,7 +278,7 @@ private fun WatchPartyIndicatorContent(style: WatchPartyIndicatorStyle, connecte
             )
         })
         if (!connected) {
-            LoadingIndicator { classes("size-4", "border-2!", style.spinnerClass) }
+            LoadingIndicator(LoadingIndicatorSize.Tiny) { classes(style.spinnerClass) }
         } else {
             BroadcastIcon { classes("size-4", "shrink-0") }
         }

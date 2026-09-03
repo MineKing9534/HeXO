@@ -15,6 +15,7 @@ import de.mineking.hexo.hds.implementation.socket.SocketIOOptions
 import de.mineking.hexo.hds.implementation.socket.connectSocketClient
 import de.mineking.hexo.web.audio.SoundPlayer
 import de.mineking.hexo.web.pages.NotFoundPage
+import de.mineking.hexo.web.pages.initNotFoundPage
 import de.mineking.hexo.web.pages.watchparty.WatchPartyController
 import de.mineking.hexo.web.settings.SettingsControllerProvider
 import de.mineking.hexo.web.web.BuildConfig
@@ -72,7 +73,9 @@ fun App(content: @Composable () -> Unit) {
 
 @InitKobweb
 fun configure(ctx: InitKobwebContext) {
-    ctx.router.setErrorPage {
-        NotFoundPage()
-    }
+    ctx.router.setErrorPage(
+        layoutId = "de.mineking.hexo.web.layout.AppLayout",
+        initRouteMethod = ::initNotFoundPage,
+        pageMethod = { NotFoundPage() },
+    )
 }

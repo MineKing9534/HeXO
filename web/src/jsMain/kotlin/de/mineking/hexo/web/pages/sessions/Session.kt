@@ -21,8 +21,8 @@ import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
+import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.LoadingCard
-import de.mineking.hexo.web.components.NotFoundBackLink
 import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
@@ -112,6 +112,6 @@ private fun NotFoundState() {
         title = "Session not found",
         description = "This session may have finished, been closed, or the link may be incorrect.",
     ) {
-        NotFoundBackLink(AppRoute.SessionList, "Back to lobbies")
+        BackLink(AppRoute.SessionList, "Back to lobbies")
     }
 }

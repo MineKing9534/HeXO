@@ -16,6 +16,7 @@ import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.LoadingIndicatorSize
 import de.mineking.hexo.web.components.TextInput
 import de.mineking.hexo.web.icons.DownloadIcon
 import kotlinx.coroutines.launch
@@ -149,7 +150,7 @@ private fun ConfirmButton(
         }
     }) {
         if (loading) {
-            LoadingIndicator { classes("size-6") }
+            LoadingIndicator(LoadingIndicatorSize.Medium)
         } else {
             DownloadIcon {
                 classes("size-5", "shrink-0")

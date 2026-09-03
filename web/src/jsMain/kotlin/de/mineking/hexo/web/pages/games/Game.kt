@@ -20,8 +20,8 @@ import de.mineking.hexo.utils.types.orElse
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
+import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.LoadingCard
-import de.mineking.hexo.web.components.NotFoundBackLink
 import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
@@ -78,6 +78,6 @@ private fun NotFoundState() {
         title = "Game not found",
         description = "This game does not exist, may have been removed, or the link may be incorrect.",
     ) {
-        NotFoundBackLink(AppRoute.FinishedGameList, "Back to games")
+        BackLink(AppRoute.FinishedGameList, "Back to games")
     }
 }
