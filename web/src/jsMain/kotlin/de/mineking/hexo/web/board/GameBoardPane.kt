@@ -8,7 +8,6 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
 import de.mineking.hexo.board.Move
@@ -29,11 +28,9 @@ import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.playerWithColor
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
-import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.playerCssColor
-import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
@@ -52,9 +49,6 @@ import org.w3c.dom.events.KeyboardEvent
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.time.Clock
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun GameBoardPane(
@@ -78,6 +72,7 @@ fun GameBoardPane(
 
     val position = game.rememberPosition(boardViewManager.currentMove)
     val (effectiveTurnPlayer, effectivePlacementsRemaining) = position.nextTurn
+    val playerTimeProvider = rememberPlayerTimeProvider(game, boardViewManager.currentMove)
     val allowAnalyzerOverlay = !(isLive && game.options.rated)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
@@ -89,7 +84,7 @@ fun GameBoardPane(
 
     AnalysedBoardPane(
         boardViewManager = boardViewManager.transformBoard(game to boardViewManager.currentMove) { overlay ->
-            val board = game.position.toBoard(focusWinningRows = false)
+            val board = position.toBoard(focusWinningRows = false)
             (board + overlay).focusWinningRows()
         },
         readOnly = true,
@@ -107,7 +102,12 @@ fun GameBoardPane(
         content?.invoke(this)
 
         if (!plain) {
-            TurnIndicator(game, isLive, game.playerWithColor(effectiveTurnPlayer), effectivePlacementsRemaining)
+            TurnIndicator(
+                game,
+                game.playerWithColor(effectiveTurnPlayer),
+                effectivePlacementsRemaining,
+                playerTimeProvider,
+            )
             BoardControls(game, boardViewManager, viewport)
         }
     }
@@ -236,29 +236,8 @@ private fun previousMove(move: Int, totalMoves: Int) = max(0, min(move, totalMov
 private fun nextMove(move: Int, totalMoves: Int) = if (move >= totalMoves - 1) Int.MAX_VALUE else move + 1
 
 @Composable
-private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
-    val soundPlayer = rememberSoundPlayer()
-
-    val timeRemaining by rememberUpdatedState(player.timeRemaining ?: return)
-    var timer by remember { mutableStateOf(timeRemaining.duration) }
-    val current by rememberUpdatedState(current)
-
-    val playerTimerSound by SettingsKey.SessionViewTimerSounds.collectAsState()
-
-    DisposableEffect(Unit) {
-        fun countdown() {
-            val delta = if (current) Clock.System.now() - timeRemaining.timestamp else Duration.ZERO
-            timer = maxOf(Duration.ZERO, timeRemaining.duration - delta)
-        }
-
-        val interval = window.setInterval(::countdown, 250)
-        onDispose { window.clearInterval(interval) }
-    }
-
-    LaunchedEffect(timer.inWholeSeconds) {
-        if (playerTimerSound && timer <= 10.seconds) soundPlayer.play(SoundEffect.CountdownWarning)
-    }
-
+private fun PlayerTimer(player: Player, current: Boolean, timeProvider: PlayerTimeProvider) {
+    val timer = timeProvider.remainingTime(player, current) ?: return
     Div({
         classes("font-extrabold", "text-lg", "leading-none", "tabular-nums")
         if (current) {
@@ -277,9 +256,9 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
 @Composable
 private fun TurnIndicator(
     game: Game,
-    isLive: Boolean,
     currentPlayer: Player,
     placementsRemaining: Int,
+    timeProvider: PlayerTimeProvider,
 ) {
     @Composable
     fun PlayerIndicator(player: Player) {
@@ -302,7 +281,7 @@ private fun TurnIndicator(
                         if (isCurrentTurn) "text-slate-100" else "text-slate-300",
                     )
                 }
-                if (player is LiveSessionPlayer && isLive) PlayerTimer(player, isCurrentTurn)
+                PlayerTimer(player, isCurrentTurn, timeProvider)
             }
             if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
         }
@@ -322,42 +301,19 @@ private fun TurnIndicator(
 
 @Composable
 private fun RatedInfoCard(game: Game) {
-    Div({
-        classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
-    }) {
-        Div({ classes("mb-1.5", "flex", "items-center", "justify-center", "text-xs") }) {
-            Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-400", "uppercase") }) {
-                Text("Rated Match")
+    HudInfoCard(
+        accent = "border-amber-400/35",
+        header = {
+            HudInfoTitle("bg-amber-300", "text-amber-200", "Rated match")
+            Span({ classes("shrink-0", "text-[10px]", "font-semibold", "uppercase", "tracking-wider", "text-slate-500") }) {
+                Text("ELO")
             }
-        }
-
+        },
+    ) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
-                Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    PlayerName(player.gamePlayer)
-                    Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
-                        Text("Elo ${player.elo}")
-
-                        @Composable
-                        fun EloDiff(diff: Int) {
-                            Span({
-                                classes(if (diff >= 0) "text-emerald-300" else "text-rose-300")
-                            }) {
-                                if (diff >= 0) Text("+")
-                                Text("$diff")
-                            }
-                        }
-
-                        Span({ classes("ml-1", "text-xs") }) {
-                            if (player is LiveSessionPlayer) {
-                                EloDiff(player.ratingAdjustment?.eloGain ?: 0)
-                                Text("/")
-                                EloDiff(player.ratingAdjustment?.eloLoss ?: 0)
-                            } else if (player is FinishedGamePlayer) {
-                                EloDiff(player.eloChange ?: 0)
-                            }
-                        }
-                    }
+                HudPlayerRow(player) {
+                    RatedPlayerElo(player)
                 }
             }
         }
@@ -368,27 +324,33 @@ private fun RatedInfoCard(game: Game) {
 private fun TournamentInfoCard(game: Game) {
     val tournament = game.tournament ?: return
 
-    Div({
-        classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
-    }) {
-        Div({ classes("mb-1.5", "flex", "items-center", "justify-between", "gap-3", "text-xs") }) {
-            Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-200") }) {
-                Text(tournament.tournament.info.name)
+    HudInfoCard(
+        accent = "border-sky-400/35",
+        header = {
+            Div({ classes("min-w-0") }) {
+                HudInfoTitle("bg-sky-300", "text-sky-200", "Tournament")
+                Span({ classes("mt-0.5", "block", "truncate", "text-xs", "font-semibold", "text-slate-200") }) {
+                    Text(tournament.tournament.info.name)
+                }
             }
-            Span({ classes("shrink-0", "font-medium", "text-slate-400") }) {
-                Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")
+            Span({
+                classes(
+                    "shrink-0", "rounded-md", "border", "border-slate-600/60", "bg-slate-950/45",
+                    "px-2", "py-1", "text-[10px]", "font-semibold", "text-slate-400",
+                )
+            }) {
+                Text("Game ${tournament.matchInfo.currentGameNumber}/${tournament.matchInfo.bestOf}")
             }
-        }
-
+        },
+    ) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
-                Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    PlayerName(player.gamePlayer)
+                HudPlayerRow(player) {
                     Span({ classes("shrink-0", "tabular-nums") }) {
                         Span({
-                            classes("font-bold", "text-sm")
+                            classes("text-sm", "font-extrabold")
                             classes(if ((player.tournamentMatchWins ?: 0) == tournament.matchInfo.requiredWins - 1) {
-                                "text-emerald-500"
+                                "text-emerald-300"
                             } else {
                                 "text-slate-300"
                             })
@@ -402,6 +364,70 @@ private fun TournamentInfoCard(game: Game) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun HudInfoCard(accent: String, header: @Composable () -> Unit, content: @Composable () -> Unit) {
+    Div({
+        classes(
+            "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-900/75",
+            "backdrop-blur-xs", "backdrop-saturate-0",
+        )
+    }) {
+        Div({ classes("flex", "min-h-9", "items-center", "justify-between", "gap-3", "border-b", "border-slate-700/55", "px-3", "py-2") }) {
+            header()
+        }
+        Div({ classes("p-2") }) { content() }
+    }
+}
+
+@Composable
+private fun HudInfoTitle(dotColor: String, textColor: String, title: String) {
+    Div({ classes("flex", "min-w-0", "items-center", "gap-2") }) {
+        Span({ classes("size-1.5", "shrink-0", "rounded-full", dotColor) })
+        Span({ classes("truncate", "text-[10px]", "font-bold", "uppercase", "tracking-[0.16em]", textColor) }) {
+            Text(title)
+        }
+    }
+}
+
+@Composable
+private fun HudPlayerRow(player: Player, content: @Composable () -> Unit) {
+    Div({
+        classes(
+            "flex", "min-w-0", "items-center", "justify-between", "gap-2", "rounded-md", "border",
+            "border-white/5", "bg-slate-950/35", "px-2", "py-1.5",
+        )
+    }) {
+        PlayerName(player.gamePlayer) {
+            classes("min-w-0", "text-[10px]", "font-semibold", "uppercase", "tracking-wider", "text-slate-300")
+        }
+        content()
+    }
+}
+
+@Composable
+private fun RatedPlayerElo(player: Player) {
+    Span({ classes("shrink-0", "text-xs", "font-semibold", "tabular-nums", "text-slate-300") }) {
+        Text("${player.elo}")
+        when (player) {
+            is LiveSessionPlayer -> player.ratingAdjustment?.let {
+                RatingChange(it.eloGain)
+                Span({ classes("mx-0.5", "text-slate-600") }) { Text("/") }
+                RatingChange(it.eloLoss)
+            }
+            is FinishedGamePlayer -> RatingChange(player.eloChange)
+            else -> Unit
+        }
+    }
+}
+
+@Composable
+private fun RatingChange(value: Int?) {
+    value ?: return
+    Span({ classes("ml-1", if (value >= 0) "text-emerald-300" else "text-rose-300") }) {
+        Text(if (value > 0) "+$value" else "$value")
     }
 }
 

@@ -25,6 +25,7 @@ import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
+import de.mineking.hexo.web.pages.sessions.FinishedGameOverlay
 import de.mineking.hexo.web.rememberHdsRepositories
 
 private val RouteInfo.gameId get() = GameId(params["id"]!!)
@@ -63,6 +64,7 @@ fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
         is EntityState.NotFound -> NotFoundState()
         is EntityState.Data -> {
             GameBoardPane(state.value, isLive = false, boardViewManager = boardViewManager)
+            FinishedGameOverlay(state.value)
         }
     }
 }
