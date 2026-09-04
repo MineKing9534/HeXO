@@ -18,7 +18,6 @@ import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
-import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
@@ -203,26 +202,27 @@ private fun BoardScope.MoveKeyboardShortcuts(
             if (event !is KeyboardEvent) return@EventListener
             if (event.altKey || event.ctrlKey || event.metaKey) return@EventListener
             if ((event.target as? HTMLElement)?.isContentEditable == true) return@EventListener
+            val numberShortcut = event.numberShortcut
 
-            when (event.key) {
-                "ArrowLeft" -> {
+            when {
+                event.key == "ArrowLeft" -> {
                     event.preventDefault()
                     boardViewManager.currentMove = previousMove(boardViewManager.currentMove, totalMoves)
                 }
-                "ArrowRight" -> {
+                event.key == "ArrowRight" -> {
                     event.preventDefault()
                     boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves)
                 }
-                in (1..9).map { "$it" } -> {
-                    val shortcut = event.key.toInt()
+                numberShortcut != null -> {
+                    event.preventDefault()
                     val max = boardViewManager.currentMove.coerceIn(0, currentMoves.size)
-                    if (shortcut > max) return@EventListener
+                    if (numberShortcut > max) return@EventListener
 
-                    val coordinate = currentMoves[max - shortcut].coordinate
+                    val coordinate = currentMoves[max - numberShortcut].coordinate
                     val point = currentRenderLayout.size.run { coordinate.toPixel() }
 
                     val current = viewport.value
-                    viewport.value = current.copy(center = point / current.zoom)
+                    viewport.value = current.copy(center = point)
                 }
             }
         }
@@ -231,6 +231,13 @@ private fun BoardScope.MoveKeyboardShortcuts(
         onDispose { window.removeEventListener("keydown", keyDown) }
     }
 }
+
+private val KeyboardEvent.numberShortcut: Int?
+    get() = when {
+        code.startsWith("Digit") -> code.removePrefix("Digit").toIntOrNull()
+        code.startsWith("Numpad") -> code.removePrefix("Numpad").toIntOrNull()
+        else -> key.toIntOrNull()
+    }?.takeIf { it in 1..9 }
 
 private fun previousMove(move: Int, totalMoves: Int) = max(0, min(move, totalMoves) - 1)
 private fun nextMove(move: Int, totalMoves: Int) = if (move >= totalMoves - 1) Int.MAX_VALUE else move + 1
