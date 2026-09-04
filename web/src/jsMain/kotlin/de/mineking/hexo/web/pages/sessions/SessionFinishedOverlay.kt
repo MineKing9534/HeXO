@@ -5,11 +5,13 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import de.mineking.hexo.hds.model.game.GameFinishReason
-import de.mineking.hexo.hds.model.game.Player
-import de.mineking.hexo.hds.model.session.LiveSession
-import de.mineking.hexo.hds.model.session.LiveSessionPlayer
-import de.mineking.hexo.hds.model.session.SessionState
+import de.mineking.hexo.game.model.game.GameFinishReason
+import de.mineking.hexo.game.model.game.Player
+import de.mineking.hexo.game.model.session.LiveSession
+import de.mineking.hexo.game.model.session.LiveSessionPlayer
+import de.mineking.hexo.game.model.session.RatingAdjustment
+import de.mineking.hexo.game.model.session.SessionState
+import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
@@ -44,7 +46,7 @@ private val collapsePositionTransition = listOf(
 )
 
 @Composable
-fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Finished) {
+fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Detailed.Finished) {
     var collapsed by remember(session.id, state) { mutableStateOf(false) }
 
     Card({
@@ -75,7 +77,7 @@ fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Finished) {
 @Composable
 private fun SessionFinishedOverlayHeader(
     collapsed: Boolean,
-    state: SessionState.Finished,
+    state: SessionState.Detailed.Finished,
     onExpandCollapse: () -> Unit,
 ) {
     val winner = state.result.winner
@@ -138,7 +140,7 @@ private fun SessionFinishedOverlayHeader(
 }
 
 @Composable
-private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession, state: SessionState.Finished) {
+private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession, state: SessionState.Detailed.Finished) {
     Div({
         classes("grid", "transition-all")
         classes(springTransition)
@@ -166,7 +168,7 @@ private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession,
 }
 
 @Composable
-private fun SessionFinishedResultSummary(session: LiveSession, state: SessionState.Finished) {
+private fun SessionFinishedResultSummary(session: LiveSession, state: SessionState.Detailed.Finished) {
     val winner = state.result.winner
 
     Div({
@@ -199,7 +201,7 @@ private fun SessionFinishedResultSummary(session: LiveSession, state: SessionSta
 }
 
 @Composable
-private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSession, state: SessionState.Finished) {
+private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSession, state: SessionState.Detailed.Finished) {
     val winner = state.result.winner
 
     SubCard({
@@ -256,7 +258,7 @@ private fun SessionFinishedPlayerHeader(player: LiveSessionPlayer, winner: Playe
 
 @Composable
 private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, rated: Boolean) {
-    val eloAdjustment = player.eloAdjustment.takeIf { rated } ?: return
+    val eloAdjustment = player.ratingAdjustment.takeIf { rated } ?: return
 
     Badge(Color.Neutral) {
         Text("Elo ")
@@ -267,10 +269,9 @@ private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, 
 }
 
 @Composable
-private fun SessionFinishedTournamentSummary(session: LiveSession, state: SessionState.Finished) {
-    val tournament = session.tournamentInfo ?: return
-    if (tournament.bestOf < 3) return
-    val requiredWins = tournament.bestOf / 2 + 1
+private fun SessionFinishedTournamentSummary(session: LiveSession, state: SessionState.Detailed.Finished) {
+    val tournament = session.tournament ?: return
+    if (tournament.matchInfo.bestOf < 3) return
 
     Div({
         classes("rounded-2xl", "border", "border-slate-700/70", "bg-slate-900/70", "px-4", "py-4")
@@ -281,17 +282,17 @@ private fun SessionFinishedTournamentSummary(session: LiveSession, state: Sessio
                     Text("Tournament")
                 }
                 P({ classes("mt-1", "truncate", "font-semibold", "text-slate-100") }) {
-                    Text(tournament.tournamentName)
+                    Text(tournament.tournament.info.name)
                 }
             }
             Badge(Color.Neutral, { classes("shrink-0") }) {
-                Text("Game ${tournament.currentGameNumber} of ${tournament.bestOf}")
+                Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")
             }
         }
 
         Div({ classes("grid", "gap-3") }) {
             session.players.forEach { player ->
-                SessionFinishedTournamentPlayer(player, state.result.winner, requiredWins)
+                SessionFinishedTournamentPlayer(player, state.result.winner, tournament.matchInfo.requiredWins)
             }
         }
     }
@@ -375,21 +376,21 @@ private fun LiveSessionPlayer.eloAdjustmentColor(winner: Player?) = when (winner
 
 private fun LiveSessionPlayer.eloAdjustmentLabel(
     winner: Player?,
-    eloAdjustment: LiveSessionPlayer.EloAdjustment,
+    ratingAdjustment: RatingAdjustment,
 ) = when (winner) {
-    this -> "+${eloAdjustment.eloGain}"
+    this -> "+${ratingAdjustment.eloGain}"
     null -> "0"
-    else -> "${eloAdjustment.eloLoss}"
+    else -> "${ratingAdjustment.eloLoss}"
 }
 
 private fun LiveSessionPlayer.finishedTournamentWins(winner: Player?) =
     tournamentMatchWins?.let { if (this == winner) it + 1 else it } ?: 0
 
 private val GameFinishReason.label get() = when (this) {
-    GameFinishReason.SixInARow -> "Six in a Row"
-    GameFinishReason.Timeout -> "Timeout"
-    GameFinishReason.Surrender -> "Surrender"
-    GameFinishReason.Disconnect -> "Disconnect"
-    GameFinishReason.DrawAgreement -> "Draw agreed"
-    GameFinishReason.Terminated -> "Terminated"
+    is GameFinishReason.Regular -> "Six in a Row"
+    is GameFinishReason.Timeout -> "Timeout"
+    is GameFinishReason.Surrender -> "Surrender"
+    is GameFinishReason.Disconnect -> "Disconnect"
+    is GameFinishReason.DrawAgreement -> "Draw agreed"
+    is GameFinishReason.Terminated -> "Terminated"
 }

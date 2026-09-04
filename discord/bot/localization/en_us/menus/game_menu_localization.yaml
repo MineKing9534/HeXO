@@ -7,13 +7,13 @@ menu.game:
   title.content: !<game:FinishedGame> |-
     # ${
         when {
-            game.tournamentInfo != null -> ":dart:"
+            game.tournament != null -> ":dart:"
             game.options.rated -> ":trophy:"
             else -> ":seedling:"
         }
     } Game Review
-    ${ game.tournamentInfo?.let { tournamentInfo ->
-      "-# Tournament: [${tournamentInfo.tournamentName}](${tournamentInfo.tournamentUrl})${if (tournamentInfo.bestOf > 1) ", G${tournamentInfo.currentGameNumber} (BO${tournamentInfo.bestOf})" else ""}"
+    ${ game.tournament?.let { 
+      "-# Tournament: [${it.tournament.info.name}](${it.tournament.info.url})${if (it.matchInfo.bestOf > 1) ", G${it.matchInfo.currentGameNumber} (BO${it.matchInfo.bestOf})" else ""}"
     } ?: "" }
 
   view.label: View in Browser
@@ -22,7 +22,7 @@ menu.game:
     inputs:
       move:
         label: Move number
-        description: !<game:FinishedGame> The move to inspect [1-${game.moves.size}]
+        description: !<game:FinishedGame> The move to inspect [1-${game.moveCount}]
         placeholder: 42
   notation.label: Show Notation
   turn.label: Show Turn Numbers
@@ -30,12 +30,12 @@ menu.game:
 finish.reason: >-
   ${
     when (reason) {
-        GameFinishReason.SixInARow -> "Six in a row"
-        GameFinishReason.Timeout -> "Timeout"
-        GameFinishReason.Surrender -> "Surrender"
-        GameFinishReason.Disconnect -> "Disconnect"
-        GameFinishReason.DrawAgreement -> "Draw"
-        GameFinishReason.Terminated -> "Terminated"
+        is GameFinishReason.Regular -> "Six in a row"
+        is GameFinishReason.Timeout -> "Timeout"
+        is GameFinishReason.Surrender -> "Surrender"
+        is GameFinishReason.Disconnect -> "Disconnect"
+        is GameFinishReason.DrawAgreement -> "Draw"
+        is GameFinishReason.Terminated -> "Terminated"
     }
   }
 

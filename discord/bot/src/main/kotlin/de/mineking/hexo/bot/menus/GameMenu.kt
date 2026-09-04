@@ -26,7 +26,6 @@ import de.mineking.discord.ui.builder.line
 import de.mineking.discord.ui.disabledIf
 import de.mineking.discord.ui.getValue
 import de.mineking.discord.ui.initialize
-import de.mineking.discord.ui.lazy
 import de.mineking.discord.ui.localize
 import de.mineking.discord.ui.message.MessageComponent
 import de.mineking.discord.ui.message.MessageMenu
@@ -38,6 +37,7 @@ import de.mineking.discord.ui.modal.map
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.render
+import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
@@ -45,8 +45,11 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.BoardAttributes
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.board.moves
 import de.mineking.hexo.board.render.notation.NotationType
+import de.mineking.hexo.board.take
 import de.mineking.hexo.board.to
+import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
@@ -56,13 +59,14 @@ import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.discord.core.DiscordUserId
-import de.mineking.hexo.hds.model.TimeControl
-import de.mineking.hexo.hds.model.asBoard
-import de.mineking.hexo.hds.model.game.FinishedGame
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.GameFinishReason
-import de.mineking.hexo.hds.model.game.GameId
-import de.mineking.hexo.hds.model.game.isGuest
+import de.mineking.hexo.game.model.TimeControl
+import de.mineking.hexo.game.model.game.FinishedGame
+import de.mineking.hexo.game.model.game.FinishedGameRepository
+import de.mineking.hexo.game.model.game.FinishedGameWithPosition
+import de.mineking.hexo.game.model.game.GameFinishReason
+import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.game.model.game.isGuest
+import de.mineking.hexo.utils.types.orElse
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
 import net.dv8tion.jda.api.components.actionrow.ActionRow
@@ -73,7 +77,6 @@ import kotlin.math.absoluteValue
 import kotlin.time.Duration.Companion.seconds
 
 data class GameMenuParameter(val event: IReplyCallback, val id: GameId, val move: Int)
-private data class MatchData(val game: FinishedGame, val board: Board)
 
 fun UIManager.gameMenu(
     gameRepository: FinishedGameRepository,
@@ -94,45 +97,40 @@ fun UIManager.gameMenu(
     val locale = parameter({ DiscordLocale.UNKNOWN }, { it.event.effectiveLocale }, { event.effectiveLocale })
     localize(locale) // Predefine locale for potential error handling
 
-    val matchData by lazy(default = null) {
-        val match = gameRepository.getGame(id) ?: return@lazy null
-        val board = match.asBoard(
-            maxMoves = move,
-            focusWinningRows = true,
-            attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to showTurnNumbers.value),
-        )
-
-        MatchData(match, board)
-    }
-
-    render {
-        val matchData = matchData
+    data class GameData(val game: FinishedGameWithPosition, val board: Board)
+    val gameData = renderValue {
         val event = parameter({ error("") }, { it.event }, { event })
-        if (matchData == null) {
+        val game = gameRepository.getGame(id).orElse {
             event.respond(MessageColor.Error, localization.errorMatchNotFound(event.effectiveLocale, id))
             terminateRender()
         }
 
+        val board = game.position.take(move).toBoard(
+            focusWinningRows = true,
+            attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to showTurnNumbers.value),
+        )
+
+        move = move.coerceIn(0, game.position.moves.size)
         localize(locale) {
-            bindParameter("game", matchData.game)
+            bindParameter("game", game)
         }
 
-        move = move.coerceIn(0, matchData.game.moves.size)
+        GameData(game, board)
     }
 
     +container {
         render {
-            val (match, board) = matchData ?: return@render
+            val (game, board) = gameData ?: return@render
             val theme = main.getUserTheme(user)
 
             +section(
-                accessory = link("view", emoji = Emojis.GLOBE_WITH_MERIDIANS, url = match.url),
+                accessory = link("view", emoji = Emojis.GLOBE_WITH_MERIDIANS, url = game.url),
                 localizedTextDisplay("title"),
             )
             +separator(invisible = true)
 
             main.run {
-                +match.gameDetails(localization, locale)
+                +game.gameDetails(localization, locale)
 
                 +separator(spacing = Separator.Spacing.LARGE)
                 +mediaGallery(board.asMediaGalleryItem(theme))
@@ -140,7 +138,7 @@ fun UIManager.gameMenu(
             }
         }
 
-        +moveSelector("move", matchData?.game?.moves?.size ?: Int.MAX_VALUE, moveState)
+        +moveSelector("move", gameData?.game?.position?.moves?.size ?: Int.MAX_VALUE, moveState)
         +additionalActions(main, id, notationMenu, showTurnNumbers)
     }
 }
@@ -162,15 +160,15 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
                 val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
                 append("　`${player.elo} ELO$eloChange`")
             }
-            if (result.winner?.playerId == player.playerId) append(" :first_place:")
+            if (result.winner?.id == player.id) append(" :first_place:")
         }
     }
 
     +line()
     +line {
-        +code("${Emojis.HOURGLASS.formatted} ${result.duration.inWholeSeconds.seconds}")
+        +code("${Emojis.TIMER_CLOCK.formatted} ${result.duration.inWholeSeconds.seconds}")
         append("\u2003")
-        +code("${Emojis.TIMER_CLOCK.formatted} ${localization.timeControl(locale, options.timeControl)}")
+        +code("${Emojis.HOURGLASS.formatted} ${localization.timeControl(locale, options.timeControl)}")
         append("\u2003")
         +code(result.reason.localize(locale, localization))
     }
@@ -202,12 +200,12 @@ private fun notationButton(
 
 private fun GameFinishReason.localize(locale: DiscordLocale, localization: GameMenuLocalization): String {
     val emoji = when (this) {
-        GameFinishReason.SixInARow -> Emojis.TRIANGULAR_RULER
-        GameFinishReason.Timeout -> Emojis.ALARM_CLOCK
-        GameFinishReason.Surrender -> Emojis.FLAG_WHITE
-        GameFinishReason.Disconnect -> Emojis.SATELLITE
-        GameFinishReason.DrawAgreement -> Emojis.HANDSHAKE
-        GameFinishReason.Terminated -> Emojis.NO_ENTRY
+        is GameFinishReason.Regular -> Emojis.TRIANGULAR_RULER
+        is GameFinishReason.Timeout -> Emojis.ALARM_CLOCK
+        is GameFinishReason.Surrender -> Emojis.FLAG_WHITE
+        is GameFinishReason.Disconnect -> Emojis.SATELLITE
+        is GameFinishReason.DrawAgreement -> Emojis.HANDSHAKE
+        is GameFinishReason.Terminated -> Emojis.NO_ENTRY
     }
 
     return "${emoji.formatted} ${localization.finishReason(locale, this)}"

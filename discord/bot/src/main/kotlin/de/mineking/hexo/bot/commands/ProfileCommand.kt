@@ -14,9 +14,8 @@ import de.mineking.discord.ui.message.replyMenu
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
 import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.finalErrorResponse
-import de.mineking.hexo.hds.model.profile.ProfileId
-import de.mineking.hexo.hds.model.profile.ProfileRepository
-import de.mineking.hexo.hds.model.profile.getProfileByName
+import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.link.AccountLinkRepository
 import net.dv8tion.jda.api.entities.User
 import net.dv8tion.jda.api.interactions.DiscordLocale
@@ -41,8 +40,6 @@ fun profileCommand(
     }
 }
 
-private val profileIdPattern = """(?:.*/)?([a-f0-9]{24})""".toRegex()
-
 private fun OptionConfig.profileIdOption(
     accountLinkRepository: AccountLinkRepository?,
     profileRepository: ProfileRepository,
@@ -56,11 +53,7 @@ private fun OptionConfig.profileIdOption(
         return@map accountLinkRepository?.getHexoProfile(user.userId)
     }
 
-    val profileIdMatch = profileIdPattern.matchEntire(input)
-    when {
-        profileIdMatch != null -> ProfileId(profileIdMatch.groupValues[1])
-        else -> profileRepository.getProfileByName(input)?.id
-    }
+    ProfileId(input)
 }
 
 interface ProfileCommandLocalization : LocalizationFile {

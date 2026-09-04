@@ -30,10 +30,12 @@ import de.mineking.hexo.bot.escapeMarkdown
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
-import de.mineking.hexo.hds.model.profile.ProfileId
-import de.mineking.hexo.hds.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
+import de.mineking.hexo.utils.types.orElse
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -68,17 +70,17 @@ fun UIManager.profileMenu(
     message(MessageEditBuilder().setAllowedMentions(emptyList()))
 
     render {
+        val event = parameter({ error("") }, { it.event }, { event })
         val (profile, linkedAccount) = coroutineScope {
-            val profile = async { profileRepository.getProfile(id) }
+            val profile = async {
+                profileRepository.getProfileById(id).orElse {
+                    event.respond(MessageColor.Error, localization.errorProfileNotFound(event.effectiveLocale, id))
+                    terminateRender()
+                }
+            }
             val linkedAccount = async { accountLinkRepository?.getDiscordProfile(id) }
 
             profile.await() to linkedAccount.await()
-        }
-
-        val event = parameter({ error("") }, { it.event }, { event })
-        if (profile == null) {
-            event.respond(MessageColor.Error, localization.errorProfileNotFound(event.effectiveLocale, id))
-            terminateRender()
         }
 
         localize(locale) {
@@ -89,12 +91,12 @@ fun UIManager.profileMenu(
             +section(accessory = thumbnail(profile.image ?: FALLBACK_IMAGE_URL)) {
                 +buildTextDisplay {
                     +h1 {
-                        val rank = when (profile.statistics.worldRank) {
+                        val rank = when (profile.statistics.rating.worldRank) {
                             1 -> Emojis.FIRST_PLACE.formatted
                             2 -> Emojis.SECOND_PLACE.formatted
                             3 -> Emojis.THIRD_PLACE.formatted
                             null -> "[:question:]"
-                            else -> "[#${profile.statistics.worldRank}]"
+                            else -> "[#${profile.statistics.rating.worldRank}]"
                         }
 
                         append("$rank ")

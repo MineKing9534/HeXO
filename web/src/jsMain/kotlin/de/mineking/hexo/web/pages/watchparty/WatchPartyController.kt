@@ -9,11 +9,11 @@ import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.browser.storage.StorageKey
 import com.varabyte.kobweb.browser.storage.getItem
 import com.varabyte.kobweb.browser.storage.setItem
-import de.mineking.hexo.hds.model.EntityState
-import de.mineking.hexo.sync.client.WatchParty
-import de.mineking.hexo.sync.client.WatchPartyClient
-import de.mineking.hexo.sync.client.createWatchParty
-import de.mineking.hexo.sync.common.WatchPartyId
+import de.mineking.hexo.game.model.EntityState
+import de.mineking.hexo.watchparty.client.WatchParty
+import de.mineking.hexo.watchparty.client.WatchPartyClient
+import de.mineking.hexo.watchparty.client.createWatchParty
+import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.web.onSet
 import de.mineking.hexo.web.settings.SettingsController
 import de.mineking.hexo.web.settings.SettingsKey

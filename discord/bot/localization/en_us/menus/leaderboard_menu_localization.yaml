@@ -2,10 +2,10 @@ menu.leaderboard:
   title.content: "# :trophy: HeXO Leaderboard"
   details.placeholder: View a player's profile
   player.details: >-
-    **`${entry.totalGames.played}`** Played, 
+    **`${entry.totalGames.total}`** Played, 
     **`${entry.totalGames.won}`** Won${
-      if (entry.totalGames.played == 0) ""
+      if (entry.totalGames.total == 0) ""
       else " (**`${(entry.totalGames.winRate * 100).roundToInt()}%`**)"
     }, 
-    **`${entry.elo}`** ELO
+    **`${entry.rating.elo}`** ELO
   reload.label: Reload

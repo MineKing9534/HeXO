@@ -29,12 +29,15 @@ import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.bindLocalizationParameter
 import de.mineking.hexo.bot.utils.respond
-import de.mineking.hexo.hds.model.profile.ProfileId
-import de.mineking.hexo.hds.model.profile.ProfileRepository
-import de.mineking.hexo.hds.model.profile.getProfileByName
+import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileRepository
+import de.mineking.hexo.game.model.profile.getProfileById
+import de.mineking.hexo.game.model.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.utils.types.isSuccess
+import de.mineking.hexo.utils.types.orElse
+import de.mineking.hexo.utils.types.orNull
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -66,7 +69,7 @@ fun UIManager.accountLinkMenu(
         coroutineScope {
             val profile = async {
                 val profileId = accountLinkRepository.getHexoProfile(event!!.user.userId)
-                profileId?.let { profileRepository.getProfile(profileId) }
+                profileId?.let { profileRepository.getProfileById(profileId) }
             }
 
             val isAuthenticated = async { discordAuthRepository.getAuthenticationStatus(event!!.user.userId) }
@@ -112,7 +115,10 @@ private fun MessageMenuConfig<out Interaction, *>.linkModalButton(
         +localizedTextDisplay("explanation")
 
         val event = this@linkModalButton.parameter({ null }, { it }, { event })
-        val candidate = event?.user?.name?.let { profileRepository.getProfileByName(it) }
+        val candidate = event?.user?.name
+            ?.let { profileRepository.getProfileByName(it) }
+            ?.orNull()
+
         val profileUrl by +textInput("url", value = candidate?.url).withLocalizedLabel()
 
         produce { profileUrl }
@@ -121,8 +127,7 @@ private fun MessageMenuConfig<out Interaction, *>.linkModalButton(
     deferEdit().queue()
 
     val profileId = ProfileId(profileUrl.split("/").last())
-    val profile = profileRepository.getProfile(profileId)
-    if (profile == null) {
+    val profile = profileRepository.getProfileById(profileId).orElse {
         respond(MessageColor.Error, localization.responseErrorProfileNotFound(userLocale, profileId), forceNew = true)
         terminateRender()
     }

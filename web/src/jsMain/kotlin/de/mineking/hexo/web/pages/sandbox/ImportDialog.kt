@@ -8,11 +8,10 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.hds.model.asBoard
-import de.mineking.hexo.hds.model.formation.FormationId
-import de.mineking.hexo.hds.model.formation.FormationRepository
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.parse.RemoteBoardParser
+import de.mineking.hexo.game.model.formation.FormationRepository
+import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog
@@ -116,6 +115,8 @@ private fun ConfirmButton(
     val coroutineScope = rememberCoroutineScope()
     var loading by remember { mutableStateOf(false) }
 
+    val parser = remember { RemoteBoardParser(formationRepository, finishedGameRepository) }
+
     Button({
         if (!valid) disabled()
 
@@ -138,13 +139,9 @@ private fun ConfirmButton(
             onErrorUpdate(false)
             coroutineScope.launch {
                 try {
-                    val board = url.urlToBoard(formationRepository, finishedGameRepository)
-                    if (board == null) {
-                        onErrorUpdate(true)
-                        return@launch
-                    }
-
-                    onConfirm(board)
+                    onConfirm(parser.parse(url))
+                } catch (_: HexoNotationException) {
+                    onErrorUpdate(true)
                 } finally {
                     loading = false
                 }
@@ -159,24 +156,5 @@ private fun ConfirmButton(
             }
             Text("Import")
         }
-    }
-}
-
-private val FORMATION_URL = """^https?://.*?/sandbox/(.*)$""".toRegex()
-private val GAME_URL = """^https?://.*?/games/(.*?)(?:\?move=(\d+))?$""".toRegex()
-private suspend fun String.urlToBoard(
-    formationRepository: FormationRepository,
-    finishedGameRepository: FinishedGameRepository,
-): Board? {
-    val formationMatch = FORMATION_URL.matchEntire(this)
-    val gameMatch = GAME_URL.matchEntire(this)
-
-    return when {
-        formationMatch != null -> formationRepository.getFormation(FormationId(formationMatch.groupValues[1]))?.asBoard()
-        gameMatch != null -> {
-            val move = gameMatch.groupValues[2].takeIf { it.isNotEmpty() }?.toInt()
-            finishedGameRepository.getGame(GameId(gameMatch.groupValues[1]))?.asBoard(move ?: Int.MAX_VALUE)
-        }
-        else -> null
     }
 }

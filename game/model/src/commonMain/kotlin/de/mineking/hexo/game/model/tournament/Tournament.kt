@@ -1,0 +1,148 @@
+package de.mineking.hexo.game.model.tournament
+
+import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.game.model.Entity
+import de.mineking.hexo.game.model.EntityId
+import de.mineking.hexo.game.model.TimeControl
+import de.mineking.hexo.game.model.game.GameReference
+import de.mineking.hexo.game.model.profile.ProfileReference
+import de.mineking.hexo.game.model.session.SessionReference
+import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmInline
+import kotlin.time.Instant
+
+@JvmInline
+@Serializable
+value class TournamentId(override val value: String) : EntityId
+
+class TournamentReference(
+    private val repository: TournamentRepository,
+    val info: TournamentInfo,
+) {
+    suspend fun retrieve() = repository.getTournament(info.id)
+    fun observe() = repository.observeTournament(info.id)
+}
+
+@JvmInline
+@Serializable
+value class TournamentMatchId(val value: String)
+
+data class TournamentInfo(
+    val id: TournamentId,
+    val url: String,
+    val name: String,
+)
+
+interface Tournament : Entity<TournamentId> {
+    override val id get() = info.id
+    override val url get() = info.url
+    val info: TournamentInfo
+    val description: String?
+    val format: TournamentFormat
+    val status: TournamentStatus
+
+    val scheduledStartAt: Instant
+    val checkInOpensAt: Instant
+    val checkInClosesAt: Instant
+
+    val maxPlayers: Int
+    val registeredCount: Int
+    val checkedInCount: Int
+
+    val timeControl: TimeControl
+    val participants: List<TournamentParticipant>
+    val matches: List<TournamentMatch>
+}
+
+interface TournamentParticipant {
+    val profile: ProfileReference
+    val displayName: String
+    val image: String?
+    val registeredAt: Instant
+    val seed: Int?
+    val standing: TournamentStanding
+}
+
+enum class TournamentStatus {
+    Draft,
+    RegistrationOpen,
+    CheckInOpen,
+    Live,
+    Completed,
+    Cancelled,
+}
+
+fun TournamentStatus.isTerminal() = this >= TournamentStatus.Completed
+
+enum class TournamentBracket {
+    Default,
+    Losers,
+    GrandFinal,
+    ThirdPlace,
+}
+
+data class TournamentStanding(
+    val rank: Int,
+    val wins: Int,
+    val losses: Int,
+)
+
+data class TournamentMatchInfo(
+    val id: TournamentMatchId,
+    val bracket: TournamentBracket,
+    val round: Int,
+    val order: Int,
+    val bestOf: Int,
+    val currentGameNumber: Int,
+)
+
+val TournamentMatchInfo.requiredWins get() = bestOf / 2 + 1
+
+sealed interface TournamentMatchPlayer {
+    val wins: Int
+    val currentColor: CellOwner
+
+    val profile: ProfileReference?
+
+    class Bye(
+        override val wins: Int,
+        override val currentColor: CellOwner,
+    ) : TournamentMatchPlayer {
+        override val profile = null
+    }
+
+    interface Participant : TournamentMatchPlayer {
+        val participant: TournamentParticipant
+        val seed: Int
+    }
+}
+
+enum class TournamentMatchResultType {
+    Played,
+    Bye,
+    Walkover,
+}
+
+data class TournamentMatchResult(
+    val winner: TournamentParticipant,
+    val type: TournamentMatchResultType,
+)
+
+sealed interface TournamentMatchState {
+    object Pending : TournamentMatchState
+    object Ready : TournamentMatchState
+    class InProgress(val session: SessionReference) : TournamentMatchState
+    class Completed(val result: TournamentMatchResult) : TournamentMatchState
+}
+
+interface TournamentMatch {
+    val info: TournamentMatchInfo
+    val state: TournamentMatchState
+    val startedAt: Instant?
+    val resolvedAt: Instant?
+    val players: List<TournamentMatchPlayer>
+    val pastGames: List<GameReference>
+}
+
+val TournamentMatch.result get() = (state as? TournamentMatchState.Completed)?.result
+val TournamentMatch.session get() = (state as? TournamentMatchState.InProgress)?.session

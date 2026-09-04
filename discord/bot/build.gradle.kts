@@ -16,7 +16,7 @@ dependencies {
     implementation(projects.board.parse)
     implementation(projects.board.render)
 
-    implementation(projects.hds.model)
+    implementation(projects.game.model)
 
     implementation(projects.server.service)
     implementation(projects.utils.coroutines)
@@ -46,10 +46,12 @@ discordLocalization {
 
     import("kotlin.math.roundToInt")
 
-    import("de.mineking.hexo.hds.model.TimeControl")
-    import("de.mineking.hexo.hds.model.game.FinishedGame")
-    import("de.mineking.hexo.hds.model.game.GameFinishReason")
-    import("de.mineking.hexo.hds.model.profile.RichProfile")
+    import("de.mineking.hexo.game.model.TimeControl")
+    import("de.mineking.hexo.game.model.game.FinishedGame")
+    import("de.mineking.hexo.game.model.game.GameFinishReason")
+    import("de.mineking.hexo.game.model.profile.ProfileWithStatistics")
+    import("de.mineking.hexo.game.model.profile.ProfileGameStatistics")
+    import("de.mineking.hexo.game.model.profile.Profile")
 
     import("kotlin.time.toJavaInstant")
     import("net.dv8tion.jda.api.utils.TimeFormat")

@@ -15,7 +15,6 @@ rootProject.name = "HeXO"
 
 include(":board")
 include(":board:parse")
-include(":board:parse:hds")
 include(":board:render")
 include(":board:latex")
 include(":board:latex:processor")
@@ -24,9 +23,9 @@ include(":board:render:compose")
 include(":web:analysis-worker")
 include(":web")
 
-include(":hds:model")
-include(":hds:implementation")
-include(":hds:implementation:processor")
+include(":game:model")
+include(":game:hds")
+include(":game:hds:processor")
 
 include(":solver")
 
@@ -42,9 +41,9 @@ include(":server")
 include(":server:service")
 include(":launcher")
 
-include(":sync:service")
-include(":sync:common")
-include(":sync:client")
+include(":watchparty:service")
+include(":watchparty:common")
+include(":watchparty:client")
 
 include(":utils:coroutines")
 include(":utils:types")
