@@ -26,7 +26,7 @@ sealed interface AppRoute {
     }
 
     data object FinishedGameList : AppRoute {
-        override val href = "/games"
+        override val href = "/games?page=1&rated=all"
         override val navBarEntry get() = NavBarEntry.History
     }
 
