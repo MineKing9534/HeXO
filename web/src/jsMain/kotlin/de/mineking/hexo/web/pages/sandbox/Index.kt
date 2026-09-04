@@ -7,13 +7,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.Page
-import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.Cell
@@ -23,7 +20,6 @@ import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findNextTurn
-import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardModifierKeys
@@ -41,10 +37,9 @@ import de.mineking.hexo.web.layout.PageStyle
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
+import de.mineking.hexo.web.rememberQueryParameter
 import de.mineking.hexo.web.rememberSoundPlayer
-import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.Div
-import org.w3c.dom.url.URL
 
 @InitRoute
 fun initSandboxPage(ctx: InitRouteContext) {
@@ -53,14 +48,10 @@ fun initSandboxPage(ctx: InitRouteContext) {
 
 @Page
 @Composable
-fun SandboxPage(ctx: PageContext) {
+fun SandboxPage() {
+    var positionParameter by rememberQueryParameter("position")
     val (initialBoard, initialError) = remember {
-        val initial = ctx.route.queryParams["position"]?.replace("_", "/") ?: ""
-        if (!AppGlobals.isExporting) {
-            val url = URL(window.location.href)
-            url.searchParams.delete("position")
-            window.history.replaceState(null, "", url.toString())
-        }
+        val initial = positionParameter?.replace("_", "/") ?: ""
 
         try {
             val board = when {
@@ -73,6 +64,7 @@ fun SandboxPage(ctx: PageContext) {
             Board.withTurnNumbers() to e.message
         }
     }
+    LaunchedEffect(Unit) { positionParameter = null }
 
     val boardViewManager = rememberHostBoardViewManager<SandboxBoardViewManager>()
     LaunchedEffect(initialBoard) {
