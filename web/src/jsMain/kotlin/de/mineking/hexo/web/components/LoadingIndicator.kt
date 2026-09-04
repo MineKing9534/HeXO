@@ -3,7 +3,6 @@
 package de.mineking.hexo.web.components
 
 import androidx.compose.runtime.Composable
-import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLDivElement
@@ -15,7 +14,6 @@ enum class LoadingIndicatorSize {
     Large,
 }
 
-@OptIn(ExperimentalComposeWebSvgApi::class)
 @Composable
 fun LoadingIndicator(
     size: LoadingIndicatorSize = LoadingIndicatorSize.Large,
