@@ -162,7 +162,7 @@ private fun MoveIndicatorButton(currentMove: Int, totalMoves: Int, onClick: () -
     Button({
         classes(
             "inline-flex", "h-9", "cursor-pointer", "items-center", "gap-2", "rounded-lg", "border",
-            "bg-slate-950/75", "px-2.5", "shadow-md", "backdrop-blur-xs", "backdrop-saturate-0",
+            "bg-slate-950/75", "px-2.5", "shadow-md", "backdrop-blur-xs",
             "transition-colors", "hover:bg-slate-900/85",
         )
         if (reviewingHistory) {
@@ -267,7 +267,7 @@ private fun TurnIndicator(
             Div({
                 classes(
                     "h-9", "min-w-0", "rounded-lg", "border-2", "px-2.5", "flex", "items-center", "justify-between", "gap-2",
-                    "bg-slate-900/75", "backdrop-blur-xs", "backdrop-saturate-0",
+                    "bg-slate-900/75", "backdrop-blur-xs",
                 )
                 if (isCurrentTurn) {
                     classes("border-emerald-400/70", "shadow-[inset_0_0_18px_rgb(16_185_129/0.08)]")
@@ -372,7 +372,7 @@ private fun HudInfoCard(accent: String, header: @Composable () -> Unit, content:
     Div({
         classes(
             "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-900/75",
-            "backdrop-blur-xs", "backdrop-saturate-0",
+            "backdrop-blur-xs",
         )
     }) {
         Div({ classes("flex", "min-h-9", "items-center", "justify-between", "gap-3", "border-b", "border-slate-700/55", "px-3", "py-2") }) {
