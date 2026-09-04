@@ -10,6 +10,7 @@ import com.varabyte.kobweb.core.init.InitKobweb
 import com.varabyte.kobweb.core.init.InitKobwebContext
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.game.model.RepositoryContainer
+import de.mineking.hexo.hds.implementation.DEFAULT_HDS_HOST
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.socket.SocketIOOptions
 import de.mineking.hexo.hds.implementation.socket.connectSocketClient
@@ -38,14 +39,14 @@ fun rememberWatchPartyController() = LocalWatchPartyController.current
 @Composable
 private fun rememberSharedHdsApiClient(): HdsApiClient? {
     if (AppGlobals.isExporting) return null
-    val host = BuildConfig.API_PROXY
+    val apiUrl = BuildConfig.API_PROXY
 
     return rememberAsyncResourceState(
-        key = host,
+        key = apiUrl,
         initialState = null,
         load = {
-            val socketClient = connectSocketClient(options = SocketIOOptions.createDefault(host))
-            HdsApiClient(host = host, socketClient = socketClient)
+            val socketClient = connectSocketClient(options = SocketIOOptions.createDefault(apiUrl))
+            HdsApiClient(apiUrl = apiUrl, publicUrl = DEFAULT_HDS_HOST, socketClient = socketClient)
         },
         dispose = { it?.shutdown() },
     )
