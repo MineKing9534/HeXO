@@ -5,8 +5,7 @@ package de.mineking.hexo.web.pages.sessions
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.runtime.key
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.core.data.add
@@ -34,8 +33,10 @@ import de.mineking.hexo.web.icons.RightArrowIcon
 import de.mineking.hexo.web.icons.TimeControlIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
+import de.mineking.hexo.web.map
 import de.mineking.hexo.web.pages.games.GameTypeBadge
 import de.mineking.hexo.web.rememberHdsRepositories
+import de.mineking.hexo.web.rememberQueryParameter
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.Span
@@ -50,32 +51,39 @@ fun initLobbyListPage(ctx: InitRouteContext) {
 @Composable
 fun LobbyListPage() {
     val client = rememberHdsRepositories()
+    var filter by rememberQueryParameter("rated").map(
+        transform = { RatedFilter.fromQuery(it) },
+        transformBack = { it.queryValue },
+    )
 
     if (client == null) {
-        LoadingState()
+        LoadingState(filter)
     } else {
-        LobbyList(client.sessionRepository)
+        LobbyList(client.sessionRepository, filter) { filter = it }
     }
 }
 
 @Composable
-private fun LoadingState() {
+private fun LoadingState(filter: RatedFilter) {
     LobbyListCard(expanded = false) {
-        LobbyListHeader(sessionCount = null, filter = RatedFilter.All, onFilterChange = {})
+        LobbyListHeader(sessionCount = null, filter = filter, onFilterChange = {})
         CardLoadingState("Connecting to lobby service")
     }
 }
 
 @Composable
-private fun LobbyList(sessionRepository: SessionRepository) {
+private fun LobbyList(
+    sessionRepository: SessionRepository,
+    filter: RatedFilter,
+    onFilterChange: (RatedFilter) -> Unit,
+) {
     val sessions by sessionRepository.sessions.collectAsState()
-    var filter by remember { mutableStateOf(RatedFilter.All) }
     val sortedLobbies = sessions.values
         .filter { filter.rated == null || it.gameOptions.rated == filter.rated }
         .sortedBy { it.hasStarted() }
 
     LobbyListCard(expanded = sortedLobbies.isNotEmpty()) {
-        LobbyListHeader(sortedLobbies.size, filter, onFilterChange = { filter = it })
+        LobbyListHeader(sortedLobbies.size, filter, onFilterChange)
 
         if (sortedLobbies.isEmpty()) {
             EmptyLobbyState(filter)
@@ -86,11 +94,10 @@ private fun LobbyList(sessionRepository: SessionRepository) {
                 Div({
                     classes(
                         "overflow-hidden", "rounded-xl", "border", "border-slate-800/80", "bg-slate-950/35",
-                        "divide-y", "divide-slate-800/80",
                     )
                 }) {
-                    sortedLobbies.forEach { lobby ->
-                        LobbyRow(lobby)
+                    sortedLobbies.forEachIndexed { index, lobby ->
+                        key(lobby.id) { LobbyRow(lobby, divided = index > 0) }
                     }
                 }
             }
@@ -154,12 +161,13 @@ private fun EmptyLobbyState(filter: RatedFilter) {
 }
 
 @Composable
-private fun LobbyRow(lobby: Session) {
+private fun LobbyRow(lobby: Session, divided: Boolean) {
     Div({
         classes(
-            "grid", "gap-4", "p-4", "transition-colors", "duration-200", "hover:bg-slate-800/20",
+            "grid", "gap-4", "p-4", "transition-[background-color]", "duration-200", "hover:bg-slate-800/20",
             "md:grid-cols-[minmax(0,1fr)_auto]", "md:items-center",
         )
+        if (divided) classes("border-t", "border-slate-800/80")
     }) {
         Div({ classes("flex", "min-w-0", "flex-col", "gap-2.5") }) {
             Div({ classes("min-w-0") }) {
