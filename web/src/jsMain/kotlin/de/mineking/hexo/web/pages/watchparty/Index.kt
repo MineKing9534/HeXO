@@ -130,32 +130,39 @@ private fun VisibleButton(visible: Boolean, onVisibleChange: (Boolean) -> Unit) 
 @Composable
 private fun WatchPartyCard() {
     StatusCard({ classes("lg:max-w-4xl") }) {
-        Div({ classes("flex", "max-w-2xl", "flex-col", "items-center", "gap-3", "text-center") }) {
-            Span({
-                classes(
-                    "grid", "size-10", "place-items-center", "rounded-xl", "border", "border-emerald-400/40",
-                    "bg-emerald-500/15", "text-emerald-300", "shadow-lg", "shadow-emerald-950/20",
-                    "sm:size-12",
-                )
-            }) {
-                BroadcastIcon { classes("size-6") }
-            }
-            Div {
-                P({ classes("mb-1", "text-xs", "font-bold", "uppercase", "tracking-[0.2em]", "text-emerald-400") }) {
-                    Text("Live board sync")
-                }
-                H1({ classes("text-2xl", "font-extrabold", "tracking-tight", "text-slate-100", "sm:text-4xl") }) {
-                    Text("Watch together")
-                }
-            }
-            P({ classes("max-w-xl", "text-sm", "leading-relaxed", "text-slate-400", "sm:text-base") }) {
-                Text("Share a board in real time. Everyone follows the same game, move, highlights, and sandbox position.")
-            }
-        }
+        WatchPartyHero(
+            title = "Watch together",
+            description = "Share a board in real time. Everyone follows the same game, move, highlights, and sandbox position.",
+        )
 
         Div({ classes("mt-3", "grid", "w-full", "gap-4", "md:grid-cols-2") }) {
             JoinWatchPartyPanel()
             HostWatchPartyPanel()
+        }
+    }
+}
+
+@Composable
+internal fun WatchPartyHero(title: String, description: String) {
+    Div({ classes("flex", "max-w-2xl", "flex-col", "items-center", "gap-3", "text-center") }) {
+        Span({
+            classes(
+                "grid", "size-10", "place-items-center", "rounded-xl", "border", "border-emerald-400/40",
+                "bg-emerald-500/15", "text-emerald-300", "shadow-lg", "shadow-emerald-950/20", "sm:size-12",
+            )
+        }) {
+            BroadcastIcon { classes("size-6") }
+        }
+        Div {
+            P({ classes("mb-1", "text-xs", "font-bold", "uppercase", "tracking-[0.2em]", "text-emerald-400") }) {
+                Text("Live board sync")
+            }
+            H1({ classes("text-2xl", "font-extrabold", "tracking-tight", "text-slate-100", "sm:text-4xl") }) {
+                Text(title)
+            }
+        }
+        P({ classes("max-w-xl", "text-sm", "leading-relaxed", "text-slate-400", "sm:text-base") }) {
+            Text(description)
         }
     }
 }
