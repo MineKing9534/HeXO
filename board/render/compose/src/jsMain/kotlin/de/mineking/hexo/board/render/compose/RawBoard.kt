@@ -15,10 +15,8 @@ import de.mineking.hexo.board.render.image.BoardRenderLayout
 import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.Stroke
-import de.mineking.hexo.board.render.image.center
 import de.mineking.hexo.board.render.image.createHex
 import de.mineking.hexo.board.render.image.createRenderLayout
-import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.board.render.image.drawBoard
 import de.mineking.hexo.board.render.image.plus
 import de.mineking.hexo.board.render.image.theme.Color
@@ -31,7 +29,6 @@ import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
 
-private const val BOARD_LAYOUT_RADIUS = 255.0
 val DEFAULT_CELL_HOVER_COlOR = Color.rgb(0x7dd3fc)
 
 typealias BoardContentBuilder = @Composable BoardScope.() -> Unit
@@ -44,7 +41,7 @@ class BoardScope(
 @Composable
 fun RawBoard(
     board: Board,
-    viewport: BoardViewport?,
+    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
@@ -59,22 +56,20 @@ fun RawBoard(
     var dragging by remember { mutableStateOf(false) }
     var hoveredCell by remember { mutableStateOf<CellCoordinate?>(null) }
 
-    val zoom = viewport?.zoom ?: 0.2
-    val layout = remember(board, zoom) {
+    val layout = remember(board) {
         board.createRenderLayout(
-            layoutRadius = BOARD_LAYOUT_RADIUS * zoom,
+            layoutRadius = 128.0,
             bounds = BoardRenderBounds.IncludeSurroundings,
             visibleRadius = DEFAULT_VISIBLE_RADIUS,
         )
     }
-    val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
 
     val renderingHook by rememberUpdatedState(renderingHook)
 
     fun redraw() {
         element?.drawBoard(
             layout = layout,
-            viewport = effectiveViewport,
+            viewport = viewport,
             hoveredCell = hoveredCell,
             theme = theme,
             cellHoverColor = cellHoverColor,
@@ -83,12 +78,12 @@ fun RawBoard(
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme, cellHoverColor, renderingHook, element) { redraw() }
+    LaunchedEffect(viewport, layout, hoveredCell, theme, cellHoverColor, renderingHook, element) { redraw() }
 
     BoardInteractions(
         element = element,
         renderLayout = { layout },
-        viewport = { effectiveViewport },
+        viewport = { viewport },
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
         onCellHoverChange = { hoveredCell = it },
@@ -141,13 +136,14 @@ private fun HTMLCanvasElement.drawBoard(
     cellHoverColor: Color?,
     renderingHook: BoardRenderingHook?,
 ) {
-    width = clientWidth
-    height = clientHeight
+    if (width != clientWidth) width = clientWidth
+    if (height != clientHeight) height = clientHeight
 
     drawBoard(
         layout = layout,
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this),
+        scale = viewport.zoom,
         theme = theme,
         renderingHook = renderingHook + BoardRenderingHook.middleLayer {
             if (hoveredCell == null || cellHoverColor == null) return@middleLayer

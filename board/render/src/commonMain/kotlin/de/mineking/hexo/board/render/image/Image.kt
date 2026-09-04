@@ -10,10 +10,12 @@ fun RenderingBackend.drawBoard(
     layout: BoardRenderLayout,
     theme: Theme = Theme.Default,
     renderingHook: BoardRenderingHook? = null,
+    visibleBounds: BoundingBox = layout.boundingBox,
 ) {
     val context = RenderingContext(
         backend = this,
         layout = layout,
+        visibleBounds = visibleBounds,
         theme = theme,
     )
 
@@ -72,15 +74,15 @@ operator fun BoardRenderingHook?.plus(other: BoardRenderingHook?) = object : Boa
 class RenderingContext(
     val backend: RenderingBackend,
     val layout: BoardRenderLayout,
+    val visibleBounds: BoundingBox = layout.boundingBox,
     theme: Theme,
 ) {
-    val maxTurn = layout.board.cells.values
-        .maxOfOrNull { it.turn ?: Int.MIN_VALUE }
-        ?.takeIf { it > Int.MIN_VALUE }
+    val maxTurn = layout.maxTurn
 
     val hexSize = layout.size.layoutRadius * (1 - theme.gap / 64)
+    val visibleCoordinates = layout.coordinatesIn(visibleBounds)
 
-    fun Polygon.isVisible() = points.any { it in layout.boundingBox }
+    fun Polygon.isVisible() = points.any { it in visibleBounds }
     fun CellCoordinate.toPixel() = layout.size.run { toPixel() }
 
     fun Double.relativeWidth() = (layout.size.layoutRadius * this / 64).toFloat()
