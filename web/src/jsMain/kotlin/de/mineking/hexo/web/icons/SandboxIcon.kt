@@ -1,0 +1,26 @@
+package de.mineking.hexo.web.icons
+
+import androidx.compose.runtime.Composable
+import org.jetbrains.compose.web.ExperimentalComposeWebSvgApi
+import org.jetbrains.compose.web.dom.AttrBuilderContext
+import org.jetbrains.compose.web.svg.Path
+import org.jetbrains.compose.web.svg.Svg
+import org.w3c.dom.svg.SVGElement
+
+@OptIn(ExperimentalComposeWebSvgApi::class)
+@Composable
+fun SandboxIcon(attrs: AttrBuilderContext<SVGElement>? = null) {
+    Svg("0 0 24 24", {
+        attr("aria-hidden", "true")
+        attr("fill", "none")
+        attr("stroke", "currentColor")
+        attr("stroke-width", "1.8")
+        attr("stroke-linecap", "round")
+        attr("stroke-linejoin", "round")
+        attrs?.invoke(this)
+    }) {
+        Path("M9 3h6")
+        Path("M10 3v6L4.7 18.2A1.9 1.9 0 0 0 6.3 21h11.4a1.9 1.9 0 0 0 1.6-2.8L14 9V3")
+        Path("M7.3 15h9.4")
+    }
+}
