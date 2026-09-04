@@ -31,9 +31,9 @@ import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.BadgeSize
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.CardHeader
+import de.mineking.hexo.web.components.CardLoadingState
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.EmptyStateCard
-import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.Pagination
 import de.mineking.hexo.web.components.RatedFilter
@@ -115,15 +115,21 @@ fun GameHistoryPage(ctx: PageContext) {
     val initialFilter = RatedFilter.fromQuery(ctx.route.queryParams["rated"])
 
     if (client == null) {
-        LoadingState()
+        LoadingState(initialFilter)
     } else {
         GameList(client.finishedGameRepository, boardViewManager, initialPage, initialFilter)
     }
 }
 
 @Composable
-private fun LoadingState() {
-    LoadingCard("Loading finished games...")
+private fun LoadingState(filter: RatedFilter) {
+    Div({ classes("lg:h-12") })
+    Div({ classes("mx-auto", "flex", "min-h-0", "w-full", "max-w-5xl") }) {
+        GameListShell(expanded = false) {
+            GameListHeader(filter, onFilterChange = {}, filterEnabled = false)
+            CardLoadingState("Loading finished games")
+        }
+    }
 }
 
 @Composable
@@ -157,7 +163,7 @@ private fun GameList(
     Div({ classes("lg:h-12") })
     Div({
         classes("mx-auto", "flex", "min-h-0", "w-full", "gap-4")
-        if (loading || games.isNotEmpty() || preview.selection != null) classes("flex-1")
+        if (games.isNotEmpty() || preview.selection != null) classes("flex-1")
         if (preview.selection == null) {
             classes("max-w-5xl")
         } else {
@@ -201,15 +207,23 @@ private fun GameListCard(
     onPageChange: (Int) -> Unit,
     onPreview: (FinishedGame) -> Unit,
 ) {
-    Card({
-        classes("flex", "min-h-0", "flex-1", "flex-col", "gap-4", "overflow-hidden", "p-4")
-    }) {
+    GameListShell(expanded = games.isNotEmpty()) {
         GameListHeader(filter, onFilterChange)
         when {
-            loading && games.isEmpty() -> GamesLoadingState()
+            loading && games.isEmpty() -> CardLoadingState("Loading finished games")
             games.isEmpty() -> EmptyGameState(filter, page, onPrevious = { onPageChange(page - 1) })
             else -> LoadedGameList(games, page, loading, previewGame, onPageChange, onPreview)
         }
+    }
+}
+
+@Composable
+private fun GameListShell(expanded: Boolean, content: @Composable () -> Unit) {
+    Card({
+        classes("flex", "min-h-0", "w-full", "flex-col", "gap-4", "overflow-hidden", "p-4")
+        if (expanded) classes("flex-1") else classes("shrink-0")
+    }) {
+        content()
     }
 }
 
@@ -251,7 +265,7 @@ private fun LoadedGameList(
 }
 
 @Composable
-private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
+private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit, filterEnabled: Boolean = true) {
     Div({ classes("flex", "shrink-0", "flex-wrap", "items-center", "justify-between", "gap-3") }) {
         CardHeader(
             title = "Match history",
@@ -262,7 +276,7 @@ private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) ->
         }
 
         Div({ classes("flex", "w-full", "justify-end", "sm:w-auto") }) {
-            RatedFilterControl(filter, onFilterChange)
+            RatedFilterControl(filter, enabled = filterEnabled, onChange = onFilterChange)
         }
     }
 }
@@ -274,13 +288,6 @@ private fun SyncGameListQueryParameters(page: Int, filter: RatedFilter) {
         url.searchParams.set("page", page.toString())
         url.searchParams.set("rated", filter.queryValue)
         window.history.replaceState(null, "", url.toString())
-    }
-}
-
-@Composable
-private fun GamesLoadingState() {
-    Div({ classes("grid", "min-h-64", "place-items-center") }) {
-        LoadingIndicator()
     }
 }
 

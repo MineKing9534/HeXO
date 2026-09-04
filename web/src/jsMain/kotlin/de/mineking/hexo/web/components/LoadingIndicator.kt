@@ -32,3 +32,14 @@ fun LoadingIndicator(
         attrs?.invoke(this)
     })
 }
+
+@Composable
+fun CardLoadingState(label: String) {
+    Div({
+        classes("grid", "min-h-64", "place-items-center")
+        attr("aria-label", label)
+        attr("role", "status")
+    }) {
+        LoadingIndicator()
+    }
+}
