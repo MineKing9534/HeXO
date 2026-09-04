@@ -119,15 +119,13 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                     return@listen
                 }
 
-                val value = state.value as? LiveSessionImpl ?: return@listen
-
                 val session = ObservedSessionImpl.of(
                     client = this@SessionRepositoryImpl.client,
-                    dto = value.dto.copy(
-                        state = event.session.state ?: value.dto.state,
-                        players = event.session.players ?: value.dto.players,
+                    dto = state.value.dto.copy(
+                        state = event.session.state ?: state.value.dto.state,
+                        players = event.session.players ?: state.value.dto.players,
                     ),
-                    gameState = value.gameState,
+                    gameState = state.value.gameState,
                 )
 
                 if (
@@ -190,10 +188,9 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                     return@listen
                 }
 
-                val value = state.value as? LiveSessionImpl ?: return@listen
                 EntityState.Data(ObservedSessionImpl.of(
                     client = this@SessionRepositoryImpl.client,
-                    dto = value.dto,
+                    dto = state.value.dto,
                     gameState = event.gameState,
                 ))
             }

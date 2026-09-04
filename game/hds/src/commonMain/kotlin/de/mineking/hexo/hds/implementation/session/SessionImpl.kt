@@ -76,8 +76,8 @@ internal class DetailedSessionImpl(
 }
 
 internal abstract class ObservedSessionImpl : BaseSessionImpl(), DetailedSession {
-    internal abstract val dto: SessionDto?
-    internal abstract val gameState: SessionGameStateDto?
+    internal abstract val dto: SessionDto
+    internal abstract val gameState: SessionGameStateDto
 
     companion object {
         internal fun of(
