@@ -36,6 +36,7 @@ import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
+import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.ATarget
 import org.jetbrains.compose.web.attributes.InputType
@@ -130,25 +131,35 @@ private fun SidebarNotationSection(
             accent = "bg-sky-400",
         )
         NotationField(notation, parseError) { value ->
-            onNotationChange(value)
-            if (value.isBlank()) {
-                onBoardChange(Board.withTurnNumbers())
-                return@NotationField
-            }
-            coroutineScope.launch {
-                try {
-                    onBoardChange(boardParser.parse(value))
-                    onParseErrorChange(null)
-                } catch (e: HexoNotationException) {
-                    onParseErrorChange(e.message)
-                }
-            }
+            updateNotation(value, coroutineScope, onNotationChange, onParseErrorChange, onBoardChange)
         }
         SidebarNotationInfo(board, onBoardChange, parseError) {
             NotationActions(repositories, notation) { value ->
-                onNotationChange(value)
+                updateNotation(value, coroutineScope, onNotationChange, onParseErrorChange, onBoardChange)
                 onImportPosition()
             }
+        }
+    }
+}
+
+private fun updateNotation(
+    value: String,
+    coroutineScope: CoroutineScope,
+    onNotationChange: (String) -> Unit,
+    onParseErrorChange: (String?) -> Unit,
+    onBoardChange: (Board) -> Unit,
+) {
+    onNotationChange(value)
+    if (value.isBlank()) {
+        onBoardChange(Board.withTurnNumbers())
+        return
+    }
+    coroutineScope.launch {
+        try {
+            onBoardChange(boardParser.parse(value))
+            onParseErrorChange(null)
+        } catch (e: HexoNotationException) {
+            onParseErrorChange(e.message)
         }
     }
 }

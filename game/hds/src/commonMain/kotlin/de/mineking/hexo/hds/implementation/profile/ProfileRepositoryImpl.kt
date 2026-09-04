@@ -21,7 +21,7 @@ import io.ktor.http.isSuccess
 import kotlinx.serialization.Serializable
 
 internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : ProfileRepository {
-    override val url = "${client.host}/profile"
+    override val url = "${client.publicUrl}/profile"
 
     private val statisticsRequester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics?> { id ->
         val response = client.request("/profiles/${id.value}/statistics")
