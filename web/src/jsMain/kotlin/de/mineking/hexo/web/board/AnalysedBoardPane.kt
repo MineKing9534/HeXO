@@ -73,7 +73,12 @@ private fun AnalyzerStatusDisplay(
         state = state,
         analyzedPlayer = effectiveTurnPlayer,
         otherPlayer = otherPlayer,
-        attrs = { classes("absolute", "right-4", "top-4") },
+        attrs = {
+            classes(
+                "absolute", "right-3", "bottom-28",
+                "sm:right-4", "sm:top-4", "sm:bottom-auto",
+            )
+        },
     ) {
         if (allowAnalyzerOverlay) {
             ActionButton(

@@ -126,7 +126,12 @@ private fun BoardScope.BoardControls(
         viewport = viewport,
     )
 
-    Div({ classes("absolute", "top-3", "left-3", "z-20") }) {
+    Div({
+        classes(
+            "absolute", "bottom-14", "left-3", "z-20",
+            "sm:top-3", "sm:bottom-auto",
+        )
+    }) {
         MoveIndicatorButton(
             currentMove = min(boardViewManager.currentMove, totalMoves),
             totalMoves = totalMoves,
