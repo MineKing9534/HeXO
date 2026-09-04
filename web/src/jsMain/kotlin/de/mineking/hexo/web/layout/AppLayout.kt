@@ -353,7 +353,11 @@ private fun SettingsButton() {
     }
 
     if (dialogOpen) {
-        Dialog("Settings", onClose = { dialogOpen = false }) {
+        Dialog(
+            title = "Settings",
+            supportingText = "Customize boards, analysis and sound.",
+            onClose = { dialogOpen = false },
+        ) {
             SettingsView()
         }
     }

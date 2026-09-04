@@ -8,7 +8,6 @@ import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.web.components.Checkbox
 import de.mineking.hexo.web.components.DropdownMenu
-import de.mineking.hexo.web.components.HorizontalDivider
 import de.mineking.hexo.web.components.Slider
 import de.mineking.hexo.web.icons.CheckIcon
 import org.jetbrains.compose.web.attributes.ATarget
@@ -24,42 +23,54 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun SettingsView() {
-    Div({ classes("flex", "flex-col", "gap-3") }) {
-        ThemeSettingsField()
-        BooleanSettingsField(
-            key = SettingsKey.ReadOnlyBoardHoverIndicator,
-            title = "Read-only hover indicator",
-            description = { Text("Show the target cell while hovering over boards you cannot edit.") },
-        )
-        BooleanSettingsField(
-            key = SettingsKey.SessionAnalyzer,
-            title = "Session analyzer",
-            description = {
-                Text("Analyzes sessions for forced-wins while watching (Powered by ")
-                A(href = "https://github.com/SootyOwl/hexo-strix", {
-                    target(ATarget.Blank)
-                    classes("font-bold", "text-sky-400")
-                }) {
-                    Text("Strix")
-                }
-                Text(").")
-            },
-        )
-
-        HorizontalDivider()
-
-        BooleanSettingsField(
-            key = SettingsKey.SessionViewTimerSounds,
-            title = "Timeout sounds",
-            description = { Text("Play an alert when a watched session timer runs out.") },
-        )
-        FloatSettingsField(
-            key = SettingsKey.Volume,
-            title = "Volume",
-            description = { Text("Adjust the volume of sound effects.") },
-            valueLabel = { "${(it * 100).toInt()}%" },
-        )
+    Div({ classes("flex", "flex-col", "gap-5") }) {
+        SettingsSection("Appearance") { ThemeSettingsField() }
+        SettingsSection("Board assistance") {
+            BooleanSettingsField(
+                key = SettingsKey.ReadOnlyBoardHoverIndicator,
+                title = "Read-only hover indicator",
+                description = { Text("Show the target cell while hovering over boards you cannot edit.") },
+            )
+            BooleanSettingsField(
+                key = SettingsKey.SessionAnalyzer,
+                title = "Session analyzer",
+                description = { SessionAnalyzerDescription() },
+            )
+        }
+        SettingsSection("Sound") {
+            BooleanSettingsField(
+                key = SettingsKey.SessionViewTimerSounds,
+                title = "Timeout sounds",
+                description = { Text("Play an alert when a watched session timer runs out.") },
+            )
+            FloatSettingsField(
+                key = SettingsKey.Volume,
+                title = "Volume",
+                description = { Text("Adjust the volume of sound effects.") },
+                valueLabel = { "${(it * 100).toInt()}%" },
+            )
+        }
     }
+}
+
+@Composable
+private fun SettingsSection(title: String, content: @Composable () -> Unit) {
+    Div({ classes("grid", "gap-2.5") }) {
+        Div({ classes("text-xs", "font-bold", "uppercase", "tracking-[0.14em]", "text-slate-500") }) {
+            Text(title)
+        }
+        content()
+    }
+}
+
+@Composable
+private fun SessionAnalyzerDescription() {
+    Text("Analyze watched sessions for forced wins. Powered by ")
+    A(href = "https://github.com/SootyOwl/hexo-strix", {
+        target(ATarget.Blank)
+        classes("font-bold", "text-sky-400")
+    }) { Text("Strix") }
+    Text(".")
 }
 
 @Composable

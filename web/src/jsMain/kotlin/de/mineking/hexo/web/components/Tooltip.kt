@@ -15,6 +15,7 @@ import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLDivElement
 import org.w3c.dom.HTMLSpanElement
+import kotlin.time.Duration.Companion.milliseconds
 
 @Composable
 fun Tooltip(
@@ -35,7 +36,7 @@ fun Tooltip(
     fun hideLater() {
         hideJob?.cancel()
         hideJob = scope.launch {
-            delay(200)
+            delay(200.milliseconds)
             visible = false
         }
     }
