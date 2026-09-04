@@ -1,8 +1,8 @@
 package de.mineking.hexo.web.pages.sessions
 
 import androidx.compose.runtime.Composable
+import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.TournamentMatchSnapshot
-import de.mineking.hexo.game.model.session.SessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
@@ -17,8 +17,8 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 internal fun TournamentSummary(
     tournament: TournamentMatchSnapshot?,
-    players: List<SessionPlayer>,
-    wins: (SessionPlayer) -> Int = { it.tournamentMatchWins ?: 0 },
+    players: List<Player>,
+    wins: (Player) -> Int = { it.tournamentMatchWins ?: 0 },
 ) {
     tournament ?: return
 
@@ -54,7 +54,7 @@ private fun TournamentHeader(tournament: TournamentMatchSnapshot) {
 }
 
 @Composable
-private fun TournamentPlayerStanding(player: SessionPlayer, wins: Int, requiredWins: Int) {
+private fun TournamentPlayerStanding(player: Player, wins: Int, requiredWins: Int) {
     val progress = (wins * 100 / requiredWins).coerceIn(0, 100)
 
     Div({ classes("rounded-lg", "bg-slate-950/35", "px-3", "py-2.5") }) {
@@ -78,7 +78,7 @@ private fun TournamentPlayerStanding(player: SessionPlayer, wins: Int, requiredW
 @Composable
 private fun TournamentScore(wins: Int, requiredWins: Int) {
     Span({ classes("shrink-0", "font-semibold", "tabular-nums") }) {
-        Span({ classes("text-lg", if (wins > 0) "text-emerald-300" else "text-slate-300") }) {
+        Span({ classes("text-lg", if (wins == requiredWins) "text-emerald-300" else "text-slate-300") }) {
             Text(wins.toString())
         }
         Span({ classes("text-sm", "text-slate-500") }) { Text("/$requiredWins") }
