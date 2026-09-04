@@ -1,6 +1,7 @@
 package de.mineking.hexo.web.components
 
 import androidx.compose.runtime.Composable
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Text
@@ -17,7 +18,7 @@ enum class RatedFilter(val rated: Boolean?, val queryValue: String, val label: S
 }
 
 @Composable
-fun RatedFilterControl(current: RatedFilter, onChange: (RatedFilter) -> Unit) {
+fun RatedFilterControl(current: RatedFilter, enabled: Boolean = true, onChange: (RatedFilter) -> Unit) {
     Div({
         attr("aria-label", "Filter by game type")
         attr("role", "group")
@@ -25,15 +26,18 @@ fun RatedFilterControl(current: RatedFilter, onChange: (RatedFilter) -> Unit) {
             "inline-flex", "shrink-0", "items-center", "gap-0.5", "rounded-lg", "border",
             "border-slate-700/70", "bg-slate-950/45", "p-0.5",
         )
+        if (!enabled) classes("opacity-70")
     }) {
         RatedFilter.entries.forEach { filter ->
             Button({
                 attr("aria-pressed", (filter == current).toString())
+                if (!enabled) disabled()
                 classes(
-                    "cursor-pointer", "rounded-md", "border", "px-2", "py-1", "text-xs", "font-semibold",
+                    "rounded-md", "border", "px-2", "py-1", "text-xs", "font-semibold",
                     "transition-colors", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-amber-300/50",
                     "sm:px-3",
                 )
+                if (enabled) classes("cursor-pointer")
                 if (filter == current) {
                     classes("shadow-sm", "shadow-black/20")
                     when (filter) {
@@ -43,10 +47,12 @@ fun RatedFilterControl(current: RatedFilter, onChange: (RatedFilter) -> Unit) {
                     }
                 } else {
                     classes("border-transparent", "text-slate-500")
-                    when (filter) {
-                        RatedFilter.All -> classes("hover:bg-sky-500/10", "hover:text-sky-300")
-                        RatedFilter.Rated -> classes("hover:bg-amber-500/10", "hover:text-amber-300")
-                        RatedFilter.Casual -> classes("hover:bg-emerald-500/10", "hover:text-emerald-300")
+                    if (enabled) {
+                        when (filter) {
+                            RatedFilter.All -> classes("hover:bg-sky-500/10", "hover:text-sky-300")
+                            RatedFilter.Rated -> classes("hover:bg-amber-500/10", "hover:text-amber-300")
+                            RatedFilter.Casual -> classes("hover:bg-emerald-500/10", "hover:text-emerald-300")
+                        }
                     }
                 }
                 onClick { onChange(filter) }

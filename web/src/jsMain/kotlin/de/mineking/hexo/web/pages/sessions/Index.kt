@@ -21,10 +21,10 @@ import de.mineking.hexo.game.model.session.hasStarted
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.CardHeader
+import de.mineking.hexo.web.components.CardLoadingState
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.EmptyStateCard
-import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.RatedFilter
 import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
@@ -60,7 +60,10 @@ fun LobbyListPage() {
 
 @Composable
 private fun LoadingState() {
-    LoadingCard("Connecting to lobby service...")
+    LobbyListCard(expanded = false) {
+        LobbyListHeader(sessionCount = null, filter = RatedFilter.All, onFilterChange = {})
+        CardLoadingState("Connecting to lobby service")
+    }
 }
 
 @Composable
@@ -71,11 +74,7 @@ private fun LobbyList(sessionRepository: SessionRepository) {
         .filter { filter.rated == null || it.gameOptions.rated == filter.rated }
         .sortedBy { it.hasStarted() }
 
-    ContentCard({
-        classes(
-            "flex", "max-h-full", "min-h-0", "flex-col", "gap-4", "overflow-hidden", "p-4", "lg:max-h-[calc(100%-3rem)]",
-        )
-    }) {
+    LobbyListCard(expanded = sortedLobbies.isNotEmpty()) {
         LobbyListHeader(sortedLobbies.size, filter, onFilterChange = { filter = it })
 
         if (sortedLobbies.isEmpty()) {
@@ -100,7 +99,20 @@ private fun LobbyList(sessionRepository: SessionRepository) {
 }
 
 @Composable
-private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
+private fun LobbyListCard(expanded: Boolean, content: @Composable () -> Unit) {
+    ContentCard({
+        classes(
+            "flex", "max-h-full", "min-h-0", "flex-col", "gap-4", "overflow-hidden", "p-4",
+            "lg:max-h-[calc(100%-3rem)]",
+        )
+        if (expanded) classes("flex-1") else classes("shrink-0")
+    }) {
+        content()
+    }
+}
+
+@Composable
+private fun LobbyListHeader(sessionCount: Int?, filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit) {
     Div({ classes("flex", "shrink-0", "flex-wrap", "items-center", "justify-between", "gap-3") }) {
         CardHeader(
             title = "Live sessions",
@@ -110,20 +122,22 @@ private fun LobbyListHeader(sessionCount: Int, filter: RatedFilter, onFilterChan
             EyeIcon { classes("size-4") }
         }
         Div({ classes("flex", "w-full", "flex-wrap", "items-center", "justify-between", "gap-2", "sm:w-auto") }) {
-            Span({
-                classes(
-                    "shrink-0", "rounded-full", "border", "border-slate-700/70", "bg-slate-950/50",
-                    "px-3", "py-1.5", "text-xs", "text-slate-500",
-                )
-            }) {
-                Span({ classes("mr-1", "font-bold", "text-slate-300") }) {
-                    Text("$sessionCount")
-                }
-                Span {
-                    Text(if (sessionCount == 1) "session" else "sessions")
+            if (sessionCount != null) {
+                Span({
+                    classes(
+                        "shrink-0", "rounded-full", "border", "border-slate-700/70", "bg-slate-950/50",
+                        "px-3", "py-1.5", "text-xs", "text-slate-500",
+                    )
+                }) {
+                    Span({ classes("mr-1", "font-bold", "text-slate-300") }) {
+                        Text("$sessionCount")
+                    }
+                    Span {
+                        Text(if (sessionCount == 1) "session" else "sessions")
+                    }
                 }
             }
-            RatedFilterControl(filter, onFilterChange)
+            RatedFilterControl(filter, enabled = sessionCount != null, onChange = onFilterChange)
         }
     }
 }
