@@ -33,7 +33,7 @@ import kotlinx.coroutines.launch
 private val logger = KotlinLogging.logger {}
 
 internal class SessionRepositoryImpl(private val client: HdsApiClient) : SessionRepository {
-    override val url = "${client.host}/session"
+    override val url = "${client.publicUrl}/session"
 
     override val sessions = MutableStateFlow(emptyMap<SessionId, SessionImpl>())
 

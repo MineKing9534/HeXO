@@ -31,7 +31,7 @@ class FormationLinkBoardParser(private val repository: FormationRepository) : Li
     }
 }
 
-class GameLinkBoardParser(private val repository: FinishedGameRepository) : LinkParser(prefix = repository.urlOf(GameId(""))) {
+class GameLinkBoardParser(private val repository: FinishedGameRepository) : LinkParser(prefix = repository.urlOf(GameId("")).also { println(it) }) {
     override suspend fun parseLink(param: String): Board {
         val (id, maxMoves) = param.parseGameLinkParameter()
         return repository.getGame(id)

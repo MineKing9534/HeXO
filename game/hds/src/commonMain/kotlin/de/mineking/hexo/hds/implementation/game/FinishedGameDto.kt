@@ -64,7 +64,7 @@ internal fun TournamentMatchSnapshotDto.toModel(client: HdsApiClient) = Tourname
         repository = client.tournamentRepository,
         info = TournamentInfo(
             id = tournamentId,
-            url = "${client.host}/tournaments/${tournamentId.value}",
+            url = "${client.publicUrl}/tournaments/${tournamentId.value}",
             name = tournamentName,
         ),
     ),
