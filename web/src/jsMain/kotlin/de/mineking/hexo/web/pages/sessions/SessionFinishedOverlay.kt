@@ -5,8 +5,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import de.mineking.hexo.game.model.game.FinishedGamePlayer
 import de.mineking.hexo.game.model.game.GameFinishReason
 import de.mineking.hexo.game.model.game.GameResult
+import de.mineking.hexo.game.model.game.GameWithPosition
 import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.game.model.session.LiveSession
@@ -45,7 +47,20 @@ private val collapsePositionTransition = listOf(
 
 @Composable
 fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Detailed.Finished) {
-    var collapsed by remember(session.id, state) { mutableStateOf(false) }
+    FinishedGameOverlay(
+        game = session.game,
+        result = state.result,
+        rematchAcceptedPlayers = state.rematchAcceptedPlayers,
+    )
+}
+
+@Composable
+fun FinishedGameOverlay(
+    game: GameWithPosition,
+    result: GameResult = requireNotNull(game.result),
+    rematchAcceptedPlayers: List<Player> = emptyList(),
+) {
+    var collapsed by remember(game.id, result) { mutableStateOf(false) }
 
     Card({
         classes(
@@ -65,17 +80,17 @@ fun SessionFinishedOverlay(session: LiveSession, state: SessionState.Detailed.Fi
     }) {
         SessionFinishedOverlayHeader(
             collapsed = collapsed,
-            state = state,
+            result = result,
             onExpandCollapse = { collapsed = !collapsed },
         )
-        SessionFinishedOverlayBody(collapsed, session, state)
+        SessionFinishedOverlayBody(collapsed, game, result, rematchAcceptedPlayers)
     }
 }
 
 @Composable
 private fun SessionFinishedOverlayHeader(
     collapsed: Boolean,
-    state: SessionState.Detailed.Finished,
+    result: GameResult,
     onExpandCollapse: () -> Unit,
 ) {
     Button({
@@ -94,7 +109,7 @@ private fun SessionFinishedOverlayHeader(
             classes("px-4", "pb-0", "pt-4", "sm:px-5", "sm:pt-5")
         }
     }) {
-        if (collapsed) CollapsedFinishedTitle(state) else ExpandedFinishedTitle(state)
+        if (collapsed) CollapsedFinishedTitle(result) else ExpandedFinishedTitle(result)
 
         ChevronDownIcon {
             classes(
@@ -112,8 +127,8 @@ private fun SessionFinishedOverlayHeader(
 }
 
 @Composable
-private fun CollapsedFinishedTitle(state: SessionState.Detailed.Finished) {
-    val winner = state.result.winner
+private fun CollapsedFinishedTitle(result: GameResult) {
+    val winner = result.winner
 
     Div({ classes("min-w-0", "flex", "items-center", "gap-3", "text-left") }) {
         Div({
@@ -131,15 +146,15 @@ private fun CollapsedFinishedTitle(state: SessionState.Detailed.Finished) {
                 Text(winner?.let { "${it.displayName} wins" } ?: "Game drawn")
             }
             Span({ classes("block", "truncate", "text-xs", "text-slate-500") }) {
-                Text(state.result.reason.label)
+                Text(result.reason.label)
             }
         }
     }
 }
 
 @Composable
-private fun ExpandedFinishedTitle(state: SessionState.Detailed.Finished) {
-    val winner = state.result.winner
+private fun ExpandedFinishedTitle(result: GameResult) {
+    val winner = result.winner
 
     Div({ classes("min-w-0", "pr-10", "text-left") }) {
         Div({ classes("mb-2", "flex", "items-center", "gap-2") }) {
@@ -157,13 +172,18 @@ private fun ExpandedFinishedTitle(state: SessionState.Detailed.Finished) {
             Text(winner?.let { "${it.displayName} wins" } ?: "Game drawn")
         }
         Span({ classes("mt-1.5", "block", "text-sm", "font-medium", "text-slate-500") }) {
-            Text("${state.result.reason.label} · ${state.result.duration.formatCompact()}")
+            Text("${result.reason.label} · ${result.duration.formatCompact()}")
         }
     }
 }
 
 @Composable
-private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession, state: SessionState.Detailed.Finished) {
+private fun SessionFinishedOverlayBody(
+    collapsed: Boolean,
+    game: GameWithPosition,
+    result: GameResult,
+    rematchAcceptedPlayers: List<Player>,
+) {
     Div({
         classes("grid", "transition-all")
         classes(springTransition)
@@ -180,14 +200,14 @@ private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession,
                     Div({ classes("p-4", "sm:p-5") }) {
                         SessionSectionLabel("Final standings")
                         Div({ classes("mt-3") }) {
-                            SessionFinishedMatchup(session, state)
+                            SessionFinishedMatchup(game, result, rematchAcceptedPlayers)
                         }
                     }
-                    SessionFinishedResultSummary(session, state)
+                    SessionFinishedResultSummary(game, result)
                 }
 
-                TournamentSummary(session.tournament, session.players) { player ->
-                    player.tournamentMatchWins?.let { if (player == state.result.winner) it + 1 else it } ?: 0
+                TournamentSummary(game.tournament, game.players) { player ->
+                    player.tournamentMatchWins?.let { if (player == result.winner) it + 1 else it } ?: 0
                 }
             }
         }
@@ -195,22 +215,26 @@ private fun SessionFinishedOverlayBody(collapsed: Boolean, session: LiveSession,
 }
 
 @Composable
-private fun SessionFinishedMatchup(session: LiveSession, state: SessionState.Detailed.Finished) {
+private fun SessionFinishedMatchup(
+    game: GameWithPosition,
+    result: GameResult,
+    rematchAcceptedPlayers: List<Player>,
+) {
     Div({ classes("grid", "items-stretch", "gap-2", "sm:grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]", "sm:gap-3") }) {
-        session.players.forEachIndexed { index, player ->
+        game.players.forEachIndexed { index, player ->
             if (index > 0) {
                 Div({ classes("flex", "items-center", "justify-center") }) {
                     Span({ classes("text-xs", "font-bold", "text-slate-600", "uppercase") }) { Text("vs") }
                 }
             }
-            SessionFinishedPlayerCard(player, session, state)
+            SessionFinishedPlayerCard(player, game, result, rematchAcceptedPlayers)
         }
     }
 }
 
 @Composable
-private fun SessionFinishedResultSummary(session: LiveSession, state: SessionState.Detailed.Finished) {
-    val winner = state.result.winner
+private fun SessionFinishedResultSummary(game: GameWithPosition, result: GameResult) {
+    val winner = result.winner
 
     Div({
         classes(
@@ -219,32 +243,33 @@ private fun SessionFinishedResultSummary(session: LiveSession, state: SessionSta
         )
     }) {
         SessionMetric("Result", if (winner == null) "text-amber-300" else "text-emerald-300") {
-            Text(state.result.reason.label)
+            Text(result.reason.label)
         }
-        SessionMetric("Duration") { Text(state.result.duration.formatCompact()) }
-        SessionMetric("Moves played") { Text(session.game.moveCount.toString()) }
+        SessionMetric("Duration") { Text(result.duration.formatCompact()) }
+        SessionMetric("Moves played") { Text(game.moveCount.toString()) }
     }
 }
 
 @Composable
-private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSession, state: SessionState.Detailed.Finished) {
-    val winner = state.result.winner
-    val showDetails = session.gameOptions.rated || player in state.rematchAcceptedPlayers
+private fun SessionFinishedPlayerCard(
+    player: Player,
+    game: GameWithPosition,
+    result: GameResult,
+    rematchAcceptedPlayers: List<Player>,
+) {
+    val winner = result.winner
 
     SubCard({
         classes(
             "relative", "h-full", "overflow-hidden", "p-3", "text-center", "transition",
         )
     }, if (winner == player) SubCardVariant.Highlighted else SubCardVariant.Deep) {
-        SessionFinishedPlayerHeader(state.result, player)
+        SessionFinishedPlayerHeader(result, player, game.options.rated)
 
-        if (showDetails) {
+        if (player in rematchAcceptedPlayers) {
             Div({ classes("mt-2", "flex", "flex-wrap", "items-center", "justify-center", "gap-1.5") }) {
-                SessionFinishedEloBadge(player, winner, session.gameOptions.rated)
-                if (player in state.rematchAcceptedPlayers) {
-                    Badge(Color.Sky) {
-                        Text("Rematch accepted")
-                    }
+                Badge(Color.Sky) {
+                    Text("Rematch accepted")
                 }
             }
         }
@@ -252,7 +277,9 @@ private fun SessionFinishedPlayerCard(player: LiveSessionPlayer, session: LiveSe
 }
 
 @Composable
-private fun SessionFinishedPlayerHeader(result: GameResult, player: LiveSessionPlayer) {
+private fun SessionFinishedPlayerHeader(result: GameResult, player: Player, rated: Boolean) {
+    val eloAdjustment = if (rated) player.eloAdjustment(result.winner) else null
+
     Div({ classes("flex", "min-w-0", "flex-col", "items-center", "gap-1.5") }) {
         SessionPlayerIcon(player)
 
@@ -261,36 +288,28 @@ private fun SessionFinishedPlayerHeader(result: GameResult, player: LiveSessionP
                 classes("font-semibold")
                 if (player == result.winner) classes("text-emerald-200!")
             })
-            SessionPlayerMeta(player)
+            if (player is LiveSessionPlayer) {
+                SessionPlayerMeta(player, eloAdjustment = eloAdjustment)
+            } else if (!player.isGuest()) {
+                Div({ classes("mt-0.5", "text-xs") }) { PlayerElo(player, eloAdjustment) }
+            }
         }
     }
 }
 
-@Composable
-private fun SessionFinishedEloBadge(player: LiveSessionPlayer, winner: Player?, rated: Boolean) {
-    val eloAdjustment = player.ratingAdjustment.takeIf { rated && !player.isGuest() } ?: return
-
-    Badge(Color.Neutral) {
-        Text("Elo ")
-        Span({ classes(player.eloAdjustmentColor(winner), "font-semibold") }) {
-            Text(player.eloAdjustmentLabel(winner, eloAdjustment))
-        }
-    }
+private fun Player.eloAdjustment(winner: Player?) = when (this) {
+    is FinishedGamePlayer -> eloChange
+    is LiveSessionPlayer -> ratingAdjustment?.let { eloAdjustment(winner, it) }
+    else -> null
 }
 
-private fun LiveSessionPlayer.eloAdjustmentColor(winner: Player?) = when (winner) {
-    this -> "text-emerald-300"
-    null -> "text-slate-300"
-    else -> "text-rose-300"
-}
-
-private fun LiveSessionPlayer.eloAdjustmentLabel(
+private fun LiveSessionPlayer.eloAdjustment(
     winner: Player?,
     ratingAdjustment: RatingAdjustment,
 ) = when (winner) {
-    this -> "+${ratingAdjustment.eloGain}"
-    null -> "0"
-    else -> "${ratingAdjustment.eloLoss}"
+    this -> ratingAdjustment.eloGain
+    null -> 0
+    else -> ratingAdjustment.eloLoss
 }
 
 private val GameFinishReason.label get() = when (this) {
