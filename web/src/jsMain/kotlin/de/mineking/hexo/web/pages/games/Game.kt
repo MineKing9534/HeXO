@@ -27,6 +27,8 @@ import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.pages.sessions.FinishedGameOverlay
 import de.mineking.hexo.web.rememberHdsRepositories
+import kotlinx.browser.window
+import org.w3c.dom.url.URL
 
 private val RouteInfo.gameId get() = GameId(params["id"]!!)
 
@@ -39,7 +41,12 @@ fun initGamePage(ctx: InitRouteContext) {
 @Composable
 fun GamePage(ctx: PageContext) {
     val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
-    Game(ctx.route.gameId, boardViewManager)
+    val gameId = ctx.route.gameId
+    val initialMove = remember(gameId) { ctx.route.queryParams["move"]?.toIntOrNull() }
+    LaunchedEffect(gameId) {
+        boardViewManager.currentMove = initialMove ?: Int.MAX_VALUE
+    }
+    Game(gameId, boardViewManager)
 }
 
 @Composable
@@ -63,9 +70,22 @@ fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
         is EntityState.Loading -> LoadingState()
         is EntityState.NotFound -> NotFoundState()
         is EntityState.Data -> {
+            SyncReviewMoveUrl(id, boardViewManager.currentMove, state.value.moveCount)
             GameBoardPane(state.value, isLive = false, boardViewManager = boardViewManager)
             FinishedGameOverlay(state.value)
         }
+    }
+}
+
+@Composable
+private fun SyncReviewMoveUrl(id: GameId, selectedMove: Int, moveCount: Int) {
+    val move = selectedMove.coerceIn(0, moveCount)
+    LaunchedEffect(id, move) {
+        val url = URL(window.location.href)
+        if (url.searchParams.get("move") == move.toString()) return@LaunchedEffect
+
+        url.searchParams.set("move", move.toString())
+        window.history.replaceState(null, "", url.toString())
     }
 }
 
