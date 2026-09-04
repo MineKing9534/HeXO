@@ -8,7 +8,6 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.Page
-import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
@@ -49,8 +48,9 @@ import de.mineking.hexo.web.icons.TimeControlIcon
 import de.mineking.hexo.web.icons.TournamentIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
+import de.mineking.hexo.web.map
 import de.mineking.hexo.web.rememberHdsRepositories
-import kotlinx.browser.window
+import de.mineking.hexo.web.rememberQueryParameter
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
@@ -62,7 +62,6 @@ import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
 import org.w3c.dom.HTMLSpanElement
-import org.w3c.dom.url.URL
 import kotlin.js.Date
 import kotlin.time.Duration.Companion.milliseconds
 
@@ -108,16 +107,29 @@ fun initLobbyListPage(ctx: InitRouteContext) {
 
 @Page
 @Composable
-fun GameHistoryPage(ctx: PageContext) {
+fun GameHistoryPage() {
     val client = rememberHdsRepositories()
     val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
-    val initialPage = ctx.route.queryParams["page"]?.toIntOrNull()?.takeIf { it > 0 } ?: 1
-    val initialFilter = RatedFilter.fromQuery(ctx.route.queryParams["rated"])
+    var page by rememberQueryParameter("page").map(transform = { it?.toIntOrNull() ?: 1 }, transformBack = { it.toString() })
+    var filter by rememberQueryParameter("rated").map(
+        transform = { RatedFilter.fromQuery(it) },
+        transformBack = { it.queryValue },
+    )
 
     if (client == null) {
-        LoadingState(initialFilter)
+        LoadingState(filter)
     } else {
-        GameList(client.finishedGameRepository, boardViewManager, initialPage, initialFilter)
+        GameList(
+            client.finishedGameRepository,
+            boardViewManager,
+            page,
+            filter,
+            onPageChange = { page = it },
+            onFilterChange = {
+                filter = it
+                page = 1
+            },
+        )
     }
 }
 
@@ -136,19 +148,16 @@ private fun LoadingState(filter: RatedFilter) {
 private fun GameList(
     finishedGameRepository: FinishedGameRepository,
     boardViewManager: GameBoardViewManager,
-    initialPage: Int,
-    initialFilter: RatedFilter,
+    page: Int,
+    filter: RatedFilter,
+    onPageChange: (Int) -> Unit,
+    onFilterChange: (RatedFilter) -> Unit,
 ) {
     val coroutineScope = rememberCoroutineScope()
-
-    var filter by remember { mutableStateOf(initialFilter) }
-    var page by remember { mutableStateOf(initialPage) }
 
     var games by remember { mutableStateOf(emptyList<FinishedGame>()) }
     var loading by remember { mutableStateOf(true) }
     val preview = remember { GamePreviewState() }
-
-    SyncGameListQueryParameters(page, filter)
 
     LaunchedEffect(finishedGameRepository, page, filter) {
         loading = true
@@ -176,11 +185,8 @@ private fun GameList(
             games = games,
             loading = loading,
             previewGame = preview.selection,
-            onFilterChange = {
-                filter = it
-                page = 1
-            },
-            onPageChange = { page = it },
+            onFilterChange = onFilterChange,
+            onPageChange = onPageChange,
             onPreview = { game ->
                 coroutineScope.launch {
                     if (preview.selection?.id == game.id) preview.close() else preview.open(game, boardViewManager)
@@ -278,16 +284,6 @@ private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) ->
         Div({ classes("flex", "w-full", "justify-end", "sm:w-auto") }) {
             RatedFilterControl(filter, enabled = filterEnabled, onChange = onFilterChange)
         }
-    }
-}
-
-@Composable
-private fun SyncGameListQueryParameters(page: Int, filter: RatedFilter) {
-    LaunchedEffect(page, filter) {
-        val url = URL(window.location.href)
-        url.searchParams.set("page", page.toString())
-        url.searchParams.set("rated", filter.queryValue)
-        window.history.replaceState(null, "", url.toString())
     }
 }
 

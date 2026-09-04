@@ -8,17 +8,23 @@ import androidx.compose.runtime.State
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import com.varabyte.kobweb.core.AppGlobals
+import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
+import kotlinx.browser.window
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.css.rgba
+import org.w3c.dom.events.EventListener
+import org.w3c.dom.url.URL
 import kotlin.time.Duration
 
 @Composable
@@ -85,8 +91,69 @@ fun <T> MutableState<T>.onSet(handler: MutableState<T>.(T) -> Unit) = interceptS
     true
 }
 
-fun <T, U> State<T>.map(transform: (T) -> U) = object : State<U> {
-    override val value get() = transform(this@map.value)
+@Composable
+fun <T, U> State<T>.map(transform: (T) -> U): State<U> {
+    val currentTransform = rememberUpdatedState(transform)
+    return remember(this) {
+        object : State<U> {
+            override val value get() = currentTransform.value(this@map.value)
+        }
+    }
+}
+
+@Composable
+fun <T, U> MutableState<T>.map(transform: (T) -> U, transformBack: (U) -> T): MutableState<U> {
+    val currentTransform = rememberUpdatedState(transform)
+    val currentTransformBack = rememberUpdatedState(transformBack)
+    return remember(this) {
+        object : MutableState<U> {
+            override var value: U
+                get() = currentTransform.value(this@map.value)
+                set(value) {
+                    this@map.value = currentTransformBack.value(value)
+                }
+
+            override fun component1() = value
+            override fun component2(): (U) -> Unit = { value = it }
+        }
+    }
+}
+
+@Composable
+fun rememberQueryParameter(
+    name: String,
+    initialValue: String? = null,
+): MutableState<String?> {
+    val state = remember(name, initialValue) { mutableStateOf(initialValue ?: currentQueryParameter(name)) }
+
+    val value = state.value
+    LaunchedEffect(name, value) {
+        if (AppGlobals.isExporting) return@LaunchedEffect
+        val url = URL(window.location.href)
+
+        if (url.searchParams.get(name) == value) return@LaunchedEffect
+        if (value == null) {
+            url.searchParams.delete(name)
+        } else {
+            url.searchParams.set(name, value)
+        }
+        window.history.replaceState(null, "", url.toString())
+    }
+
+    DisposableEffect(name) {
+        if (AppGlobals.isExporting) return@DisposableEffect onDispose {}
+        val listener = EventListener { state.value = currentQueryParameter(name) }
+        window.addEventListener("popstate", listener)
+
+        onDispose { window.removeEventListener("popstate", listener) }
+    }
+    return state
+}
+
+private fun currentQueryParameter(name: String) = if (AppGlobals.isExporting) {
+    null
+} else {
+    URL(window.location.href).searchParams.get(name)
 }
 
 @Composable

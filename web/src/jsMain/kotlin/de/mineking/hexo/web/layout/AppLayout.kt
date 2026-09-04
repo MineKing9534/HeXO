@@ -24,11 +24,11 @@ import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.GitHubIcon
 import de.mineking.hexo.web.icons.SettingsIcon
-import de.mineking.hexo.web.onSet
+import de.mineking.hexo.web.map
 import de.mineking.hexo.web.pages.watchparty.WatchPartyHostOptions
+import de.mineking.hexo.web.rememberQueryParameter
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsView
-import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.ATarget
 import org.jetbrains.compose.web.attributes.target
 import org.jetbrains.compose.web.dom.A
@@ -40,7 +40,6 @@ import org.jetbrains.compose.web.dom.Main
 import org.jetbrains.compose.web.dom.Nav
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.url.URL
 
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
@@ -73,18 +72,14 @@ fun rememberAppLayout() = LocalAppLayout.current
 @Layout(".layout.RootLayout")
 fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
     val data = ctx.data.getValue<PageData>()
+    val fullscreenParameter = rememberQueryParameter("fullscreen").map(
+        transform = { it == "true" },
+        transformBack = { if (it) "true" else null },
+    )
 
-    val layout = remember(ctx.route.path) {
+    val layout = remember(ctx.route.path, fullscreenParameter) {
         AppLayout(
-            fullscreen = mutableStateOf("fullscreen" in ctx.route.queryParams).onSet { fullscreen ->
-                val url = URL(window.location.href)
-                if (fullscreen) {
-                    url.searchParams.set("fullscreen", "true")
-                } else {
-                    url.searchParams.delete("fullscreen")
-                }
-                window.history.replaceState(null, "", url.toString())
-            },
+            fullscreen = fullscreenParameter,
             supportsFullScreen = mutableStateOf(false),
             pageStyle = mutableStateOf(data.style),
         )
