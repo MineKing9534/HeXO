@@ -50,7 +50,7 @@ fun String.parseBKENotation(
 
     val origin = origin ?: run {
         board[0, 0].apply {
-            owner = CellOwner.X
+            owner = turns.first().player.other
             turn = 0
         }
         CellCoordinate.Zero
