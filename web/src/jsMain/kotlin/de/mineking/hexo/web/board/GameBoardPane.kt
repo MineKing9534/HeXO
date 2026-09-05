@@ -8,17 +8,16 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
 import de.mineking.hexo.board.Move
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.moves
 import de.mineking.hexo.board.plus
+import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
-import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
@@ -28,18 +27,19 @@ import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.playerWithColor
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
-import de.mineking.hexo.web.audio.SoundEffect
+import de.mineking.hexo.web.components.Slider
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.playerCssColor
-import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -50,12 +50,15 @@ import org.w3c.dom.events.KeyboardEvent
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
-import kotlin.time.Clock
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: GameBoardViewManager) {
+fun GameBoardPane(
+    game: GameWithPosition,
+    isLive: Boolean,
+    plain: Boolean = false,
+    boardViewManager: GameBoardViewManager,
+    content: BoardContentBuilder? = null,
+) {
     val viewport = remember { mutableStateOf(BoardViewport()) }
 
     val watchPartyController = rememberWatchPartyController()
@@ -70,6 +73,7 @@ fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: Gam
 
     val position = game.rememberPosition(boardViewManager.currentMove)
     val (effectiveTurnPlayer, effectivePlacementsRemaining) = position.nextTurn
+    val playerTimeProvider = rememberPlayerTimeProvider(game, boardViewManager.currentMove)
     val allowAnalyzerOverlay = !(isLive && game.options.rated)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
@@ -81,10 +85,11 @@ fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: Gam
 
     AnalysedBoardPane(
         boardViewManager = boardViewManager.transformBoard(game to boardViewManager.currentMove) { overlay ->
-            val board = game.position.toBoard(focusWinningRows = false)
+            val board = position.toBoard(focusWinningRows = false)
             (board + overlay).focusWinningRows()
         },
         readOnly = true,
+        plain = plain,
         allowAnalyzerOverlay = allowAnalyzerOverlay,
         turn = analyzerTurn,
         players = game.players.associate { it.color to it.gamePlayer },
@@ -95,8 +100,17 @@ fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: Gam
             boardViewManager.apply(interaction)
         },
     ) {
-        TurnIndicator(game, isLive, game.playerWithColor(effectiveTurnPlayer), effectivePlacementsRemaining)
-        BoardControls(game, boardViewManager, viewport)
+        content?.invoke(this)
+
+        if (!plain) {
+            TurnIndicator(
+                game,
+                game.playerWithColor(effectiveTurnPlayer),
+                effectivePlacementsRemaining,
+                playerTimeProvider,
+            )
+            BoardControls(game, boardViewManager, viewport)
+        }
     }
 }
 
@@ -114,13 +128,13 @@ private fun BoardScope.BoardControls(
         viewport = viewport,
     )
 
-    Div({ classes("absolute", "top-3", "left-3", "z-20") }) {
-        BoardActionButton(onClick = { boardViewManager.currentMove = Int.MAX_VALUE }) {
-            Text("Move ${min(boardViewManager.currentMove, totalMoves)}/$totalMoves")
-        }
-    }
-
-    Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
+    Div({
+        classes(
+            "absolute", "bottom-3", "left-3", "right-3", "z-20", "flex", "items-center", "gap-3",
+            // Reserve the board tools' width (including borders) plus the same gap as this row.
+            if (boardViewManager.hasClearableHighlights) "sm:right-[calc(15.75rem+8px)]" else "sm:right-[calc(12rem+6px)]",
+        )
+    }) {
         BoardActionButton(
             enabled = boardViewManager.currentMove > 0,
             attrs = {
@@ -138,6 +152,75 @@ private fun BoardScope.BoardControls(
             },
             onClick = { boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronRightIcon { classes("size-4") } }
+
+        MoveSliderPanel(boardViewManager, totalMoves)
+    }
+}
+
+@Composable
+private fun MoveSliderPanel(boardViewManager: GameBoardViewManager, totalMoves: Int) {
+    val currentMove = boardViewManager.currentMove.coerceIn(0, totalMoves)
+
+    Div({
+        classes(
+            "absolute", "bottom-14", "left-0", "sm:static", "flex", "min-w-0", "sm:flex-1",
+            "items-center", "gap-2", "rounded-lg", "border",
+            "border-slate-700/70", "bg-slate-950/85", "pl-1", "pr-1", "sm:pr-3", "shadow-md", "backdrop-blur-xs",
+        )
+    }) {
+        Div {
+            MoveIndicatorButton(
+                currentMove = currentMove,
+                totalMoves = totalMoves,
+                onClick = { boardViewManager.currentMove = Int.MAX_VALUE },
+            )
+        }
+
+        Div({ classes("hidden", "sm:flex", "h-9", "min-w-0", "flex-1", "items-center") }) {
+            Slider(
+                value = currentMove.toFloat(),
+                range = 0f..totalMoves.toFloat(),
+                step = 1f,
+                onValueChange = {
+                    val move = it.toInt().coerceIn(0, totalMoves)
+                    boardViewManager.currentMove = if (move == totalMoves) Int.MAX_VALUE else move
+                },
+            ) {
+                attr("aria-label", "Select move")
+                if (totalMoves == 0) disabled()
+                onKeyDown { it.stopPropagation() }
+            }
+        }
+    }
+}
+
+@Composable
+private fun MoveIndicatorButton(currentMove: Int, totalMoves: Int, onClick: () -> Unit) {
+    val reviewingHistory = currentMove < totalMoves
+    Button({
+        classes(
+            "inline-flex", "h-9", "shrink-0", "cursor-pointer", "items-center", "gap-2", "rounded-md",
+            "px-2.5",
+            "transition-colors", "hover:bg-slate-900/85",
+        )
+        if (reviewingHistory) {
+            attr("title", "Return to latest move")
+        } else {
+            attr("title", "Latest move")
+        }
+        attr("aria-label", if (reviewingHistory) "Return to latest move" else "Latest move")
+        onClick { onClick() }
+    }) {
+        Span({ classes("text-[10px]", "font-semibold", "uppercase", "tracking-[0.16em]", "text-slate-400") }) {
+            Text("Move")
+        }
+        Span({ classes("flex", "items-baseline", "gap-1", "tabular-nums") }) {
+            Span({ classes("text-sm", "font-extrabold", if (reviewingHistory) "text-amber-200" else "text-slate-100") }) {
+                Text("$currentMove")
+            }
+            Span({ classes("text-[10px]", "font-medium", "text-slate-600") }) { Text("/") }
+            Span({ classes("text-xs", "font-semibold", "text-slate-400") }) { Text("$totalMoves") }
+        }
     }
 }
 
@@ -156,26 +239,27 @@ private fun BoardScope.MoveKeyboardShortcuts(
             if (event !is KeyboardEvent) return@EventListener
             if (event.altKey || event.ctrlKey || event.metaKey) return@EventListener
             if ((event.target as? HTMLElement)?.isContentEditable == true) return@EventListener
+            val numberShortcut = event.numberShortcut
 
-            when (event.key) {
-                "ArrowLeft" -> {
+            when {
+                event.key == "ArrowLeft" -> {
                     event.preventDefault()
                     boardViewManager.currentMove = previousMove(boardViewManager.currentMove, totalMoves)
                 }
-                "ArrowRight" -> {
+                event.key == "ArrowRight" -> {
                     event.preventDefault()
                     boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves)
                 }
-                in (1..9).map { "$it" } -> {
-                    val shortcut = event.key.toInt()
+                numberShortcut != null -> {
+                    event.preventDefault()
                     val max = boardViewManager.currentMove.coerceIn(0, currentMoves.size)
-                    if (shortcut > max) return@EventListener
+                    if (numberShortcut > max) return@EventListener
 
-                    val coordinate = currentMoves[max - shortcut].coordinate
+                    val coordinate = currentMoves[max - numberShortcut].coordinate
                     val point = currentRenderLayout.size.run { coordinate.toPixel() }
 
                     val current = viewport.value
-                    viewport.value = current.copy(center = point / current.zoom)
+                    viewport.value = current.copy(center = point)
                 }
             }
         }
@@ -185,35 +269,21 @@ private fun BoardScope.MoveKeyboardShortcuts(
     }
 }
 
+private val KeyboardEvent.numberShortcut: Int?
+    get() = when {
+        code.startsWith("Digit") -> code.removePrefix("Digit").toIntOrNull()
+        code.startsWith("Numpad") -> code.removePrefix("Numpad").toIntOrNull()
+        else -> key.toIntOrNull()
+    }?.takeIf { it in 1..9 }
+
 private fun previousMove(move: Int, totalMoves: Int) = max(0, min(move, totalMoves) - 1)
 private fun nextMove(move: Int, totalMoves: Int) = if (move >= totalMoves - 1) Int.MAX_VALUE else move + 1
 
 @Composable
-private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
-    val soundPlayer = rememberSoundPlayer()
-
-    val timeRemaining by rememberUpdatedState(player.timeRemaining ?: return)
-    var timer by remember { mutableStateOf(timeRemaining.duration) }
-    val current by rememberUpdatedState(current)
-
-    val playerTimerSound by SettingsKey.SessionViewTimerSounds.collectAsState()
-
-    DisposableEffect(Unit) {
-        fun countdown() {
-            val delta = if (current) Clock.System.now() - timeRemaining.timestamp else Duration.ZERO
-            timer = maxOf(Duration.ZERO, timeRemaining.duration - delta)
-        }
-
-        val interval = window.setInterval(::countdown, 250)
-        onDispose { window.clearInterval(interval) }
-    }
-
-    LaunchedEffect(timer.inWholeSeconds) {
-        if (playerTimerSound && timer <= 10.seconds) soundPlayer.play(SoundEffect.CountdownWarning)
-    }
-
+private fun PlayerTimer(player: Player, current: Boolean, timeProvider: PlayerTimeProvider) {
+    val timer = timeProvider.remainingTime(player, current) ?: return
     Div({
-        classes("font-extrabold", "text-lg", "tabular-nums")
+        classes("font-extrabold", "text-lg", "leading-none", "tabular-nums")
         if (current) {
             classes("text-emerald-200")
         } else {
@@ -230,40 +300,44 @@ private fun PlayerTimer(player: LiveSessionPlayer, current: Boolean) {
 @Composable
 private fun TurnIndicator(
     game: Game,
-    isLive: Boolean,
     currentPlayer: Player,
     placementsRemaining: Int,
+    timeProvider: PlayerTimeProvider,
 ) {
     @Composable
     fun PlayerIndicator(player: Player) {
         val isCurrentTurn = player === currentPlayer
         Div({ classes("flex", "flex-col", "justify-center", "gap-2") }) {
             Div({
-                classes("rounded-md", "py-1", "px-3", "border", "flex", "items-center", "justify-between")
+                classes(
+                    "h-9", "min-w-0", "rounded-lg", "border-2", "px-2.5", "flex", "items-center", "justify-between", "gap-2",
+                    "bg-slate-900/75", "backdrop-blur-xs",
+                )
                 if (isCurrentTurn) {
-                    classes("bg-emerald-500/20", "border-emerald-500/50")
+                    classes("border-emerald-400/70", "shadow-[inset_0_0_18px_rgb(16_185_129/0.08)]")
                 } else {
-                    classes("bg-slate-500/20", "border-slate-500/50")
+                    classes("border-slate-500/60")
                 }
             }) {
-                Player(player.gamePlayer)
-                if (player is LiveSessionPlayer && isLive) PlayerTimer(player, isCurrentTurn)
+                PlayerName(player.gamePlayer) {
+                    classes(
+                        "min-w-0", "text-[11px]", "font-semibold", "uppercase", "tracking-[0.14em]",
+                        if (isCurrentTurn) "text-slate-100" else "text-slate-300",
+                    )
+                }
+                PlayerTimer(player, isCurrentTurn, timeProvider)
             }
             if (isCurrentTurn) PlacementsRemainingIndicator(player.color, placementsRemaining)
         }
     }
 
-    Div({ classes("pointer-events-none", "absolute", "top-3", "left-3", "right-3", "flex", "justify-center") }) {
-        Div({
-            classes("pointer-events-auto", "shadow-xl", "bg-slate-800/85", "rounded-lg", "p-3", "max-w-xl", "w-full", "backdrop-blur-xs")
-        }) {
-            if (game.tournament != null) TournamentInfoCard(game)
-            if (game.options.rated) RatedInfoCard(game)
+    Div({ classes("pointer-events-none", "absolute", "top-3", "left-3", "right-3", "mx-auto", "max-w-xl") }) {
+        if (game.tournament != null) TournamentInfoCard(game)
+        if (game.options.rated) RatedInfoCard(game)
 
-            Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
-                game.players.forEach {
-                    PlayerIndicator(it)
-                }
+        Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
+            game.players.forEach {
+                PlayerIndicator(it)
             }
         }
     }
@@ -271,42 +345,19 @@ private fun TurnIndicator(
 
 @Composable
 private fun RatedInfoCard(game: Game) {
-    Div({
-        classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
-    }) {
-        Div({ classes("mb-1.5", "flex", "items-center", "justify-center", "text-xs") }) {
-            Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-400", "uppercase") }) {
-                Text("Rated Match")
+    HudInfoCard(
+        accent = "border-amber-400/35",
+        header = {
+            HudInfoTitle("bg-amber-300", "text-amber-200", "Rated match")
+            Span({ classes("shrink-0", "text-[10px]", "font-semibold", "uppercase", "tracking-wider", "text-slate-500") }) {
+                Text("ELO")
             }
-        }
-
+        },
+    ) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
-                Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Player(player.gamePlayer)
-                    Span({ classes("text-sm", "font-medium", "text-slate-300") }) {
-                        Text("Elo ${player.elo}")
-
-                        @Composable
-                        fun EloDiff(diff: Int) {
-                            Span({
-                                classes(if (diff >= 0) "text-emerald-300" else "text-rose-300")
-                            }) {
-                                if (diff >= 0) Text("+")
-                                Text("$diff")
-                            }
-                        }
-
-                        Span({ classes("ml-1", "text-xs") }) {
-                            if (player is LiveSessionPlayer) {
-                                EloDiff(player.ratingAdjustment?.eloGain ?: 0)
-                                Text("/")
-                                EloDiff(player.ratingAdjustment?.eloLoss ?: 0)
-                            } else if (player is FinishedGamePlayer) {
-                                EloDiff(player.eloChange ?: 0)
-                            }
-                        }
-                    }
+                HudPlayerRow(player) {
+                    RatedPlayerElo(player)
                 }
             }
         }
@@ -317,27 +368,33 @@ private fun RatedInfoCard(game: Game) {
 private fun TournamentInfoCard(game: Game) {
     val tournament = game.tournament ?: return
 
-    Div({
-        classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
-    }) {
-        Div({ classes("mb-1.5", "flex", "items-center", "justify-between", "gap-3", "text-xs") }) {
-            Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-200") }) {
-                Text(tournament.tournament.info.name)
+    HudInfoCard(
+        accent = "border-sky-400/35",
+        header = {
+            Div({ classes("min-w-0") }) {
+                HudInfoTitle("bg-sky-300", "text-sky-200", "Tournament")
+                Span({ classes("mt-0.5", "block", "truncate", "text-xs", "font-semibold", "text-slate-200") }) {
+                    Text(tournament.tournament.info.name)
+                }
             }
-            Span({ classes("shrink-0", "font-medium", "text-slate-400") }) {
-                Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")
+            Span({
+                classes(
+                    "shrink-0", "rounded-md", "border", "border-slate-600/60", "bg-slate-950/45",
+                    "px-2", "py-1", "text-[10px]", "font-semibold", "text-slate-400",
+                )
+            }) {
+                Text("Game ${tournament.matchInfo.currentGameNumber}/${tournament.matchInfo.bestOf}")
             }
-        }
-
+        },
+    ) {
         Div({ classes("grid", "grid-cols-2", "gap-2") }) {
             game.players.forEach { player ->
-                Div({ classes("flex", "items-center", "gap-1.5", "text-xs") }) {
-                    Player(player.gamePlayer)
+                HudPlayerRow(player) {
                     Span({ classes("shrink-0", "tabular-nums") }) {
                         Span({
-                            classes("font-bold", "text-sm")
+                            classes("text-sm", "font-extrabold")
                             classes(if ((player.tournamentMatchWins ?: 0) == tournament.matchInfo.requiredWins - 1) {
-                                "text-emerald-500"
+                                "text-emerald-300"
                             } else {
                                 "text-slate-300"
                             })
@@ -354,11 +411,75 @@ private fun TournamentInfoCard(game: Game) {
     }
 }
 
+@Composable
+private fun HudInfoCard(accent: String, header: @Composable () -> Unit, content: @Composable () -> Unit) {
+    Div({
+        classes(
+            "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-900/75",
+            "backdrop-blur-xs",
+        )
+    }) {
+        Div({ classes("flex", "min-h-9", "items-center", "justify-between", "gap-3", "border-b", "border-slate-700/55", "px-3", "py-2") }) {
+            header()
+        }
+        Div({ classes("p-2") }) { content() }
+    }
+}
+
+@Composable
+private fun HudInfoTitle(dotColor: String, textColor: String, title: String) {
+    Div({ classes("flex", "min-w-0", "items-center", "gap-2") }) {
+        Span({ classes("size-1.5", "shrink-0", "rounded-full", dotColor) })
+        Span({ classes("truncate", "text-[10px]", "font-bold", "uppercase", "tracking-[0.16em]", textColor) }) {
+            Text(title)
+        }
+    }
+}
+
+@Composable
+private fun HudPlayerRow(player: Player, content: @Composable () -> Unit) {
+    Div({
+        classes(
+            "flex", "min-w-0", "items-center", "justify-between", "gap-2", "rounded-md", "border",
+            "border-white/5", "bg-slate-950/35", "px-2", "py-1.5",
+        )
+    }) {
+        PlayerName(player.gamePlayer) {
+            classes("min-w-0", "text-[10px]", "font-semibold", "uppercase", "tracking-wider", "text-slate-300")
+        }
+        content()
+    }
+}
+
+@Composable
+private fun RatedPlayerElo(player: Player) {
+    Span({ classes("shrink-0", "text-xs", "font-semibold", "tabular-nums", "text-slate-300") }) {
+        Text("${player.elo}")
+        when (player) {
+            is LiveSessionPlayer -> player.ratingAdjustment?.let {
+                RatingChange(it.eloGain)
+                Span({ classes("mx-0.5", "text-slate-600") }) { Text("/") }
+                RatingChange(it.eloLoss)
+            }
+            is FinishedGamePlayer -> RatingChange(player.eloChange)
+            else -> Unit
+        }
+    }
+}
+
+@Composable
+private fun RatingChange(value: Int?) {
+    value ?: return
+    Span({ classes("ml-1", if (value >= 0) "text-emerald-300" else "text-rose-300") }) {
+        Text(if (value > 0) "+$value" else "$value")
+    }
+}
+
 data class GamePlayer(val displayName: String, val color: CellOwner)
 val Player.gamePlayer get() = GamePlayer(displayName, color)
 
 @Composable
-fun Player(
+fun PlayerName(
     player: GamePlayer,
     attrs: AttrBuilderContext<HTMLSpanElement>? = null,
 ) {

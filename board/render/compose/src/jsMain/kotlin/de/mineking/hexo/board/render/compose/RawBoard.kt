@@ -15,7 +15,6 @@ import de.mineking.hexo.board.render.image.BoardRenderLayout
 import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.Stroke
-import de.mineking.hexo.board.render.image.createHex
 import de.mineking.hexo.board.render.image.createRenderLayout
 import de.mineking.hexo.board.render.image.drawBoard
 import de.mineking.hexo.board.render.image.plus
@@ -149,11 +148,14 @@ private fun HTMLCanvasElement.drawBoard(
             if (hoveredCell == null || cellHoverColor == null) return@middleLayer
             val cell = layout.board.cells[hoveredCell]
 
-            backend.drawPolygon(
-                shape = hoveredCell.toPixel().createHex(hexSize),
-                color = cellHoverColor.withAlpha(48),
-                outline = if (cell != null && (cell.highlight != null || cell.focused)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
-            )
+            theme.cellShape.run {
+                backend.drawCellShape(
+                    point = hoveredCell.toPixel(),
+                    radius = hexSize,
+                    color = cellHoverColor.withAlpha(48),
+                    outline = if (cell != null && (cell.highlight != null || cell.focused)) null else Stroke(cellHoverColor.withAlpha(140), 2f),
+                )
+            }
         },
     )
 }

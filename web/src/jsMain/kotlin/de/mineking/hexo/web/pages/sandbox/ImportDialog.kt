@@ -12,16 +12,16 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.parse.RemoteBoardParser
 import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.game.model.game.FinishedGameRepository
-import de.mineking.hexo.web.components.Badge
+import de.mineking.hexo.web.components.ActionButton
+import de.mineking.hexo.web.components.ButtonSize
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.LoadingIndicatorSize
 import de.mineking.hexo.web.components.TextInput
 import de.mineking.hexo.web.icons.DownloadIcon
 import kotlinx.coroutines.launch
 import org.jetbrains.compose.web.attributes.InputType
-import org.jetbrains.compose.web.attributes.disabled
-import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
@@ -40,9 +40,10 @@ fun ImportDialog(
 
     Dialog(
         title = "Import Position",
+        supportingText = "Load a board from a shared position or finished game.",
         onClose = onClose,
         actionRow = {
-            ConfirmButton(
+            ImportButton(
                 formationRepository = formationRepository,
                 finishedGameRepository = finishedGameRepository,
                 url = url,
@@ -52,28 +53,29 @@ fun ImportDialog(
             )
         },
     ) {
-        Div({ classes("text-sm", "font-semibold", "uppercase", "text-slate-300") }) {
-            Text("URL")
+        Div({ classes("grid", "gap-3", "rounded-xl", "border", "border-slate-800", "bg-slate-950/35", "p-3") }) {
+            Div({ classes("grid", "gap-0.5") }) {
+                Div({ classes("text-sm", "font-semibold", "text-slate-200") }) { Text("Position URL") }
+                Div({ classes("text-xs", "text-slate-500") }) { Text("Paste a game or sandbox link") }
+            }
+            UrlInput(
+                url = url,
+                onUrlUpdate = {
+                    url = it
+                    error = false
+                },
+                valid = valid,
+            )
         }
-        Div({ classes("text-xs", "text-slate-500") }) {
-            Text("Game or Sandbox Position Link")
-        }
-
-        UrlInput(
-            url = url,
-            onUrlUpdate = {
-                url = it
-                error = false
-            },
-            valid = valid,
-        )
 
         if (error) {
-            Div({ classes("min-h-5", "text-sm", "leading-relaxed", "text-rose-400") }) {
-                Span({ classes("font-bold", "uppercase") }) {
-                    Text("Error: ")
-                }
-                Text("Position or game not found")
+            Div({
+                classes(
+                    "rounded-lg", "border", "border-rose-400/25", "bg-rose-400/8", "px-3", "py-2",
+                    "text-sm", "text-rose-300",
+                )
+            }) {
+                Text("The position or game could not be found.")
             }
         }
     }
@@ -89,22 +91,17 @@ private fun UrlInput(url: String, onUrlUpdate: (String) -> Unit, valid: Boolean)
         attrs = { classes("text-ellipsis") },
         onValueChange = onUrlUpdate,
     )
-    Div({ classes("text-xs", "text-slate-500") }) {
-        Span({ classes("font-bold", "uppercase") }) {
-            Text("Hint: ")
+    Div({ classes("text-xs", "leading-relaxed", "text-slate-500") }) {
+        Text("To import a specific game state, append ")
+        Span({ classes("rounded", "bg-slate-800", "px-1", "py-0.5", "font-mono", "text-sky-300") }) {
+            Text("?move=…")
         }
-        Text("You can add ")
-        Badge(Color.Sky, {
-            classes("mx-1", "rounded-md", "px-1", "py-0.5", "font-mono", "font-semibold")
-        }) {
-            Text("?move=...")
-        }
-        Text(" to a game url to import the position at a specific move!")
+        Text(" to the game URL.")
     }
 }
 
 @Composable
-private fun ConfirmButton(
+private fun ImportButton(
     formationRepository: FormationRepository,
     finishedGameRepository: FinishedGameRepository,
     url: String,
@@ -117,24 +114,12 @@ private fun ConfirmButton(
 
     val parser = remember { RemoteBoardParser(formationRepository, finishedGameRepository) }
 
-    Button({
-        if (!valid) disabled()
-
-        classes(
-            "rounded-lg", "border", "px-4", "py-2", "transition", "text-sm", "font-medium", "h-10", "w-24",
-            "flex", "items-center", "justify-center", "gap-1.5",
-        )
-
-        if (loading || !valid) {
-            classes("border-slate-500/40", "bg-slate-500/15", "text-slate-300")
-        } else {
-            classes(
-                "border-emerald-500/40", "bg-emerald-500/15", "text-emerald-300",
-                "hover:bg-emerald-500/25", "hover:text-emerald-100", "cursor-pointer",
-            )
-        }
-
-        onClick {
+    ActionButton(
+        enabled = valid && !loading,
+        size = ButtonSize.Medium,
+        color = Color.Sky,
+        attrs = { classes("inline-flex", "items-center", "justify-center", "gap-2", "px-5!") },
+        onClick = {
             loading = true
             onErrorUpdate(false)
             coroutineScope.launch {
@@ -146,13 +131,13 @@ private fun ConfirmButton(
                     loading = false
                 }
             }
-        }
-    }) {
+        },
+    ) {
         if (loading) {
-            LoadingIndicator { classes("size-6") }
+            LoadingIndicator(LoadingIndicatorSize.Medium)
         } else {
             DownloadIcon {
-                classes("size-5", "shrink-0")
+                classes("size-4", "shrink-0")
             }
             Text("Import")
         }

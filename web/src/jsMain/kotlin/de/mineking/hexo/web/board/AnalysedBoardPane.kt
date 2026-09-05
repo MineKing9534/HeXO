@@ -22,6 +22,7 @@ import org.w3c.dom.HTMLCanvasElement
 fun AnalysedBoardPane(
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
+    plain: Boolean = false,
     allowAnalyzerOverlay: Boolean,
     turn: AnalyzerTurn?,
     players: Map<CellOwner, GamePlayer>,
@@ -37,6 +38,7 @@ fun AnalysedBoardPane(
     BoardPane(
         boardViewManager = boardViewManager,
         readOnly = readOnly,
+        plain = plain,
         viewport = viewport,
         onViewportChange = onViewportChange,
         onBoardInteraction = onBoardInteraction,
@@ -45,7 +47,7 @@ fun AnalysedBoardPane(
     ) {
         content?.invoke(this)
 
-        if (analyzerState != null && turn != null) {
+        if (analyzerState != null && turn != null && !plain) {
             AnalyzerStatusDisplay(
                 state = analyzerState,
                 allowAnalyzerOverlay = allowAnalyzerOverlay,
@@ -71,7 +73,12 @@ private fun AnalyzerStatusDisplay(
         state = state,
         analyzedPlayer = effectiveTurnPlayer,
         otherPlayer = otherPlayer,
-        attrs = { classes("absolute", "right-4", "top-4") },
+        attrs = {
+            classes(
+                "absolute", "right-3", "bottom-28",
+                "sm:right-4", "sm:top-4", "sm:bottom-auto",
+            )
+        },
     ) {
         if (allowAnalyzerOverlay) {
             ActionButton(

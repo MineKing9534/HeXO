@@ -2,7 +2,6 @@ package de.mineking.hexo.hds.implementation.session
 
 import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.session.DetailedSession
-import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.session.Session
 import de.mineking.hexo.game.model.session.SessionId
 import de.mineking.hexo.game.model.session.SessionNotFoundError
@@ -34,7 +33,7 @@ import kotlinx.coroutines.launch
 private val logger = KotlinLogging.logger {}
 
 internal class SessionRepositoryImpl(private val client: HdsApiClient) : SessionRepository {
-    override val url = "${client.host}/session"
+    override val url = "${client.publicUrl}/session"
 
     override val sessions = MutableStateFlow(emptyMap<SessionId, SessionImpl>())
 
@@ -130,7 +129,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
                 if (
                     event.session.state is SessionStateDto.Finished &&
-                    session.players.any { it is LiveSessionPlayer && it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
+                    session.players.any { it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
                 ) {
                     logger.info { "Session ${id.value} removed because it has finished" }
                     cleanup()

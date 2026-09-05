@@ -36,6 +36,7 @@ sealed interface SessionState {
     }
 
     data object Lobby : Detailed
+    data object Closed : Detailed
 
     sealed interface InGame : SessionState {
         companion object : InGame
@@ -52,7 +53,7 @@ interface Session : Entity<SessionId> {
     val gameOptions: GameOptions
     val tournament: TournamentMatchSnapshot?
 
-    val players: List<Player>
+    val players: List<SessionPlayer>
     val state: SessionState
 
     val createdAt: Instant
@@ -87,15 +88,18 @@ enum class SessionPlayerConnectionStatus {
     Disconnected,
 }
 
+interface SessionPlayer : Player {
+    val connectionStatus: SessionPlayerConnectionStatus
+}
+
 data class RatingAdjustment(
     val eloGain: Int,
     val eloLoss: Int,
 )
 
-interface LiveSessionPlayer : Player {
+interface LiveSessionPlayer : SessionPlayer {
     val ratingAdjustment: RatingAdjustment?
     val timeRemaining: LiveDuration?
-    val connectionStatus: SessionPlayerConnectionStatus
 }
 
 data class SessionTurn(

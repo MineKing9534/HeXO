@@ -10,6 +10,8 @@ interface FinishedGame : Game, Entity<GameId> {
 
     override val result: GameResult
     override val players: List<FinishedGamePlayer>
+
+    suspend fun withPosition(): FinishedGameWithPosition
 }
 
 interface FinishedGameWithPosition : FinishedGame, GameWithPosition {

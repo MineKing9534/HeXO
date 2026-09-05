@@ -3,6 +3,7 @@ package de.mineking.hexo.hds.implementation.game
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.toGamePosition
+import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.game.FinishedGameMove
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
 import de.mineking.hexo.game.model.game.FinishedGameRepository
@@ -14,6 +15,7 @@ import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.orThrow
 
 internal class FinishedGameImpl(
     private val client: HdsApiClient,
@@ -62,6 +64,9 @@ internal class FinishedGameImpl(
     override val options = dto.options
     override val tournament = dto.tournament?.toModel(client)
     override val moveCount = dto.moveCount
+
+    override suspend fun withPosition() = client.finishedGameRepository.getGame(id)
+        .orThrow { EntityNotFoundException() }
 }
 
 internal abstract class PlayerImpl(

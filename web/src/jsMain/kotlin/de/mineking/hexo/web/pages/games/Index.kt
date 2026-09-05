@@ -5,62 +5,98 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.core.Page
-import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.game.model.game.FinishedGameRepository
-import de.mineking.hexo.game.model.game.Game
+import de.mineking.hexo.game.model.game.FinishedGameWithPosition
+import de.mineking.hexo.game.model.game.GameOptions
+import de.mineking.hexo.game.model.game.TournamentMatchSnapshot
 import de.mineking.hexo.game.model.game.rated
 import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.page
-import de.mineking.hexo.web.board.Player
+import de.mineking.hexo.web.board.GameBoardPane
+import de.mineking.hexo.web.board.GameBoardViewManager
+import de.mineking.hexo.web.board.PlayerName
 import de.mineking.hexo.web.board.gamePlayer
+import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
-import de.mineking.hexo.web.components.ButtonSize
+import de.mineking.hexo.web.components.BadgeSize
+import de.mineking.hexo.web.components.Card
+import de.mineking.hexo.web.components.CardHeader
+import de.mineking.hexo.web.components.CardLoadingState
 import de.mineking.hexo.web.components.Color
-import de.mineking.hexo.web.components.ContentCard
+import de.mineking.hexo.web.components.EmptyStateCard
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.Pagination
+import de.mineking.hexo.web.components.RatedFilter
+import de.mineking.hexo.web.components.RatedFilterControl
 import de.mineking.hexo.web.components.ScrollableView
-import de.mineking.hexo.web.components.Select
-import de.mineking.hexo.web.components.StatusCard
-import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.formatCompact
 import de.mineking.hexo.web.icons.CasualGameIcon
-import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
+import de.mineking.hexo.web.icons.CloseIcon
+import de.mineking.hexo.web.icons.EyeIcon
 import de.mineking.hexo.web.icons.StarIcon
+import de.mineking.hexo.web.icons.TimeControlIcon
 import de.mineking.hexo.web.icons.TournamentIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
+import de.mineking.hexo.web.map
 import de.mineking.hexo.web.rememberHdsRepositories
-import kotlinx.browser.window
+import de.mineking.hexo.web.rememberQueryParameter
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
+import org.jetbrains.compose.web.dom.AttrBuilderContext
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H2
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
-import org.w3c.dom.url.URL
+import org.w3c.dom.HTMLSpanElement
 import kotlin.js.Date
+import kotlin.time.Duration.Companion.milliseconds
 
 private const val PAGE_SIZE = 10
 
-private enum class RatedFilter(val rated: Boolean?, val queryValue: String, private val label: String) {
-    All(null, "all", "All"),
-    Rated(true, "rated", "Rated"),
-    Casual(false, "casual", "Casual"),
-    ;
+private class GamePreviewState {
+    var selection by mutableStateOf<FinishedGame?>(null)
+        private set
+    var game by mutableStateOf<FinishedGameWithPosition?>(null)
+        private set
+    var closing by mutableStateOf(false)
+        private set
 
-    override fun toString() = label
+    suspend fun open(selectedGame: FinishedGame, boardViewManager: GameBoardViewManager) {
+        selection = selectedGame
+        game = null
+        closing = false
 
-    companion object {
-        fun fromQuery(value: String?) = entries.find { it.queryValue == value } ?: All
+        val positionedGame = selectedGame.withPosition()
+        if (selection?.id == selectedGame.id) {
+            game = positionedGame
+            boardViewManager.currentMove = Int.MAX_VALUE
+        }
+    }
+
+    suspend fun close() {
+        closing = true
+        delay(180.milliseconds)
+        reset()
+    }
+
+    fun reset() {
+        selection = null
+        game = null
+        closing = false
     }
 }
 
@@ -71,24 +107,39 @@ fun initLobbyListPage(ctx: InitRouteContext) {
 
 @Page
 @Composable
-fun GameHistoryPage(ctx: PageContext) {
+fun GameHistoryPage() {
     val client = rememberHdsRepositories()
-    val initialPage = ctx.route.queryParams["page"]?.toIntOrNull()?.takeIf { it > 0 } ?: 1
-    val initialFilter = RatedFilter.fromQuery(ctx.route.queryParams["rated"])
+    val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
+    var page by rememberQueryParameter("page").map(transform = { it?.toIntOrNull() ?: 1 }, transformBack = { it.toString() })
+    var filter by rememberQueryParameter("rated").map(
+        transform = { RatedFilter.fromQuery(it) },
+        transformBack = { it.queryValue },
+    )
 
     if (client == null) {
-        LoadingState()
+        LoadingState(filter)
     } else {
-        GameList(client.finishedGameRepository, initialPage, initialFilter)
+        GameList(
+            client.finishedGameRepository,
+            boardViewManager,
+            page,
+            filter,
+            onPageChange = { page = it },
+            onFilterChange = {
+                filter = it
+                page = 1
+            },
+        )
     }
 }
 
 @Composable
-private fun LoadingState() {
-    StatusCard {
-        LoadingIndicator { classes("size-9") }
-        P({ classes("font-semibold", "text-slate-200") }) {
-            Text("Loading finished games...")
+private fun LoadingState(filter: RatedFilter) {
+    Div({ classes("lg:h-12") })
+    Div({ classes("mx-auto", "flex", "min-h-0", "w-full", "max-w-5xl") }) {
+        GameListShell(expanded = false) {
+            GameListHeader(filter, onFilterChange = {}, filterEnabled = false)
+            CardLoadingState("Loading finished games")
         }
     }
 }
@@ -96,18 +147,21 @@ private fun LoadingState() {
 @Composable
 private fun GameList(
     finishedGameRepository: FinishedGameRepository,
-    initialPage: Int,
-    initialFilter: RatedFilter,
+    boardViewManager: GameBoardViewManager,
+    page: Int,
+    filter: RatedFilter,
+    onPageChange: (Int) -> Unit,
+    onFilterChange: (RatedFilter) -> Unit,
 ) {
-    var filter by remember { mutableStateOf(initialFilter) }
-    var page by remember { mutableStateOf(initialPage) }
+    val coroutineScope = rememberCoroutineScope()
+
     var games by remember { mutableStateOf(emptyList<FinishedGame>()) }
     var loading by remember { mutableStateOf(true) }
-
-    SyncGameListQueryParameters(page, filter)
+    val preview = remember { GamePreviewState() }
 
     LaunchedEffect(finishedGameRepository, page, filter) {
         loading = true
+        preview.reset()
         games = finishedGameRepository.getGlobalHistory(
             Selector.page(page, PAGE_SIZE)
                 .rated(filter.rated),
@@ -115,169 +169,339 @@ private fun GameList(
         loading = false
     }
 
-    ContentCard({
-        classes(
-            "flex", "max-h-full", "min-h-0", "flex-col", "gap-4", "overflow-hidden", "p-4", "lg:max-h-[calc(100%-3rem)]",
-        )
+    Div({ classes("lg:h-12") })
+    Div({
+        classes("mx-auto", "flex", "min-h-0", "w-full", "gap-4")
+        if (games.isNotEmpty() || preview.selection != null) classes("flex-1")
+        if (preview.selection == null) {
+            classes("max-w-5xl")
+        } else {
+            classes("max-w-none", "flex-col", "lg:grid", "lg:grid-cols-[minmax(26rem,1fr)_minmax(0,2fr)]")
+        }
     }) {
-        Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
-            H2({ classes("text-lg", "font-bold", "text-slate-100") }) {
-                Text("Finished Games")
-            }
+        GameListCard(
+            filter = filter,
+            page = page,
+            games = games,
+            loading = loading,
+            previewGame = preview.selection,
+            onFilterChange = onFilterChange,
+            onPageChange = onPageChange,
+            onPreview = { game ->
+                coroutineScope.launch {
+                    if (preview.selection?.id == game.id) preview.close() else preview.open(game, boardViewManager)
+                }
+            },
+        )
 
-            Select(RatedFilter.entries, filter) {
-                filter = it
-                page = 1
+        preview.selection?.let { selectedGame ->
+            GamePreview(selectedGame, preview.game, boardViewManager, closing = preview.closing) {
+                coroutineScope.launch { preview.close() }
             }
         }
+    }
+}
 
+@Composable
+private fun GameListCard(
+    filter: RatedFilter,
+    page: Int,
+    games: List<FinishedGame>,
+    loading: Boolean,
+    previewGame: FinishedGame?,
+    onFilterChange: (RatedFilter) -> Unit,
+    onPageChange: (Int) -> Unit,
+    onPreview: (FinishedGame) -> Unit,
+) {
+    GameListShell(expanded = games.isNotEmpty()) {
+        GameListHeader(filter, onFilterChange)
         when {
-            loading && games.isEmpty() -> GamesLoadingState()
-            games.isEmpty() -> EmptyGameState(filter, page, onPrevious = { page-- })
-            else -> {
-                Div({ classes("relative", "flex", "min-h-0", "flex-1", "flex-col", "gap-4") }) {
-                    ScrollableView({ classes("flex-1", "pr-2") }) {
-                        Div({ classes("grid", "gap-3") }) {
-                            games.forEach { GameCard(it) }
-                        }
-                    }
+            loading && games.isEmpty() -> CardLoadingState("Loading finished games")
+            games.isEmpty() -> EmptyGameState(filter, page, onPrevious = { onPageChange(page - 1) })
+            else -> LoadedGameList(games, page, loading, previewGame, onPageChange, onPreview)
+        }
+    }
+}
 
-                    Pagination(
-                        page = page,
-                        hasNextPage = games.size == PAGE_SIZE,
-                        onPrevious = { page-- },
-                        onNext = { page++ },
-                    )
+@Composable
+private fun GameListShell(expanded: Boolean, content: @Composable () -> Unit) {
+    Card({
+        classes("flex", "min-h-0", "w-full", "flex-col", "gap-4", "overflow-hidden", "p-4")
+        if (expanded) classes("flex-1") else classes("shrink-0")
+    }) {
+        content()
+    }
+}
 
-                    if (loading) {
-                        Div({
-                            classes(
-                                "absolute", "inset-0", "z-10", "grid", "place-items-center",
-                                "rounded-xl", "bg-slate-900/70", "backdrop-blur-[2px]",
-                            )
-                            attr("aria-label", "Loading games")
-                        }) {
-                            LoadingIndicator { classes("size-9") }
-                        }
-                    }
+@Composable
+private fun LoadedGameList(
+    games: List<FinishedGame>,
+    page: Int,
+    loading: Boolean,
+    previewGame: FinishedGame?,
+    onPageChange: (Int) -> Unit,
+    onPreview: (FinishedGame) -> Unit,
+) {
+    Div({ classes("relative", "flex", "min-h-0", "flex-1", "flex-col", "gap-4") }) {
+        ScrollableView({ classes("flex-1", "pr-2") }) {
+            Div({
+                classes(
+                    "overflow-hidden", "rounded-xl", "border", "border-slate-800/80", "bg-slate-950/35",
+                    "divide-y", "divide-slate-800/80",
+                )
+            }) {
+                games.forEach { game ->
+                    GameRow(game, previewing = game.id == previewGame?.id, onPreview = { onPreview(game) })
                 }
             }
         }
+        Pagination(page, games.size == PAGE_SIZE, onPageChange = onPageChange)
+        if (loading) {
+            Div({
+                classes(
+                    "absolute", "inset-0", "z-10", "grid", "place-items-center", "rounded-xl",
+                    "bg-slate-900/70", "backdrop-blur-[2px]",
+                )
+                attr("aria-label", "Loading games")
+            }) {
+                LoadingIndicator()
+            }
+        }
     }
 }
 
 @Composable
-private fun SyncGameListQueryParameters(page: Int, filter: RatedFilter) {
-    LaunchedEffect(page, filter) {
-        val url = URL(window.location.href)
-        url.searchParams.set("page", page.toString())
-        url.searchParams.set("rated", filter.queryValue)
-        window.history.replaceState(null, "", url.toString())
-    }
-}
+private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit, filterEnabled: Boolean = true) {
+    Div({ classes("flex", "shrink-0", "flex-wrap", "items-center", "justify-between", "gap-3") }) {
+        CardHeader(
+            title = "Match history",
+            supportingText = "Review recently completed games",
+            iconAttrs = { classes("border-sky-400/25", "bg-sky-400/10", "text-sky-300") },
+        ) {
+            TimeControlIcon { classes("size-4", "fill-none", "stroke-current") }
+        }
 
-@Composable
-private fun GamesLoadingState() {
-    Div({ classes("grid", "min-h-64", "place-items-center") }) {
-        LoadingIndicator { classes("size-9") }
+        Div({ classes("flex", "w-full", "justify-end", "sm:w-auto") }) {
+            RatedFilterControl(filter, enabled = filterEnabled, onChange = onFilterChange)
+        }
     }
 }
 
 @Composable
 private fun EmptyGameState(filter: RatedFilter, page: Int, onPrevious: () -> Unit) {
-    SubCard({
-        classes("grid", "min-h-64", "place-items-center", "border-dashed", "bg-slate-950/40", "p-6", "text-center")
+    val description = if (page == 1 && filter != RatedFilter.All) {
+        "No ${filter.label.lowercase()} games have been recorded yet."
+    } else {
+        "There are no games to show on this page."
+    }
+    EmptyStateCard(
+        title = if (page == 1) "No finished games" else "No more games",
+        description = description,
+        action = if (page > 1) {
+            @Composable { ActionButton(label = "Previous page", onClick = onPrevious) }
+        } else {
+            null
+        },
+    )
+}
+
+@Composable
+private fun GameRow(game: FinishedGame, previewing: Boolean, onPreview: () -> Unit) {
+    Div({
+        classes(
+            "relative", "grid", "gap-4", "p-4", "transition-colors", "duration-200", "hover:bg-slate-800/20",
+            "md:grid-cols-[minmax(0,1fr)_auto]", "md:items-center",
+        )
+        if (previewing) {
+            classes(
+                "bg-slate-800/70", "shadow-[inset_0_1px_0_rgb(255_255_255/0.04)]", "hover:bg-slate-800/80",
+            )
+            attr("aria-label", "Currently previewing this game")
+        }
     }) {
-        Div({ classes("flex", "flex-col", "items-center", "gap-2") }) {
-            H2({ classes("text-base", "font-semibold", "text-slate-200") }) {
-                Text(if (page == 1) "No finished games" else "No more games")
+        if (previewing) {
+            GameRowPreviewIndicator()
+        }
+        Div({ classes("min-w-0") }) {
+            Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
+                game.players.forEachIndexed { index, player ->
+                    if (index > 0) {
+                        Span({ classes("text-xs", "font-medium", "text-slate-500") }) {
+                            Text("vs")
+                        }
+                    }
+                    PlayerName(player.gamePlayer) {
+                        classes("font-semibold")
+                        if (player == game.result.winner) classes("font-bold", "text-emerald-200!")
+                    }
+                }
             }
-            P({ classes("max-w-md", "text-sm", "leading-relaxed", "text-slate-500") }) {
-                Text(
-                    if (page == 1 && filter != RatedFilter.All) {
-                        "No ${filter.toString().lowercase()} games have been recorded yet."
-                    } else {
-                        "There are no games to show on this page."
-                    },
-                )
+            P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-600") }) {
+                Text(game.id.value)
             }
-            if (page > 1) {
-                ActionButton(label = "Previous page", onClick = onPrevious)
+
+            Div({ classes("mt-3", "flex", "flex-wrap", "items-center", "gap-2") }) {
+                GameTypeBadge(game.options, game.tournament)
+                Badge(attrs = {
+                    attr("title", game.startedAt.toString())
+                }) {
+                    Text(Date(game.startedAt.toEpochMilliseconds().toDouble()).formatMinutePrecision())
+                }
+                Badge {
+                    Text(game.result.duration.formatCompact())
+                }
+                Badge {
+                    Text("${game.moveCount} moves")
+                }
             }
         }
+
+        GameRowActions(game, previewing, onPreview)
     }
 }
 
 @Composable
-private fun GameCard(game: FinishedGame) {
-    Anchor(AppRoute.FinishedGame(game.id), { classes("block") }) {
-        SubCard({
+private fun GameRowPreviewIndicator() {
+    Span({
+        classes(
+            "absolute", "inset-y-0", "left-0", "w-1", "bg-linear-to-b", "from-sky-300", "to-sky-500",
+            "shadow-sm", "shadow-sky-500/30",
+        )
+        attr("aria-hidden", "true")
+    })
+}
+
+@Composable
+private fun GameRowActions(game: FinishedGame, previewing: Boolean, onPreview: () -> Unit) {
+    Div({ classes("flex", "w-full", "flex-col", "items-stretch", "justify-end", "gap-2", "md:w-auto") }) {
+        Anchor(AppRoute.FinishedGame(game.id), {
             classes(
-                "group", "grid", "gap-3", "p-3", "transition", "hover:border-slate-600/80",
-                "hover:bg-slate-700/80", "md:grid-cols-[1fr_auto]", "md:items-center",
+                "group", "inline-flex", "shrink-0", "items-center", "justify-center", "gap-2", "rounded-lg",
+                "border", "border-slate-700", "bg-slate-800/70", "px-4", "py-2", "text-sm", "font-semibold",
+                "text-slate-300", "transition", "hover:border-slate-600", "hover:bg-slate-700/70",
+                "hover:text-slate-100", "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-emerald-400/60",
             )
         }) {
-            Div({ classes("min-w-0") }) {
-                Div({ classes("flex", "flex-wrap", "items-center", "gap-2") }) {
-                    GameTypeBadge(game)
-                    Badge(attrs = {
-                        attr("title", game.startedAt.toString())
-                    }) {
-                        Text(Date(game.startedAt.toEpochMilliseconds().toDouble()).formatMinutePrecision())
-                    }
-                    Badge {
-                        Text(game.result.duration.formatCompact())
-                    }
-                }
-
-                Div({ classes("mt-2", "flex", "flex-wrap", "items-center", "gap-2") }) {
-                    game.players.forEachIndexed { index, player ->
-                        if (index > 0) {
-                            Span({ classes("text-xs", "font-medium", "text-slate-400") }) {
-                                Text("vs")
-                            }
-                        }
-                        Player(player.gamePlayer) {
-                            classes("font-semibold")
-                            if (player == game.result.winner) classes("text-emerald-300!")
-                        }
-                    }
-                }
-                P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-500") }) {
-                    Text(game.id.value)
-                }
+            Text("Review game")
+            ChevronRightIcon {
+                classes("size-4", "shrink-0", "transition-transform", "group-hover:translate-x-0.5")
             }
+        }
+        Button({
+            classes(
+                "group", "hidden", "w-full", "cursor-pointer", "items-center", "justify-center", "gap-2",
+                "md:inline-flex",
+                "rounded-lg", "border", "px-4", "py-2", "text-sm", "font-semibold", "transition",
+                "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-sky-400/50",
+            )
+            if (previewing) {
+                classes("border-sky-400/40", "bg-sky-500/15", "text-sky-200", "hover:bg-sky-500/20")
+            } else {
+                classes(
+                    "border-slate-700", "bg-slate-950/60", "text-slate-400", "hover:border-slate-600",
+                    "hover:bg-slate-800/70", "hover:text-slate-100",
+                )
+            }
+            onClick { onPreview() }
+        }) {
+            Text(if (previewing) "Hide preview" else "Preview")
+            EyeIcon { classes("size-4", "shrink-0") }
+        }
+    }
+}
 
-            Div({ classes("flex", "items-center", "gap-3", "text-sm", "text-slate-400") }) {
-                Span { Text("${game.moveCount} moves") }
-                ChevronRightIcon {
-                    classes("size-4", "transition-transform", "group-hover:translate-x-0.5")
-                }
+@Composable
+private fun GamePreview(
+    game: FinishedGame,
+    positionedGame: FinishedGameWithPosition?,
+    boardViewManager: GameBoardViewManager,
+    closing: Boolean,
+    onClose: () -> Unit,
+) {
+    Div({
+        classes("hidden", "min-h-0", "min-w-0", "game-preview-enter", "md:flex")
+        if (closing) classes("game-preview-exit")
+    }) {
+        if (positionedGame == null) {
+            Div({
+                classes(
+                    "relative", "grid", "min-h-96", "min-w-0", "flex-1", "place-items-center", "rounded-2xl",
+                    "border", "border-slate-800", "bg-slate-900", "shadow-2xl",
+                )
+                attr("aria-label", "Loading game preview")
+            }) {
+                LoadingIndicator()
+                GamePreviewHeader(game, onClose)
+            }
+        } else {
+            GameBoardPane(game = positionedGame, isLive = false, plain = true, boardViewManager = boardViewManager) {
+                GamePreviewHeader(game, onClose)
             }
         }
     }
 }
 
 @Composable
-private fun GameTypeBadge(game: Game) {
+private fun GamePreviewHeader(game: FinishedGame, onClose: () -> Unit) {
+    Div({
+        classes(
+            "absolute", "left-3", "top-3", "z-20", "min-w-0", "max-w-[calc(100%-4.5rem)]",
+            "rounded-lg", "border", "border-slate-700/80", "bg-slate-950/85", "px-3", "py-2",
+            "shadow-lg", "shadow-black/25", "backdrop-blur-sm",
+        )
+    }) {
+        Div({ classes("mb-0.5", "flex", "items-center", "gap-1.5") }) {
+            EyeIcon { classes("size-3", "text-sky-300") }
+            Span({ classes("text-[0.65rem]", "font-bold", "tracking-widest", "text-sky-300", "uppercase") }) {
+                Text("Previewing")
+            }
+        }
+        H2({ classes("truncate", "text-sm", "font-semibold", "text-slate-100") }) {
+            Text(game.players.joinToString(" vs ") { it.displayName })
+        }
+    }
+
+    Button({
+        attr("aria-label", "Hide preview")
+        classes(
+            "grid", "size-8", "shrink-0", "cursor-pointer", "place-items-center", "rounded-md",
+            "text-slate-400", "transition", "hover:bg-slate-800", "hover:text-rose-400",
+            "focus:outline-none", "focus-visible:ring-2", "focus-visible:ring-rose-400/50",
+            "absolute", "top-2", "right-2",
+        )
+        onClick { onClose() }
+    }) {
+        CloseIcon()
+    }
+}
+
+@Composable
+fun GameTypeBadge(
+    options: GameOptions,
+    tournament: TournamentMatchSnapshot?,
+    size: BadgeSize = BadgeSize.Small,
+    attrs: AttrBuilderContext<HTMLSpanElement>? = null,
+) {
     Badge(
-        when {
-            game.tournament != null -> Color.Sky
-            game.options.rated -> Color.Yellow
-            else -> Color.Neutral
+        color = when {
+            tournament != null -> Color.Sky
+            options.rated -> Color.Yellow
+            else -> Color.Emerald
         },
+        attrs = attrs,
+        size = size,
     ) {
         when {
-            game.tournament != null -> {
-                TournamentIcon { classes("size-3.5") }
+            tournament != null -> {
+                TournamentIcon { classes("size-4", "text-current") }
                 Text("Tournament")
             }
-            game.options.rated -> {
-                StarIcon { classes("size-3.5", "fill-current") }
+            options.rated -> {
+                StarIcon { classes("size-4", "text-amber-300") }
                 Text("Rated")
             }
             else -> {
-                CasualGameIcon { classes("size-3.5", "fill-none", "stroke-current") }
+                CasualGameIcon { classes("size-4", "text-current") }
                 Text("Casual")
             }
         }
@@ -288,34 +512,4 @@ private fun Date.formatMinutePrecision(): String {
     val hours = getHours().toString().padStart(2, '0')
     val minutes = getMinutes().toString().padStart(2, '0')
     return "${toLocaleDateString()}, $hours:$minutes"
-}
-
-@Composable
-private fun Pagination(
-    page: Int,
-    hasNextPage: Boolean,
-    onPrevious: () -> Unit,
-    onNext: () -> Unit,
-) {
-    Div({ classes("flex", "shrink-0", "items-center", "justify-between", "gap-3") }) {
-        ActionButton(enabled = page > 1, size = ButtonSize.Medium, attrs = {
-            classes("inline-flex", "items-center", "gap-1")
-            attr("aria-label", "Previous page")
-        }, onClick = onPrevious) {
-            ChevronLeftIcon { classes("size-4") }
-            Text("Previous")
-        }
-
-        Span({ classes("text-sm", "font-semibold", "text-slate-400") }) {
-            Text("Page $page")
-        }
-
-        ActionButton(enabled = hasNextPage, size = ButtonSize.Medium, attrs = {
-            classes("inline-flex", "items-center", "gap-1")
-            attr("aria-label", "Next page")
-        }, onClick = onNext) {
-            Text("Next")
-            ChevronRightIcon { classes("size-4") }
-        }
-    }
 }

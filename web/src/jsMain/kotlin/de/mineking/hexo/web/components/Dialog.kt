@@ -11,22 +11,34 @@ import org.jetbrains.compose.web.dom.Text
 fun Dialog(
     title: String?,
     onClose: () -> Unit,
+    supportingText: String? = null,
     actionRow: (@Composable () -> Unit)? = null,
     content: @Composable () -> Unit,
 ) {
     Div({
         onClick { onClose() }
-        classes("fixed", "inset-0", "z-50", "grid", "place-items-center", "bg-slate-950/70")
+        classes("fixed", "inset-0", "z-50", "grid", "place-items-center", "bg-slate-950/70", "p-3")
     }) {
         Div({
             onClick { it.stopPropagation() }
-            classes("relative", "w-full", "max-w-xl", "rounded-xl", "border", "border-slate-700", "bg-slate-900", "p-5", "pt-3", "shadow-2xl")
+            classes(
+                "relative", "max-h-[calc(100dvh-1.5rem)]", "w-full", "max-w-xl", "overflow-y-auto",
+                "rounded-xl", "border", "border-slate-700", "bg-slate-900", "p-4", "pt-3",
+                "shadow-2xl", "sm:p-5", "sm:pt-3",
+            )
         }) {
             Div({ classes("space-y-6") }) {
                 if (title != null) {
-                    Div({ classes("flex", "items-center", "justify-between", "gap-4", "pr-8") }) {
-                        H1({ classes("text-xl", "font-bold", "text-slate-100") }) {
-                            Text(title)
+                    Div({ classes("flex", "items-start", "justify-between", "gap-4", "pr-8") }) {
+                        Div({ classes("min-w-0") }) {
+                            H1({ classes("text-xl", "font-bold", "text-slate-100") }) {
+                                Text(title)
+                            }
+                            if (supportingText != null) {
+                                Div({ classes("mt-1", "text-sm", "leading-snug", "text-slate-500") }) {
+                                    Text(supportingText)
+                                }
+                            }
                         }
                     }
                 }

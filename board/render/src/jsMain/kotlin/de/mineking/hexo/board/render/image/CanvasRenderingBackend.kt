@@ -62,6 +62,15 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
     private val lineLayer by lazy { createLineLayer() }
 
     override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
+        if (outline == null && textExclusions.isEmpty()) {
+            canvas.strokeStyle = stroke.color.css
+            canvas.lineWidth = stroke.width.toDouble()
+            canvas.lineCap = CanvasLineCap.ROUND
+            canvas.lineJoin = CanvasLineJoin.ROUND
+            canvas.strokeSegment(from, to)
+            return
+        }
+
         val layer = lineLayer.apply { clear() }
         val lineRadius = ((stroke.width + (outline?.width ?: 0f)) / 2.0)
         val minX = minOf(from.x, to.x) - lineRadius
