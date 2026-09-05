@@ -27,6 +27,7 @@ import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.playerWithColor
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
+import de.mineking.hexo.web.components.Slider
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.playerCssColor
@@ -35,6 +36,7 @@ import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
+import org.jetbrains.compose.web.attributes.disabled
 import org.jetbrains.compose.web.css.backgroundColor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Button
@@ -128,18 +130,11 @@ private fun BoardScope.BoardControls(
 
     Div({
         classes(
-            "absolute", "bottom-14", "left-3", "z-20",
-            "sm:top-3", "sm:bottom-auto",
+            "absolute", "bottom-3", "left-3", "right-3", "z-20", "flex", "items-center", "gap-3",
+            // Reserve the board tools' width (including borders) plus the same gap as this row.
+            if (boardViewManager.hasClearableHighlights) "sm:right-[calc(15.75rem+8px)]" else "sm:right-[calc(12rem+6px)]",
         )
     }) {
-        MoveIndicatorButton(
-            currentMove = min(boardViewManager.currentMove, totalMoves),
-            totalMoves = totalMoves,
-            onClick = { boardViewManager.currentMove = Int.MAX_VALUE },
-        )
-    }
-
-    Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
         BoardActionButton(
             enabled = boardViewManager.currentMove > 0,
             attrs = {
@@ -157,6 +152,45 @@ private fun BoardScope.BoardControls(
             },
             onClick = { boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronRightIcon { classes("size-4") } }
+
+        MoveSliderPanel(boardViewManager, totalMoves)
+    }
+}
+
+@Composable
+private fun MoveSliderPanel(boardViewManager: GameBoardViewManager, totalMoves: Int) {
+    val currentMove = boardViewManager.currentMove.coerceIn(0, totalMoves)
+
+    Div({
+        classes(
+            "absolute", "bottom-14", "left-0", "sm:static", "flex", "min-w-0", "sm:flex-1",
+            "items-center", "gap-2", "rounded-lg", "border",
+            "border-slate-700/70", "bg-slate-950/85", "pl-1", "pr-1", "sm:pr-3", "shadow-md", "backdrop-blur-xs",
+        )
+    }) {
+        Div {
+            MoveIndicatorButton(
+                currentMove = currentMove,
+                totalMoves = totalMoves,
+                onClick = { boardViewManager.currentMove = Int.MAX_VALUE },
+            )
+        }
+
+        Div({ classes("hidden", "sm:flex", "h-9", "min-w-0", "flex-1", "items-center") }) {
+            Slider(
+                value = currentMove.toFloat(),
+                range = 0f..totalMoves.toFloat(),
+                step = 1f,
+                onValueChange = {
+                    val move = it.toInt().coerceIn(0, totalMoves)
+                    boardViewManager.currentMove = if (move == totalMoves) Int.MAX_VALUE else move
+                },
+            ) {
+                attr("aria-label", "Select move")
+                if (totalMoves == 0) disabled()
+                onKeyDown { it.stopPropagation() }
+            }
+        }
     }
 }
 
@@ -165,15 +199,13 @@ private fun MoveIndicatorButton(currentMove: Int, totalMoves: Int, onClick: () -
     val reviewingHistory = currentMove < totalMoves
     Button({
         classes(
-            "inline-flex", "h-9", "cursor-pointer", "items-center", "gap-2", "rounded-lg", "border",
-            "bg-slate-950/75", "px-2.5", "shadow-md", "backdrop-blur-xs",
+            "inline-flex", "h-9", "shrink-0", "cursor-pointer", "items-center", "gap-2", "rounded-md",
+            "px-2.5",
             "transition-colors", "hover:bg-slate-900/85",
         )
         if (reviewingHistory) {
-            classes("border-amber-400/55", "hover:border-amber-300/75")
             attr("title", "Return to latest move")
         } else {
-            classes("border-slate-500/60", "hover:border-slate-400/75")
             attr("title", "Latest move")
         }
         attr("aria-label", if (reviewingHistory) "Return to latest move" else "Latest move")
