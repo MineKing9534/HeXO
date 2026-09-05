@@ -11,6 +11,7 @@ import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.session.SessionPlayer
 import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
+import de.mineking.hexo.web.components.EloBadge
 import org.jetbrains.compose.web.attributes.AttrsScope
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Img
@@ -45,31 +46,12 @@ internal fun SessionPlayerMeta(
     disconnectedAsWaiting: Boolean = false,
     eloAdjustment: Int? = null,
 ) {
-    Div({ classes("mt-0.5", "flex", "items-center", "justify-center", "gap-1.5", "text-xs") }) {
+    Div({ classes("mt-2", "flex", "flex-col", "items-center", "justify-center", "gap-2", "text-xs") }) {
         if (!player.isGuest()) {
-            PlayerElo(player, eloAdjustment)
-            Span({ classes("text-slate-700") }) { Text("·") }
+            EloBadge(player.elo, eloAdjustment)
         }
         PlayerConnectionStatus(player.connectionStatus, disconnectedAsWaiting)
     }
-}
-
-@Composable
-internal fun PlayerElo(player: Player, adjustment: Int? = null) {
-    Span({ classes("text-slate-400") }) {
-        Text("ELO ${player.elo}")
-        if (adjustment != null) {
-            Span({ classes("ml-1", "font-semibold", adjustment.color) }) {
-                Text(if (adjustment > 0) "+$adjustment" else "$adjustment")
-            }
-        }
-    }
-}
-
-private val Int.color get() = when {
-    this > 0 -> "text-emerald-300"
-    this < 0 -> "text-rose-300"
-    else -> "text-slate-300"
 }
 
 @Composable

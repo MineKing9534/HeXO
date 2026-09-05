@@ -86,17 +86,35 @@ internal abstract class ObservedSessionImpl : BaseSessionImpl(), DetailedSession
             client: HdsApiClient,
             dto: SessionDto,
             gameState: SessionGameStateDto,
-        ) = when (dto.state) {
-            is SessionStateDto.Lobby -> LobbySessionImpl(client, dto, dto.state, gameState)
-            is SessionStateDto.GameSessionState -> LiveSessionImpl(client, dto, dto.state, gameState)
+        ) = when {
+            dto.players.isEmpty() && dto.tournament == null -> ClosedSessionImpl(client, dto, dto.state, gameState)
+            dto.state is SessionStateDto.Lobby -> LobbySessionImpl(client, dto, dto.state, gameState)
+            dto.state is SessionStateDto.GameSessionState -> LiveSessionImpl(client, dto, dto.state, gameState)
+            else -> error("impossible")
         }
     }
+}
+
+internal class ClosedSessionImpl(
+    override val client: HdsApiClient,
+    override val dto: SessionDto,
+    stateDto: SessionStateDto,
+    override val gameState: SessionGameStateDto,
+) : ObservedSessionImpl() {
+    override val id = dto.id
+    override val createdAt = stateDto.createdAt
+    override val startedAt = null
+    override val gameOptions = dto.gameOptions
+    override val tournament = dto.tournament?.toModel(client)
+
+    override val state = SessionState.Closed
+    override val players: List<SessionPlayer> = emptyList()
 }
 
 internal class LobbySessionImpl(
     override val client: HdsApiClient,
     override val dto: SessionDto,
-    private val stateDto: SessionStateDto.Lobby,
+    stateDto: SessionStateDto.Lobby,
     override val gameState: SessionGameStateDto,
 ) : ObservedSessionImpl(), LobbySession {
     override val id = dto.id
