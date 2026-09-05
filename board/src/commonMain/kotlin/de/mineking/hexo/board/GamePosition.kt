@@ -75,7 +75,7 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPos
             turns += Turn(
                 meta = TurnMetaData(
                     player = expected,
-                    placementsRemaining = (movesPerTurn - cells.size).coerceIn(0, movesPerTurn),
+                    placementsRemaining = ((if (turn == 0) 1 else movesPerTurn) - cells.size).coerceIn(0, movesPerTurn),
                     turn = turn,
                 ),
                 moves = cells.map { Move(it.key, expected) },
@@ -126,7 +126,7 @@ fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN
             meta = TurnMetaData(
                 player = player,
                 turn = index,
-                placementsRemaining = (movesPerTurn - cells.size).coerceIn(0, movesPerTurn),
+                placementsRemaining = ((if (index == 0) 1 else movesPerTurn) - cells.size).coerceIn(0, movesPerTurn),
             ),
             moves = cells,
         )
