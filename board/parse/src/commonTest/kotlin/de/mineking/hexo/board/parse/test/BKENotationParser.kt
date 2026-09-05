@@ -40,7 +40,7 @@ class BKENotationParser {
 
         assertEquals(
             mapOf(
-                CellCoordinate(0, 0) to Cell(CellOwner.X, turn = 0),
+                CellCoordinate(0, 0) to Cell(CellOwner.O, turn = 0),
 
                 CellCoordinate(-1, 1) to Cell(CellOwner.X, turn = 1),
                 CellCoordinate(0, 1) to Cell(CellOwner.X, turn = 1),
@@ -61,7 +61,7 @@ class BKENotationParser {
 
         assertEquals(
             mapOf(
-                CellCoordinate(0, 0) to Cell(CellOwner.X, turn = 0),
+                CellCoordinate(0, 0) to Cell(CellOwner.O, turn = 0),
                 CellCoordinate(1, -1) to Cell(CellOwner.X, turn = 1),
                 CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 2),
             ),
@@ -75,7 +75,7 @@ class BKENotationParser {
 
         assertEquals(
             mapOf(
-                CellCoordinate(0, 0) to Cell(CellOwner.X, turn = 0),
+                CellCoordinate(0, 0) to Cell(CellOwner.O, turn = 0),
 
                 CellCoordinate(1, -1) to Cell(CellOwner.X, turn = 1),
                 CellCoordinate(1, 0) to Cell(CellOwner.X, turn = 1),
