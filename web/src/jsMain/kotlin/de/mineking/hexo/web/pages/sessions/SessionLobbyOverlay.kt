@@ -9,7 +9,7 @@ import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.BadgeSize
 import de.mineking.hexo.web.components.Color
-import de.mineking.hexo.web.components.ContentCard
+import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.components.SubCardVariant
 import de.mineking.hexo.web.format
@@ -26,16 +26,18 @@ import org.jetbrains.compose.web.dom.Text
 
 @Composable
 fun LobbyOverlay(session: LobbySession) {
-    ContentCard({
-        classes(
-            "my-auto", "flex", "max-w-4xl", "flex-col", "gap-5", "border-sky-900/70!", "bg-slate-900/95!",
-            "bg-linear-to-br!", "from-slate-900!", "via-slate-900!", "to-sky-950/50!",
-            "p-5", "shadow-[0_28px_80px_-24px_rgba(0,0,0,0.8)]!",
-            "ring-1", "ring-white/5", "backdrop-blur-md", "sm:p-6",
-        )
-    }) {
-        LobbyHeader(session)
-        StandardLobby(session)
+    Div({ classes("flex", "min-h-0", "flex-1", "flex-col", "overflow-y-auto") }) {
+        Card({
+            classes(
+                "my-auto", "mx-auto", "w-full", "shrink-0", "flex", "max-w-4xl", "flex-col", "gap-5", "border-sky-900/70!", "bg-slate-900/95!",
+                "bg-linear-to-br!", "from-slate-900!", "via-slate-900!", "to-sky-950/50!",
+                "p-5", "shadow-[0_28px_80px_-24px_rgba(0,0,0,0.8)]!",
+                "ring-1", "ring-white/5", "backdrop-blur-md", "sm:p-6",
+            )
+        }) {
+            LobbyHeader(session)
+            StandardLobby(session)
+        }
     }
 }
 
