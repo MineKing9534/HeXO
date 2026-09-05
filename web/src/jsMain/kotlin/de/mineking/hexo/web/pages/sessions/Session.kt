@@ -71,6 +71,7 @@ fun Session(id: SessionId, boardViewManager: GameBoardViewManager) {
                     if (state is SessionState.Detailed.Finished) SessionFinishedOverlay(session, state)
                 }
                 is LobbySession -> LobbyOverlay(session)
+                else -> ClosedState()
             }
         }
     }
@@ -111,6 +112,16 @@ private fun NotFoundState() {
     NotFoundCard(
         title = "Session not found",
         description = "This session may have finished, been closed, or the link may be incorrect.",
+    ) {
+        BackLink(AppRoute.SessionList, "Back to lobbies")
+    }
+}
+
+@Composable
+private fun ClosedState() {
+    NotFoundCard(
+        title = "Session closed",
+        description = "This session has been closed and is no longer available.",
     ) {
         BackLink(AppRoute.SessionList, "Back to lobbies")
     }

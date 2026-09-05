@@ -14,6 +14,7 @@ import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.layout.Layout
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.Player
+import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.game.model.session.Session
 import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.session.hasStarted
@@ -171,9 +172,7 @@ private fun LobbyRow(lobby: Session, divided: Boolean) {
     }) {
         Div({ classes("flex", "min-w-0", "flex-col", "gap-2.5") }) {
             Div({ classes("min-w-0") }) {
-                H2({ classes("truncate", "text-base", "font-semibold", "text-slate-100") }) {
-                    Text(lobby.players.formatPlayers())
-                }
+                LobbyPlayers(lobby.players)
                 Div({ classes("mt-0.5", "flex", "min-w-0", "items-center", "gap-1.5", "text-xs", "text-slate-600") }) {
                     Span { Text("Session") }
                     Span { Text("·") }
@@ -206,6 +205,27 @@ private fun LobbyRow(lobby: Session, divided: Boolean) {
 }
 
 @Composable
+private fun LobbyPlayers(players: List<Player>) {
+    H2({ classes("flex", "flex-wrap", "items-baseline", "gap-x-2", "gap-y-0.5", "text-slate-100") }) {
+        players.forEachIndexed { index, player ->
+            if (index > 0) {
+                Span({ classes("text-[10px]", "font-bold", "uppercase", "tracking-wider", "text-slate-600") }) {
+                    Text("vs")
+                }
+            }
+            Span({ classes("inline-flex", "min-w-0", "items-baseline", "gap-1.5") }) {
+                Span({ classes("truncate", "text-base", "font-semibold") }) { Text(player.displayName) }
+                if (!player.isGuest()) {
+                    Span({ classes("shrink-0", "text-xs", "font-semibold", "tabular-nums", "text-slate-400") }) {
+                        Text("${player.elo} ELO")
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
 private fun StatusBadge(lobby: Session) {
     val isLive = lobby.hasStarted()
     val status = if (isLive) "Live" else "Open"
@@ -230,9 +250,4 @@ private fun TimeControlBadge(timeControl: TimeControl) {
         }
         Text(timeControl.format())
     }
-}
-
-private fun List<Player>.formatPlayers() = when (size) {
-    1 -> first().displayName
-    else -> joinToString(" vs ") { it.displayName }
 }
