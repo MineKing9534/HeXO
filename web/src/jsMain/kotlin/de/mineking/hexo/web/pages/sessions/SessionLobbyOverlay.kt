@@ -8,8 +8,8 @@ import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
 import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.BadgeSize
-import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Card
+import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.components.SubCardVariant
 import de.mineking.hexo.web.format
