@@ -61,7 +61,7 @@ fun FinishedGameOverlay(
     result: GameResult = requireNotNull(game.result),
     rematchAcceptedPlayers: List<Player> = emptyList(),
 ) {
-    var collapsed by remember(game.id, result) { mutableStateOf(false) }
+    var collapsed by remember(game.id) { mutableStateOf(false) }
 
     Card({
         classes(
