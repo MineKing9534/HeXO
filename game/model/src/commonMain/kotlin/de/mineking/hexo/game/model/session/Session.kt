@@ -36,6 +36,7 @@ sealed interface SessionState {
     }
 
     data object Lobby : Detailed
+    data object Closed : Detailed
 
     sealed interface InGame : SessionState {
         companion object : InGame

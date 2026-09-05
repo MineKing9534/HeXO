@@ -20,6 +20,7 @@ import de.mineking.hexo.web.board.gamePlayer
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
 import de.mineking.hexo.web.components.Color
+import de.mineking.hexo.web.components.EloBadge
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.components.SubCardVariant
 import de.mineking.hexo.web.formatCompact
@@ -291,7 +292,7 @@ private fun SessionFinishedPlayerHeader(result: GameResult, player: Player, rate
             if (player is LiveSessionPlayer) {
                 SessionPlayerMeta(player, eloAdjustment = eloAdjustment)
             } else if (!player.isGuest()) {
-                Div({ classes("mt-0.5", "text-xs") }) { PlayerElo(player, eloAdjustment) }
+                Div({ classes("mt-2") }) { EloBadge(player.elo, eloAdjustment) }
             }
         }
     }
