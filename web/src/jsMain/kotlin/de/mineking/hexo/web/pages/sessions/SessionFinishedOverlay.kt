@@ -24,8 +24,13 @@ import de.mineking.hexo.web.components.EloBadge
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.components.SubCardVariant
 import de.mineking.hexo.web.formatCompact
-import de.mineking.hexo.web.icons.CheckIcon
 import de.mineking.hexo.web.icons.ChevronDownIcon
+import de.mineking.hexo.web.icons.DisconnectIcon
+import de.mineking.hexo.web.icons.HandshakeIcon
+import de.mineking.hexo.web.icons.MedalIcon
+import de.mineking.hexo.web.icons.SurrenderIcon
+import de.mineking.hexo.web.icons.TerminatedIcon
+import de.mineking.hexo.web.icons.TimeControlIcon
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.Span
@@ -105,7 +110,7 @@ private fun SessionFinishedOverlayHeader(
         onClick { onExpandCollapse() }
 
         if (collapsed) {
-            classes("px-4", "py-2.5")
+            classes("px-3", "py-2")
         } else {
             classes("px-4", "pb-0", "pt-4", "sm:px-5", "sm:pt-5")
         }
@@ -134,13 +139,9 @@ private fun CollapsedFinishedTitle(result: GameResult) {
     Div({ classes("min-w-0", "flex", "items-center", "gap-3", "text-left") }) {
         Div({
             classes("grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "border")
-            if (winner == null) {
-                classes("border-amber-300/40", "bg-amber-300/15", "text-amber-200")
-            } else {
-                classes("border-emerald-300/40", "bg-emerald-400/15", "text-emerald-200")
-            }
+            classes("border-current/30", "bg-current/10", result.reason.accentColor)
         }) {
-            if (winner == null) Text("=") else CheckIcon { classes("size-4") }
+            FinishedReasonIcon(result.reason)
         }
         Div({ classes("min-w-0") }) {
             Span({ classes("block", "truncate", "font-bold", "text-slate-100") }) {
@@ -154,16 +155,28 @@ private fun CollapsedFinishedTitle(result: GameResult) {
 }
 
 @Composable
+private fun FinishedReasonIcon(reason: GameFinishReason) {
+    when (reason) {
+        is GameFinishReason.Regular -> MedalIcon { classes("size-5") }
+        GameFinishReason.Timeout -> TimeControlIcon { classes("size-5") }
+        GameFinishReason.Surrender -> SurrenderIcon { classes("size-5") }
+        GameFinishReason.Disconnect -> DisconnectIcon { classes("size-5") }
+        GameFinishReason.DrawAgreement -> HandshakeIcon { classes("size-5") }
+        GameFinishReason.Terminated -> TerminatedIcon { classes("size-5") }
+    }
+}
+
+@Composable
 private fun ExpandedFinishedTitle(result: GameResult) {
     val winner = result.winner
 
     Div({ classes("min-w-0", "pr-10", "text-left") }) {
-        Div({ classes("mb-2", "flex", "items-center", "gap-2") }) {
-            Span({ classes("size-2", "rounded-full", if (winner == null) "bg-amber-300" else "bg-emerald-300") })
+        Div({ classes("mb-2", "flex", "items-center", "gap-2", result.reason.accentColor) }) {
+            Span({ classes("size-2", "rounded-full", "bg-current") })
             Span({
                 classes(
                     "text-xs", "font-bold", "tracking-widest",
-                    if (winner == null) "text-amber-300" else "text-emerald-300", "uppercase",
+                    "uppercase",
                 )
             }) {
                 Text("Match complete")
@@ -320,4 +333,13 @@ private val GameFinishReason.label get() = when (this) {
     is GameFinishReason.Disconnect -> "Disconnect"
     is GameFinishReason.DrawAgreement -> "Draw agreed"
     is GameFinishReason.Terminated -> "Terminated"
+}
+
+private val GameFinishReason.accentColor get() = when (this) {
+    is GameFinishReason.Regular -> "text-emerald-300"
+    GameFinishReason.Timeout -> "text-lime-400"
+    GameFinishReason.Surrender -> "text-emerald-300"
+    GameFinishReason.Disconnect -> "text-rose-400"
+    GameFinishReason.DrawAgreement -> "text-amber-300"
+    GameFinishReason.Terminated -> "text-slate-400"
 }
