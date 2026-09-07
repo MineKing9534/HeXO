@@ -35,6 +35,7 @@ fun SandboxBoardPane(
             it.copy().focusWinningRows()
         },
         readOnly = false,
+        showOpenInSandbox = false,
         allowAnalyzerOverlay = true,
         turn = if (shouldAnalyze) placementMode.analyzerTurn(boardViewManager.board) else null,
         players = sandboxPlayers,

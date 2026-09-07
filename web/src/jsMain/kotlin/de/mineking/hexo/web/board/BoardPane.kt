@@ -80,6 +80,7 @@ fun BoardPane(
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
     plain: Boolean = false,
+    showOpenInSandbox: Boolean = true,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
@@ -123,7 +124,7 @@ fun BoardPane(
             },
         ) {
             content?.invoke(this)
-            DefaultBoardControls(boardViewManager, plain, onViewportChange)
+            DefaultBoardControls(boardViewManager, plain, showOpenInSandbox, onViewportChange)
         }
 
         @Composable
@@ -148,6 +149,7 @@ fun BoardPane(
 private fun DefaultBoardControls(
     boardViewManager: BoardViewManager,
     plain: Boolean,
+    showOpenInSandbox: Boolean,
     onViewportChange: (BoardViewport) -> Unit,
 ) {
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
@@ -157,7 +159,7 @@ private fun DefaultBoardControls(
             }
         }
 
-        OpenInSandboxButton(boardViewManager.board)
+        if (showOpenInSandbox) OpenInSandboxButton(boardViewManager.board)
 
         BoardActionButton(onClick = {
             onViewportChange(BoardViewport())
