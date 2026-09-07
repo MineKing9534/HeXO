@@ -30,6 +30,7 @@ import de.mineking.hexo.hds.implementation.game.PlayerImpl
 import de.mineking.hexo.hds.implementation.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.implementation.game.toModel
 import kotlin.time.Clock
+import kotlin.time.Duration
 
 internal abstract class BaseSessionImpl : Session {
     internal abstract val client: HdsApiClient
@@ -227,6 +228,13 @@ internal class LiveSessionImpl(
                     } else {
                         gameState.playerTimeRemaining[data.id]
                     }
+            }?.let { time ->
+                if (stateDto is SessionStateDto.Finished && data.id == gameState.currentTurnPlayerId) {
+                    val elapsed = (stateDto.finishedAt - time.timestamp).coerceAtLeast(Duration.ZERO)
+                    LiveDuration((time.duration - elapsed).coerceAtLeast(Duration.ZERO), stateDto.finishedAt)
+                } else {
+                    time
+                }
             },
         )
     }

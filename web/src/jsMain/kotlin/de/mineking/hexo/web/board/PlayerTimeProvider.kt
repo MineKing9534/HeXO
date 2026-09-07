@@ -6,7 +6,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isComplete
@@ -35,33 +34,38 @@ internal fun rememberPlayerTimeProvider(game: GameWithPosition, move: Int): Play
         val selectedMove = move.coerceIn(0, game.moveCount)
         remember(game, selectedMove) { FinishedPlayerTimeProvider(game, selectedMove) }
     } else {
-        LivePlayerTimeProvider
+        remember(game) { LivePlayerTimeProvider(game.position.nextTurn.player, game.result == null) }
     }
 
-private data object LivePlayerTimeProvider : PlayerTimeProvider {
+private class LivePlayerTimeProvider(
+    private val activePlayer: CellOwner,
+    private val running: Boolean,
+) : PlayerTimeProvider {
     @Composable
     override fun remainingTime(player: Player, current: Boolean): Duration? {
         val livePlayer = player as? LiveSessionPlayer ?: return null
-        val source by rememberUpdatedState(livePlayer.timeRemaining ?: return null)
-        val isCurrent by rememberUpdatedState(current)
-        var remaining by remember(livePlayer.id) { mutableStateOf(source.duration) }
+        val source = livePlayer.timeRemaining ?: return null
+        val ticking = running && player.color == activePlayer
+        fun remainingNow(): Duration {
+            val elapsed = if (ticking) maxOf(Duration.ZERO, Clock.System.now() - source.timestamp) else Duration.ZERO
+            return maxOf(Duration.ZERO, source.duration - elapsed)
+        }
+        var remaining by remember(livePlayer.id, source, ticking) { mutableStateOf(remainingNow()) }
 
-        LaunchedEffect(source) { remaining = source.duration }
-        DisposableEffect(source, current) {
+        DisposableEffect(source, ticking) {
             fun update() {
-                val elapsed = if (isCurrent) Clock.System.now() - source.timestamp else Duration.ZERO
-                remaining = maxOf(Duration.ZERO, source.duration - elapsed)
+                remaining = remainingNow()
             }
 
             update()
-            val interval = window.setInterval(::update, 250)
-            onDispose { window.clearInterval(interval) }
+            val interval = if (ticking) window.setInterval(::update, 250) else null
+            onDispose { interval?.let { window.clearInterval(it) } }
         }
 
         val soundPlayer = rememberSoundPlayer()
         val timerSounds by SettingsKey.SessionViewTimerSounds.collectAsState()
-        LaunchedEffect(remaining.inWholeSeconds) {
-            if (timerSounds && isCurrent && remaining <= 10.seconds) {
+        LaunchedEffect(remaining.inWholeSeconds, ticking) {
+            if (timerSounds && ticking && current && remaining > Duration.ZERO && remaining <= 10.seconds) {
                 soundPlayer.play(SoundEffect.CountdownWarning)
             }
         }
