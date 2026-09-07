@@ -156,6 +156,16 @@ private fun currentQueryParameter(name: String) = if (AppGlobals.isExporting) {
     URL(window.location.href).searchParams.get(name)
 }
 
+enum class DeviceType {
+    Mobile,
+    Desktop,
+    ;
+
+    companion object {
+        val Current = if (window.matchMedia("(min-width: 640px)").matches) Desktop else Mobile
+    }
+}
+
 @Composable
 fun rememberTheme() = SettingsKey.Theme.collectAsState().map { it.theme }
 

@@ -2,6 +2,7 @@ package de.mineking.hexo.web.settings
 
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.watchparty.common.WatchPartyId
+import de.mineking.hexo.web.DeviceType
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
@@ -26,13 +27,13 @@ class SettingsKey<out T> private constructor(val name: String, val type: KType, 
                 .also { keys[name] = it }
         }
 
-        val SessionViewTimerSounds by key(true)
-        val Volume by key(1f)
-        val ReadOnlyBoardHoverIndicator by key(true)
-        val SessionAnalyzer by key(true)
-        val SandboxAnalyzer by key(false)
-        val Theme by key(DefaultTheme.HDS)
+        val SessionViewTimerSounds by key(default = true)
+        val Volume by key(default = 1f)
+        val ReadOnlyBoardHoverIndicator by key(default = true)
+        val SessionAnalyzer by key(default = DeviceType.Current == DeviceType.Desktop)
+        val SandboxAnalyzer by key(default = false)
+        val Theme by key(default = DefaultTheme.HDS)
 
-        val HostWatchPartyId by key<WatchPartyId?>(null)
+        val HostWatchPartyId by key<WatchPartyId?>(default = null)
     }
 }
