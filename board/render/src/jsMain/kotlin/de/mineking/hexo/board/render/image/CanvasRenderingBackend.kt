@@ -25,12 +25,14 @@ fun HTMLCanvasElement.drawBoard(
     scale: Double = 1.0,
     theme: Theme = Theme.Default,
     renderingHook: BoardRenderingHook? = null,
+    pixelRatio: Double = 1.0,
 ) {
     val context = getContext("2d") as CanvasRenderingContext2D
 
     context.setTransform(1.0, 0.0, 0.0, 1.0, 0.0, 0.0)
     context.fillStyle = theme.backgroundColor.css
     context.fillRect(0.0, 0.0, width.toDouble(), height.toDouble())
+    context.scale(pixelRatio, pixelRatio)
     context.translate(padding.toDouble() + offset.x, padding.toDouble() + offset.y)
     context.scale(scale, scale)
 
@@ -38,9 +40,9 @@ fun HTMLCanvasElement.drawBoard(
     val originY = padding + offset.y
     val visibleBounds = BoundingBox(
         minX = -originX / scale,
-        maxX = (width - originX) / scale,
+        maxX = (width / pixelRatio - originX) / scale,
         minY = -originY / scale,
-        maxY = (height - originY) / scale,
+        maxY = (height / pixelRatio - originY) / scale,
     )
     CanvasRenderingBackend(context).drawBoard(layout, theme, renderingHook, visibleBounds)
 }

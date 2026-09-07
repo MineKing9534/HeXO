@@ -22,12 +22,15 @@ import de.mineking.hexo.board.render.image.plus
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.board.render.image.theme.withAlpha
+import kotlinx.browser.window
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.events.EventListener
+import kotlin.math.roundToInt
 
 val DEFAULT_CELL_HOVER_COlOR = Color.rgb(0x7dd3fc)
 
@@ -115,10 +118,13 @@ private fun ResizeHandler(element: HTMLCanvasElement?, onResize: () -> Unit) {
     DisposableEffect(element) {
         val canvas = element ?: return@DisposableEffect onDispose {}
         val observer = ResizeObserver { onResize() }
+        val windowResize = EventListener { onResize() }
 
         observer.observe(canvas)
+        window.addEventListener("resize", windowResize)
         onDispose {
             observer.disconnect()
+            window.removeEventListener("resize", windowResize)
         }
     }
 }
@@ -136,14 +142,18 @@ private fun HTMLCanvasElement.drawBoard(
     cellHoverColor: Color?,
     renderingHook: BoardRenderingHook?,
 ) {
-    if (width != clientWidth) width = clientWidth
-    if (height != clientHeight) height = clientHeight
+    val pixelRatio = window.devicePixelRatio.takeIf { it.isFinite() && it > 0 } ?: 1.0
+    val pixelWidth = (clientWidth * pixelRatio).roundToInt()
+    val pixelHeight = (clientHeight * pixelRatio).roundToInt()
+    if (width != pixelWidth) width = pixelWidth
+    if (height != pixelHeight) height = pixelHeight
 
     drawBoard(
         layout = layout,
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this),
         scale = viewport.zoom,
+        pixelRatio = pixelRatio,
         theme = theme,
         renderingHook = renderingHook + BoardRenderingHook.middleLayer {
             if (hoveredCell == null || cellHoverColor == null) return@middleLayer
