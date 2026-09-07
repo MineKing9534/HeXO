@@ -1,7 +1,6 @@
 package de.mineking.hexo.web.board
 
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -9,6 +8,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.isComplete
+import de.mineking.hexo.board.take
+import de.mineking.hexo.game.model.LiveDuration
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
 import de.mineking.hexo.game.model.game.GameWithPosition
@@ -18,9 +19,11 @@ import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
-import kotlinx.browser.window
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.isActive
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.milliseconds
 import kotlin.time.Duration.Companion.seconds
 
 internal interface PlayerTimeProvider {
@@ -46,29 +49,10 @@ private class LivePlayerTimeProvider(
         val livePlayer = player as? LiveSessionPlayer ?: return null
         val source = livePlayer.timeRemaining ?: return null
         val ticking = running && player.color == activePlayer
-        fun remainingNow(): Duration {
-            val elapsed = if (ticking) maxOf(Duration.ZERO, Clock.System.now() - source.timestamp) else Duration.ZERO
-            return maxOf(Duration.ZERO, source.duration - elapsed)
-        }
-        var remaining by remember(livePlayer.id, source, ticking) { mutableStateOf(remainingNow()) }
+        val remaining = source.rememberRemainingTime(ticking)
 
-        DisposableEffect(source, ticking) {
-            fun update() {
-                remaining = remainingNow()
-            }
+        CountdownWarning(remaining, ticking, current)
 
-            update()
-            val interval = if (ticking) window.setInterval(::update, 250) else null
-            onDispose { interval?.let { window.clearInterval(it) } }
-        }
-
-        val soundPlayer = rememberSoundPlayer()
-        val timerSounds by SettingsKey.SessionViewTimerSounds.collectAsState()
-        LaunchedEffect(remaining.inWholeSeconds, ticking) {
-            if (timerSounds && ticking && current && remaining > Duration.ZERO && remaining <= 10.seconds) {
-                soundPlayer.play(SoundEffect.CountdownWarning)
-            }
-        }
         return remaining
     }
 }
@@ -80,49 +64,68 @@ private class FinishedPlayerTimeProvider(game: FinishedGameWithPosition, move: I
     override fun remainingTime(player: Player, current: Boolean) = remaining[player.color]
 }
 
-private fun reconstructPlayerTimes(game: FinishedGameWithPosition, move: Int): Map<CellOwner, Duration> = when (
-    val control = game.options.timeControl
-) {
-    TimeControl.Unlimited -> emptyMap()
-    is TimeControl.Turn -> reconstructTimes(game, move, control.turnTime) { _, complete ->
-        if (complete) control.turnTime else null
-    }
-    is TimeControl.Match -> reconstructTimes(game, move, control.mainTime) { remaining, complete ->
-        if (complete) remaining + control.increment else remaining
-    }
-}
+@Composable
+private fun LiveDuration.rememberRemainingTime(ticking: Boolean): Duration {
+    if (!ticking) return duration.coerceAtLeast(Duration.ZERO)
 
-private inline fun reconstructTimes(
-    game: FinishedGameWithPosition,
-    move: Int,
-    initialTime: Duration,
-    afterTurn: (remaining: Duration, complete: Boolean) -> Duration?,
-): Map<CellOwner, Duration> {
-    val remaining = CellOwner.entries.associateWith { initialTime }.toMutableMap()
-    var consumedMoves = 0
-    var turnStartedAt = game.startedAt
-
-    for (turn in game.position.turns) {
-        val selectedCount = minOf(turn.moves.size, move - consumedMoves)
-        if (selectedCount <= 0) break
-
-        val lastMove = turn.moves[selectedCount - 1]
-        val elapsed = positiveDuration(lastMove.timestamp - turnStartedAt)
-        val playerTime = positiveDuration(remaining.getValue(turn.meta.player) - elapsed)
-        val complete = selectedCount == turn.moves.size && turn.isComplete()
-        remaining[turn.meta.player] = afterTurn(playerTime, complete) ?: playerTime
-
-        consumedMoves += selectedCount
-        turnStartedAt = lastMove.timestamp
-        if (selectedCount < turn.moves.size) break
-    }
-
-    if (move == game.moveCount) {
-        val elapsed = positiveDuration(game.startedAt + game.result.duration - turnStartedAt)
-        val currentPlayer = game.position.nextTurn.player
-        remaining[currentPlayer] = positiveDuration(remaining.getValue(currentPlayer) - elapsed)
+    var remaining by remember(this) { mutableStateOf(remainingNow()) }
+    LaunchedEffect(this) {
+        while (isActive) {
+            remaining = remainingNow()
+            delay(250.milliseconds)
+        }
     }
     return remaining
 }
 
-private fun positiveDuration(duration: Duration) = maxOf(Duration.ZERO, duration)
+private fun LiveDuration.remainingNow(): Duration {
+    val elapsed = (Clock.System.now() - timestamp).coerceAtLeast(Duration.ZERO)
+    return (duration - elapsed).coerceAtLeast(Duration.ZERO)
+}
+
+@Composable
+private fun CountdownWarning(remaining: Duration, ticking: Boolean, current: Boolean) {
+    val soundPlayer = rememberSoundPlayer()
+    val enabled by SettingsKey.SessionViewTimerSounds.collectAsState()
+
+    LaunchedEffect(remaining.inWholeSeconds, ticking) {
+        if (enabled && ticking && current && remaining > Duration.ZERO && remaining <= 10.seconds) {
+            soundPlayer.play(SoundEffect.CountdownWarning)
+        }
+    }
+}
+
+private fun reconstructPlayerTimes(game: FinishedGameWithPosition, move: Int): Map<CellOwner, Duration> {
+    val control = game.options.timeControl
+    val initialTime = when (control) {
+        TimeControl.Unlimited -> return emptyMap()
+        is TimeControl.Turn -> control.turnTime
+        is TimeControl.Match -> control.mainTime
+    }
+    val remaining = CellOwner.entries.associateWith { initialTime }.toMutableMap()
+    var turnStartedAt = game.startedAt
+
+    for (turn in game.position.take(move).turns) {
+        val lastMove = turn.moves.last()
+        val elapsed = (lastMove.timestamp - turnStartedAt).coerceAtLeast(Duration.ZERO)
+        val playerTime = (remaining.getValue(turn.meta.player) - elapsed).coerceAtLeast(Duration.ZERO)
+        remaining[turn.meta.player] = if (turn.isComplete()) control.afterCompletedTurn(playerTime) else playerTime
+
+        turnStartedAt = lastMove.timestamp
+    }
+
+    // Account for time after the last placement, such as waiting for a timeout or surrender.
+    if (move == game.moveCount) {
+        val finishedAt = game.startedAt + game.result.duration
+        val elapsed = (finishedAt - turnStartedAt).coerceAtLeast(Duration.ZERO)
+        val currentPlayer = game.position.nextTurn.player
+        remaining[currentPlayer] = (remaining.getValue(currentPlayer) - elapsed).coerceAtLeast(Duration.ZERO)
+    }
+    return remaining
+}
+
+private fun TimeControl.afterCompletedTurn(remaining: Duration): Duration = when (this) {
+    TimeControl.Unlimited -> remaining
+    is TimeControl.Turn -> turnTime
+    is TimeControl.Match -> remaining + increment
+}
