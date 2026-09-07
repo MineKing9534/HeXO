@@ -28,7 +28,37 @@ data class GamePosition<out M : Move>(
 )
 
 val <M : Move> GamePosition<M>.moves get() = turns.flatMap { it.moves }
-fun <M : Move> GamePosition<M>.take(maxMoves: Int) = moves.take(maxMoves).toGamePosition()
+fun <M : Move> GamePosition<M>.take(maxMoves: Int): GamePosition<M> {
+    require(maxMoves >= 0) { "Requested move count $maxMoves is less than zero." }
+
+    val selectedTurns = mutableListOf<Turn<M>>()
+    var remainingMoves = maxMoves
+    for (turn in turns) {
+        if (remainingMoves == 0) {
+            val next = selectedTurns
+                .lastOrNull()
+                ?.takeUnless { it.isComplete() }
+                ?.meta
+                ?: turn.meta.copy(placementsRemaining = turn.moves.size + turn.meta.placementsRemaining)
+
+            return GamePosition(selectedTurns, next)
+        }
+
+        if (remainingMoves < turn.moves.size) {
+            val meta = turn.meta.copy(placementsRemaining = turn.meta.placementsRemaining + turn.moves.size - remainingMoves)
+            selectedTurns += turn.copy(
+                meta = meta,
+                moves = turn.moves.take(remainingMoves),
+            )
+            return GamePosition(selectedTurns, meta)
+        }
+
+        selectedTurns += turn
+        remainingMoves -= turn.moves.size
+    }
+
+    return this
+}
 
 fun GamePosition<*>.toBoard(
     focusWinningRows: Boolean = true,
