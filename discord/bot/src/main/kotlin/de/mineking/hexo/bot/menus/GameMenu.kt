@@ -200,12 +200,13 @@ private fun notationButton(
 
 private fun GameFinishReason.localize(locale: DiscordLocale, localization: GameMenuLocalization): String {
     val emoji = when (this) {
-        is GameFinishReason.Regular -> Emojis.TRIANGULAR_RULER
+        is GameFinishReason.Regular -> Emojis.TROPHY
         is GameFinishReason.Timeout -> Emojis.ALARM_CLOCK
         is GameFinishReason.Surrender -> Emojis.FLAG_WHITE
-        is GameFinishReason.Disconnect -> Emojis.SATELLITE
+        is GameFinishReason.Disconnect -> Emojis.ELECTRIC_PLUG
         is GameFinishReason.DrawAgreement -> Emojis.HANDSHAKE
-        is GameFinishReason.Terminated -> Emojis.NO_ENTRY
+        is GameFinishReason.Terminated -> Emojis.WARNING
+        is GameFinishReason.Aborted -> Emojis.NO_ENTRY
     }
 
     return "${emoji.formatted} ${localization.finishReason(locale, this)}"

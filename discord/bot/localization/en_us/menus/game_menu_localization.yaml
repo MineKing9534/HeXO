@@ -36,6 +36,7 @@ finish.reason: >-
         is GameFinishReason.Disconnect -> "Disconnect"
         is GameFinishReason.DrawAgreement -> "Draw"
         is GameFinishReason.Terminated -> "Terminated"
+        is GameFinishReason.Aborted -> "Aborted by ${reason.abortingPlayer.displayName}"
     }
   }
 

@@ -4,7 +4,9 @@ import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.game.model.game.GameFinishReason
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.game.GameOptions
+import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.GameVisibility
+import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.PlayerId
 import de.mineking.hexo.game.model.game.TournamentMatchSnapshot
 import de.mineking.hexo.game.model.profile.ProfileId
@@ -110,16 +112,47 @@ internal data class PlayerDto(
 @Serializable
 internal data class GameResultDto(
     val winningPlayerId: PlayerId?,
+    val abortedByPlayerId: PlayerId? = null,
     @SerialName("durationMs") val duration: Duration,
     val reason: GameFinishReasonDto,
-)
+) {
+    fun toModel(players: List<Player>) = GameResult(
+        winner = winningPlayerId?.let { players.single { it.id == winningPlayerId } },
+        duration = duration,
+        reason = reason.toModal(this, players),
+    )
+}
 
 @Serializable
-enum class GameFinishReasonDto(val model: GameFinishReason) {
-    @SerialName("six-in-a-row") SixInARow(GameFinishReason.Regular(6)),
-    @SerialName("timeout") Timeout(GameFinishReason.Timeout),
-    @SerialName("surrender") Surrender(GameFinishReason.Surrender),
-    @SerialName("disconnect") Disconnect(GameFinishReason.Disconnect),
-    @SerialName("draw-agreement") DrawAgreement(GameFinishReason.DrawAgreement),
-    @SerialName("terminated") Terminated(GameFinishReason.Terminated),
+internal enum class GameFinishReasonDto {
+    @SerialName("six-in-a-row") SixInARow {
+        override fun toModal(result: GameResultDto, players: List<Player>) = GameFinishReason.Regular(6)
+    },
+    @SerialName("timeout") Timeout {
+        override fun toModal(result: GameResultDto, players: List<Player>) = GameFinishReason.Timeout
+    },
+    @SerialName("surrender") Surrender {
+        override fun toModal(result: GameResultDto, players: List<Player>) = GameFinishReason.Surrender(
+            surrenderingPlayer = players.single { it.id != result.winningPlayerId },
+        )
+    },
+    @SerialName("disconnect") Disconnect {
+        override fun toModal(result: GameResultDto, players: List<Player>) = GameFinishReason.Disconnect(
+            disconnectedPlayer = players.single { it.id != result.winningPlayerId },
+        )
+    },
+    @SerialName("draw-agreement") DrawAgreement {
+        override fun toModal(result: GameResultDto, players: List<Player>) = GameFinishReason.DrawAgreement
+    },
+    @SerialName("terminated") Terminated {
+        override fun toModal(result: GameResultDto, players: List<Player>) = GameFinishReason.Terminated
+    },
+    @SerialName("aborted") Aborted {
+        override fun toModal(result: GameResultDto, players: List<Player>) = GameFinishReason.Aborted(
+            abortingPlayer = players.single { it.id == result.abortedByPlayerId },
+        )
+    },
+    ;
+
+    abstract fun toModal(result: GameResultDto, players: List<Player>): GameFinishReason
 }

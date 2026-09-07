@@ -7,7 +7,6 @@ import de.mineking.hexo.game.model.game.FinishedGameMove
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
-import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.PlayerId
 import de.mineking.hexo.game.model.profile.ProfileReference
@@ -49,11 +48,7 @@ internal class FinishedGameImpl(
     override val id = dto.id
     override val startedAt = dto.startedAt
     override val url = client.finishedGameRepository.urlOf(id)
-    override val result = GameResult(
-        winner = dto.result.winningPlayerId?.let { getPlayerById(it) },
-        duration = dto.result.duration,
-        reason = dto.result.reason.model,
-    )
+    override val result = dto.result.toModel(players)
     override val options = dto.options
     override val tournament = dto.tournament?.toModel(client)
     override val moveCount = dto.moveCount

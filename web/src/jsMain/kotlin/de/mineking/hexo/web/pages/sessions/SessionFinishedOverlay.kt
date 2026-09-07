@@ -393,4 +393,5 @@ private val GameFinishReason.label get() = when (this) {
     is GameFinishReason.Disconnect -> "Disconnect"
     is GameFinishReason.DrawAgreement -> "Draw agreed"
     is GameFinishReason.Terminated -> "Terminated"
+    is GameFinishReason.Aborted -> "Aborted"
 }

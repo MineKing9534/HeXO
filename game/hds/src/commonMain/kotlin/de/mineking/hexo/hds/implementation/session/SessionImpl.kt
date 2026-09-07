@@ -6,7 +6,6 @@ import de.mineking.hexo.board.toGamePosition
 import de.mineking.hexo.game.model.LiveDuration
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.GameMove
-import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.GameVisibility
 import de.mineking.hexo.game.model.game.PlayerId
 import de.mineking.hexo.game.model.profile.ProfileId
@@ -24,6 +23,7 @@ import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.Instant
 import de.mineking.hexo.hds.implementation.game.GameOptionsDto
+import de.mineking.hexo.hds.implementation.game.GameResultDto
 import de.mineking.hexo.hds.implementation.game.PlayerImpl
 import de.mineking.hexo.hds.implementation.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.implementation.game.toModel
@@ -207,11 +207,12 @@ internal class LiveSessionImpl(
         )
 
         is SessionStateDto.Finished -> SessionState.Detailed.Finished(
-            result = GameResult(
-                winner = stateDto.winningPlayerId?.let { getPlayerById(it) },
+            result = GameResultDto(
+                winningPlayerId = stateDto.winningPlayerId,
+                abortedByPlayerId = stateDto.abortedByPlayerId,
                 duration = stateDto.finishedAt - stateDto.startedAt,
-                reason = stateDto.finishReason.model,
-            ),
+                reason = stateDto.finishReason,
+            ).toModel(players),
             rematchAcceptedPlayers = stateDto.rematchAcceptedPlayerIds.map { getPlayerById(it) },
         )
     }

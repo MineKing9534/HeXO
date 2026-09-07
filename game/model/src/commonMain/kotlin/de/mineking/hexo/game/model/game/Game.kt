@@ -75,10 +75,12 @@ sealed interface GameFinishReason {
     data class Regular(val length: Int) : GameFinishReason
 
     data object Timeout : GameFinishReason
-    data object Surrender : GameFinishReason
-    data object Disconnect : GameFinishReason
+    data class Surrender(val surrenderingPlayer: Player) : GameFinishReason
+    data class Disconnect(val disconnectedPlayer: Player) : GameFinishReason
     data object DrawAgreement : GameFinishReason
     data object Terminated : GameFinishReason
+
+    data class Aborted(val abortingPlayer: Player) : GameFinishReason
 }
 
 data class GameResult(

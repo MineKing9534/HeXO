@@ -117,6 +117,7 @@ internal sealed interface SessionStateDto {
         val finishedAt: Instant,
         val finishReason: GameFinishReasonDto,
         val winningPlayerId: PlayerId?,
+        val abortedByPlayerId: PlayerId? = null,
         val rematchAcceptedPlayerIds: List<PlayerId>,
     ) : GameSessionState
 }
