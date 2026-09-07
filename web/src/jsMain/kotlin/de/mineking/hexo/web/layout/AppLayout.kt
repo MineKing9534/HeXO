@@ -73,8 +73,8 @@ fun rememberAppLayout() = LocalAppLayout.current
 fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
     val data = ctx.data.getValue<PageData>()
     val fullscreenParameter = rememberQueryParameter("fullscreen").map(
-        transform = { it == "true" },
-        transformBack = { if (it) "true" else null },
+        transform = { it == "true" || it == "" },
+        transformBack = { if (it) "" else null },
     )
 
     val layout = remember(ctx.route.path, fullscreenParameter) {
