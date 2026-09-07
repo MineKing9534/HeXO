@@ -72,8 +72,8 @@ private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, modifi
         if (currentCell?.turn == null) {
             run keyboard@{
                 val new = when {
-                    modifiers.ctrlKey -> CellOwner.X
-                    modifiers.altKey || modifiers.shiftKey -> CellOwner.O
+                    modifiers.ctrlKey || modifiers.shiftKey -> CellOwner.X
+                    modifiers.altKey -> CellOwner.O
                     else -> return@keyboard
                 }
 
