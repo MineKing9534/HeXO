@@ -1,5 +1,6 @@
 package de.mineking.hexo.hds.implementation.game
 
+import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.game.model.game.GameFinishReason
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.game.GameOptions
@@ -17,7 +18,6 @@ import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.Instant
 import de.mineking.hexo.hds.implementation.TimeControl
 import de.mineking.hexo.hds.implementation.tournament.TournamentBracketDto
-import de.mineking.hexo.hds.implementation.utils.Color
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
@@ -87,7 +87,9 @@ internal data class MoveDto(
 )
 
 @Serializable
-internal data class PlayerTile(val color: Color)
+internal data class PlayerTile(val colorIndex: Int) {
+    val color get() = CellOwner.entries[colorIndex]
+}
 
 internal interface AbstractPlayerDto {
     val playerId: PlayerId

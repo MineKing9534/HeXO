@@ -166,18 +166,12 @@ internal class LiveSessionImpl(
     override val startedAt = stateDto.startedAt
 
     override val players = dto.players.mapIndexed { index, data ->
-        val owner = gameState.playerTiles?.get(data.id)?.color?.let {
-            when {
-                it.red > 200 -> CellOwner.X
-                it.blue > 200 -> CellOwner.O
-                else -> error("Unrecognized color '${it.format()}'")
-            }
-        } ?: CellOwner.entries[index]
+        val color = gameState.playerTiles?.get(data.id)?.color ?: CellOwner.entries[index]
 
         LiveSessionPlayerImpl(
             client = client,
             dto = data,
-            color = owner,
+            color = color,
             tournamentMatchWins = dto.tournament?.let {
                 when (data.profileId) {
                     it.leftProfileId -> it.leftWins

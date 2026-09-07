@@ -23,16 +23,11 @@ internal class FinishedGameImpl(
 
     override val players = dto.players.map { data ->
         val color = dto.playerTiles[data.playerId]?.color ?: error("Player tile for ${data.playerId} not defined")
-        val owner = when {
-            color.red > 200 -> CellOwner.X
-            color.blue > 200 -> CellOwner.O
-            else -> error("Unrecognized color '${color.format()}'")
-        }
 
         FinishedGamePlayerImpl(
             client = client,
             dto = data,
-            color = owner,
+            color = color,
             tournamentMatchWins = dto.tournament?.let {
                 when (data.profileId) {
                     it.leftProfileId -> it.leftWins
