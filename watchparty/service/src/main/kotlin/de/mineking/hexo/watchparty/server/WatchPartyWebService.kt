@@ -1,13 +1,16 @@
 package de.mineking.hexo.watchparty.server
 
 import de.mineking.hexo.sever.service.ApiWebService
-import de.mineking.hexo.watchparty.common.WatchPartyErrorResponse
-import de.mineking.hexo.watchparty.common.WatchPartyId
-import de.mineking.hexo.watchparty.common.WatchPartyPingRequest
-import de.mineking.hexo.watchparty.common.WatchPartyPongResponse
-import de.mineking.hexo.watchparty.common.WatchPartyRequest
-import de.mineking.hexo.watchparty.common.WatchPartyResponse
-import de.mineking.hexo.watchparty.common.WatchPartyWebsocketCodes
+import de.mineking.hexo.watchparty.model.WatchPartyId
+import de.mineking.hexo.watchparty.protocol.WatchPartyAcceptedResponse
+import de.mineking.hexo.watchparty.protocol.WatchPartyActionRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyErrorResponse
+import de.mineking.hexo.watchparty.protocol.WatchPartyPingRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyPongResponse
+import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyRequestId
+import de.mineking.hexo.watchparty.protocol.WatchPartyResponse
+import de.mineking.hexo.watchparty.protocol.WatchPartyWebsocketCodes
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.serialization.deserialize
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
@@ -23,6 +26,7 @@ import io.ktor.server.websocket.sendSerialized
 import io.ktor.server.websocket.timeout
 import io.ktor.server.websocket.webSocket
 import io.ktor.websocket.CloseReason
+import io.ktor.websocket.Frame
 import io.ktor.websocket.close
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -88,8 +92,8 @@ class WatchPartyWebService : ApiWebService() {
     }
 
     override fun Route.registerApiRoutes() {
-        route("/watchparties") {
-            webSocket("/ws") {
+        route("/watchparty") {
+            webSocket("/connect") {
                 val id = call.request.queryParameters["id"]?.let { WatchPartyId(it) }
                 val detachOnClose = call.request.queryParameters["detachOnClose"] == "true"
                 val connectionId = call.request.queryParameters["connectionId"]
@@ -108,12 +112,8 @@ class WatchPartyWebService : ApiWebService() {
                 try {
                     handleConnection(session, connectionId = connectionId)
                 } finally {
-                    if (session.release(connectionId)) {
+                    if (session.release(connectionId, detachOnClose)) {
                         scheduleRemoval(session)
-                    }
-
-                    if (detachOnClose) {
-                        session.update { it.copy(target = null) }
                     }
                 }
             }
@@ -124,29 +124,46 @@ class WatchPartyWebService : ApiWebService() {
         session: WatchPartySession,
         connectionId: WatchPartyConnectionId,
     ) {
+        suspend fun respond(response: WatchPartyResponse) {
+            sendSerialized<WatchPartyResponse>(response)
+        }
+
         val job = launch {
-            session.collect(connectionId) {
-                sendSerialized<WatchPartyResponse>(it)
+            session.state.collect(connectionId) {
+                respond(it)
             }
         }
 
         try {
             for (frame in incoming) {
-                try {
-                    val request = converter!!.deserialize<WatchPartyRequest>(frame)
-                    if (request is WatchPartyPingRequest) {
-                        sendSerialized<WatchPartyResponse>(WatchPartyPongResponse)
-                    } else {
-                        session.apply(request, connectionId)
-                    }
-                } catch (e: SerializationException) {
-                    sendSerialized<WatchPartyResponse>(WatchPartyErrorResponse(e.message ?: "Invalid request"))
-                } catch (e: WatchPartyRequestException) {
-                    sendSerialized<WatchPartyResponse>(WatchPartyErrorResponse(e.message))
-                }
+                handleFrame(frame, session, connectionId)
             }
         } finally {
             job.cancelAndJoin()
+        }
+    }
+
+    private suspend fun DefaultWebSocketServerSession.handleFrame(
+        frame: Frame,
+        session: WatchPartySession,
+        connectionId: WatchPartyConnectionId,
+    ) {
+        suspend fun respond(response: WatchPartyResponse) = sendSerialized<WatchPartyResponse>(response)
+
+        var requestId: WatchPartyRequestId? = null
+        try {
+            when (val request = converter!!.deserialize<WatchPartyRequest>(frame)) {
+                is WatchPartyPingRequest -> respond(WatchPartyPongResponse)
+                is WatchPartyActionRequest -> {
+                    val requestId = request.id.also { requestId = it }
+                    val revision = session.apply(request.action, connectionId, expectedGeneration = request.generation)
+                    respond(WatchPartyAcceptedResponse(requestId, revision))
+                }
+            }
+        } catch (e: SerializationException) {
+            respond(WatchPartyErrorResponse(e.message ?: "Invalid request", requestId, session.state.snapshot(connectionId)))
+        } catch (e: WatchPartyRequestException) {
+            respond(WatchPartyErrorResponse(e.message, requestId, e.state ?: session.state.snapshot(connectionId)))
         }
     }
 }

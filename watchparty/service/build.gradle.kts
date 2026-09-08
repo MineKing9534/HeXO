@@ -1,9 +1,10 @@
 plugins {
     id("kotlin-jvm")
+    alias(libs.plugins.kotlin.atomicfu)
 }
 
 dependencies {
-    implementation(projects.watchparty.common)
+    implementation(projects.watchparty.protocol)
 
     implementation(projects.game.model)
     implementation(projects.server.service)

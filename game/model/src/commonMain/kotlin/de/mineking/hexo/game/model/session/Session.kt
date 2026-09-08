@@ -1,15 +1,15 @@
 package de.mineking.hexo.game.model.session
 
 import de.mineking.hexo.board.moves
-import de.mineking.hexo.game.model.Entity
-import de.mineking.hexo.game.model.EntityId
-import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.LiveDuration
 import de.mineking.hexo.game.model.game.GameOptions
 import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.GameWithPosition
 import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.TournamentMatchSnapshot
+import de.mineking.hexo.utils.types.Entity
+import de.mineking.hexo.utils.types.EntityId
+import de.mineking.hexo.utils.types.EntityState
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline

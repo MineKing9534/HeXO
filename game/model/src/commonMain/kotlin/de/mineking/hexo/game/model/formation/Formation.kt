@@ -1,8 +1,8 @@
 package de.mineking.hexo.game.model.formation
 
 import de.mineking.hexo.board.GamePosition
-import de.mineking.hexo.game.model.Entity
-import de.mineking.hexo.game.model.EntityId
+import de.mineking.hexo.utils.types.Entity
+import de.mineking.hexo.utils.types.EntityId
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 

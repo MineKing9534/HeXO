@@ -1,4 +1,4 @@
-package de.mineking.hexo.game.model
+package de.mineking.hexo.utils.types
 
 interface EntityId {
     val value: String

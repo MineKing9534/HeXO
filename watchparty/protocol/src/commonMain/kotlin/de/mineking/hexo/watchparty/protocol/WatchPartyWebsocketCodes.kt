@@ -1,4 +1,4 @@
-package de.mineking.hexo.watchparty.common
+package de.mineking.hexo.watchparty.protocol
 
 @Suppress("PropertyName")
 object WatchPartyWebsocketCodes {

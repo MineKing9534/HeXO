@@ -1,8 +1,8 @@
 package de.mineking.hexo.game.model.game
 
-import de.mineking.hexo.game.model.EntityRepository
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileQueryError
+import de.mineking.hexo.utils.types.EntityRepository
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.QueryResult
 import de.mineking.hexo.utils.types.Result

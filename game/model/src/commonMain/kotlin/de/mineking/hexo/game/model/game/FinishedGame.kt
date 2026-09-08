@@ -2,7 +2,7 @@ package de.mineking.hexo.game.model.game
 
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.GamePosition
-import de.mineking.hexo.game.model.Entity
+import de.mineking.hexo.utils.types.Entity
 import kotlin.time.Instant
 
 interface FinishedGame : Game, Entity<GameId> {

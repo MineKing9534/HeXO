@@ -1,6 +1,6 @@
 package de.mineking.hexo.game.model.profile
 
-import de.mineking.hexo.game.model.EntityRepository
+import de.mineking.hexo.utils.types.EntityRepository
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
 
