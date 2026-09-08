@@ -174,6 +174,7 @@ enum class CellPlacementMode {
 
 @Composable
 fun Sandbox(boardViewManager: SandboxBoardViewManager) {
+    val history = remember(boardViewManager) { SandboxHistory(boardViewManager) }
     val appLayout = rememberAppLayout()
     DisposableEffect(appLayout) {
         val previousStyle = appLayout.pageStyle
@@ -199,7 +200,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
     Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "flex-col", "md:flex-row") }) {
         Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "p-3", "md:p-6") }) {
             SandboxBoardPane(
-                boardViewManager = boardViewManager,
+                history = history,
                 placementMode = placementMode.value,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
@@ -210,7 +211,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
                 repositories = repositories,
                 placementMode = placementMode,
                 board = boardViewManager.board,
-                onBoardChange = { boardViewManager.board = it },
+                onBoardChange = { history.board = it },
                 onImportPosition = { viewport = BoardViewport() },
             )
         }
