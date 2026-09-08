@@ -58,12 +58,14 @@ fun BoardViewManager.transformBoard(key: Any, transform: (Board) -> Board): Boar
 
 @Composable
 fun BoardActionButton(
+    tooltip: String,
     enabled: Boolean = true,
     color: Color = Color.Neutral,
     attrs: AttrBuilderContext<HTMLButtonElement>? = null,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) = ActionButton(
+    tooltip = tooltip,
     enabled = enabled,
     size = ButtonSize.Medium,
     color = color,
@@ -154,14 +156,14 @@ private fun DefaultBoardControls(
 ) {
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
         if (boardViewManager.hasClearableHighlights) {
-            BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
+            BoardActionButton(tooltip = "Clear highlights", onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
                 ClearHighlightsIcon { classes("size-4") }
             }
         }
 
         if (showOpenInSandbox) OpenInSandboxButton(boardViewManager.board)
 
-        BoardActionButton(onClick = {
+        BoardActionButton(tooltip = "Reset board view", onClick = {
             onViewportChange(BoardViewport())
         }) {
             ResetViewIcon { classes("size-4") }
@@ -174,10 +176,7 @@ private fun DefaultBoardControls(
 @Composable
 private fun OpenInSandboxButton(board: Board) {
     BoardActionButton(
-        attrs = {
-            attr("aria-label", "Open this position in the sandbox")
-            attr("title", "Open this position in the sandbox")
-        },
+        tooltip = "Open this position in the sandbox",
         onClick = {
             val url = URL("${window.location.origin}${BasePath.prependTo(AppRoute.Sandbox.href)}")
             val notation = board.renderRectilinearStateBKETurnNotation()
@@ -200,7 +199,10 @@ private fun FullScreenButton() {
         onDispose { layout.supportsFullScreen = previousSupportsFullScreen }
     }
 
-    BoardActionButton(onClick = { layout.fullscreen = !layout.fullscreen }) {
+    BoardActionButton(
+        tooltip = if (layout.fullscreen) "Exit fullscreen" else "Enter fullscreen",
+        onClick = { layout.fullscreen = !layout.fullscreen },
+    ) {
         if (layout.fullscreen) {
             ExitFullscreenIcon { classes("size-4") }
         } else {

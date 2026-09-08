@@ -84,6 +84,7 @@ private fun AnalyzerStatusDisplay(
     ) {
         if (allowAnalyzerOverlay) {
             ActionButton(
+                tooltip = if (showAnalyzerOverlay) "Hide analysis overlay" else "Show analysis overlay",
                 onClick = { onShowAnalyzerOverlayChange(!showAnalyzerOverlay) },
                 attrs = { classes("flex-0") },
             ) {
@@ -96,9 +97,6 @@ private fun AnalyzerStatusDisplay(
         } else {
             Tooltip(
                 text = "The forced-win overlay is disabled for live rated games",
-                tooltipAttrs = {
-                    classes("right-11", "top-1/2", "w-max", "max-w-72", "-translate-y-1/2")
-                },
             ) {
                 Div({
                     classes(
