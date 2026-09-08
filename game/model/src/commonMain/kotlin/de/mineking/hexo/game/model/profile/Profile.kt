@@ -1,11 +1,11 @@
 package de.mineking.hexo.game.model.profile
 
-import de.mineking.hexo.game.model.Entity
-import de.mineking.hexo.game.model.EntityId
-import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.FinishedGameSelector
+import de.mineking.hexo.utils.types.Entity
+import de.mineking.hexo.utils.types.EntityId
+import de.mineking.hexo.utils.types.EntityNotFoundException
 import de.mineking.hexo.utils.types.QueryResult
 import de.mineking.hexo.utils.types.orThrow
 import kotlinx.serialization.Serializable

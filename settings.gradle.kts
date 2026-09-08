@@ -42,7 +42,8 @@ include(":server:service")
 include(":launcher")
 
 include(":watchparty:service")
-include(":watchparty:common")
+include(":watchparty:protocol")
+include(":watchparty:model")
 include(":watchparty:client")
 
 include(":utils:coroutines")

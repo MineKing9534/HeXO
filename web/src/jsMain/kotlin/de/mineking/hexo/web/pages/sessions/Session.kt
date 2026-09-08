@@ -11,16 +11,16 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.session.LiveSession
 import de.mineking.hexo.game.model.session.LobbySession
 import de.mineking.hexo.game.model.session.Session
 import de.mineking.hexo.game.model.session.SessionId
 import de.mineking.hexo.game.model.session.SessionState
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
-import de.mineking.hexo.web.board.rememberHostBoardViewManager
+import de.mineking.hexo.web.board.rememberGameBoardViewManager
 import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.NotFoundCard
@@ -40,7 +40,7 @@ fun initSessionPage(ctx: InitRouteContext) {
 @Page("{id}")
 @Composable
 fun SessionPage(ctx: PageContext) {
-    val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
+    val boardViewManager = rememberGameBoardViewManager()
     Session(ctx.route.sessionId, boardViewManager)
 }
 

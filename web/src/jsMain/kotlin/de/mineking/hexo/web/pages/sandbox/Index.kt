@@ -28,7 +28,7 @@ import de.mineking.hexo.utils.types.present
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.AnalyzerTurn
 import de.mineking.hexo.web.board.SandboxBoardViewManager
-import de.mineking.hexo.web.board.rememberHostBoardViewManager
+import de.mineking.hexo.web.board.rememberSandboxBoardViewManager
 import de.mineking.hexo.web.components.Dialog
 import de.mineking.hexo.web.components.TextAreaInput
 import de.mineking.hexo.web.layout.AppRoute
@@ -39,6 +39,7 @@ import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberQueryParameter
 import de.mineking.hexo.web.rememberSoundPlayer
+import de.mineking.hexo.web.rememberWatchPartyController
 import org.jetbrains.compose.web.dom.Div
 
 @InitRoute
@@ -50,6 +51,7 @@ fun initSandboxPage(ctx: InitRouteContext) {
 @Composable
 fun SandboxPage() {
     var positionParameter by rememberQueryParameter("position")
+    val hasInitialPosition = remember { !positionParameter.isNullOrBlank() }
     val (initialBoard, initialError) = remember {
         val initial = positionParameter?.replace("_", "/") ?: ""
 
@@ -66,9 +68,13 @@ fun SandboxPage() {
     }
     LaunchedEffect(Unit) { positionParameter = null }
 
-    val boardViewManager = rememberHostBoardViewManager<SandboxBoardViewManager>()
-    LaunchedEffect(initialBoard) {
-        boardViewManager.board = initialBoard
+    val boardViewManager = rememberSandboxBoardViewManager()
+    val watchPartyController = rememberWatchPartyController()
+    LaunchedEffect(boardViewManager, initialBoard) {
+        watchPartyController.awaitReady()
+        if (hasInitialPosition || watchPartyController.currentWatchParty == null) {
+            boardViewManager.board = initialBoard
+        }
     }
 
     Sandbox(boardViewManager)
@@ -174,7 +180,6 @@ enum class CellPlacementMode {
 
 @Composable
 fun Sandbox(boardViewManager: SandboxBoardViewManager) {
-    val history = remember(boardViewManager) { SandboxHistory(boardViewManager) }
     val appLayout = rememberAppLayout()
     DisposableEffect(appLayout) {
         val previousStyle = appLayout.pageStyle
@@ -200,7 +205,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
     Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "flex-col", "md:flex-row") }) {
         Div({ classes("min-h-0", "min-w-0", "flex-1", "flex", "p-3", "md:p-6") }) {
             SandboxBoardPane(
-                history = history,
+                boardViewManager = boardViewManager,
                 placementMode = placementMode.value,
                 viewport = viewport,
                 onViewportChange = { viewport = it },
@@ -211,7 +216,7 @@ fun Sandbox(boardViewManager: SandboxBoardViewManager) {
                 repositories = repositories,
                 placementMode = placementMode,
                 board = boardViewManager.board,
-                onBoardChange = { history.board = it },
+                onBoardChange = { boardViewManager.board = it },
                 onImportPosition = { viewport = BoardViewport() },
             )
         }

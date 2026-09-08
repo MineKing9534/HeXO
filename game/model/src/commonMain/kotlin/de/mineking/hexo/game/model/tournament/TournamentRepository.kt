@@ -1,7 +1,7 @@
 package de.mineking.hexo.game.model.tournament
 
-import de.mineking.hexo.game.model.EntityRepository
-import de.mineking.hexo.game.model.EntityState
+import de.mineking.hexo.utils.types.EntityRepository
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
 import kotlinx.coroutines.flow.StateFlow

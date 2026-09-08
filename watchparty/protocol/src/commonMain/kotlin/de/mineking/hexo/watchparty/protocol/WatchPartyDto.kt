@@ -1,16 +1,11 @@
-package de.mineking.hexo.watchparty.common
+package de.mineking.hexo.watchparty.protocol
 
 import de.mineking.hexo.board.Board
-import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
+import de.mineking.hexo.watchparty.model.WatchPartyId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmInline
-
-@JvmInline
-@Serializable
-value class WatchPartyId(override val value: String) : EntityId
 
 @Serializable
 sealed interface WatchPartyResponse
@@ -20,14 +15,14 @@ sealed interface WatchPartyResponse
 data object WatchPartyPongResponse : WatchPartyResponse
 
 @Serializable
-sealed interface WatchPartyTarget {
+sealed interface WatchPartyTargetDto {
     @Serializable
     @SerialName("session")
     data class Session(
         val sessionId: SessionId,
         val move: Int,
         val overlay: Board,
-    ) : WatchPartyTarget
+    ) : WatchPartyTargetDto
 
     @Serializable
     @SerialName("game")
@@ -35,23 +30,35 @@ sealed interface WatchPartyTarget {
         val gameId: GameId,
         val move: Int,
         val overlay: Board,
-    ) : WatchPartyTarget
+    ) : WatchPartyTargetDto
 
     @Serializable
     @SerialName("sandbox")
     data class Sandbox(
         val board: Board,
-    ) : WatchPartyTarget
+        val canUndo: Boolean,
+        val canRedo: Boolean,
+    ) : WatchPartyTargetDto
 }
 
 @Serializable
 @SerialName("data")
-data class WatchPartyData(
+data class WatchPartyDto(
     val id: WatchPartyId,
-    val target: WatchPartyTarget?,
-    val clearableHighlights: Boolean = false,
+    val target: WatchPartyTargetDto?,
+    val clearableHighlights: Boolean,
+    val revision: Long = 0,
+    val generation: Long = 0,
 ) : WatchPartyResponse
 
 @Serializable
 @SerialName("error")
-data class WatchPartyErrorResponse(val message: String) : WatchPartyResponse
+data class WatchPartyErrorResponse(
+    val message: String,
+    val requestId: WatchPartyRequestId?,
+    val state: WatchPartyDto,
+) : WatchPartyResponse
+
+@Serializable
+@SerialName("accepted")
+data class WatchPartyAcceptedResponse(val requestId: WatchPartyRequestId, val revision: Long) : WatchPartyResponse

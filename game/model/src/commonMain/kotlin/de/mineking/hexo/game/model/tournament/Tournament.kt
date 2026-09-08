@@ -1,12 +1,12 @@
 package de.mineking.hexo.game.model.tournament
 
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.game.model.Entity
-import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.GameReference
 import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.session.SessionReference
+import de.mineking.hexo.utils.types.Entity
+import de.mineking.hexo.utils.types.EntityId
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant

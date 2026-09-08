@@ -47,16 +47,6 @@ fun GameWithPosition.rememberPosition(move: Int): GamePosition<GameMove> {
 }
 
 @Composable
-fun BoardViewManager.transformBoard(key: Any, transform: (Board) -> Board): BoardViewManager {
-    val board = remember(board, key) { transform(board) }
-    return remember(board) {
-        object : BoardViewManager by this {
-            override val board = board
-        }
-    }
-}
-
-@Composable
 fun BoardActionButton(
     tooltip: String,
     enabled: Boolean = true,
@@ -79,6 +69,7 @@ fun BoardActionButton(
 
 @Composable
 fun BoardPane(
+    board: Board,
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
     plain: Boolean = false,
@@ -111,7 +102,7 @@ fun BoardPane(
         )
     }) {
         InteractiveBoard(
-            board = boardViewManager.board,
+            board = board,
             viewport = viewport,
             onViewportChange = onViewportChange,
             onBoardInteraction = onBoardInteraction,
@@ -126,7 +117,13 @@ fun BoardPane(
             },
         ) {
             content?.invoke(this)
-            DefaultBoardControls(boardViewManager, plain, showOpenInSandbox, onViewportChange)
+            DefaultBoardControls(
+                board = board,
+                boardViewManager = boardViewManager,
+                plain = plain,
+                showOpenInSandbox = showOpenInSandbox,
+                onViewportChange = onViewportChange,
+            )
         }
 
         @Composable
@@ -149,6 +146,7 @@ fun BoardPane(
 
 @Composable
 private fun DefaultBoardControls(
+    board: Board,
     boardViewManager: BoardViewManager,
     plain: Boolean,
     showOpenInSandbox: Boolean,
@@ -161,7 +159,7 @@ private fun DefaultBoardControls(
             }
         }
 
-        if (showOpenInSandbox) OpenInSandboxButton(boardViewManager.board)
+        if (showOpenInSandbox) OpenInSandboxButton(board)
 
         BoardActionButton(tooltip = "Reset board view", onClick = {
             onViewportChange(BoardViewport())

@@ -1,6 +1,5 @@
 package de.mineking.hexo.hds.implementation.tournament
 
-import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.tournament.Tournament
 import de.mineking.hexo.game.model.tournament.TournamentId
 import de.mineking.hexo.game.model.tournament.TournamentNotFoundError
@@ -11,6 +10,7 @@ import de.mineking.hexo.hds.implementation.socket.TournamentUpdate
 import de.mineking.hexo.hds.implementation.socket.listen
 import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.isSuccess
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import kotlinx.atomicfu.locks.SynchronizedObject

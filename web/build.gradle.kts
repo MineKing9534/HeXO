@@ -52,6 +52,8 @@ kotlin {
             implementation(libs.compose.html.svg)
 
             implementation(libs.kotlin.serialization.json)
+
+            implementation(libs.logging)
         }
 
         resources.srcDir(layout.buildDirectory.dir("generated/resources"))

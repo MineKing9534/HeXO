@@ -1,5 +1,7 @@
 plugins {
     id("kotlin-multiplatform")
+    alias(libs.plugins.kotlin.atomicfu)
+
     id("publish")
 }
 
@@ -9,7 +11,8 @@ kotlin {
 
     sourceSets.commonMain {
         dependencies {
-            api(projects.watchparty.common)
+            api(projects.watchparty.model)
+            implementation(projects.watchparty.protocol)
             implementation(projects.game.model)
 
             implementation(libs.bundles.ktor.client)

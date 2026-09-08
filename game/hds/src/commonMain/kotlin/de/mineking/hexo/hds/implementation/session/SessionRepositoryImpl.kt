@@ -1,6 +1,5 @@
 package de.mineking.hexo.hds.implementation.session
 
-import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.session.DetailedSession
 import de.mineking.hexo.game.model.session.Session
 import de.mineking.hexo.game.model.session.SessionId
@@ -21,6 +20,7 @@ import de.mineking.hexo.hds.implementation.socket.SocketListener
 import de.mineking.hexo.hds.implementation.socket.listen
 import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body

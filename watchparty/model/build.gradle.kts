@@ -8,7 +8,7 @@ plugins {
 kotlin {
     sourceSets.commonMain {
         dependencies {
-            api(projects.board)
+            implementation(projects.utils.types)
             implementation(projects.game.model)
 
             implementation(libs.kotlin.serialization.core)

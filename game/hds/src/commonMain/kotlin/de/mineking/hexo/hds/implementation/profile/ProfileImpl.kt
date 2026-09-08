@@ -1,15 +1,15 @@
 package de.mineking.hexo.hds.implementation.profile
 
-import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.game.rated
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
-import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.EntityNotFoundException
 import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.orThrow
 import de.mineking.hexo.utils.types.page
+import de.mineking.hexo.utils.types.urlOf
 
 internal class ProfileImpl(
     private val client: HdsApiClient,
