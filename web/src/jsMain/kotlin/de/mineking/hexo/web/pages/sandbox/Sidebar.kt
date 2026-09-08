@@ -395,11 +395,10 @@ private fun NotationActions(
     Div({ classes("flex", "shrink-0", "gap-1.5") }) {
         var link by remember { mutableStateOf<String?>(null) }
         ActionButton(
+            tooltip = "Copy a link to this position",
             enabled = notation.isNotBlank(),
             attrs = {
                 classes("grid", "size-7!", "place-items-center", "p-0!")
-                attr("aria-label", "Copy a link to this position")
-                attr("title", "Copy a link to this position")
             },
             onClick = {
                 val url = URL(window.location.href)
@@ -414,10 +413,9 @@ private fun NotationActions(
 
         if (repositories != null) {
             ActionButton(
+                tooltip = "Import an existing position",
                 attrs = {
                     classes("grid", "size-7!", "place-items-center", "p-0!")
-                    attr("aria-label", "Import an existing position")
-                    attr("title", "Import an existing position")
                 },
                 onClick = { importDialogOpen = true },
             ) {
@@ -477,10 +475,9 @@ private fun SidebarNotationInfo(
         Div({ classes("flex", "items-center", "gap-1.5") }) {
             if (parseError == null && board.cells.any { it.value.turn != null }) {
                 ActionButton(
+                    tooltip = "Remove turn data",
                     attrs = {
                         classes("grid", "size-7!", "place-items-center", "p-0!")
-                        attr("aria-label", "Remove turn data")
-                        attr("title", "Remove turn data")
                     },
                     onClick = {
                         onBoardChange(board.copy().apply {

@@ -115,6 +115,7 @@ private fun ImportButton(
     val parser = remember { RemoteBoardParser(formationRepository, finishedGameRepository) }
 
     ActionButton(
+        tooltip = if (loading) "Importing position" else "Import position from URL",
         enabled = valid && !loading,
         size = ButtonSize.Medium,
         color = Color.Sky,

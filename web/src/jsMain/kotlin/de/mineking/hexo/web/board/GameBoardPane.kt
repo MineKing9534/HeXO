@@ -137,19 +137,13 @@ private fun BoardScope.BoardControls(
     }) {
         BoardActionButton(
             enabled = boardViewManager.currentMove > 0,
-            attrs = {
-                attr("aria-label", "Previous move")
-                attr("title", "Previous move")
-            },
+            tooltip = "Previous move",
             onClick = { boardViewManager.currentMove = previousMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronLeftIcon { classes("size-4") } }
 
         BoardActionButton(
             enabled = boardViewManager.currentMove < totalMoves,
-            attrs = {
-                attr("aria-label", "Next move")
-                attr("title", "Next move")
-            },
+            tooltip = "Next move",
             onClick = { boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronRightIcon { classes("size-4") } }
 

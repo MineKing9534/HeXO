@@ -298,7 +298,7 @@ private fun EmptyGameState(filter: RatedFilter, page: Int, onPrevious: () -> Uni
         title = if (page == 1) "No finished games" else "No more games",
         description = description,
         action = if (page > 1) {
-            @Composable { ActionButton(label = "Previous page", onClick = onPrevious) }
+            @Composable { ActionButton(label = "Previous page", tooltip = "Go to the previous page of games", onClick = onPrevious) }
         } else {
             null
         },
