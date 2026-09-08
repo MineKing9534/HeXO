@@ -189,6 +189,12 @@ private class WatchPartyBoardViewManager(val watchParty: WatchParty) : LocalBoar
     }
 
     override fun clearHighlights() {
+        if (watchParty.data.value.target is WatchPartyTarget.Sandbox) {
+            suppressOutboundUpdate {
+                super.clearHighlights()
+            }
+        }
+
         GlobalScope.launch {
             watchParty.clearHighlights()
         }
