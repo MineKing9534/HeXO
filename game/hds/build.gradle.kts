@@ -9,12 +9,6 @@ plugins {
 
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.kotlin.atomicfu)
-
-    alias(libs.plugins.ksp)
-}
-
-dependencies {
-    kspCommonMainMetadata(projects.game.hds.processor)
 }
 
 kotlin {
@@ -27,10 +21,12 @@ kotlin {
             implementation(projects.board)
 
             implementation(projects.utils.coroutines)
+            implementation(projects.utils.socketio.client)
 
             implementation(libs.kotlin.coroutines.core)
             implementation(libs.kotlin.serialization.json)
             implementation(libs.bundles.ktor.client)
+            implementation(libs.ktor.client.websockets)
 
             implementation(libs.logging)
         }
@@ -39,26 +35,12 @@ kotlin {
     sourceSets.jvmMain {
         dependencies {
             implementation(libs.ktor.client.cio)
-
-            implementation("io.socket:socket.io-client:2.1.1")
         }
     }
 
     sourceSets.jsMain {
         dependencies {
             implementation(libs.ktor.client.js)
-
-            implementation(npm("socket.io-client", "4.8.3"))
         }
     }
-}
-
-project.tasks.withType(KotlinCompilationTask::class.java).configureEach {
-    if (name != "kspCommonMainKotlinMetadata") {
-        dependsOn("kspCommonMainKotlinMetadata")
-    }
-}
-
-project.tasks.matching { it.name.lowercase().endsWith("sourcesjar") }.configureEach {
-    dependsOn("kspCommonMainKotlinMetadata")
 }

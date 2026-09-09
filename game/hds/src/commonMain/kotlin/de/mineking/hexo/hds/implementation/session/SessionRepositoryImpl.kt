@@ -9,17 +9,16 @@ import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.socket.GameCellPlace
 import de.mineking.hexo.hds.implementation.socket.GameStateUpdated
+import de.mineking.hexo.hds.implementation.socket.HdsSocketClient
 import de.mineking.hexo.hds.implementation.socket.HexoSocketRequest
 import de.mineking.hexo.hds.implementation.socket.LobbyRemoved
 import de.mineking.hexo.hds.implementation.socket.LobbyUpdated
 import de.mineking.hexo.hds.implementation.socket.SessionUpdated
 import de.mineking.hexo.hds.implementation.socket.SessionWatchError
 import de.mineking.hexo.hds.implementation.socket.SessionWatchStarted
-import de.mineking.hexo.hds.implementation.socket.SocketIOClient
-import de.mineking.hexo.hds.implementation.socket.SocketListener
-import de.mineking.hexo.hds.implementation.socket.listen
 import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
+import de.mineking.hexo.utils.socketio.client.SocketListener
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -49,7 +48,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
     }
 
     init {
-        client.socketClient?.registerLobbyListeners()
+        client.client.socketClient?.registerLobbyListeners()
         client.coroutineScope.launch { populateLobbyList() }
     }
 
@@ -60,7 +59,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         this.sessions.value = lobbies.associate { it.id to SessionImpl(client, it) }
     }
 
-    private fun SocketIOClient.registerLobbyListeners() {
+    private fun HdsSocketClient.registerLobbyListeners() {
         listen<LobbyUpdated> { event ->
             val newLobby = SessionImpl(client, event.data)
             sessions.update { it + (event.id to newLobby) }
@@ -77,7 +76,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         .successIfNotNullOrElse(SessionNotFoundError)
 
     override fun observeSession(id: SessionId): StateFlow<EntityState<DetailedSession>> {
-        if (client.socketClient == null) error("Cannot observe sessions without a SocketIO connection")
+        if (client.client.socketClient == null) error("Cannot observe sessions without a SocketIO connection")
 
         return sessionsLock.withLock {
             sessionFlows.getOrPut(id) {
@@ -89,11 +88,11 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
     }
 
     private fun MutableStateFlow<EntityState<ObservedSessionImpl>>.handleSessionState(id: SessionId, onCleanup: () -> Unit) {
-        require(client.socketClient != null)
+        require(client.client.socketClient != null)
 
         val listeners = mutableListOf<SocketListener>()
-        fun cleanup() {
-            client.socketClient.request(HexoSocketRequest.UnwatchSession(id))
+        suspend fun cleanup() {
+            client.client.socketClient.request(HexoSocketRequest.UnwatchSession(id))
 
             sessionsLock.withLock { sessionFlows -= id }
 
@@ -101,7 +100,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             onCleanup()
         }
 
-        listeners += client.socketClient.listen<SessionWatchError> { event ->
+        listeners += client.client.socketClient.listen<SessionWatchError> { event ->
             if (event.sessionId != id) return@listen
 
             logger.warn { "Failed to watch session ${id.value}: ${event.message}" }
@@ -109,7 +108,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             cleanup()
         }
 
-        listeners += client.socketClient.listen<SessionUpdated> { event ->
+        listeners += client.client.socketClient.listen<SessionUpdated> { event ->
             if (event.sessionId != id) return@listen
 
             update { state ->
@@ -141,11 +140,11 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
     }
 
     private fun MutableStateFlow<EntityState<ObservedSessionImpl>>.populate(id: SessionId) {
-        require(client.socketClient != null)
+        require(client.client.socketClient != null)
 
         val listeners = mutableListOf<SocketListener>()
 
-        listeners += client.socketClient.listen<SessionWatchStarted> { event ->
+        listeners += client.client.socketClient.listen<SessionWatchStarted> { event ->
             if (event.session.id != id) return@listen
 
             logger.info { "Successfully joined session ${event.session.id.value}" }
@@ -156,7 +155,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             ))
         }
 
-        listeners += client.socketClient.listen<GameCellPlace> { event ->
+        listeners += client.client.socketClient.listen<GameCellPlace> { event ->
             if (event.sessionId != id) return@listen
 
             update { state ->
@@ -178,7 +177,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             }
         }
 
-        listeners += client.socketClient.listen<GameStateUpdated> { event ->
+        listeners += client.client.socketClient.listen<GameStateUpdated> { event ->
             if (event.sessionId != id) return@listen
 
             update { state ->
@@ -200,6 +199,8 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         }
 
         logger.info { "Watching session ${id.value}..." }
-        client.socketClient.request(HexoSocketRequest.WatchSession(id))
+        client.coroutineScope.launch {
+            client.client.socketClient.request(HexoSocketRequest.WatchSession(id))
+        }
     }
 }

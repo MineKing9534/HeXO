@@ -25,7 +25,6 @@ include(":web")
 
 include(":game:model")
 include(":game:hds")
-include(":game:hds:processor")
 
 include(":solver")
 
@@ -48,3 +47,5 @@ include(":watchparty:client")
 
 include(":utils:coroutines")
 include(":utils:types")
+include(":utils:socketio:client")
+include(":utils:socketio:server")

@@ -1,20 +1,16 @@
 package de.mineking.hexo.hds.implementation.socket
 
 import de.mineking.hexo.game.model.session.SessionId
-import de.mineking.hexo.hds.socket.SocketRequestRegistry
+import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
-sealed interface SocketRequest
-
-sealed interface HexoSocketRequest : SocketRequest {
+@Serializable
+sealed interface HexoSocketRequest {
     @Serializable
-    @SocketEventName("watch-session")
+    @SerialName("watch-session")
     data class WatchSession(val sessionId: SessionId) : HexoSocketRequest
 
     @Serializable
-    @SocketEventName("unwatch-session")
+    @SerialName("unwatch-session")
     data class UnwatchSession(val sessionId: SessionId) : HexoSocketRequest
 }
-
-val SocketRequest.requestName get() = SocketRequestRegistry.requestNames[this::class]
-    ?: error("requestName for ${this::class} not found, this should never happen")
