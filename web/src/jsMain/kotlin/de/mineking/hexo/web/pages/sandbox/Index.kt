@@ -25,6 +25,7 @@ import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.render.compose.BoardModifierKeys
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.utils.types.present
+import de.mineking.hexo.watchparty.client.WatchPartyTarget
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.AnalyzerTurn
 import de.mineking.hexo.web.board.SandboxBoardViewManager
@@ -40,6 +41,7 @@ import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberQueryParameter
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberWatchPartyController
+import kotlinx.coroutines.flow.first
 import org.jetbrains.compose.web.dom.Div
 
 @InitRoute
@@ -72,6 +74,11 @@ fun SandboxPage() {
     val watchPartyController = rememberWatchPartyController()
     LaunchedEffect(boardViewManager, initialBoard) {
         watchPartyController.awaitReady()
+        if (hasInitialPosition) {
+            // Wait for RootLayout to update the watchparty target.
+            watchPartyController.hostWatchParty?.target
+                ?.first { it is WatchPartyTarget.Sandbox }
+        }
         if (hasInitialPosition || watchPartyController.currentWatchParty == null) {
             boardViewManager.board = initialBoard
         }

@@ -31,6 +31,7 @@ import de.mineking.hexo.web.icons.SandboxIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberTheme
+import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
@@ -173,13 +174,15 @@ private fun DefaultBoardControls(
 
 @Composable
 private fun OpenInSandboxButton(board: Board) {
+    val watchPartyController = rememberWatchPartyController()
+
     BoardActionButton(
         tooltip = "Open this position in the sandbox",
         onClick = {
             val url = URL("${window.location.origin}${BasePath.prependTo(AppRoute.Sandbox.href)}")
             val notation = board.renderRectilinearStateBKETurnNotation()
             url.searchParams.set("position", notation.replace("/", "_"))
-            window.open(url.toString(), "_blank")
+            window.open(url.toString(), if (watchPartyController.hostWatchParty == null) "_blank" else "_self")
         },
     ) {
         SandboxIcon { classes("size-4") }
