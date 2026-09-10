@@ -86,10 +86,11 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
     }
 
     val fullscreen = layout.fullscreen && layout.supportsFullScreen
+    var watchPartyOptionsOpen by remember { mutableStateOf(false) }
 
     Div({ classes("flex", "h-full", "w-full", "flex-col", "overflow-hidden", "select-none") }) {
         if (!fullscreen) {
-            NavBar(data.route)
+            NavBar(data.route, onOpenWatchPartyOptions = { watchPartyOptionsOpen = true })
         }
 
         Main({
@@ -108,11 +109,17 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
         if (!fullscreen) {
             AppFooter()
         }
+
+        if (watchPartyOptionsOpen) {
+            Dialog(title = null, onClose = { watchPartyOptionsOpen = false }) {
+                WatchPartyHostOptions()
+            }
+        }
     }
 }
 
 @Composable
-private fun NavBar(activePage: AppRoute?) {
+private fun NavBar(activePage: AppRoute?, onOpenWatchPartyOptions: () -> Unit) {
     Header({
         classes(
             "relative", "z-20", "shrink-0", "border-b", "border-slate-800/80", "bg-slate-950/95", "px-3", "py-2.5",
@@ -154,7 +161,7 @@ private fun NavBar(activePage: AppRoute?) {
             DesktopNavigation(activePage)
 
             Div({ classes("col-start-3", "row-start-1", "flex", "min-w-0", "justify-self-end") }) {
-                WatchPartyIndicator()
+                WatchPartyIndicator(onOpenWatchPartyOptions)
             }
         }
     }
@@ -205,21 +212,13 @@ private fun DesktopNavigation(activePage: AppRoute?) {
 }
 
 @Composable
-private fun WatchPartyIndicator() {
+private fun WatchPartyIndicator(onOpenHostOptions: () -> Unit) {
     val watchPartyController = rememberWatchPartyController()
     val watchParty = watchPartyController.currentWatchParty ?: return
     val connected by watchParty.connected.collectAsState()
 
     if (watchPartyController.hostWatchParty != null) {
-        var open by remember { mutableStateOf(false) }
-
-        SessionHostIndicatorButton(connected, onClick = { open = true })
-
-        if (open) {
-            Dialog(title = null, onClose = { open = false }) {
-                WatchPartyHostOptions()
-            }
-        }
+        SessionHostIndicatorButton(connected, onClick = onOpenHostOptions)
         return
     }
 
