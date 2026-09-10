@@ -4,82 +4,71 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
+import de.mineking.hexo.watchparty.model.WatchPartyId
 import de.mineking.hexo.watchparty.model.WatchPartyNavigateTarget
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import kotlin.jvm.JvmInline
+
+@Serializable
+data class WatchPartyConnectData(
+    val watchPartyId: WatchPartyId,
+    val connectionId: WatchPartyConnectionId,
+    val detachOnClose: Boolean,
+)
 
 @Serializable
 sealed interface WatchPartyRequest
 
 @Serializable
-@SerialName("ping")
-data object WatchPartyPingRequest : WatchPartyRequest
-
-@Serializable
-@SerialName("action")
-data class WatchPartyActionRequest(
-    val id: WatchPartyRequestId,
-    val generation: Long?,
-    val action: WatchPartyAction,
-) : WatchPartyRequest
-
-@Serializable
-sealed interface WatchPartyAction
-
-@Serializable
-sealed interface WatchPartyTransactionChildAction : WatchPartyAction
+sealed interface WatchPartyTransactionChildRequest : WatchPartyRequest
 
 @Serializable
 @SerialName("navigate")
 data class WatchPartyNavigateRequest(
     val target: WatchPartyNavigateTarget?,
-) : WatchPartyAction
+) : WatchPartyRequest
 
 @Serializable
 @SerialName("move")
 data class WatchPartyMoveCountRequest(
     val move: Int,
-) : WatchPartyAction
+) : WatchPartyRequest
 
 @Serializable
 @SerialName("update")
 data class WatchPartyUpdateRequest(
     val board: Board,
-) : WatchPartyTransactionChildAction
+) : WatchPartyTransactionChildRequest
 
 @Serializable
 @SerialName("cell")
 data class WatchPartyCellRequest(
     val coordinate: CellCoordinate,
     val cell: CellOverride,
-) : WatchPartyTransactionChildAction
+) : WatchPartyTransactionChildRequest
 
 @Serializable
 @SerialName("line")
 data class WatchPartyLineHighlightRequest(
     val line: LineHighlight,
     val remove: Boolean,
-) : WatchPartyTransactionChildAction
+) : WatchPartyTransactionChildRequest
 
 @Serializable
 @SerialName("clear-highlights")
-data object WatchPartyClearHighlightsRequest : WatchPartyTransactionChildAction
+data object WatchPartyClearHighlightsRequest : WatchPartyTransactionChildRequest
 
 @Serializable
 @SerialName("undo")
-data object WatchPartyUndoRequest : WatchPartyTransactionChildAction
+data object WatchPartyUndoRequest : WatchPartyTransactionChildRequest
 
 @Serializable
 @SerialName("redo")
-data object WatchPartyRedoRequest : WatchPartyTransactionChildAction
+data object WatchPartyRedoRequest : WatchPartyTransactionChildRequest
 
 @Serializable
 @SerialName("transaction")
 data class WatchPartyTransactionRequest(
-    val actions: List<WatchPartyTransactionChildAction>,
-) : WatchPartyAction
-
-@JvmInline
-@Serializable
-value class WatchPartyRequestId(val value: String)
+    val actions: List<WatchPartyTransactionChildRequest>,
+) : WatchPartyRequest

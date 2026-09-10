@@ -74,7 +74,7 @@ class HdsApiClient(
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
 ) : RepositoryContainer {
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
-        client.httpClient.request("${client.apiUrl}/api$path", builder)
+        client.httpClient.request("${client.apiUrl.trimEnd('/')}/api$path", builder)
 
     override val formationRepository = repositoryWrapper.run { FormationRepositoryImpl(this@HdsApiClient).wrap() }
     override val finishedGameRepository = repositoryWrapper.run { FinishedGameRepositoryImpl(this@HdsApiClient).wrap() }

@@ -60,11 +60,11 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
     }
 
     private fun HdsSocketClient.registerLobbyListeners() {
-        listen<LobbyUpdated> { event ->
+        listen<LobbyUpdated> { (event) ->
             val newLobby = SessionImpl(client, event.data)
             sessions.update { it + (event.id to newLobby) }
         }
-        listen<LobbyRemoved> { event ->
+        listen<LobbyRemoved> { (event) ->
             sessions.update { it - event.id }
             sessionsLock.withLock {
                 sessionFlows -= event.id
@@ -100,7 +100,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             onCleanup()
         }
 
-        listeners += client.client.socketClient.listen<SessionWatchError> { event ->
+        listeners += client.client.socketClient.listen<SessionWatchError> { (event) ->
             if (event.sessionId != id) return@listen
 
             logger.warn { "Failed to watch session ${id.value}: ${event.message}" }
@@ -108,7 +108,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             cleanup()
         }
 
-        listeners += client.client.socketClient.listen<SessionUpdated> { event ->
+        listeners += client.client.socketClient.listen<SessionUpdated> { (event) ->
             if (event.sessionId != id) return@listen
 
             update { state ->
@@ -144,7 +144,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
         val listeners = mutableListOf<SocketListener>()
 
-        listeners += client.client.socketClient.listen<SessionWatchStarted> { event ->
+        listeners += client.client.socketClient.listen<SessionWatchStarted> { (event) ->
             if (event.session.id != id) return@listen
 
             logger.info { "Successfully joined session ${event.session.id.value}" }
@@ -155,7 +155,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             ))
         }
 
-        listeners += client.client.socketClient.listen<GameCellPlace> { event ->
+        listeners += client.client.socketClient.listen<GameCellPlace> { (event) ->
             if (event.sessionId != id) return@listen
 
             update { state ->
@@ -177,7 +177,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             }
         }
 
-        listeners += client.client.socketClient.listen<GameStateUpdated> { event ->
+        listeners += client.client.socketClient.listen<GameStateUpdated> { (event) ->
             if (event.sessionId != id) return@listen
 
             update { state ->
@@ -199,8 +199,6 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         }
 
         logger.info { "Watching session ${id.value}..." }
-        client.coroutineScope.launch {
-            client.client.socketClient.request(HexoSocketRequest.WatchSession(id))
-        }
+        client.client.socketClient.request(HexoSocketRequest.WatchSession(id))
     }
 }

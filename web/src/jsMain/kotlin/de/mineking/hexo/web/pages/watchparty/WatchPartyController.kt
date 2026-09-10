@@ -12,7 +12,8 @@ import com.varabyte.kobweb.browser.storage.setItem
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.watchparty.client.WatchParty
 import de.mineking.hexo.watchparty.client.WatchPartyClient
-import de.mineking.hexo.watchparty.client.createWatchParty
+import de.mineking.hexo.watchparty.client.createAndConnectWatchParty
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 import de.mineking.hexo.watchparty.model.WatchPartyId
 import de.mineking.hexo.web.onSet
 import de.mineking.hexo.web.settings.SettingsController
@@ -22,7 +23,6 @@ import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.DelicateCoroutinesApi
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import kotlin.uuid.Uuid
 
 @OptIn(DelicateCoroutinesApi::class)
 class WatchPartyController(host: String, private val settingsController: SettingsController) {
@@ -60,7 +60,7 @@ class WatchPartyController(host: String, private val settingsController: Setting
     suspend fun startHost() {
         closeHost()
 
-        val session = watchPartyClient.createWatchParty(detachOnClose = true, connectionId = connectionId)
+        val session = watchPartyClient.createAndConnectWatchParty(detachOnClose = true, connectionId = connectionId)
         hostWatchParty = session
     }
 
@@ -96,8 +96,7 @@ class WatchPartyController(host: String, private val settingsController: Setting
 
     private fun MutableState<WatchParty?>.interceptWatchPartyHost() = onSet { new ->
         if (new == null) {
-            val current = value
-            GlobalScope.launch { current?.close() }
+            value?.close()
             settingsController[SettingsKey.HostWatchPartyId].value = null
         } else {
             settingsController[SettingsKey.HostWatchPartyId].value = new.id
@@ -110,7 +109,7 @@ class WatchPartyController(host: String, private val settingsController: Setting
     private fun MutableState<EntityState<WatchParty>?>.interceptWatchPartySubscriber() = onSet { new ->
         val current = value
         if (current is EntityState.Data) {
-            GlobalScope.launch { current.value.close() }
+            current.value.close()
         }
 
         if (new is EntityState.Data) {
@@ -121,15 +120,15 @@ class WatchPartyController(host: String, private val settingsController: Setting
     }
 }
 
-private object WatchPartyConnectionIdKey : StorageKey<String>("watchparty_connection_id") {
-    override fun convertToString(value: String) = value
-    override fun convertFromString(value: String) = value
+private object WatchPartyConnectionIdKey : StorageKey<WatchPartyConnectionId>("watchparty_connection_id") {
+    override fun convertToString(value: WatchPartyConnectionId) = value.value
+    override fun convertFromString(value: String) = WatchPartyConnectionId(value)
 }
 
-private fun getOrCreateConnectionId(): String {
+private fun getOrCreateConnectionId(): WatchPartyConnectionId {
     val existing = window.sessionStorage.getItem(WatchPartyConnectionIdKey)
     if (existing != null) return existing
 
-    return Uuid.random().toString()
+    return WatchPartyConnectionId.generate()
         .also { window.sessionStorage.setItem(WatchPartyConnectionIdKey, it) }
 }

@@ -6,11 +6,9 @@ plugins {
 }
 
 kotlin {
-    js { browser() }
-    jvm()
-
     sourceSets.commonMain {
         dependencies {
+            api(projects.utils.socketio.client)
             api(projects.watchparty.model)
             implementation(projects.watchparty.protocol)
             implementation(projects.game.model)

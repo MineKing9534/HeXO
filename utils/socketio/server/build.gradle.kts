@@ -3,8 +3,16 @@ plugins {
 }
 
 dependencies {
+    implementation(projects.utils.types)
+
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.websockets)
 
-    implementation(libs.socketio.server)
+    api(libs.socketio.server)
+    runtimeOnly(libs.jakarta.servlet)
+
+    implementation(libs.kotlin.serialization.json)
+    implementation(libs.kotlin.coroutines.core)
+
+    implementation(libs.logging)
 }

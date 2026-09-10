@@ -7,15 +7,11 @@ import de.mineking.hexo.utils.socketio.client.awaitConnect
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
+import kotlinx.serialization.Serializable
 import kotlin.uuid.Uuid
 
-internal data class AuthData(val deviceId: String, val ephemeralClientId: String, val versionHash: String = DEFAULT_VERSION_HASH) {
-    fun toMap() = mapOf(
-        "deviceId" to deviceId,
-        "ephemeralClientId" to ephemeralClientId,
-        "versionHash" to versionHash,
-    )
-
+@Serializable
+internal data class AuthData(val deviceId: String, val ephemeralClientId: String, val versionHash: String) {
     companion object {
         const val DEFAULT_VERSION_HASH = "HeXO-Kotlin"
     }
@@ -53,6 +49,7 @@ suspend fun connectHdsSocket(
     val authData = AuthData(
         deviceId = Uuid.random().toString(),
         ephemeralClientId = Uuid.random().toString(),
+        versionHash = AuthData.DEFAULT_VERSION_HASH,
     )
 
     return SocketIOClient<HexoSocketEvent, HexoSocketRequest>(
@@ -60,7 +57,7 @@ suspend fun connectHdsSocket(
         url = options.url,
         query = options.query,
         headers = options.headers,
-        auth = authData.toMap(),
+        connectionData = authData,
         format = json,
     ).awaitConnect().also {
         logger.info { "Connected" }

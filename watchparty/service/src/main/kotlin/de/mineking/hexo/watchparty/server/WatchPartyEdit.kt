@@ -4,6 +4,7 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 
 internal sealed interface WatchPartyEdit {
     context(author: WatchPartyConnectionId)

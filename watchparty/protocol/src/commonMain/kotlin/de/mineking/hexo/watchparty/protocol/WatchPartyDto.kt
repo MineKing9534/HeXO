@@ -8,13 +8,6 @@ import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface WatchPartyResponse
-
-@Serializable
-@SerialName("pong")
-data object WatchPartyPongResponse : WatchPartyResponse
-
-@Serializable
 sealed interface WatchPartyTargetDto {
     @Serializable
     @SerialName("session")
@@ -42,6 +35,9 @@ sealed interface WatchPartyTargetDto {
 }
 
 @Serializable
+sealed interface WatchPartyResponse
+
+@Serializable
 @SerialName("data")
 data class WatchPartyDto(
     val id: WatchPartyId,
@@ -52,13 +48,11 @@ data class WatchPartyDto(
 ) : WatchPartyResponse
 
 @Serializable
-@SerialName("error")
-data class WatchPartyErrorResponse(
-    val message: String,
-    val requestId: WatchPartyRequestId?,
-    val state: WatchPartyDto,
-) : WatchPartyResponse
+@SerialName("closed")
+data class WatchPartyClosedResponse(val message: String) : WatchPartyResponse
 
 @Serializable
-@SerialName("accepted")
-data class WatchPartyAcceptedResponse(val requestId: WatchPartyRequestId, val revision: Long) : WatchPartyResponse
+data class WatchPartyAcknowledgement(val state: WatchPartyDto, val error: String? = null)
+
+@Serializable
+data class WatchPartyCreatedResponse(val id: WatchPartyId)
