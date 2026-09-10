@@ -27,8 +27,10 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlin.reflect.KClass
+import kotlin.time.Duration.Companion.milliseconds
 
 private val logger = KotlinLogging.logger {}
 
@@ -80,7 +82,7 @@ private abstract class AbstractBoardViewManager<T : WatchPartyTarget>(
     private val targetType: KClass<T>,
     parentScope: CoroutineScope,
 ) : BoardViewManager {
-    private val scope = CoroutineScope(parentScope.coroutineContext + SupervisorJob(parentScope.coroutineContext[Job]))
+    protected val scope = CoroutineScope(parentScope.coroutineContext + SupervisorJob(parentScope.coroutineContext[Job]))
     private val edits = Channel<suspend () -> Unit>(Channel.UNLIMITED)
 
     private var editingScope: Pair<CoroutineScope, T>? = null
@@ -334,13 +336,20 @@ private class GameBoardViewManagerImpl(
     targetType = WatchPartyTarget.AbstractGameWatchPartyTarget::class,
     parentScope = parentScope,
 ), GameBoardViewManager {
+    private var moveUpdateJob: Job? = null
     override var overlay by mutableStateOf(Board())
     private var move by mutableStateOf(Int.MAX_VALUE)
     override var currentMove: Int
         get() = move
-        set(value) = updateState {
+        set(value) {
             move = value
-            sendRequest { setCurrentMove(value) }
+            if (watchParty == null) return
+
+            moveUpdateJob?.cancel()
+            moveUpdateJob = scope.launch {
+                delay(MOVE_UPDATE_DEBOUNCE)
+                sendRequest { setCurrentMove(value) }
+            }
         }
 
     override fun receiveTarget(target: WatchPartyTarget.AbstractGameWatchPartyTarget<*>?) {
@@ -351,5 +360,9 @@ private class GameBoardViewManagerImpl(
     override fun updateLocalBoard(transform: (Board) -> Board) {
         overlay = transform(overlay)
         if (watchParty == null) hasClearableHighlights = overlay.hasHighlights()
+    }
+
+    private companion object {
+        val MOVE_UPDATE_DEBOUNCE = 75.milliseconds
     }
 }
