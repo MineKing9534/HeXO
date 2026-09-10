@@ -10,6 +10,7 @@ import de.mineking.hexo.board.plusAssign
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
 import de.mineking.hexo.utils.types.Omissible
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 import de.mineking.hexo.watchparty.protocol.WatchPartyTargetDto
 
 internal sealed interface WatchPartyServerTarget {

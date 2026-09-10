@@ -1,15 +1,16 @@
 package de.mineking.hexo.watchparty.server
 
+import de.mineking.hexo.utils.socketio.server.SocketId
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 import de.mineking.hexo.watchparty.model.WatchPartyId
 import de.mineking.hexo.watchparty.model.WatchPartyNavigateTarget
-import de.mineking.hexo.watchparty.protocol.WatchPartyAction
 import de.mineking.hexo.watchparty.protocol.WatchPartyCellRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyClearHighlightsRequest
-import de.mineking.hexo.watchparty.protocol.WatchPartyDto
 import de.mineking.hexo.watchparty.protocol.WatchPartyLineHighlightRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyMoveCountRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyNavigateRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyRedoRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyTransactionRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyUndoRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyUpdateRequest
@@ -20,12 +21,8 @@ import kotlinx.coroutines.launch
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
 
-@JvmInline
-internal value class WatchPartyConnectionId(val value: String)
-
 internal class WatchPartyRequestException(
     override val message: String,
-    val state: WatchPartyDto? = null,
     cause: Throwable? = null,
 ) : Exception(message, cause)
 
@@ -104,7 +101,7 @@ internal class WatchPartySession(
     }
 
     private fun removeHighlightsIfDisconnected(connectionId: WatchPartyConnectionId) {
-        val _ = state.update(connectionId) {
+        state.update(connectionId) {
             synchronized(connectionLock) {
                 val connection = connectionStates[connectionId] ?: return@update
                 if (connection.count != 0) return@update
@@ -120,31 +117,34 @@ internal class WatchPartySession(
     }
 
     fun apply(
-        action: WatchPartyAction,
+        action: WatchPartyRequest,
         connectionId: WatchPartyConnectionId,
+        origin: SocketId,
         expectedGeneration: Long? = null,
-    ): Long = state.update(connectionId) {
-        if (action is WatchPartyNavigateRequest) {
-            if (!target.matches(action.target)) target = action.target.toServerTarget()
-            return@update
-        }
+    ) {
+        state.update(connectionId, origin) {
+            if (action is WatchPartyNavigateRequest) {
+                if (!target.matches(action.target)) target = action.target.toServerTarget()
+                return@update
+            }
 
-        if (expectedGeneration != null && expectedGeneration != generation) {
-            throw WatchPartyRequestException("Watch party target changed")
-        }
+            if (expectedGeneration != null && expectedGeneration != generation) {
+                throw WatchPartyRequestException("Watch party target changed")
+            }
 
-        val current = target ?: throw WatchPartyRequestException("no watchparty target")
-        when (action) {
-            is WatchPartyMoveCountRequest -> current.setMove(action.move)
-            is WatchPartyUndoRequest -> current.undo()
-            is WatchPartyRedoRequest -> current.redo()
-            is WatchPartyTransactionRequest -> current.transaction(action.actions.map { it.toEdit() })
-            else -> action.toEdit().apply(current)
+            val current = target ?: throw WatchPartyRequestException("no watchparty target")
+            when (action) {
+                is WatchPartyMoveCountRequest -> current.setMove(action.move)
+                is WatchPartyUndoRequest -> current.undo()
+                is WatchPartyRedoRequest -> current.redo()
+                is WatchPartyTransactionRequest -> current.transaction(action.actions.map { it.toEdit() })
+                else -> action.toEdit().apply(current)
+            }
         }
     }
 }
 
-private fun WatchPartyAction.toEdit(): WatchPartyEdit = when (this) {
+private fun WatchPartyRequest.toEdit(): WatchPartyEdit = when (this) {
     is WatchPartyUpdateRequest -> WatchPartyEdit.ReplaceBoard(board)
     is WatchPartyCellRequest -> WatchPartyEdit.UpdateCell(coordinate, cell)
     is WatchPartyLineHighlightRequest -> WatchPartyEdit.HighlightLine(line, remove)

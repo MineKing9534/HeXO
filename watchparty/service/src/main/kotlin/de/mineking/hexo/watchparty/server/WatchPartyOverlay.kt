@@ -5,6 +5,7 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 
 internal class WatchPartyOverlay {
     private val cells = mutableMapOf<CellCoordinate, AuthoredCellHighlight>()

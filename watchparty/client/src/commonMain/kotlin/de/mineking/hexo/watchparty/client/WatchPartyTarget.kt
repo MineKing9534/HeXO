@@ -9,15 +9,15 @@ import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
 import de.mineking.hexo.utils.types.EntityId
 import de.mineking.hexo.utils.types.present
-import de.mineking.hexo.watchparty.protocol.WatchPartyAction
 import de.mineking.hexo.watchparty.protocol.WatchPartyCellRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyClearHighlightsRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyDto
 import de.mineking.hexo.watchparty.protocol.WatchPartyLineHighlightRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyMoveCountRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyRedoRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyTargetDto
-import de.mineking.hexo.watchparty.protocol.WatchPartyTransactionChildAction
+import de.mineking.hexo.watchparty.protocol.WatchPartyTransactionChildRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyTransactionRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyUndoRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyUpdateRequest
@@ -70,7 +70,7 @@ internal sealed class AbstractWatchPartyTargetImpl(
     override val generation = data.generation
     override val hasClearableHighlights = data.clearableHighlights
 
-    protected open suspend fun request(action: WatchPartyAction) {
+    protected open suspend fun request(action: WatchPartyRequest) {
         watchparty.request(action, generation)
     }
 
@@ -111,18 +111,18 @@ internal class SandboxWatchPartyTargetImpl(
         override val key = WatchPartyTransactionKey
         private val lock = SynchronizedObject()
 
-        private val _actions = mutableListOf<WatchPartyTransactionChildAction>()
+        private val _actions = mutableListOf<WatchPartyTransactionChildRequest>()
         val actions get() = synchronized(lock) { _actions.toList() }
 
-        operator fun plusAssign(request: WatchPartyTransactionChildAction) {
+        operator fun plusAssign(request: WatchPartyTransactionChildRequest) {
             synchronized(lock) {
                 _actions += request
             }
         }
     }
 
-    override suspend fun request(action: WatchPartyAction) {
-        require(action is WatchPartyTransactionChildAction)
+    override suspend fun request(action: WatchPartyRequest) {
+        require(action is WatchPartyTransactionChildRequest)
 
         val transaction = currentCoroutineContext()[WatchPartyTransactionKey]
         if (transaction == null) {

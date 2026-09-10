@@ -1,5 +1,6 @@
 package de.mineking.hexo.utils.socketio.client
 
+import com.piasy.kmp.socketio.socketio.Ack
 import com.piasy.kmp.socketio.socketio.IO
 import com.piasy.kmp.socketio.socketio.Socket
 import com.piasy.kmp.xlog.Logging
@@ -8,6 +9,7 @@ import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.http.Url
 import io.ktor.http.protocolWithAuthority
+import io.ktor.utils.io.CancellationException
 import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CompletableDeferred
@@ -36,6 +38,8 @@ import kotlinx.serialization.encoding.AbstractDecoder
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonObject
 import kotlinx.serialization.json.encodeToJsonElement
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import kotlinx.serialization.modules.SerializersModule
 import kotlinx.serialization.serializer
 import kotlin.reflect.KClass
@@ -46,6 +50,11 @@ private val errorHandler = CoroutineExceptionHandler { context, cause ->
 }
 
 class ConnectErrorException(override val message: String) : Exception(message)
+
+class SocketIOEvent<out T>(val data: T, val raw: Array<out Any>) {
+    operator fun component1() = data
+    operator fun component2() = raw
+}
 
 interface SocketListener {
     fun remove()
@@ -58,7 +67,7 @@ inline fun <reified Incoming : Any, reified Outgoing : Any> SocketIOClient(
     url: Url,
     query: Map<String, String> = emptyMap(),
     headers: Map<String, String?> = emptyMap(),
-    auth: Map<String, String> = emptyMap(),
+    connectionData: Any = Unit,
     format: Json = Json,
 ) = SocketIOClient<Incoming, Outgoing>(
     incomingSerializer = format.serializersModule.serializer(Incoming::class) as SealedClassSerializer<Incoming>,
@@ -66,7 +75,7 @@ inline fun <reified Incoming : Any, reified Outgoing : Any> SocketIOClient(
     url = url,
     query = query,
     headers = headers,
-    auth = auth,
+    connectionData = connectionData,
     format = format,
 )
 
@@ -77,8 +86,8 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
     private val url: Url,
     private val query: Map<String, String> = emptyMap(),
     private val headers: Map<String, String?> = emptyMap(),
-    private val auth: Map<String, String> = emptyMap(),
-    private val format: Json,
+    private val connectionData: Any = Unit,
+    val format: Json,
 ) {
     companion object {
         init {
@@ -93,16 +102,28 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
         }
     }
 
-    private val requestSerializers = incomingSerializer.eventSerializers(format.serializersModule)
+    private val incomingSerializers = incomingSerializer.eventSerializers(format.serializersModule)
 
     private val job = SupervisorJob(client.coroutineContext[Job])
     private val scope = CoroutineScope(client.coroutineContext + job + errorHandler)
 
-    private val outgoing = Channel<Outgoing>(Channel.BUFFERED)
+    private val outgoing = Channel<Pair<SocketIOEvent<Outgoing>, Ack?>>(Channel.BUFFERED)
 
     private val lock = SynchronizedObject()
-    private val handlers = mutableMapOf<String, MutableList<suspend (Incoming) -> Unit>>()
-    private val allHandlers = mutableListOf<suspend (Incoming) -> Unit>()
+    private val pendingAcks = mutableSetOf<CompletableDeferred<*>>()
+
+    private fun failAcknowledgements() {
+        val pending = synchronized(lock) {
+            pendingAcks.toList()
+                .also { pendingAcks.clear() }
+        }
+
+        pending.forEach {
+            it.completeExceptionally(IllegalStateException("Socket.IO disconnected"))
+        }
+    }
+
+    private val handlers = mutableListOf<suspend (SocketIOEvent<Incoming>) -> Unit>()
 
     val connected: StateFlow<Boolean>
         field = MutableStateFlow(false)
@@ -113,42 +134,43 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
         }
     }
 
-    suspend fun request(request: Outgoing) {
-        outgoing.send(request)
-    }
+    @IgnorableReturnValue
+    fun request(request: Outgoing, vararg raw: Any) = outgoing.trySend(SocketIOEvent(request, raw) to null).isSuccess
 
-    fun <T : Incoming> listen(type: KClass<T>, handler: suspend (T) -> Unit): SocketListener {
-        val name = format.serializersModule.serializer(type).descriptor.serialName
-        check(name in requestSerializers)
-
+    suspend fun <A : Any> requestAwait(request: Outgoing, vararg raw: Any, ack: DeserializationStrategy<A>): A {
+        val result = CompletableDeferred<A>()
         synchronized(lock) {
-            val handlers = handlers.getOrPut(name) { mutableListOf() }
-            handlers += {
-                @Suppress("UNCHECKED_CAST")
-                handler(it as T)
-            }
+            check(connected.value) { "Socket.IO is not connected" }
+            pendingAcks += result
         }
-
-        return object : SocketListener {
-            override fun remove() {
-                handlers[name]?.remove(handler)
-            }
+        try {
+            outgoing.send(SocketIOEvent(request, raw) to CoroutineAck(result, format, ack))
+            return result.await()
+        } finally {
+            synchronized(lock) { pendingAcks -= result }
+            result.cancel()
         }
     }
 
-    @IgnorableReturnValue
-    inline fun <reified E : Incoming> listen(noinline handler: suspend (E) -> Unit) = listen(E::class, handler)
+    suspend inline fun <reified A : Any> requestAwait(request: Outgoing, vararg raw: Any) =
+        requestAwait(request, raw = raw, ack = format.serializersModule.serializer<A>())
 
     @IgnorableReturnValue
-    fun listenAll(handler: suspend (Incoming) -> Unit): SocketListener {
+    inline fun <reified T : Incoming> listen(noinline handler: suspend (SocketIOEvent<T>) -> Unit) = listenAll {
+        if (it.data !is T) return@listenAll
+        handler(SocketIOEvent(it.data, it.raw))
+    }
+
+    @IgnorableReturnValue
+    fun listenAll(handler: suspend (SocketIOEvent<Incoming>) -> Unit): SocketListener {
         synchronized(lock) {
-            allHandlers += handler
+            handlers += handler
         }
 
         return object : SocketListener {
             override fun remove() {
                 synchronized(lock) {
-                    allHandlers -= handler
+                    handlers -= handler
                 }
             }
         }
@@ -157,6 +179,7 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
     fun connect(): Deferred<SocketIOClient<Incoming, Outgoing>> = connection
 
     fun disconnect() {
+        failAcknowledgements()
         scope.cancel()
         synchronized(lock) { connected.value = false }
         outgoing.cancel()
@@ -170,34 +193,28 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
         job.invokeOnCompletion { outgoing.cancel() }
 
         IO.socket(url.protocolWithAuthority, IO.Options().also {
+            it.forceNew = true
             it.httpClient = client
             it.transports = listOf("websocket")
             it.path = "${url.encodedPath.trimEnd('/')}/socket.io/"
             it.query = query.toMutableMap()
             it.extraHeaders = headers.mapValues { (_, value) -> listOfNotNull(value) }
-            it.auth = auth
+            it.auth = format.encodeToJsonElement(
+                serializer = format.serializersModule.serializer(connectionData::class),
+                value = connectionData,
+            ).jsonObject.mapValues { (_, value) -> value.jsonPrimitive.content }
         }) { socket ->
             if (!scope.isActive) {
                 socket.close()
                 return@socket
             }
 
-            requestSerializers.forEach { (name, serializer) ->
+            incomingSerializers.forEach { (name, serializer) ->
                 socket.on(name) { args ->
                     scope.launch(CoroutineName("event $name")) {
-                        val parsed = when (val raw = args.singleOrNull()) {
-                            is String -> {
-                                @Serializable
-                                data class Message(val message: String)
+                        val parsed = format.decodeFromSocketIO(serializer, args)
 
-                                format.decodeFromJsonElement(serializer, format.encodeToJsonElement(Message(raw)))
-                            }
-                            is JsonObject -> format.decodeFromJsonElement(serializer, raw)
-                            null -> format.decodeFromString(serializer, "{}")
-                            else -> error("Unexpected event parameter type $raw")
-                        }
-
-                        dispatchListeners(name, parsed)
+                        dispatchListeners(SocketIOEvent(parsed, args))
                     }
                 }
             }
@@ -205,11 +222,18 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
             scope.launch(CoroutineName("sender")) {
                 socket.open(status)
                 status.await()
-                for (request in outgoing) {
-                    val serializer = format.serializersModule.serializer(request::class)
-                    val data = format.encodeToJsonElement(serializer, request)
+                for ((request, ack) in outgoing) {
+                    if (ack is CoroutineAck<*> && !ack.isActive) continue
+                    if (ack != null && !connected.value) {
+                        failAcknowledgements()
+                        continue
+                    }
 
-                    socket.emit(serializer.descriptor.serialName, data)
+                    val serializer = format.serializersModule.serializer(request.data::class)
+                    val encoded = format.encodeToJsonElement(serializer, request.data)
+
+                    @Suppress("SpreadOperator")
+                    socket.emit(serializer.descriptor.serialName, encoded, *request.raw, *if (ack == null) emptyArray() else arrayOf(ack))
                 }
             }.invokeOnCompletion { cause ->
                 if (cause != null) {
@@ -233,6 +257,7 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
         }
 
         on(Socket.EVENT_DISCONNECT) {
+            failAcknowledgements()
             synchronized(lock) {
                 this@SocketIOClient.connected.value = false
             }
@@ -258,19 +283,22 @@ class SocketIOClient<Incoming : Any, Outgoing : Any>(
         }
     }
 
-    private suspend fun dispatchListeners(event: String, data: Incoming) = supervisorScope {
-        val listeners = synchronized(lock) {
-            handlers[event].orEmpty().toList() + allHandlers
-        }
-
-        listeners.forEach { handler ->
-            launch(errorHandler) {
+    private suspend fun dispatchListeners(data: SocketIOEvent<Incoming>) = supervisorScope {
+        val listeners = synchronized(lock) { handlers.toList() }
+        for (handler in listeners) {
+            @Suppress("TooGenericExceptionCaught")
+            try {
                 handler(data)
-            }.join()
+            } catch (cause: CancellationException) {
+                throw cause
+            } catch (cause: Exception) {
+                logger.error(cause) { "Socket.IO handler failed" }
+            }
         }
     }
 }
 
+@IgnorableReturnValue
 suspend fun <Incoming : Any, Outgoing : Any> SocketIOClient<Incoming, Outgoing>.awaitConnect() = connect().await()
 
 @PublishedApi
@@ -289,5 +317,32 @@ internal fun <T : Any> SealedClassSerializer<T>.eventSerializers(module: Seriali
         checkNotNull(findPolymorphicSerializerOrNull(decoder, name)) {
             "No serializer found for Socket.IO event $name"
         }
+    }
+}
+
+private fun <T> Json.decodeFromSocketIO(serializer: DeserializationStrategy<T>, args: Array<out Any>) = when (val raw = args.firstOrNull()) {
+    is String -> {
+        @Serializable
+        data class Message(val message: String)
+
+        decodeFromJsonElement(serializer, encodeToJsonElement(Message(raw)))
+    }
+    is JsonObject -> decodeFromJsonElement(serializer, raw)
+    null -> decodeFromString(serializer, "{}")
+    else -> error("Unexpected event parameter type $raw")
+}
+
+private class CoroutineAck<T>(
+    private val result: CompletableDeferred<T>,
+    private val format: Json,
+    private val serializer: DeserializationStrategy<T>,
+) : Ack {
+    val isActive get() = result.isActive
+
+    override fun call(vararg args: Any) {
+        if (!result.isActive) return
+        runCatching { format.decodeFromSocketIO(serializer, args) }
+            .onSuccess { result.complete(it) }
+            .onFailure { result.completeExceptionally(it) }
     }
 }

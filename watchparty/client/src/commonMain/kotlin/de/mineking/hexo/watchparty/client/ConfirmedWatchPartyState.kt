@@ -10,8 +10,11 @@ internal class ConfirmedWatchPartyState(initial: WatchPartyDto) {
     val data get() = synchronized(lock) { current }
 
     fun update(next: WatchPartyDto): Boolean = synchronized(lock) {
-        if (next.id != current.id || next.revision < current.revision) return false
+        check(next.id == current.id)
+
+        if (next.revision < current.revision) return false
         current = next
+
         true
     }
 }

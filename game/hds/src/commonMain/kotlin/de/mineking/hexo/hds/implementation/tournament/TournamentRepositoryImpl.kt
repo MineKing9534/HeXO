@@ -21,7 +21,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
     override val url = "${client.publicUrl}/tournaments"
 
     init {
-        client.client.socketClient?.listen<TournamentUpdate> { event ->
+        client.client.socketClient?.listen<TournamentUpdate> { (event) ->
             val isObserved = cacheLock.withLock { event.tournamentId in cache }
             if (isObserved) {
                 client.coroutineScope.launch {
