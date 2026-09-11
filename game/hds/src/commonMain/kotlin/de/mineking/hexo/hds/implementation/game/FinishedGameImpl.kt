@@ -70,7 +70,7 @@ internal abstract class PlayerImpl(
         ?.let { ProfileReference(repository, gameRepository, it) }
 
     override val displayName = dto.displayName
-    override val elo = dto.elo
+    override val elo = dto.elo.takeIf { it != 0 }
 }
 
 internal class FinishedGamePlayerImpl(

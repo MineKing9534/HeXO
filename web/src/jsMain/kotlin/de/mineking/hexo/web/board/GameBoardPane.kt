@@ -447,8 +447,10 @@ private fun HudPlayerRow(player: Player, content: @Composable () -> Unit) {
 
 @Composable
 private fun RatedPlayerElo(player: Player) {
+    val elo = player.elo ?: return
+
     Span({ classes("shrink-0", "text-xs", "font-semibold", "tabular-nums", "text-slate-300") }) {
-        Text("${player.elo}")
+        Text("$elo")
         when (player) {
             is LiveSessionPlayer -> player.ratingAdjustment?.let {
                 RatingChange(it.eloGain)

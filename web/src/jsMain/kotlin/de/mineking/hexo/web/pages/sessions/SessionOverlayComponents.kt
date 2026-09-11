@@ -7,7 +7,6 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.game.model.game.Player
-import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.session.SessionPlayer
 import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
@@ -47,9 +46,7 @@ internal fun SessionPlayerMeta(
     eloAdjustment: Int? = null,
 ) {
     Div({ classes("mt-2", "flex", "flex-col", "items-center", "justify-center", "gap-2", "text-xs") }) {
-        if (!player.isGuest()) {
-            EloBadge(player.elo, eloAdjustment)
-        }
+        player.elo?.let { EloBadge(it, eloAdjustment) }
         PlayerConnectionStatus(player.connectionStatus, disconnectedAsWaiting)
     }
 }
