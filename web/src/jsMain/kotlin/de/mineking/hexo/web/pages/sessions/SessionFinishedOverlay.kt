@@ -10,7 +10,6 @@ import de.mineking.hexo.game.model.game.GameFinishReason
 import de.mineking.hexo.game.model.game.GameResult
 import de.mineking.hexo.game.model.game.GameWithPosition
 import de.mineking.hexo.game.model.game.Player
-import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.game.model.session.LiveSession
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.session.RatingAdjustment
@@ -312,8 +311,10 @@ private fun SessionFinishedPlayerHeader(result: GameResult, player: Player, rate
             })
             if (player is LiveSessionPlayer) {
                 SessionPlayerMeta(player, eloAdjustment = eloAdjustment)
-            } else if (!player.isGuest()) {
-                Div({ classes("mt-2") }) { EloBadge(player.elo, eloAdjustment) }
+            } else {
+                player.elo?.let { elo ->
+                    Div({ classes("mt-2") }) { EloBadge(elo, eloAdjustment) }
+                }
             }
         }
     }

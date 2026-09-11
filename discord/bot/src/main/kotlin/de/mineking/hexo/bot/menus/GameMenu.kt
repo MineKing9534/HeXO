@@ -65,7 +65,6 @@ import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
 import de.mineking.hexo.game.model.game.GameFinishReason
 import de.mineking.hexo.game.model.game.GameId
-import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.utils.types.orElse
 import dev.freya02.jda.emojis.unicode.Emojis
 import net.dv8tion.jda.api.EmbedBuilder.ZERO_WIDTH_SPACE
@@ -156,9 +155,9 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
             append(" ")
             append(player.displayName)
 
-            if (!player.isGuest()) {
+            player.elo?.let { elo ->
                 val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
-                append("　`${player.elo} ELO$eloChange`")
+                append("　`$elo ELO$eloChange`")
             }
             if (result.winner?.id == player.id) append(" :first_place:")
         }

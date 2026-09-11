@@ -269,6 +269,7 @@ internal class LiveSessionPlayerImpl(
     override val tournamentMatchWins: Int?,
     override val timeRemaining: LiveDuration?,
 ) : LiveSessionPlayer, PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
+    override val elo = dto.elo.takeIf { it != 0 }
     override val ratingAdjustment = dto.ratingAdjustment?.let { RatingAdjustment(eloGain = it.eloGain, eloLoss = it.eloLoss) }
     override val connectionStatus = dto.connectionStatus
 }

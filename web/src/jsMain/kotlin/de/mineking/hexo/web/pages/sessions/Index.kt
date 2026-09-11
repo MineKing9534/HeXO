@@ -14,7 +14,6 @@ import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.core.layout.Layout
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.Player
-import de.mineking.hexo.game.model.game.isGuest
 import de.mineking.hexo.game.model.session.Session
 import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.session.hasStarted
@@ -215,9 +214,9 @@ private fun LobbyPlayers(players: List<Player>) {
             }
             Span({ classes("inline-flex", "min-w-0", "items-baseline", "gap-1.5") }) {
                 Span({ classes("truncate", "text-base", "font-semibold") }) { Text(player.displayName) }
-                if (!player.isGuest()) {
+                player.elo?.let { elo ->
                     Span({ classes("shrink-0", "text-xs", "font-semibold", "tabular-nums", "text-slate-400") }) {
-                        Text("${player.elo} ELO")
+                        Text("$elo ELO")
                     }
                 }
             }
