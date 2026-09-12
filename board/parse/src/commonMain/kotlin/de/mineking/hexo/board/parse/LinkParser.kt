@@ -9,7 +9,7 @@ abstract class LinkParser(private val prefix: String) : BoardParser {
 
         if (!trimmedNotation.startsWith(prefix)) throw HexoNotationFormatException("Invalid link")
 
-        val param = trimmedNotation.removePrefix(prefix)
+        val param = trimmedNotation.substring(startIndex = prefix.length)
         if (""".*\s.*""".toRegex().containsMatchIn(param)) throw HexoNotationFormatException("Invalid parameter")
 
         return parseLink(param)

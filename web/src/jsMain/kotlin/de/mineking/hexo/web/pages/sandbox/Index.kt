@@ -22,6 +22,7 @@ import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
+import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
@@ -30,7 +31,6 @@ import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.utils.types.present
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.AnalyzerTurn
-import de.mineking.hexo.web.board.MOVES_PER_TURN
 import de.mineking.hexo.web.board.SandboxBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.Dialog
@@ -157,10 +157,10 @@ enum class CellPlacementMode {
                 }
             }
 
-            val (player, turn) = board.findNextTurn()
+            val turn = board.findNextTurn()
             updateCell(coordinate, CellOverride(
-                owner = player.present(),
-                turn = turn.present(),
+                owner = turn.player.present(),
+                turn = turn.turn.present(),
             ))
         }
 
@@ -244,48 +244,4 @@ fun SandboxSounds(board: Board) {
             soundPlayer.play(SoundEffect.TilePlaced)
         }
     }
-}
-
-private data class Turn(val player: CellOwner, val turn: Int, val placementsRemaining: Int)
-
-private fun Board.findNextTurn(): Turn {
-    var hasState = false
-    var turn = 0
-    var placed = 0
-    var player = CellOwner.X
-
-    cells.values.forEach { cell ->
-        val cellOwner = cell.owner ?: return@forEach
-        val cellTurn = cell.turn ?: run {
-            hasState = true
-            return@forEach
-        }
-
-        if (cellTurn > turn) {
-            turn = cellTurn
-            player = cellOwner
-            placed = 1
-        } else if (cellTurn == turn) {
-            placed++
-        }
-    }
-
-    val movesPerTurn = MOVES_PER_TURN
-        .takeIf { turn > 0 || hasState }
-        ?: 1
-
-    if (turn == 0 && hasState) {
-        turn = 1
-        player = CellOwner.X
-    } else if (placed >= movesPerTurn) {
-        turn++
-        player = player.other
-        placed = 0
-    }
-
-    return Turn(
-        player = player,
-        turn = turn,
-        placementsRemaining = movesPerTurn - placed,
-    )
 }

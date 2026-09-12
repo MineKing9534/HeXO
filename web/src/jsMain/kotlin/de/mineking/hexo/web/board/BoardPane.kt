@@ -6,6 +6,7 @@ import androidx.compose.runtime.remember
 import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.GamePosition
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
@@ -14,8 +15,10 @@ import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
-import de.mineking.hexo.hds.model.AbstractGamePosition
-import de.mineking.hexo.hds.model.asBoard
+import de.mineking.hexo.board.take
+import de.mineking.hexo.board.toBoard
+import de.mineking.hexo.game.model.game.GameMove
+import de.mineking.hexo.game.model.game.GameWithPosition
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.settings.SettingsKey
@@ -25,11 +28,14 @@ import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
 
-const val MOVES_PER_TURN = 2
+@Composable
+fun GameWithPosition.rememberPosition(move: Int): GamePosition<GameMove> {
+    return remember(this, move) { position.take(move) }
+}
 
 @Composable
-fun AbstractGamePosition.rememberBoard(overlay: Board, move: Int): Board {
-    val board = remember(move, this) { asBoard(move) }
+fun GamePosition<*>.rememberBoard(overlay: Board): Board {
+    val board = remember(this) { toBoard() }
     return remember(board, overlay) {
         (board + overlay).focusWinningRows()
     }

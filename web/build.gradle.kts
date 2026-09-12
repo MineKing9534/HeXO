@@ -39,9 +39,9 @@ kotlin {
             implementation(projects.board.render.compose)
 
             implementation(projects.board.parse)
-            implementation(projects.hds.implementation)
+            implementation(projects.game.hds)
 
-            implementation(projects.sync.client)
+            implementation(projects.watchparty.client)
             implementation(projects.solver)
             implementation(projects.web.analysisWorker)
 

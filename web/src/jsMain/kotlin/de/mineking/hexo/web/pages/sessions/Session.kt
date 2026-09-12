@@ -11,12 +11,12 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.hds.model.EntityState
-import de.mineking.hexo.hds.model.session.LiveSession
-import de.mineking.hexo.hds.model.session.LobbySession
-import de.mineking.hexo.hds.model.session.Session
-import de.mineking.hexo.hds.model.session.SessionId
-import de.mineking.hexo.hds.model.session.SessionState
+import de.mineking.hexo.game.model.EntityState
+import de.mineking.hexo.game.model.session.LiveSession
+import de.mineking.hexo.game.model.session.LobbySession
+import de.mineking.hexo.game.model.session.Session
+import de.mineking.hexo.game.model.session.SessionId
+import de.mineking.hexo.game.model.session.SessionState
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
@@ -67,7 +67,7 @@ fun Session(id: SessionId, boardViewManager: GameBoardViewManager) {
                     val state = session.state
 
                     GameBoardPane(session.game, state is SessionState.InGame, boardViewManager)
-                    if (state is SessionState.Finished) SessionFinishedOverlay(session, state)
+                    if (state is SessionState.Detailed.Finished) SessionFinishedOverlay(session, state)
                 }
                 is LobbySession -> LobbyOverlay(session)
             }

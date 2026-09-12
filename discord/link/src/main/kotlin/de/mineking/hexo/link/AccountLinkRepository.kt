@@ -5,7 +5,7 @@ import de.mineking.hexo.database.UnexpectedDatabaseErrorException
 import de.mineking.hexo.database.UniqueViolationError
 import de.mineking.hexo.database.throwOnDatabaseError
 import de.mineking.hexo.discord.core.DiscordUserId
-import de.mineking.hexo.hds.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.link.database.AccountLinkTable
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result

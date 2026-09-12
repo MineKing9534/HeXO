@@ -8,6 +8,7 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             implementation(projects.board)
+            implementation(projects.game.model)
 
             implementation(libs.kotlin.serialization.core)
         }

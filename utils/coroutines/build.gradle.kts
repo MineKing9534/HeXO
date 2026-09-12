@@ -6,6 +6,8 @@ plugins {
 kotlin {
     sourceSets.commonMain {
         dependencies {
+            implementation(projects.utils.types)
+
             implementation(libs.kotlin.coroutines.core)
 
             implementation(libs.logging)

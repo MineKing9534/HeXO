@@ -12,6 +12,7 @@ import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
+import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.coroutines.DelicateCoroutinesApi
@@ -108,4 +109,10 @@ fun Duration.formatCompact(): String {
         minutes > 0 -> "${minutes}m ${seconds}s"
         else -> "${seconds}s"
     }
+}
+
+fun TimeControl.format() = when (this) {
+    is TimeControl.Unlimited -> "Unlimited"
+    is TimeControl.Turn -> "Turn $turnTime"
+    is TimeControl.Match -> "Match $mainTime +$increment"
 }

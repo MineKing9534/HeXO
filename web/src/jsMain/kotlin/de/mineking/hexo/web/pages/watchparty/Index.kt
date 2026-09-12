@@ -10,7 +10,7 @@ import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
 import com.varabyte.kobweb.navigation.BasePath
-import de.mineking.hexo.sync.common.WatchPartyId
+import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.CopyButton
 import de.mineking.hexo.web.components.LoadingIndicator
