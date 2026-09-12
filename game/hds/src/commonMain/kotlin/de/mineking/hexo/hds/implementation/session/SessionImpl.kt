@@ -21,7 +21,6 @@ import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
 import de.mineking.hexo.game.model.session.SessionState
 import de.mineking.hexo.game.model.session.SessionTurn
 import de.mineking.hexo.game.model.session.hasStarted
-import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.Instant
 import de.mineking.hexo.hds.implementation.game.GameOptionsDto
@@ -29,6 +28,7 @@ import de.mineking.hexo.hds.implementation.game.GameResultDto
 import de.mineking.hexo.hds.implementation.game.PlayerImpl
 import de.mineking.hexo.hds.implementation.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.implementation.game.toModel
+import de.mineking.hexo.utils.types.urlOf
 import kotlin.time.Clock
 import kotlin.time.Duration
 

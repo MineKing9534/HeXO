@@ -1,12 +1,12 @@
 package de.mineking.hexo.hds.implementation.leaderboard
 
-import de.mineking.hexo.game.model.EntityNotFoundException
 import de.mineking.hexo.game.model.leaderboard.Leaderboard
 import de.mineking.hexo.game.model.leaderboard.LeaderboardEntry
 import de.mineking.hexo.game.model.profile.ProfileGameStatistics
 import de.mineking.hexo.game.model.profile.ProfileRating
 import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.EntityNotFoundException
 import de.mineking.hexo.utils.types.orThrow
 
 internal class LeaderboardImpl(

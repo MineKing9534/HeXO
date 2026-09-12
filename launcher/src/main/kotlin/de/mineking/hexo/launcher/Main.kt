@@ -18,6 +18,7 @@ import de.mineking.hexo.database.HexoDatabaseManager
 import de.mineking.hexo.discord.bot.config.UserThemeRepository
 import de.mineking.hexo.game.model.caching.CachingRepositoryWrapper
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.HdsHttpClient
 import de.mineking.hexo.launcher.web.OAUth2CallbackWebService
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.AESTokenTransform
@@ -35,7 +36,7 @@ import kotlin.io.encoding.Base64
 
 fun main() {
     val config = Config.fromEnvironment()
-    val client = HdsApiClient(socketClient = null, repositoryWrapper = CachingRepositoryWrapper())
+    val client = HdsApiClient(client = HdsHttpClient.createDefault(), repositoryWrapper = CachingRepositoryWrapper())
 
     val database = config.database?.let { HexoDatabaseManager(it.url) }
     val discordOAuth2Client = config.createDiscordOAuth2Client()

@@ -1,47 +1,52 @@
 package de.mineking.hexo.watchparty.server
 
 import de.mineking.hexo.sever.service.ApiWebService
-import de.mineking.hexo.watchparty.common.WatchPartyErrorResponse
-import de.mineking.hexo.watchparty.common.WatchPartyId
-import de.mineking.hexo.watchparty.common.WatchPartyPingRequest
-import de.mineking.hexo.watchparty.common.WatchPartyPongResponse
-import de.mineking.hexo.watchparty.common.WatchPartyRequest
-import de.mineking.hexo.watchparty.common.WatchPartyResponse
-import de.mineking.hexo.watchparty.common.WatchPartyWebsocketCodes
+import de.mineking.hexo.utils.socketio.server.SocketIO
+import de.mineking.hexo.utils.socketio.server.SocketIOSession
+import de.mineking.hexo.utils.socketio.server.socketIOSession
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
+import de.mineking.hexo.watchparty.model.WatchPartyId
+import de.mineking.hexo.watchparty.protocol.WatchPartyAcknowledgement
+import de.mineking.hexo.watchparty.protocol.WatchPartyClosedResponse
+import de.mineking.hexo.watchparty.protocol.WatchPartyConnectData
+import de.mineking.hexo.watchparty.protocol.WatchPartyCreatedResponse
+import de.mineking.hexo.watchparty.protocol.WatchPartyNavigateRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.serialization.deserialize
-import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
+import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpMethod
+import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
+import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.application.install
+import io.ktor.server.plugins.cors.routing.CORS
+import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.ktor.server.websocket.DefaultWebSocketServerSession
 import io.ktor.server.websocket.WebSockets
-import io.ktor.server.websocket.converter
-import io.ktor.server.websocket.pingPeriod
-import io.ktor.server.websocket.sendSerialized
-import io.ktor.server.websocket.timeout
-import io.ktor.server.websocket.webSocket
-import io.ktor.websocket.CloseReason
-import io.ktor.websocket.close
+import io.socket.engineio.server.EngineIoServerOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancelAndJoin
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.SerializationException
 import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 import kotlin.uuid.Uuid
 
 private val logger = KotlinLogging.logger {}
-private val connectionCleanupTimeout = 5.seconds
-private val sessionRemovalTimeout = 5.minutes
 
-class WatchPartyWebService : ApiWebService() {
+class WatchPartyWebService(
+    private val connectionCleanupTimeout: Duration = 5.seconds,
+    private val sessionRemovalTimeout: Duration = 5.minutes,
+) : ApiWebService() {
     private val sessions = ConcurrentHashMap<WatchPartyId, WatchPartySession>()
     private val cleanupScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -53,100 +58,106 @@ class WatchPartyWebService : ApiWebService() {
     private fun scheduleRemoval(session: WatchPartySession) {
         val job = cleanupScope.launch {
             delay(sessionRemovalTimeout)
-
             if (session.markRemovingIfUnused()) {
                 sessions.remove(session.id, session)
                 logger.info { "Removed watchparty with id ${session.id.value}" }
             }
         }
-
         session.scheduleRemoval(job)
     }
 
-    private fun createSession(connectionId: WatchPartyConnectionId): WatchPartySession {
+    private fun createSession(): WatchPartySession {
         val id = WatchPartyId(Uuid.random().toString())
-        logger.info { "Created watchparty with id ${id.value}" }
-
-        return WatchPartySession(
-            id = id,
-            cleanupScope = cleanupScope,
-            connectionCleanupTimeout = connectionCleanupTimeout,
-        ).also {
-            check(it.acquire(connectionId))
+        return WatchPartySession(id, cleanupScope, connectionCleanupTimeout).also {
             sessions[id] = it
+            // Also expire parties that are created but never connected to.
+            scheduleRemoval(it)
+            logger.info { "Created watchparty with id ${id.value}" }
         }
     }
 
     override fun Application.setup() {
-        install(WebSockets) {
-            pingPeriod = 30.seconds
-            timeout = 15.seconds
-            contentConverter = KotlinxWebsocketSerializationConverter(Json {
-                allowStructuredMapKeys = true
-            })
+        install(CORS) {
+            anyHost()
+            allowMethod(HttpMethod.Post)
+            allowHeader(HttpHeaders.ContentType)
         }
+        install(WebSockets)
+        install(SocketIO) {
+            format = Json { allowStructuredMapKeys = true }
+            engineOptions.allowedCorsOrigins = EngineIoServerOptions.ALLOWED_CORS_ORIGIN_ALL
+        }
+        monitor.subscribe(ApplicationStopped) { cleanupScope.cancel() }
     }
 
     override fun Route.registerApiRoutes() {
         route("/watchparties") {
-            webSocket("/ws") {
-                val id = call.request.queryParameters["id"]?.let { WatchPartyId(it) }
-                val detachOnClose = call.request.queryParameters["detachOnClose"] == "true"
-                val connectionId = call.request.queryParameters["connectionId"]
-                    ?.takeIf { it.isNotBlank() }
-                    ?.let { WatchPartyConnectionId(it) }
-                    ?: WatchPartyConnectionId(Uuid.random().toString())
+            post {
+                call.respond(HttpStatusCode.Created, WatchPartyCreatedResponse(createSession().id))
+            }
 
-                val session = when {
-                    id != null -> acquireSession(id, connectionId) ?: run {
-                        close(CloseReason(WatchPartyWebsocketCodes.NotFound, "No session found with id ${id.value}"))
-                        return@webSocket
-                    }
-                    else -> createSession(connectionId)
-                }
-
-                try {
-                    handleConnection(session, connectionId = connectionId)
-                } finally {
-                    if (session.release(connectionId)) {
-                        scheduleRemoval(session)
-                    }
-
-                    if (detachOnClose) {
-                        session.update { it.copy(target = null) }
-                    }
-                }
+            socketIOSession<WatchPartyRequest, WatchPartyResponse> {
+                handleConnection()
             }
         }
     }
 
-    private suspend fun DefaultWebSocketServerSession.handleConnection(
-        session: WatchPartySession,
-        connectionId: WatchPartyConnectionId,
-    ) {
-        val job = launch {
-            session.collect(connectionId) {
-                sendSerialized<WatchPartyResponse>(it)
+    private suspend fun SocketIOSession<WatchPartyRequest, WatchPartyResponse>.handleConnection() {
+        val data = try {
+            connectionData<WatchPartyConnectData>().also {
+                require(it.connectionId.value.isNotBlank())
             }
+        } catch (_: IllegalArgumentException) {
+            send(WatchPartyClosedResponse("Invalid connection data"))
+            return
+        }
+
+        val session = acquireSession(data.watchPartyId, data.connectionId)
+        if (session == null) {
+            send(WatchPartyClosedResponse("Watchparty not found"))
+            return
         }
 
         try {
-            for (frame in incoming) {
-                try {
-                    val request = converter!!.deserialize<WatchPartyRequest>(frame)
-                    if (request is WatchPartyPingRequest) {
-                        sendSerialized<WatchPartyResponse>(WatchPartyPongResponse)
-                    } else {
-                        session.apply(request, connectionId)
+            coroutineScope {
+                val collector = launch {
+                    session.state.collect(data.connectionId, id) {
+                        send(it)
                     }
-                } catch (e: SerializationException) {
-                    sendSerialized<WatchPartyResponse>(WatchPartyErrorResponse(e.message ?: "Invalid request"))
-                } catch (e: WatchPartyRequestException) {
-                    sendSerialized<WatchPartyResponse>(WatchPartyErrorResponse(e.message))
+                }
+
+                try {
+                    handleRequests(session, data.connectionId)
+                } finally {
+                    collector.cancel()
                 }
             }
         } finally {
-            job.cancelAndJoin()
+            if (session.release(data.connectionId, data.detachOnClose)) {
+                scheduleRemoval(session)
+            }
+        }
+    }
+
+    private suspend fun SocketIOSession<WatchPartyRequest, WatchPartyResponse>.handleRequests(
+        session: WatchPartySession,
+        connectionId: WatchPartyConnectionId,
+    ) {
+        for (event in incoming) {
+            val result = try {
+                val generation = when (event.data) {
+                    is WatchPartyNavigateRequest -> null
+                    else -> event.raw.getOrNull(1)?.toString()?.toLongOrNull()
+                        ?: throw WatchPartyRequestException("Missing or invalid generation")
+                }
+
+                session.apply(event.data, connectionId, origin = id, expectedGeneration = generation)
+                WatchPartyAcknowledgement(session.state.snapshot(connectionId))
+            } catch (cause: WatchPartyRequestException) {
+                WatchPartyAcknowledgement(session.state.snapshot(connectionId), cause.message)
+            }
+
+            event.acknowledge { result }
         }
     }
 }

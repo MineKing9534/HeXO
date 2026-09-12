@@ -9,9 +9,9 @@ import de.mineking.hexo.game.model.formation.FormationId
 import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.GameId
-import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.utils.types.map
 import de.mineking.hexo.utils.types.orThrow
+import de.mineking.hexo.utils.types.urlOf
 
 class RemoteBoardParser(
     formationRepository: FormationRepository,

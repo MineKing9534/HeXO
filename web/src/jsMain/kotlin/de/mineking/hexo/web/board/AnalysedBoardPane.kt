@@ -5,6 +5,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
@@ -20,6 +21,7 @@ import org.w3c.dom.HTMLCanvasElement
 
 @Composable
 fun AnalysedBoardPane(
+    board: Board,
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
     plain: Boolean = false,
@@ -33,10 +35,11 @@ fun AnalysedBoardPane(
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
 ) {
-    val analyzerState = if (turn != null) rememberBoardAnalysis(boardViewManager.board, turn) else null
+    val analyzerState = if (turn != null) rememberBoardAnalysis(board, turn) else null
     var showAnalyzerOverlay by remember { mutableStateOf(true) }
 
     BoardPane(
+        board = board,
         boardViewManager = boardViewManager,
         readOnly = readOnly,
         plain = plain,

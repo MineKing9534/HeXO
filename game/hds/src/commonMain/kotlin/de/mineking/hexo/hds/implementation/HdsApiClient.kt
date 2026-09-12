@@ -7,7 +7,9 @@ import de.mineking.hexo.hds.implementation.game.FinishedGameRepositoryImpl
 import de.mineking.hexo.hds.implementation.leaderboard.LeaderboardRepositoryImpl
 import de.mineking.hexo.hds.implementation.profile.ProfileRepositoryImpl
 import de.mineking.hexo.hds.implementation.session.SessionRepositoryImpl
-import de.mineking.hexo.hds.implementation.socket.SocketIOClient
+import de.mineking.hexo.hds.implementation.socket.HdsSocketClient
+import de.mineking.hexo.hds.implementation.socket.HdsSocketOptions
+import de.mineking.hexo.hds.implementation.socket.connectHdsSocket
 import de.mineking.hexo.hds.implementation.tournament.TournamentRepositoryImpl
 import de.mineking.hexo.hds.implementation.utils.EntityRequesterFactory
 import de.mineking.hexo.utils.coroutines.createCoroutineScope
@@ -17,6 +19,7 @@ import io.ktor.client.HttpClientConfig
 import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
+import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.request
@@ -24,6 +27,7 @@ import io.ktor.client.statement.HttpResponse
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
 import io.ktor.http.contentType
+import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
@@ -38,17 +42,39 @@ internal val json = Json {
     isLenient = true
 }
 
+data class HdsHttpClient(
+    val apiUrl: String,
+    val httpClient: HttpClient,
+    val socketClient: HdsSocketClient?,
+) {
+    companion object {
+        fun createDefault(
+            apiUrl: String = DEFAULT_HDS_HOST,
+            httpClient: HttpClient = createDefaultHttpClient(),
+        ) = HdsHttpClient(
+            apiUrl = apiUrl,
+            httpClient = httpClient,
+            socketClient = null,
+        )
+    }
+
+    suspend fun withSocketClient(options: HdsSocketOptions = HdsSocketOptions.createDefault(apiUrl)) = copy(
+        socketClient = connectHdsSocket(
+            client = httpClient,
+            options = options,
+        ),
+    )
+}
+
 class HdsApiClient(
+    internal val client: HdsHttpClient,
     internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
-    internal val apiUrl: String = DEFAULT_HDS_HOST,
     internal val publicUrl: String = DEFAULT_HDS_HOST,
-    internal val socketClient: SocketIOClient?,
-    private val httpClient: HttpClient = createDefaultHttpClient(),
     internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
 ) : RepositoryContainer {
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
-        httpClient.request("$apiUrl/api$path", builder)
+        client.httpClient.request("${client.apiUrl.trimEnd('/')}/api$path", builder)
 
     override val formationRepository = repositoryWrapper.run { FormationRepositoryImpl(this@HdsApiClient).wrap() }
     override val finishedGameRepository = repositoryWrapper.run { FinishedGameRepositoryImpl(this@HdsApiClient).wrap() }
@@ -59,7 +85,7 @@ class HdsApiClient(
 
     fun shutdown() {
         coroutineScope.cancel()
-        socketClient?.disconnect()
+        client.socketClient?.disconnect()
     }
 }
 
@@ -73,6 +99,10 @@ fun createDefaultHttpClient(
 ) = HttpClient(engine) {
     install(ContentNegotiation) {
         json(json)
+    }
+
+    install(WebSockets) {
+        contentConverter = KotlinxWebsocketSerializationConverter(json)
     }
 
     defaultRequest {

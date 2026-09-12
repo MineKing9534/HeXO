@@ -19,7 +19,6 @@ import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.toBoard
-import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
 import de.mineking.hexo.game.model.game.Game
 import de.mineking.hexo.game.model.game.GameWithPosition
@@ -27,6 +26,7 @@ import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.playerWithColor
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.web.components.Slider
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
@@ -83,11 +83,14 @@ fun GameBoardPane(
         null
     }
 
+    val board = remember(position, boardViewManager.overlay) {
+        val board = position.toBoard(focusWinningRows = false)
+        (board + boardViewManager.overlay).focusWinningRows()
+    }
+
     AnalysedBoardPane(
-        boardViewManager = boardViewManager.transformBoard(game to boardViewManager.currentMove) { overlay ->
-            val board = position.toBoard(focusWinningRows = false)
-            (board + overlay).focusWinningRows()
-        },
+        board = board,
+        boardViewManager = boardViewManager,
         readOnly = true,
         plain = plain,
         allowAnalyzerOverlay = allowAnalyzerOverlay,

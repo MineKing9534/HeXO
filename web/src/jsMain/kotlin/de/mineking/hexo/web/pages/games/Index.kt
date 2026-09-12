@@ -20,10 +20,9 @@ import de.mineking.hexo.game.model.game.rated
 import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.page
 import de.mineking.hexo.web.board.GameBoardPane
-import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.PlayerName
 import de.mineking.hexo.web.board.gamePlayer
-import de.mineking.hexo.web.board.rememberHostBoardViewManager
+import de.mineking.hexo.web.board.rememberGameBoardViewManager
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.Badge
@@ -75,7 +74,7 @@ private class GamePreviewState {
     var closing by mutableStateOf(false)
         private set
 
-    suspend fun open(selectedGame: FinishedGame, boardViewManager: GameBoardViewManager) {
+    suspend fun open(selectedGame: FinishedGame) {
         selection = selectedGame
         game = null
         closing = false
@@ -83,7 +82,6 @@ private class GamePreviewState {
         val positionedGame = selectedGame.withPosition()
         if (selection?.id == selectedGame.id) {
             game = positionedGame
-            boardViewManager.currentMove = Int.MAX_VALUE
         }
     }
 
@@ -109,7 +107,6 @@ fun initLobbyListPage(ctx: InitRouteContext) {
 @Composable
 fun GameHistoryPage() {
     val client = rememberHdsRepositories()
-    val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
     var page by rememberQueryParameter("page").map(transform = { it?.toIntOrNull() ?: 1 }, transformBack = { it.toString() })
     var filter by rememberQueryParameter("rated").map(
         transform = { RatedFilter.fromQuery(it) },
@@ -121,7 +118,6 @@ fun GameHistoryPage() {
     } else {
         GameList(
             client.finishedGameRepository,
-            boardViewManager,
             page,
             filter,
             onPageChange = { page = it },
@@ -147,7 +143,6 @@ private fun LoadingState(filter: RatedFilter) {
 @Composable
 private fun GameList(
     finishedGameRepository: FinishedGameRepository,
-    boardViewManager: GameBoardViewManager,
     page: Int,
     filter: RatedFilter,
     onPageChange: (Int) -> Unit,
@@ -189,13 +184,13 @@ private fun GameList(
             onPageChange = onPageChange,
             onPreview = { game ->
                 coroutineScope.launch {
-                    if (preview.selection?.id == game.id) preview.close() else preview.open(game, boardViewManager)
+                    if (preview.selection?.id == game.id) preview.close() else preview.open(game)
                 }
             },
         )
 
         preview.selection?.let { selectedGame ->
-            GamePreview(selectedGame, preview.game, boardViewManager, closing = preview.closing) {
+            GamePreview(selectedGame, preview.game, closing = preview.closing) {
                 coroutineScope.launch { preview.close() }
             }
         }
@@ -414,7 +409,6 @@ private fun GameRowActions(game: FinishedGame, previewing: Boolean, onPreview: (
 private fun GamePreview(
     game: FinishedGame,
     positionedGame: FinishedGameWithPosition?,
-    boardViewManager: GameBoardViewManager,
     closing: Boolean,
     onClose: () -> Unit,
 ) {
@@ -434,6 +428,7 @@ private fun GamePreview(
                 GamePreviewHeader(game, onClose)
             }
         } else {
+            val boardViewManager = rememberGameBoardViewManager(watchParty = null)
             GameBoardPane(game = positionedGame, isLive = false, plain = true, boardViewManager = boardViewManager) {
                 GamePreviewHeader(game, onClose)
             }
