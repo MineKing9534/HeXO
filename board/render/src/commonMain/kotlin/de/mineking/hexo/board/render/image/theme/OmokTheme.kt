@@ -2,8 +2,10 @@ package de.mineking.hexo.board.render.image.theme
 
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.endInclusive
+import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
@@ -26,6 +28,8 @@ data class OmokTheme(
     override val playerXColor: Color,
     override val playerOColor: Color,
 ) : BaseTheme() {
+    override val cellShape = CellShape.Circle
+
     companion object {
         val Default = OmokTheme(
             gap = 6.0,
@@ -58,26 +62,38 @@ class OmokRenderer(
     private val lineThickness = context.run { theme.lineThickness.relativeWidth() }
 
     override fun drawCell(point: Point, hex: Polygon, cell: Cell) = context.run {
-        val gridHex = point.createHex(layout.size.layoutRadius)
-        fun pointAt(index: Int) = (gridHex.points[index % 6] + gridHex.points[(index + 1) % 6]) / 2.0
+        drawGrid(point)
 
-        repeat(3) { index ->
-            backend.drawLine(
-                from = pointAt(index),
-                to = pointAt(index + 3),
-                stroke = Stroke(theme.cellBorderColor, borderThickness),
+        val cellColor = theme.run { cell.owner.color(default = emptyCellBackgroundColor) }
+        if (!cellColor.isTransparent()) {
+            backend.drawCircle(
+                point = point,
+                stroke = Stroke(cellColor, (hexSize * SQRT3).toFloat()),
             )
         }
-
-        backend.drawCircle(
-            point = point,
-            stroke = Stroke(theme.run { cell.owner.color(default = emptyCellBackgroundColor) }, (hexSize * SQRT3).toFloat()),
-        )
 
         drawCellHighlight(point, cell)
 
         if (cell.highlight != null && cell.owner != null) {
             backend.drawCircle(point, Stroke(cell.focusColor, borderThickness * 8))
+        }
+    }
+
+    private fun drawGrid(point: Point) = context.run {
+        val coordinate = layout.run { point.toCoordinate() }
+        val gridHex = point.createHex(layout.size.layoutRadius)
+        fun pointAt(index: Int) = (gridHex.points[index % 6] + gridHex.points[(index + 1) % 6]) / 2.0
+
+        repeat(3) { index ->
+            val forward = coordinate + Direction.entries[index].direction in layout.coordinates
+            val backward = coordinate + Direction.entries[index + 3].direction in layout.coordinates
+            if (!forward && !backward) return@repeat
+
+            backend.drawLine(
+                from = if (forward) pointAt(index) else point,
+                to = if (backward) pointAt(index + 3) else point,
+                stroke = Stroke(theme.cellBorderColor, borderThickness),
+            )
         }
     }
 
@@ -92,8 +108,11 @@ class OmokRenderer(
 
         backend.drawCircle(
             point = point,
-            stroke = Stroke(color = color.withAlpha(if (cell.owner == null) 150 else 16), (hexSize * SQRT3).toFloat()),
-            outline = Stroke(color, borderThickness * 4),
+            stroke = Stroke(
+                color = color.withAlpha(if (cell.owner == null) 150 else 16),
+                width = (hexSize * SQRT3).toFloat() - borderThickness * 6,
+            ),
+            outline = Stroke(color, borderThickness * 6),
         )
     }
 

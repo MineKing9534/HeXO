@@ -13,17 +13,21 @@ import de.mineking.hexo.board.render.compose.BoardModifierKeys
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.utils.types.present
 import de.mineking.hexo.web.board.AnalysedBoardPane
+import de.mineking.hexo.web.board.BoardActionButton
 import de.mineking.hexo.web.board.GamePlayer
 import de.mineking.hexo.web.board.SandboxBoardViewManager
 import de.mineking.hexo.web.board.transformBoard
+import de.mineking.hexo.web.icons.RedoIcon
+import de.mineking.hexo.web.icons.UndoIcon
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
+import org.jetbrains.compose.web.dom.Div
 
 private val sandboxPlayers = CellOwner.entries.associateWith { GamePlayer(it.symbol, it) }
 
 @Composable
-fun SandboxBoardPane(
-    boardViewManager: SandboxBoardViewManager,
+internal fun SandboxBoardPane(
+    history: SandboxHistory,
     placementMode: CellPlacementMode,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
@@ -31,26 +35,38 @@ fun SandboxBoardPane(
     val shouldAnalyze by SettingsKey.SandboxAnalyzer.collectAsState()
 
     AnalysedBoardPane(
-        boardViewManager = boardViewManager.transformBoard(Unit) {
+        boardViewManager = history.transformBoard(Unit) {
             it.copy().focusWinningRows()
         },
         readOnly = false,
+        showOpenInSandbox = false,
         allowAnalyzerOverlay = true,
-        turn = if (shouldAnalyze) placementMode.analyzerTurn(boardViewManager.board) else null,
+        turn = if (shouldAnalyze) placementMode.analyzerTurn(history.board) else null,
         players = sandboxPlayers,
         viewport = viewport,
         onViewportChange = onViewportChange,
         onBoardInteraction = { interaction ->
-            when (interaction) {
-                is BoardInteraction.PlaceCell -> boardViewManager.placeCell(
-                    interaction.coordinate,
-                    interaction.modifiers,
-                    placementMode,
-                )
-                is BoardInteraction.HighlightBoardInteraction -> boardViewManager.apply(interaction)
+            history.transaction {
+                when (interaction) {
+                    is BoardInteraction.PlaceCell -> history.placeCell(
+                        interaction.coordinate,
+                        interaction.modifiers,
+                        placementMode,
+                    )
+                    is BoardInteraction.HighlightBoardInteraction -> history.apply(interaction)
+                }
             }
         },
-    )
+    ) {
+        Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
+            BoardActionButton(tooltip = "Undo", enabled = history.canUndo(), onClick = history::undo) {
+                UndoIcon { classes("size-4") }
+            }
+            BoardActionButton(tooltip = "Redo", enabled = history.canRedo(), onClick = history::redo) {
+                RedoIcon { classes("size-4") }
+            }
+        }
+    }
 }
 
 private fun Board.getMaxTurn() = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
@@ -71,8 +87,8 @@ private fun SandboxBoardViewManager.placeCell(coordinate: CellCoordinate, modifi
         if (currentCell?.turn == null) {
             run keyboard@{
                 val new = when {
-                    modifiers.ctrlKey -> CellOwner.X
-                    modifiers.altKey || modifiers.shiftKey -> CellOwner.O
+                    modifiers.ctrlKey || modifiers.shiftKey -> CellOwner.X
+                    modifiers.altKey -> CellOwner.O
                     else -> return@keyboard
                 }
 

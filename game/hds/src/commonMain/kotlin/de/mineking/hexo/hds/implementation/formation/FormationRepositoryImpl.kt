@@ -11,7 +11,7 @@ import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 
 internal class FormationRepositoryImpl(private val client: HdsApiClient) : FormationRepository {
-    override val url = "${client.host}/sandbox"
+    override val url = "${client.publicUrl}/sandbox"
 
     companion object {
         private val ID_PATTERN = "^[a-zA-Z0-9]{7}$".toRegex()

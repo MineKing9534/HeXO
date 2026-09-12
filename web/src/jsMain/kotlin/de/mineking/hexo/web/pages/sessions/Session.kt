@@ -22,16 +22,13 @@ import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.BackLink
-import de.mineking.hexo.web.components.LoadingIndicator
-import de.mineking.hexo.web.components.StatusCard
+import de.mineking.hexo.web.components.LoadingCard
+import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberHdsRepositories
 import de.mineking.hexo.web.rememberPrevious
 import de.mineking.hexo.web.rememberSoundPlayer
-import org.jetbrains.compose.web.dom.H1
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
 
 private val RouteInfo.sessionId get() = SessionId(params["id"]!!)
 
@@ -66,10 +63,15 @@ fun Session(id: SessionId, boardViewManager: GameBoardViewManager) {
                 is LiveSession -> {
                     val state = session.state
 
-                    GameBoardPane(session.game, state is SessionState.InGame, boardViewManager)
+                    GameBoardPane(
+                        game = session.game,
+                        isLive = state is SessionState.InGame,
+                        boardViewManager = boardViewManager,
+                    )
                     if (state is SessionState.Detailed.Finished) SessionFinishedOverlay(session, state)
                 }
                 is LobbySession -> LobbyOverlay(session)
+                else -> ClosedState()
             }
         }
     }
@@ -102,23 +104,25 @@ private fun SessionSounds(session: Session) {
 
 @Composable
 private fun LoadingState() {
-    StatusCard {
-        LoadingIndicator { classes("size-9") }
-        P({ classes("font-semibold", "text-slate-200") }) {
-            Text("Connecting to session...")
-        }
-    }
+    LoadingCard("Connecting to session...")
 }
 
 @Composable
 private fun NotFoundState() {
-    StatusCard {
-        H1({ classes("text-slate-100", "font-extrabold", "text-3xl", "uppercase") }) {
-            Text("Session not found")
-        }
-        P({ classes("text-slate-400", "text-center") }) {
-            Text("This live session does not exist anymore. It may have finished already, been closed, or the link may be incorrect.")
-        }
-        BackLink(AppRoute.LobbyList, "Back to lobbies")
+    NotFoundCard(
+        title = "Session not found",
+        description = "This session may have finished, been closed, or the link may be incorrect.",
+    ) {
+        BackLink(AppRoute.SessionList, "Back to lobbies")
+    }
+}
+
+@Composable
+private fun ClosedState() {
+    NotFoundCard(
+        title = "Session closed",
+        description = "This session has been closed and is no longer available.",
+    ) {
+        BackLink(AppRoute.SessionList, "Back to lobbies")
     }
 }

@@ -22,6 +22,7 @@ internal interface AbstractSessionPlayerDto : AbstractPlayerDto {
     override val profileId: ProfileId?
     override val displayName: String
     override val elo: Int
+    val connectionStatus: SessionPlayerConnectionStatus
 }
 
 @Serializable
@@ -31,6 +32,7 @@ internal data class LobbyPlayerDto(
     override val elo: Int,
 ) : AbstractSessionPlayerDto {
     override val playerId = PlayerId("")
+    override val connectionStatus = SessionPlayerConnectionStatus.Connected
 }
 
 @Serializable
@@ -44,6 +46,7 @@ internal data class SessionPlayerDto(
 ) : AbstractSessionPlayerDto {
     override val playerId = id
     override val elo = rating.eloScore
+    override val connectionStatus get() = connection.status
 
     @Serializable
     data class Rating(

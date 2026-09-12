@@ -18,6 +18,7 @@ enum class ButtonSize {
 
 @Composable
 fun ActionButton(
+    tooltip: String,
     enabled: Boolean = true,
     size: ButtonSize = ButtonSize.Small,
     color: Color = Color.Neutral,
@@ -26,33 +27,49 @@ fun ActionButton(
     content: @Composable () -> Unit,
 ) {
     val onClick by rememberUpdatedState(onClick)
-    Button({
-        classes("rounded-lg", "border", "text-nowrap", "font-medium", "transition")
+    Tooltip(
+        text = tooltip,
+        attrs = { classes("inline-flex", "shrink-0") },
+        tooltipAttrs = { classes("text-left") },
+        showArrow = false,
+    ) {
+        Button({
+            classes("rounded-lg", "border", "text-nowrap", "font-medium", "transition")
 
-        if (!enabled) disabled()
-        if (enabled) classes("cursor-pointer")
+            if (!enabled) disabled()
+            if (enabled) classes("cursor-pointer")
 
-        when (size) {
-            ButtonSize.Small -> classes("px-2.5", "py-1", "text-xs")
-            ButtonSize.Medium -> classes("px-4", "py-1.5", "text-sm")
+            when (size) {
+                ButtonSize.Small -> classes("px-2.5", "py-1", "text-xs")
+                ButtonSize.Medium -> classes("px-4", "py-1.5", "text-sm")
+            }
+
+            colorButtonClasses(color, enabled)
+            attrs?.invoke(this)
+            attr("aria-label", tooltip)
+            onClick { onClick() }
+        }) {
+            content()
         }
-
-        colorButtonClasses(color, enabled)
-        attrs?.invoke(this)
-        onClick { onClick() }
-    }) {
-        content()
     }
 }
 
 @Composable
 fun ActionButton(
     label: String,
+    tooltip: String,
     enabled: Boolean = true,
     size: ButtonSize = ButtonSize.Small,
     color: Color = Color.Neutral,
-    attrs: AttrBuilderContext<HTMLButtonElement>? = null,
     onClick: () -> Unit,
+    attrs: AttrBuilderContext<HTMLButtonElement>? = null,
 ) {
-    ActionButton(enabled, size, color, attrs, onClick) { Text(label) }
+    ActionButton(
+        tooltip = tooltip,
+        enabled = enabled,
+        size = size,
+        color = color,
+        attrs = attrs,
+        onClick = onClick,
+    ) { Text(label) }
 }

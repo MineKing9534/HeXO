@@ -21,14 +21,14 @@ import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
 import de.mineking.hexo.web.board.rememberHostBoardViewManager
 import de.mineking.hexo.web.components.BackLink
-import de.mineking.hexo.web.components.LoadingIndicator
-import de.mineking.hexo.web.components.StatusCard
+import de.mineking.hexo.web.components.LoadingCard
+import de.mineking.hexo.web.components.NotFoundCard
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
+import de.mineking.hexo.web.map
+import de.mineking.hexo.web.pages.sessions.FinishedGameOverlay
 import de.mineking.hexo.web.rememberHdsRepositories
-import org.jetbrains.compose.web.dom.H1
-import org.jetbrains.compose.web.dom.P
-import org.jetbrains.compose.web.dom.Text
+import de.mineking.hexo.web.rememberQueryParameter
 
 private val RouteInfo.gameId get() = GameId(params["id"]!!)
 
@@ -41,7 +41,21 @@ fun initGamePage(ctx: InitRouteContext) {
 @Composable
 fun GamePage(ctx: PageContext) {
     val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
-    Game(ctx.route.gameId, boardViewManager)
+    val gameId = ctx.route.gameId
+    var move by rememberQueryParameter("move").map(
+        transform = { it?.toIntOrNull() ?: Int.MAX_VALUE },
+        transformBack = { it.takeIf { it < Int.MAX_VALUE }?.toString() },
+    )
+
+    LaunchedEffect(move) {
+        boardViewManager.currentMove = move
+    }
+
+    LaunchedEffect(boardViewManager.currentMove) {
+        move = boardViewManager.currentMove
+    }
+
+    Game(gameId, boardViewManager)
 }
 
 @Composable
@@ -65,30 +79,24 @@ fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
         is EntityState.Loading -> LoadingState()
         is EntityState.NotFound -> NotFoundState()
         is EntityState.Data -> {
-            GameBoardPane(state.value, isLive = false, boardViewManager)
+            val move = boardViewManager.currentMove.coerceIn(0, state.value.moveCount)
+            GameBoardPane(state.value, isLive = false, boardViewManager = boardViewManager)
+            FinishedGameOverlay(state.value)
         }
     }
 }
 
 @Composable
 private fun LoadingState() {
-    StatusCard {
-        LoadingIndicator { classes("size-9") }
-        P({ classes("font-semibold", "text-slate-200") }) {
-            Text("Loading game...")
-        }
-    }
+    LoadingCard("Loading game...")
 }
 
 @Composable
 private fun NotFoundState() {
-    StatusCard {
-        H1({ classes("text-slate-100", "font-extrabold", "text-3xl", "uppercase") }) {
-            Text("Game not found")
-        }
-        P({ classes("text-slate-400", "text-center") }) {
-            Text("The queried game wasn't found.")
-        }
+    NotFoundCard(
+        title = "Game not found",
+        description = "This game does not exist, may have been removed, or the link may be incorrect.",
+    ) {
         BackLink(AppRoute.FinishedGameList, "Back to games")
     }
 }

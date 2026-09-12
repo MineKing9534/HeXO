@@ -40,7 +40,7 @@ fun RootLayout(ctx: PageContext, content: @Composable () -> Unit) {
                 is WatchPartyTarget.Sandbox -> AppRoute.Sandbox
                 is WatchPartyTarget.Game -> AppRoute.FinishedGame(target.gameId)
                 is WatchPartyTarget.Session -> AppRoute.Session(target.sessionId)
-                null -> AppRoute.LobbyList.takeIf {
+                null -> AppRoute.SessionList.takeIf {
                     data.route is AppRoute.Sandbox || data.route is AppRoute.Session || data.route is AppRoute.FinishedGame
                 }
             } ?: return@collect

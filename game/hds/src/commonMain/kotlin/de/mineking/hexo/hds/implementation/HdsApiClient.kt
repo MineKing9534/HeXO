@@ -29,7 +29,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 
-const val DEFAULT_HOST = "https://hexo.did.science"
+const val DEFAULT_HDS_HOST = "https://hexo.did.science"
 
 private val logger = KotlinLogging.logger {}
 
@@ -40,14 +40,15 @@ internal val json = Json {
 
 class HdsApiClient(
     internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
-    internal val host: String = DEFAULT_HOST,
+    internal val apiUrl: String = DEFAULT_HDS_HOST,
+    internal val publicUrl: String = DEFAULT_HDS_HOST,
     internal val socketClient: SocketIOClient?,
     private val httpClient: HttpClient = createDefaultHttpClient(),
     internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
 ) : RepositoryContainer {
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
-        httpClient.request("$host/api$path", builder)
+        httpClient.request("$apiUrl/api$path", builder)
 
     override val formationRepository = repositoryWrapper.run { FormationRepositoryImpl(this@HdsApiClient).wrap() }
     override val finishedGameRepository = repositoryWrapper.run { FinishedGameRepositoryImpl(this@HdsApiClient).wrap() }

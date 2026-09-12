@@ -22,6 +22,8 @@ import org.w3c.dom.HTMLCanvasElement
 fun AnalysedBoardPane(
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
+    plain: Boolean = false,
+    showOpenInSandbox: Boolean = true,
     allowAnalyzerOverlay: Boolean,
     turn: AnalyzerTurn?,
     players: Map<CellOwner, GamePlayer>,
@@ -37,6 +39,8 @@ fun AnalysedBoardPane(
     BoardPane(
         boardViewManager = boardViewManager,
         readOnly = readOnly,
+        plain = plain,
+        showOpenInSandbox = showOpenInSandbox,
         viewport = viewport,
         onViewportChange = onViewportChange,
         onBoardInteraction = onBoardInteraction,
@@ -45,7 +49,7 @@ fun AnalysedBoardPane(
     ) {
         content?.invoke(this)
 
-        if (analyzerState != null && turn != null) {
+        if (analyzerState != null && turn != null && !plain) {
             AnalyzerStatusDisplay(
                 state = analyzerState,
                 allowAnalyzerOverlay = allowAnalyzerOverlay,
@@ -71,10 +75,16 @@ private fun AnalyzerStatusDisplay(
         state = state,
         analyzedPlayer = effectiveTurnPlayer,
         otherPlayer = otherPlayer,
-        attrs = { classes("absolute", "right-4", "top-4") },
+        attrs = {
+            classes(
+                "absolute", "right-3", "bottom-28",
+                "sm:right-4", "sm:top-4", "sm:bottom-auto",
+            )
+        },
     ) {
         if (allowAnalyzerOverlay) {
             ActionButton(
+                tooltip = if (showAnalyzerOverlay) "Hide analysis overlay" else "Show analysis overlay",
                 onClick = { onShowAnalyzerOverlayChange(!showAnalyzerOverlay) },
                 attrs = { classes("flex-0") },
             ) {
@@ -87,9 +97,6 @@ private fun AnalyzerStatusDisplay(
         } else {
             Tooltip(
                 text = "The forced-win overlay is disabled for live rated games",
-                tooltipAttrs = {
-                    classes("right-11", "top-1/2", "w-max", "max-w-72", "-translate-y-1/2")
-                },
             ) {
                 Div({
                     classes(
