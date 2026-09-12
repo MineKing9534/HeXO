@@ -20,7 +20,7 @@ import de.mineking.discord.ui.modal.createModalComponent
 import de.mineking.discord.ui.modal.getValue
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
-import de.mineking.discord.ui.renderValue
+import de.mineking.discord.ui.render
 import de.mineking.discord.ui.terminateRender
 import de.mineking.discord.utils.await
 import de.mineking.hexo.bot.CustomEmoji
@@ -30,14 +30,17 @@ import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.bindLocalizationParameter
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.game.model.profile.ProfileId
+import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.game.model.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
+import de.mineking.hexo.utils.types.flatMap
 import de.mineking.hexo.utils.types.isSuccess
 import de.mineking.hexo.utils.types.orElse
 import de.mineking.hexo.utils.types.orNull
+import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -64,41 +67,43 @@ fun UIManager.accountLinkMenu(
     val authRemoveConfirmModalButton = register(authRemoveConfirmModalButton(localization, discordAuthRepository))
 
     // Define this *after* the submenus, so that this is not executed for submenu renders
-    val event = parameter({ null }, { it }, { event })
-    val (profile, isAuthenticated) = renderValue {
-        coroutineScope {
+    render {
+        val event = parameter({ error("") }, { it }, { event })
+        val (profile, isAuthenticated) = coroutineScope {
             val profile = async {
-                val profileId = accountLinkRepository.getHexoProfile(event!!.user.userId)
-                profileId?.let { profileRepository.getProfileById(profileId) }
+                accountLinkRepository.getHexoProfile(event.user.userId)
+                    .successIfNotNullOrElse(ProfileNotFoundError)
+                    .flatMap { profileRepository.getProfileById(it) }
+                    .orNull()
             }
 
-            val isAuthenticated = async { discordAuthRepository.getAuthenticationStatus(event!!.user.userId) }
+            val isAuthenticated = async { discordAuthRepository.getAuthenticationStatus(event.user.userId) }
 
             profile.await() to isAuthenticated.await()
         }
-    } ?: (null to false)
 
-    localizeForUser {
-        bindParameter("profile", profile)
-        bindParameter("isAuthenticated", isAuthenticated)
-    }
+        localizeForUser {
+            bindParameter("profile", profile)
+            bindParameter("isAuthenticated", isAuthenticated)
+        }
 
-    +container {
-        +localizedTextDisplay("title")
-        +separator()
-        +section(
-            accessory = if (profile == null) linkModalButton else unlinkConfirmModalButton,
-            localizedTextDisplay("link_status"),
-        )
-        +separator(invisible = true)
-        +section(
-            accessory = if (!isAuthenticated) authModalButton else authRemoveConfirmModalButton,
-            localizedTextDisplay("auth_status"),
-        )
+        +container {
+            +localizedTextDisplay("title")
+            +separator()
+            +section(
+                accessory = if (profile == null) linkModalButton else unlinkConfirmModalButton,
+                localizedTextDisplay("link_status"),
+            )
+            +separator(invisible = true)
+            +section(
+                accessory = if (!isAuthenticated) authModalButton else authRemoveConfirmModalButton,
+                localizedTextDisplay("auth_status"),
+            )
 
-        if (profile != null && !isAuthenticated) {
-            +separator(spacing = Separator.Spacing.LARGE)
-            +localizedTextDisplay("auth_explanation")
+            if (profile != null && !isAuthenticated) {
+                +separator(spacing = Separator.Spacing.LARGE)
+                +localizedTextDisplay("auth_explanation")
+            }
         }
     }
 }
