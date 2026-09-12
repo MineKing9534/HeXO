@@ -22,9 +22,11 @@ import de.mineking.hexo.web.icons.BroadcastIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.icons.GitHubIcon
 import de.mineking.hexo.web.icons.SettingsIcon
+import de.mineking.hexo.web.onSet
 import de.mineking.hexo.web.pages.watchparty.WatchPartyHostOptions
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsView
+import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.ATarget
 import org.jetbrains.compose.web.attributes.target
 import org.jetbrains.compose.web.dom.A
@@ -36,6 +38,7 @@ import org.jetbrains.compose.web.dom.Main
 import org.jetbrains.compose.web.dom.Nav
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.url.URL
 
 private const val GITHUB_URL = "https://github.com/MineKing9534/HeXO-Renderer"
 
@@ -51,9 +54,11 @@ data class PageData(
 
 class AppLayout(
     fullscreen: MutableState<Boolean>,
+    supportsFullScreen: MutableState<Boolean>,
     pageStyle: MutableState<PageStyle>,
 ) {
     var fullscreen by fullscreen
+    var supportsFullScreen by supportsFullScreen
     var pageStyle by pageStyle
 }
 
@@ -69,13 +74,24 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
 
     val layout = remember(ctx.route.path) {
         AppLayout(
-            fullscreen = mutableStateOf("fullscreen" in ctx.route.queryParams),
+            fullscreen = mutableStateOf("fullscreen" in ctx.route.queryParams).onSet { fullscreen ->
+                val url = URL(window.location.href)
+                if (fullscreen) {
+                    url.searchParams.set("fullscreen", "true")
+                } else {
+                    url.searchParams.delete("fullscreen")
+                }
+                window.history.replaceState(null, "", url.toString())
+            },
+            supportsFullScreen = mutableStateOf(false),
             pageStyle = mutableStateOf(data.style),
         )
     }
 
+    val fullscreen = layout.fullscreen && layout.supportsFullScreen
+
     Div({ classes("flex", "h-full", "w-full", "flex-col", "overflow-hidden", "select-none") }) {
-        if (!layout.fullscreen) {
+        if (!fullscreen) {
             NavBar(data.route)
         }
 
@@ -92,7 +108,7 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
             }
         }
 
-        if (!layout.fullscreen) {
+        if (!fullscreen) {
             AppFooter()
         }
     }

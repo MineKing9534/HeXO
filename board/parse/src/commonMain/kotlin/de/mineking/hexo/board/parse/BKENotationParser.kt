@@ -18,7 +18,7 @@ private const val TURN_LIST_PATTERN = /*language=regexp*/ """$TURN_PATTERN(?:\s+
 
 private const val ORIGIN_PATTERN = /*language=regexp*/ """@\s*\((-?\d+),\s*(-?\d+)\)"""
 
-private val BKE_FORMAT_CHECK_PATTERN = ".*$TURN_PATTERN.*".toRegex()
+private val BKE_FORMAT_CHECK_PATTERN = TURN_PATTERN.toRegex()
 private val EXTENDED_BKE_PATTERN = """^\s*([bdpq<>])?\s*(CW|CCW)?\s*(?:$ORIGIN_PATTERN\s*:?)?\s*($TURN_LIST_PATTERN)\s*$""".toRegex()
 
 enum class Chirality(val symbol: String) {
@@ -104,7 +104,7 @@ private fun String.bkePrecheck(): Board? {
         }
     }
 
-    requireHexo(matches(BKE_FORMAT_CHECK_PATTERN), notationCheck = true) { "Invalid bke notation" }
+    requireHexo(BKE_FORMAT_CHECK_PATTERN.containsMatchIn(this), notationCheck = true) { "Invalid bke notation" }
     return null
 }
 

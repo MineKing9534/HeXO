@@ -2,6 +2,7 @@ package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.FontType
+import kotlin.math.absoluteValue
 import kotlin.math.hypot
 import kotlin.math.min
 
@@ -42,6 +43,8 @@ operator fun Point.plus(point: Point) = Point(x + point.x, y + point.y)
 operator fun Point.minus(point: Point) = Point(x - point.x, y - point.y)
 operator fun Point.times(value: Double) = Point(x * value, y * value)
 operator fun Point.div(value: Double) = Point(x / value, y / value)
+
+fun Point.isCloseTo(other: Point) = (x - other.x).absoluteValue < 1e-6 && (y - other.y).absoluteValue < 1e-6
 
 fun Polygon.toPath(borderRadius: Float = 0f): PolygonPath {
     if (points.isEmpty()) return PolygonPath(Point.Zero, emptyList())
