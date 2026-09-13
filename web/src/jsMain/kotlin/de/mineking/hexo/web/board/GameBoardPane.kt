@@ -8,6 +8,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
+import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
 import de.mineking.hexo.board.Move
@@ -28,8 +29,10 @@ import de.mineking.hexo.game.model.game.playerWithColor
 import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.web.components.Slider
+import de.mineking.hexo.web.icons.ChevronDownIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
+import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.playerCssColor
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.rememberWatchPartyController
@@ -407,16 +410,49 @@ private fun TournamentInfoCard(game: Game) {
 
 @Composable
 private fun HudInfoCard(accent: String, header: @Composable () -> Unit, content: @Composable () -> Unit) {
+    var collapsed by remember { mutableStateOf(false) }
+    val appLayout = rememberAppLayout()
+
+    LaunchedEffect(appLayout.fullscreen) {
+        if (appLayout.fullscreen) collapsed = true
+    }
+
     Div({
         classes(
-            "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-900/75",
+            "pointer-events-auto", "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-900/75",
             "backdrop-blur-xs",
         )
     }) {
-        Div({ classes("flex", "min-h-9", "items-center", "justify-between", "gap-3", "border-b", "border-slate-700/55", "px-3", "py-2") }) {
-            header()
+        Button({
+            classes(
+                "flex", "min-h-9", "w-full", "cursor-pointer", "items-center", "gap-3", "border-0", "bg-transparent",
+                "px-3", "py-2", "text-left", "text-inherit", "transition-[background-color]", "hover:bg-slate-800/40",
+            )
+            if (!collapsed) classes("border-b", "border-slate-700/55")
+            attr("aria-expanded", (!collapsed).toString())
+            attr("aria-label", if (collapsed) "Expand session information" else "Collapse session information")
+            onClick { collapsed = !collapsed }
+        }) {
+            Div({ classes("flex", "min-w-0", "flex-1", "items-center", "justify-between", "gap-3") }) {
+                header()
+            }
+            ChevronDownIcon {
+                classes("size-4", "shrink-0", "text-slate-400", "transition-transform", "duration-200")
+                if (collapsed) classes("-rotate-90")
+            }
         }
-        Div({ classes("p-2") }) { content() }
+        Div({
+            classes("grid", "transition-[grid-template-rows,opacity]", "duration-200")
+            if (collapsed) {
+                classes("grid-rows-[0fr]", "opacity-0")
+            } else {
+                classes("grid-rows-[1fr]", "opacity-100")
+            }
+        }) {
+            Div({ classes("min-h-0", "overflow-hidden") }) {
+                Div({ classes("p-2") }) { content() }
+            }
+        }
     }
 }
 
