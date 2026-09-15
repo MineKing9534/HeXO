@@ -8,7 +8,7 @@ dependencies {
     implementation(projects.watchparty.protocol)
 
     implementation(projects.game.model)
-    implementation(projects.server.service)
+    implementation(projects.server.api)
 
     implementation(projects.utils.types)
 

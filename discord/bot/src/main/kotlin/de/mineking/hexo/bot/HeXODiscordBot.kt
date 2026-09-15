@@ -2,7 +2,6 @@ package de.mineking.hexo.bot
 
 import de.mineking.discord.Manager
 import de.mineking.discord.discordToolKit
-import de.mineking.discord.localization.DefaultLocalizationManager
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.read
 import de.mineking.discord.ui.message.MessageMenu
@@ -21,6 +20,7 @@ import de.mineking.hexo.bot.commands.profileUserCommand
 import de.mineking.hexo.bot.commands.renderHexoMessageCommand
 import de.mineking.hexo.bot.commands.renderHexoSlashCommand
 import de.mineking.hexo.bot.commands.themeCommand
+import de.mineking.hexo.bot.localization.HexoBotLocalizationManager
 import de.mineking.hexo.bot.menus.GameMenuParameter
 import de.mineking.hexo.bot.menus.NotationMenuParameter
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
@@ -30,15 +30,13 @@ import de.mineking.hexo.bot.menus.leaderboardMenu
 import de.mineking.hexo.bot.menus.notationMenu
 import de.mineking.hexo.bot.menus.profileMenu
 import de.mineking.hexo.bot.utils.installErrorHandling
-import de.mineking.hexo.bot.utils.updateLinkedRoleMetadata
 import de.mineking.hexo.discord.bot.config.UserThemeRepository
 import de.mineking.hexo.discord.core.DiscordUserId
+import de.mineking.hexo.discord.oauth2.OAuth2TokenRepository
 import de.mineking.hexo.game.model.RepositoryContainer
 import de.mineking.hexo.link.AccountLinkRepository
-import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import dev.freya02.jda.emojis.unicode.Emojis
 import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.runBlocking
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
@@ -58,7 +56,7 @@ val Manager.main get() = manager.bot as HeXODiscordBot
 class HeXODiscordBot(
     private val repositories: RepositoryContainer,
     private val accountLinkRepository: AccountLinkRepository?,
-    private val discordUserAuthenticationRepository: DiscordUserAuthenticationRepository?,
+    private val discordUserAuthenticationRepository: OAuth2TokenRepository?,
     val userThemeRepository: UserThemeRepository?,
     val notationParser: BoardParser,
     val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
@@ -83,7 +81,7 @@ class HeXODiscordBot(
     private lateinit var accountLinkMenu: MessageMenu<IModalCallback, *>
 
     val dtk = discordToolKit(jda, this)
-        .withLocalization<_, DefaultLocalizationManager>()
+        .withLocalization<_, HexoBotLocalizationManager>()
         .withUIManager {
             localize()
             installErrorHandling()
@@ -122,12 +120,6 @@ class HeXODiscordBot(
         .build()
 
     init {
-        if (publicUrl != null) {
-            runBlocking {
-                dtk.updateLinkedRoleMetadata()
-            }
-        }
-
         jda.registerMessageDeleteListener()
     }
 

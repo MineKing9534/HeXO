@@ -10,7 +10,7 @@ import com.varabyte.kobweb.core.init.InitKobweb
 import com.varabyte.kobweb.core.init.InitKobwebContext
 import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.game.model.RepositoryContainer
-import de.mineking.hexo.hds.implementation.DEFAULT_HDS_HOST
+import de.mineking.hexo.hds.implementation.DEFAULT_HDS_PUBLIC_URL
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.HdsHttpClient
 import de.mineking.hexo.web.audio.SoundPlayer
@@ -38,16 +38,16 @@ fun rememberWatchPartyController() = LocalWatchPartyController.current
 @Composable
 private fun rememberSharedHdsApiClient(): HdsApiClient? {
     if (AppGlobals.isExporting) return null
-    val apiUrl = BuildConfig.API_PROXY
+    val apiUrl = BuildConfig.HDS_API_URL
 
     return rememberAsyncResourceState(
         key = apiUrl,
         initialState = null,
         load = {
             val client = HdsHttpClient.createDefault(apiUrl).withSocketClient()
-            HdsApiClient(client = client, publicUrl = DEFAULT_HDS_HOST)
+            HdsApiClient(client = client, publicUrl = DEFAULT_HDS_PUBLIC_URL)
         },
-        dispose = { it?.shutdown() },
+        dispose = { it?.close() },
     )
 }
 
@@ -57,7 +57,7 @@ fun App(content: @Composable () -> Unit) {
     SettingsControllerProvider(localStorage) { settingsController ->
         val hdsApiClient = rememberSharedHdsApiClient()
         val soundPlayer = remember(settingsController) { SoundPlayer(settingsController) }
-        val watchPartyController = remember { WatchPartyController(BuildConfig.TOOLS_API, settingsController) }
+        val watchPartyController = remember { WatchPartyController(BuildConfig.HMD_API_URL, settingsController) }
 
         CompositionLocalProvider(
             LocalHdsApiRepositories provides hdsApiClient,

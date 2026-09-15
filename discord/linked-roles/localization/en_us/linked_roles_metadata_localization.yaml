@@ -1,0 +1,8 @@
+linked_roles:
+  elo:
+    name: ELO
+    description: Grants the role to users whose linked profiles have at least the specified ELO
+
+  rank:
+    name: World Rank
+    description: Grants the role to users whose linked profiles are in the top N world by rank

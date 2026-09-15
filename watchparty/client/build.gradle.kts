@@ -8,8 +8,8 @@ plugins {
 kotlin {
     sourceSets.commonMain {
         dependencies {
-            api(projects.utils.socketio.client)
             api(projects.watchparty.model)
+            implementation(projects.utils.socketio.client)
             implementation(projects.watchparty.protocol)
             implementation(projects.game.model)
 
@@ -22,7 +22,13 @@ kotlin {
 
     sourceSets.jvmMain {
         dependencies {
-            implementation(libs.ktor.client.cio)
+            runtimeOnly(libs.ktor.client.cio)
+        }
+    }
+
+    sourceSets.jsMain {
+        dependencies {
+            runtimeOnly(libs.ktor.client.js)
         }
     }
 }

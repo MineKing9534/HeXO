@@ -3,10 +3,12 @@ package de.mineking.hexo.discord.bot.config
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
-import de.mineking.hexo.database.HexoDatabaseManager
+import de.mineking.hexo.database.DatabaseManager
+import de.mineking.hexo.database.Transaction
 import de.mineking.hexo.database.UnexpectedDatabaseErrorException
 import de.mineking.hexo.database.UniqueViolationError
 import de.mineking.hexo.database.mapNullableResult
+import de.mineking.hexo.database.select
 import de.mineking.hexo.database.throwOnDatabaseError
 import de.mineking.hexo.discord.bot.config.database.ThemeDataTable
 import de.mineking.hexo.discord.bot.config.database.UserThemeTable
@@ -14,18 +16,14 @@ import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.mapError
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.firstOrNull
+import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.leftJoin
 import org.jetbrains.exposed.v1.core.statements.UpdateBuilder
-import org.jetbrains.exposed.v1.core.vendors.ForUpdateOption
-import org.jetbrains.exposed.v1.jdbc.deleteWhere
-import org.jetbrains.exposed.v1.jdbc.insertReturning
-import org.jetbrains.exposed.v1.jdbc.select
-import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.updateReturning
-import org.jetbrains.exposed.v1.jdbc.upsert
 import kotlin.reflect.KProperty1
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.full.primaryConstructor
@@ -49,7 +47,23 @@ sealed interface UserThemeSelection {
     data class Default(val theme: DefaultTheme) : UserThemeSelection
 }
 
-class UserThemeRepository(private val database: HexoDatabaseManager) {
+interface UserThemeRepository {
+    suspend fun listUserThemes(user: DiscordUserId): List<CustomTheme>
+
+    suspend fun getCurrentUserTheme(user: DiscordUserId): Theme
+    suspend fun getThemeById(id: CustomThemeSelector): Result<CustomTheme, CustomThemeQueryError>
+
+    suspend fun setCurrentUserTheme(user: DiscordUserId, theme: UserThemeSelection): Result<Theme?, CustomThemeQueryError>
+    suspend fun createCustomTheme(owner: DiscordUserId, name: String, theme: Theme): Result<CustomTheme, CustomThemeCreateError>
+
+    context(user: DiscordUserId)
+    suspend fun updateCustomThemeById(id: CustomThemeSelector, theme: Theme): Result<CustomTheme, CustomThemeUpdateError>
+
+    context(user: DiscordUserId)
+    suspend fun deleteThemeById(id: CustomThemeSelector): Result<Unit, CustomThemeDeleteError>
+}
+
+class UserThemeRepositoryImpl(private val database: DatabaseManager) : UserThemeRepository {
     private fun ResultRow.mapToCustomTheme() = CustomTheme(
         id = this[ThemeDataTable.id].value,
         owner = this[ThemeDataTable.owner],
@@ -96,20 +110,23 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         this[ThemeDataTable.overrides] = overrides
     }
 
-    suspend fun listUserThemes(user: DiscordUserId): List<CustomTheme> {
+    override suspend fun listUserThemes(user: DiscordUserId): List<CustomTheme> {
         return database.transaction(readOnly = true) {
-            ThemeDataTable.selectAll()
+            ThemeDataTable.select()
                 .where(ThemeDataTable.owner eq user)
                 .map { it.mapToCustomTheme() }
+                .execute()
+                .toList()
         }.throwOnDatabaseError()
     }
 
-    suspend fun getCurrentUserTheme(user: DiscordUserId): Theme? {
+    override suspend fun getCurrentUserTheme(user: DiscordUserId): Theme {
         return database.transaction(readOnly = true) {
             val result = UserThemeTable.leftJoin(ThemeDataTable, onColumn = { customTheme }, otherColumn = { id })
-                .selectAll()
+                .select()
                 .where(UserThemeTable.id eq user)
-                .firstOrNull() ?: return@transaction null
+                .execute()
+                .firstOrNull() ?: return@transaction Theme.Default
 
             val default = result[UserThemeTable.defaultTheme]
             if (default != null) return@transaction default.theme
@@ -118,12 +135,13 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
         }.throwOnDatabaseError()
     }
 
-    suspend fun setCurrentUserTheme(user: DiscordUserId, theme: UserThemeSelection): Result<Theme?, CustomThemeQueryError> {
+    override suspend fun setCurrentUserTheme(user: DiscordUserId, theme: UserThemeSelection): Result<Theme?, CustomThemeQueryError> {
         return database.transaction(readOnly = false) {
             val theme = when (theme) {
                 is UserThemeSelection.Custom -> {
-                    val theme = ThemeDataTable.selectAll()
+                    val theme = ThemeDataTable.select()
                         .where(theme.selector.toCondition())
+                        .execute()
                         .firstOrNull()
                         ?.mapToCustomTheme()
                         ?: return@transaction Result.Error(CustomThemeNotFoundError)
@@ -133,32 +151,32 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
                 is UserThemeSelection.Default -> ThemeContainer.Default(theme.theme)
             }
 
-            UserThemeTable.upsert(where = { UserThemeTable.id eq user }) {
-                it[UserThemeTable.id] = user
+            UserThemeTable.upsert {
+                this[UserThemeTable.id] = user
 
                 when (theme) {
                     is ThemeContainer.Default -> {
-                        it[UserThemeTable.defaultTheme] = theme.default
-                        it[UserThemeTable.customTheme] = null
+                        this[UserThemeTable.defaultTheme] = theme.default
+                        this[UserThemeTable.customTheme] = null
                     }
                     is ThemeContainer.Custom -> {
-                        it[UserThemeTable.defaultTheme] = null
-                        it[UserThemeTable.customTheme] = theme.theme.id
+                        this[UserThemeTable.defaultTheme] = null
+                        this[UserThemeTable.customTheme] = theme.theme.id
                     }
                 }
-            }
+            }.execute()
 
             Result.Success(theme.theme)
         }.throwOnDatabaseError()
     }
 
-    suspend fun createCustomTheme(owner: DiscordUserId, name: String, theme: Theme): Result<CustomTheme, CustomThemeCreateError> {
+    override suspend fun createCustomTheme(owner: DiscordUserId, name: String, theme: Theme): Result<CustomTheme, CustomThemeCreateError> {
         return database.transaction(readOnly = false) {
-            ThemeDataTable.insertReturning {
-                it[ThemeDataTable.owner] = owner
-                it[ThemeDataTable.name] = name
+            ThemeDataTable.insert {
+                this[ThemeDataTable.owner] = owner
+                this[ThemeDataTable.name] = name
 
-                it.bindTheme(theme)
+                this.bindTheme(theme)
             }.first().mapToCustomTheme()
         }.mapError {
             when (it) {
@@ -169,47 +187,49 @@ class UserThemeRepository(private val database: HexoDatabaseManager) {
     }
 
     context(user: DiscordUserId)
-    suspend fun updateCustomThemeById(id: CustomThemeSelector, theme: Theme): Result<CustomTheme, CustomThemeUpdateError> {
+    override suspend fun updateCustomThemeById(id: CustomThemeSelector, theme: Theme): Result<CustomTheme, CustomThemeUpdateError> {
         return database.transaction(readOnly = false) {
             val owner = getThemeOwner(id)
                 ?: return@transaction Result.Error(CustomThemeNotFoundError)
 
             if (owner != user) return@transaction Result.Error(MissingCustomThemePermissionError)
 
-            val result = ThemeDataTable.updateReturning(where = { id.toCondition() }) {
-                it.bindTheme(theme)
+            val result = ThemeDataTable.update(where = id.toCondition()) {
+                this.bindTheme(theme)
             }.first().mapToCustomTheme()
 
             return@transaction Result.Success(result)
         }.throwOnDatabaseError()
     }
 
-    suspend fun getThemeById(id: CustomThemeSelector): Result<CustomTheme, CustomThemeQueryError> {
+    override suspend fun getThemeById(id: CustomThemeSelector): Result<CustomTheme, CustomThemeQueryError> {
         return database.transaction(readOnly = true) {
-            ThemeDataTable.selectAll()
+            ThemeDataTable.select()
                 .where(id.toCondition())
+                .execute()
                 .firstOrNull()
                 ?.mapToCustomTheme()
         }.mapNullableResult(CustomThemeNotFoundError)
     }
 
     context(user: DiscordUserId)
-    suspend fun deleteThemeById(id: CustomThemeSelector): Result<Unit, CustomThemeDeleteError> {
+    override suspend fun deleteThemeById(id: CustomThemeSelector): Result<Unit, CustomThemeDeleteError> {
         return database.transaction(readOnly = false) {
             val owner = getThemeOwner(id)
                 ?: return@transaction Result.Error(CustomThemeNotFoundError)
 
             if (owner != user) return@transaction Result.Error(MissingCustomThemePermissionError)
 
-            ThemeDataTable.deleteWhere { id.toCondition() }
+            ThemeDataTable.delete(where = id.toCondition()).execute()
 
             return@transaction Result.Success(Unit)
         }.throwOnDatabaseError()
     }
 
-    private fun getThemeOwner(id: CustomThemeSelector) = ThemeDataTable.select(ThemeDataTable.owner)
+    context(_: Transaction)
+    private suspend fun getThemeOwner(id: CustomThemeSelector) = ThemeDataTable.select(column = ThemeDataTable.owner)
         .where(id.toCondition())
-        .forUpdate(ForUpdateOption.ForUpdate)
+        .forUpdate()
+        .execute()
         .firstOrNull()
-        ?.get(ThemeDataTable.owner)
 }

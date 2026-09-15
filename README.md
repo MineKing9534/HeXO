@@ -185,7 +185,7 @@ oauth2.clientSecret=    # Discord client secret for linked roles
 oauth2.encryptionKey=   # Encryption key used for encrypting discord tokens
 
 # The database block is optional
-database.url=           # JDBC url for persisting data
+database.url=           # R2DBC url for persisting data
 
 # The server block is optional
 server.port=            # The port for the API to listen on
@@ -199,8 +199,8 @@ To export the web module as a static site manually, run:
 ```shell
 ./gradlew :web:kobwebExport \
     -PkobwebExportLayout=STATIC \
-    -Pweb.apiProxy=http://localhost:3001 \  # The HDS API proxy, e.g. https://hexo.mineking.dev/proxy
-    -Pweb.toolsApi=http://localhost:1234    # The mineking hexo tools API, used for watch parties etc., e.g. https://hexo.mineking.dev
+    -Pweb.hdsApiUrl=http://localhost:3001 \  # The HDS API proxy, e.g. https://hexo.mineking.dev/proxy/api
+    -Pweb.hmdApiUrl=http://localhost:1234    # The mineking hexo tools API, used for watch parties etc., e.g. https://hexo.mineking.dev/api
 ```
 
 The generated site is written to `web/.kobweb/site`. The two URLs are embedded into the web application at build time.
@@ -219,7 +219,8 @@ OAUTH2_ENCRYPTION_KEY=  # Encryption key used for encrypting discord tokens
 
 SERVER_URL=             # The public server url
 
-WEB_API_PROXY=          # The HDS API proxy, e.g. https://hexo.mineking.dev/proxy
+HDS_API_URL=            # The HDS API url, e.g. https://hexo.mineking.dev/proxy/api
+HMD_API_URL=            # The HMD API url, e.g. https://hexo.mineking.dev/api
 ```
 
 To deploy both backend and frontend, run:

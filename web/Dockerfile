@@ -2,8 +2,8 @@ FROM gradle:9.4.0-jdk21 AS build
 
 WORKDIR /workspace
 
-ARG WEB_API_PROXY
-ARG WEB_TOOLS_API
+ARG HDS_API_URL
+ARG HMD_API_URL
 
 # Kobweb's browser tooling needs these libraries while exporting the static site.
 RUN apt-get update \
@@ -38,9 +38,10 @@ RUN --mount=type=cache,id=hexo-gradle,target=/home/gradle/.gradle,sharing=locked
     ./gradlew --no-daemon --parallel \
         :web:kobwebExport \
         -PkobwebExportLayout=STATIC \
-        -Pweb.apiProxy=${WEB_API_PROXY} \
-        -Pweb.toolsApi=${WEB_TOOLS_API}
+        -Pweb.hdsApiUrl=${HDS_API_URL} \
+        -Pweb.hmdApiUrl=${HMD_API_URL} \
+    && cp -a web/.kobweb/site /site
 
 FROM nginx:1.31.1-alpine
 
-COPY --from=build /workspace/web/.kobweb/site /usr/share/nginx/html
+COPY --from=build /site /usr/share/nginx/html

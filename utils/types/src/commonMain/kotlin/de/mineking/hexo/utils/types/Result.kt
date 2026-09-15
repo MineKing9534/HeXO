@@ -16,6 +16,7 @@ sealed interface Result<out T, out E : IError> {
     data class Error<out E : IError>(val error: E) : Result<Nothing, E>
 }
 
+fun <T : Any> T?.successIfNotNull() = successIfNotNullOrElse(object : IError {})
 fun <T : Any, E : IError> T?.successIfNotNullOrElse(error: E) = when (this) {
     null -> Result.Error(error)
     else -> Result.Success(this)

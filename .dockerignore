@@ -16,4 +16,5 @@
 
 # Additional inputs referenced directly by build scripts.
 !discord/bot/localization/**
+!discord/linked-roles/localization/**
 !web/.kobweb/conf.yaml

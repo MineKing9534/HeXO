@@ -9,6 +9,7 @@ import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.browser.storage.StorageKey
 import com.varabyte.kobweb.browser.storage.getItem
 import com.varabyte.kobweb.browser.storage.setItem
+import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.watchparty.client.WatchParty
 import de.mineking.hexo.watchparty.client.WatchPartyClient
@@ -38,7 +39,7 @@ class WatchPartyController(host: String, private val settingsController: Setting
     val currentWatchParty get() = hostWatchParty
         ?: (subscribedWatchParty as? EntityState.Data)?.value
 
-    private val watchPartyClient = WatchPartyClient(host, coroutineScope = GlobalScope)
+    private val watchPartyClient = WatchPartyClient(publicUrl = BasePath.prependTo(""), apiUrl = host, coroutineScope = GlobalScope)
 
     init {
         GlobalScope.launch {

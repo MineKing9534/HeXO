@@ -15,8 +15,6 @@ import de.mineking.hexo.hds.implementation.utils.EntityRequesterFactory
 import de.mineking.hexo.utils.coroutines.createCoroutineScope
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
-import io.ktor.client.HttpClientConfig
-import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
@@ -33,7 +31,8 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 
-const val DEFAULT_HDS_HOST = "https://hexo.did.science"
+const val DEFAULT_HDS_PUBLIC_URL = "https://hexo.did.science"
+const val DEFAULT_HDS_API_URL = "$DEFAULT_HDS_PUBLIC_URL/api"
 
 private val logger = KotlinLogging.logger {}
 
@@ -46,11 +45,24 @@ data class HdsHttpClient(
     val apiUrl: String,
     val httpClient: HttpClient,
     val socketClient: HdsSocketClient?,
-) {
+) : AutoCloseable {
     companion object {
         fun createDefault(
-            apiUrl: String = DEFAULT_HDS_HOST,
-            httpClient: HttpClient = createDefaultHttpClient(),
+            apiUrl: String = DEFAULT_HDS_API_URL,
+            httpClient: HttpClient = HttpClient {
+                install(ContentNegotiation) {
+                    json(json)
+                }
+
+                install(WebSockets) {
+                    contentConverter = KotlinxWebsocketSerializationConverter(json)
+                }
+
+                defaultRequest {
+                    contentType(ContentType.Application.Json)
+                    header(HttpHeaders.UserAgent, HEXO_USER_AGENT)
+                }
+            },
         ) = HdsHttpClient(
             apiUrl = apiUrl,
             httpClient = httpClient,
@@ -58,23 +70,28 @@ data class HdsHttpClient(
         )
     }
 
-    suspend fun withSocketClient(options: HdsSocketOptions = HdsSocketOptions.createDefault(apiUrl)) = copy(
+    suspend fun withSocketClient(options: HdsSocketOptions = HdsSocketOptions.createDefault(apiUrl.removeSuffix("/api"))) = copy(
         socketClient = connectHdsSocket(
             client = httpClient,
             options = options,
         ),
     )
+
+    override fun close() {
+        httpClient.close()
+        socketClient?.disconnect()
+    }
 }
 
 class HdsApiClient(
     internal val client: HdsHttpClient,
     internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
-    internal val publicUrl: String = DEFAULT_HDS_HOST,
+    internal val publicUrl: String = DEFAULT_HDS_PUBLIC_URL,
     internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
-) : RepositoryContainer {
+) : RepositoryContainer, AutoCloseable {
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
-        client.httpClient.request("${client.apiUrl.trimEnd('/')}/api$path", builder)
+        client.httpClient.request("${client.apiUrl.trimEnd('/')}$path", builder)
 
     override val formationRepository = repositoryWrapper.run { FormationRepositoryImpl(this@HdsApiClient).wrap() }
     override val finishedGameRepository = repositoryWrapper.run { FinishedGameRepositoryImpl(this@HdsApiClient).wrap() }
@@ -83,32 +100,10 @@ class HdsApiClient(
     override val sessionRepository = repositoryWrapper.run { SessionRepositoryImpl(this@HdsApiClient).wrap() }
     override val tournamentRepository = repositoryWrapper.run { TournamentRepositoryImpl(this@HdsApiClient).wrap() }
 
-    fun shutdown() {
+    override fun close() {
         coroutineScope.cancel()
-        client.socketClient?.disconnect()
+        client.close()
     }
 }
-
-expect val DefaultHttpEngine: HttpClientEngine
 
 expect val HEXO_USER_AGENT: String?
-
-fun createDefaultHttpClient(
-    engine: HttpClientEngine = DefaultHttpEngine,
-    config: HttpClientConfig<*>.() -> Unit = {},
-) = HttpClient(engine) {
-    install(ContentNegotiation) {
-        json(json)
-    }
-
-    install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(json)
-    }
-
-    defaultRequest {
-        contentType(ContentType.Application.Json)
-        header(HttpHeaders.UserAgent, HEXO_USER_AGENT)
-    }
-
-    config()
-}

@@ -29,13 +29,13 @@ import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.bindLocalizationParameter
 import de.mineking.hexo.bot.utils.respond
+import de.mineking.hexo.discord.oauth2.OAuth2TokenRepository
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.game.model.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
-import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.utils.types.flatMap
 import de.mineking.hexo.utils.types.isSuccess
 import de.mineking.hexo.utils.types.orElse
@@ -52,7 +52,7 @@ import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
 private val IMAGE_URL_PATTERN = """https://cdn\.discordapp\.com/avatars/(\d+)/.*\.(?:png|jpg|webp|gif)(?:\?size=\d+)?""".trimMargin().toRegex()
 
 fun UIManager.accountLinkMenu(
-    discordAuthRepository: DiscordUserAuthenticationRepository,
+    discordAuthRepository: OAuth2TokenRepository,
     accountLinkRepository: AccountLinkRepository,
     profileRepository: ProfileRepository,
 ) = registerLocalizedMenu<IModalCallback, AccountLinkMenuLocalization>("link") { localization ->
@@ -77,7 +77,7 @@ fun UIManager.accountLinkMenu(
                     .orNull()
             }
 
-            val isAuthenticated = async { discordAuthRepository.getAuthenticationStatus(event.user.userId) }
+            val isAuthenticated = async { discordAuthRepository.hasTokens(event.user.userId) }
 
             profile.await() to isAuthenticated.await()
         }
@@ -173,7 +173,7 @@ private fun MessageMenuConfig<out Interaction, *>.authModalButton() = modalButto
 
 private fun MessageMenuConfig<*, *>.authRemoveConfirmModalButton(
     localization: AccountLinkMenuLocalization,
-    discordAuthRepository: DiscordUserAuthenticationRepository,
+    discordAuthRepository: OAuth2TokenRepository,
 ) = modalButton(
     "remove_auth",
     color = ButtonColor.RED,
@@ -190,7 +190,7 @@ private fun MessageMenuConfig<*, *>.authRemoveConfirmModalButton(
     hook.deleteOriginal().await()
     respond(MessageColor.Success, localization.responseSuccessRevoke(userLocale), forceNew = true)
 
-    discordAuthRepository.unauthenticateUser(user.userId)
+    discordAuthRepository.revoke(user.userId)
 }
 
 interface AccountLinkMenuLocalization : LocalizationFile {

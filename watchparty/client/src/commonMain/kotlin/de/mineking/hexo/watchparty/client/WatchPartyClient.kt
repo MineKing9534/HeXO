@@ -12,9 +12,7 @@ import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
-import io.ktor.client.HttpClientConfig
 import io.ktor.client.call.body
-import io.ktor.client.engine.HttpClientEngine
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets
 import io.ktor.client.request.post
@@ -33,32 +31,25 @@ import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
 import kotlinx.serialization.json.Json
 
-expect val DefaultHttpEngine: HttpClientEngine
 private val logger = KotlinLogging.logger {}
 private val json = Json { allowStructuredMapKeys = true }
 
-fun createDefaultHttpClient(
-    engine: HttpClientEngine = DefaultHttpEngine,
-    config: HttpClientConfig<*>.() -> Unit = {},
-) = HttpClient(engine) {
-    install(WebSockets) {
-        contentConverter = KotlinxWebsocketSerializationConverter(json)
-    }
-
-    install(ContentNegotiation) {
-        json(json)
-    }
-
-    config()
-}
-
 class WatchPartyClient(
-    internal val host: String,
-    private val httpClient: HttpClient = createDefaultHttpClient(),
+    internal val publicUrl: String,
+    internal val apiUrl: String,
+    private val httpClient: HttpClient = HttpClient {
+        install(WebSockets) {
+            contentConverter = KotlinxWebsocketSerializationConverter(json)
+        }
+
+        install(ContentNegotiation) {
+            json(json)
+        }
+    },
     private val coroutineScope: CoroutineScope,
 ) {
     suspend fun createWatchParty(): WatchPartyId {
-        val response = httpClient.post("${host.trimEnd('/')}/api/watchparties")
+        val response = httpClient.post("${apiUrl.trimEnd('/')}/watchparties")
         check(response.status.isSuccess()) { "Failed to create watchparty: ${response.status}" }
 
         return response.body<WatchPartyCreatedResponse>().id
@@ -71,7 +62,7 @@ class WatchPartyClient(
     ): WatchParty? {
         val socket = SocketIOClient<WatchPartyResponse, WatchPartyRequest>(
             client = httpClient,
-            url = Url("${host.trimEnd('/')}/api/watchparties"),
+            url = Url("${apiUrl.trimEnd('/')}/watchparties"),
             connectionData = WatchPartyConnectData(
                 watchPartyId = id,
                 connectionId = connectionId ?: WatchPartyConnectionId.generate(),

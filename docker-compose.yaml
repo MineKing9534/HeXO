@@ -15,29 +15,12 @@ services:
       - |
         cat >/etc/caddy/Caddyfile <<'EOF'
         http:// {
-          redir / /app
-          handle_path /app* {
-            route {
-              @root path /
-              rewrite @root /index.html
-
-              @page {
-                not path *.*
-              }
-              rewrite @page {path}.html
-
-              reverse_proxy web:80 {
-                @notFound status 404
-                handle_response @notFound {
-                  rewrite * /not-found.html
-                  reverse_proxy web:80
-                }
-              }
-            }
+          handle_path /api/* {
+            reverse_proxy backend:80
           }
 
           handle {
-            reverse_proxy backend:80
+            reverse_proxy web:80
           }
         }
         EOF
@@ -66,6 +49,8 @@ services:
     build:
       context: .
       dockerfile: launcher/Dockerfile
+      args:
+        LAUNCHER_TYPE: api
     restart: unless-stopped
     depends_on:
       database:
@@ -73,12 +58,35 @@ services:
     expose:
       - "80"
     environment:
-      bot.token: ${BOT_TOKEN:?}
-      oauth2.clientId: ${OAUTH2_CLIENT_ID:-}
-      oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:-}
-      oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:-}
-      database.url: jdbc:postgresql://database:5432/hexo?user=hexo&password=hexo
+      oauth2.clientId: ${OAUTH2_CLIENT_ID:?}
+      oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:?}
+      oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:?}
+      database.url: r2dbc:pool:postgresql://hexo:hexo@database:5432/hexo
       server.port: 80
+      server.url: ${SERVER_URL:?}
+    healthcheck:
+      test: [ "CMD", "wget", "--spider", "-q", "http://localhost:80/health" ]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  discord:
+    build:
+      context: .
+      dockerfile: launcher/Dockerfile
+      args:
+        LAUNCHER_TYPE: discord
+    restart: unless-stopped
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      bot.token: ${BOT_TOKEN:?}
+      oauth2.clientId: ${OAUTH2_CLIENT_ID:?}
+      oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:?}
+      oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:?}
+      database.url: r2dbc:pool:postgresql://hexo:hexo@database:5432/hexo
       server.url: ${SERVER_URL:?}
 
   web:
@@ -86,8 +94,8 @@ services:
       context: .
       dockerfile: web/Dockerfile
       args:
-        WEB_API_PROXY: ${WEB_API_PROXY:?}
-        WEB_TOOLS_API: ${SERVER_URL:?}
+        HDS_API_URL: ${HDS_API_URL:?}
+        HMD_API_URL: ${HMD_API_URL:?}
     restart: unless-stopped
     expose:
       - "80"
