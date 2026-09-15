@@ -45,3 +45,4 @@ RUN --mount=type=cache,id=hexo-gradle,target=/home/gradle/.gradle,sharing=locked
 FROM nginx:1.31.1-alpine
 
 COPY --from=build /site /usr/share/nginx/html
+COPY web/nginx.conf /etc/nginx/conf.d/default.conf

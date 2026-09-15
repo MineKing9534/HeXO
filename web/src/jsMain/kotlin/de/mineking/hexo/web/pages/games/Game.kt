@@ -6,12 +6,14 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
+import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.utils.types.EntityState
@@ -40,6 +42,11 @@ fun initGamePage(ctx: InitRouteContext) {
 @Page("{id}")
 @Composable
 fun GamePage(ctx: PageContext) {
+    if (AppGlobals.isExporting) {
+        LoadingState()
+        return
+    }
+
     val boardViewManager = rememberGameBoardViewManager()
     val gameId = ctx.route.gameId
     var move by rememberQueryParameter("move").map(

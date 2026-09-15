@@ -26,6 +26,11 @@ kobweb {
                 link(rel = "stylesheet", type = "text/css", href = basePath.prependTo("/styles.css"))
             }
         }
+        export {
+            addExtraRoute("/games/export", exportPath = "games/dynamic.html")
+            addExtraRoute("/sessions/export", exportPath = "sessions/dynamic.html")
+            addExtraRoute("/watchparty/export", exportPath = "watchparty/dynamic.html")
+        }
     }
 }
 
