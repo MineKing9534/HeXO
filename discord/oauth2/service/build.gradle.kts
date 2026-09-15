@@ -24,4 +24,6 @@ dependencies {
     implementation(libs.cache)
     implementation(libs.jda)
     implementation(libs.dtk)
+
+    testImplementation(kotlin("test"))
 }

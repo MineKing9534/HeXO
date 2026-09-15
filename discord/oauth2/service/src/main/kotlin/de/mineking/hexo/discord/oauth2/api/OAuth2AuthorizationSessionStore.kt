@@ -17,6 +17,7 @@ class InMemoryOAuth2AuthorizationSessionStore : OAuth2AuthorizationSessionStore 
     private val random = SecureRandom()
     private val sessions = Caffeine.newBuilder()
         .expireAfterWrite(5.minutes)
+        .maximumSize(100)
         .build<String, OAuth2AuthorizationSession>()
 
     override suspend fun create(flow: OAuth2Flow): String {

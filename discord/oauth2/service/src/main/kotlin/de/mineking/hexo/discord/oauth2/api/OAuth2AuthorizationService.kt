@@ -4,6 +4,8 @@ import de.mineking.hexo.discord.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.discord.oauth2.model.OAuth2Flow
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
+import kotlinx.coroutines.sync.Semaphore
+import kotlinx.coroutines.sync.withPermit
 
 sealed interface OAuth2AuthorizationError : IError
 
@@ -16,11 +18,14 @@ class OAuth2AuthorizationService(
     private val discordOAuth2Client: DiscordOAuth2Client,
     private val sessionStore: OAuth2AuthorizationSessionStore,
     handlers: Collection<OAuth2FlowHandler>,
+    maxConcurrentTokenExchanges: Int = 8,
 ) {
     private val handlers = handlers.associateBy(OAuth2FlowHandler::flow)
+    private val tokenExchangeSemaphore = Semaphore(maxConcurrentTokenExchanges)
 
     init {
         require(this.handlers.size == handlers.size) { "Only one handler may be registered for each OAuth2 flow" }
+        require(maxConcurrentTokenExchanges > 0) { "maxConcurrentTokenExchanges must be positive" }
     }
 
     suspend fun createAuthorization(flow: OAuth2Flow): Result<String, UnsupportedOAuth2Flow> {
@@ -34,7 +39,7 @@ class OAuth2AuthorizationService(
     suspend fun completeAuthorization(code: String, state: String): Result<OAuth2Flow, OAuth2AuthorizationError> {
         val session = sessionStore.consume(state) ?: return Result.Error(InvalidOAuth2AuthorizationState)
         val handler = handlers[session.flow] ?: return Result.Error(UnsupportedOAuth2Flow)
-        val tokens = when (val result = discordOAuth2Client.exchangeAuthorizationCode(code)) {
+        val tokens = when (val result = tokenExchangeSemaphore.withPermit { discordOAuth2Client.exchangeAuthorizationCode(code) }) {
             is Result.Success -> result.value
             is Result.Error -> return Result.Error(OAuth2CodeExchangeFailed(session.flow))
         }

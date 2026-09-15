@@ -1,7 +1,6 @@
 package de.mineking.hexo.watchparty.server
 
 import de.mineking.hexo.server.api.ApiModule
-import de.mineking.hexo.utils.socketio.server.SocketIO
 import de.mineking.hexo.utils.socketio.server.SocketIOSession
 import de.mineking.hexo.utils.socketio.server.socketIOSession
 import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
@@ -14,19 +13,13 @@ import de.mineking.hexo.watchparty.protocol.WatchPartyNavigateRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
 import de.mineking.hexo.watchparty.protocol.WatchPartyResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
-import io.ktor.http.HttpHeaders
-import io.ktor.http.HttpMethod
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
-import io.ktor.server.application.install
-import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
-import io.ktor.server.websocket.WebSockets
-import io.socket.engineio.server.EngineIoServerOptions
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -34,7 +27,6 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.serialization.json.Json
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.time.Duration
 import kotlin.time.Duration.Companion.minutes
@@ -77,16 +69,6 @@ class WatchPartyApiModule(
     }
 
     override fun Application.install() {
-        install(CORS) {
-            anyHost()
-            allowMethod(HttpMethod.Post)
-            allowHeader(HttpHeaders.ContentType)
-        }
-        install(WebSockets)
-        install(SocketIO) {
-            format = Json { allowStructuredMapKeys = true }
-            engineOptions.allowedCorsOrigins = EngineIoServerOptions.ALLOWED_CORS_ORIGIN_ALL
-        }
         monitor.subscribe(ApplicationStopped) { cleanupScope.cancel() }
     }
 

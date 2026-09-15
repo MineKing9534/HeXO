@@ -47,25 +47,28 @@ class OAuth2TokenRepositoryImpl(
 ) : OAuth2TokenRepository {
     private val tokenLocks = KeyedSemaphore<DiscordUserId>()
 
-    private fun ResultRow.mapToTokens() = OAuth2Tokens(
-        client = discordOAuth2Client,
-        data = OAuth2TokensDto(
-            accessToken = transform.unwrap(this[DiscordUserTokensTable.accessToken].bytes),
-            refreshToken = transform.unwrap(this[DiscordUserTokensTable.refreshToken].bytes),
-            expiresAt = this[DiscordUserTokensTable.expiresAt],
-            scopes = this[DiscordUserTokensTable.scopes].map(Scope::valueOf),
-        ),
-        id = this[DiscordUserTokensTable.id].value,
-    )
+    private fun ResultRow.mapToTokens(): OAuth2Tokens {
+        val userId = this[DiscordUserTokensTable.id].value
+        return OAuth2Tokens(
+            client = discordOAuth2Client,
+            data = OAuth2TokensDto(
+                accessToken = transform.unwrap(this[DiscordUserTokensTable.accessToken].bytes, userId.accessTokenContext),
+                refreshToken = transform.unwrap(this[DiscordUserTokensTable.refreshToken].bytes, userId.refreshTokenContext),
+                expiresAt = this[DiscordUserTokensTable.expiresAt],
+                scopes = this[DiscordUserTokensTable.scopes].map(Scope::valueOf),
+            ),
+            id = userId,
+        )
+    }
 
     private fun UpdateBuilder<*>.bindTokens(tokens: OAuth2Tokens) {
-        this[DiscordUserTokensTable.accessToken] = ExposedBlob(transform.wrap(tokens.data.accessToken))
-        this[DiscordUserTokensTable.refreshToken] = ExposedBlob(transform.wrap(tokens.data.refreshToken))
+        this[DiscordUserTokensTable.accessToken] = ExposedBlob(transform.wrap(tokens.data.accessToken, tokens.id.accessTokenContext))
+        this[DiscordUserTokensTable.refreshToken] = ExposedBlob(transform.wrap(tokens.data.refreshToken, tokens.id.refreshTokenContext))
         this[DiscordUserTokensTable.expiresAt] = tokens.data.expiresAt
         this[DiscordUserTokensTable.scopes] = tokens.data.scopes.map(Scope::name)
     }
 
-    override suspend fun store(tokens: OAuth2Tokens, cause: OAuth2Flow) {
+    override suspend fun store(tokens: OAuth2Tokens, cause: OAuth2Flow) = tokenLocks.withPermit(tokens.id) {
         database.transaction(readOnly = false) {
             DiscordUserTokensTable.upsert {
                 this[DiscordUserTokensTable.id] = tokens.id
@@ -137,16 +140,29 @@ class OAuth2TokenRepositoryImpl(
         updated.successIfNotNullOrElse(OAuth2TokenRefreshFailed)
     }
 
-    override suspend fun revoke(userId: DiscordUserId) {
-        val tokens = database.transaction(readOnly = false) {
-            DiscordUserTokensTable.delete(
-                returning = DiscordUserTokensTable.columns,
-                where = DiscordUserTokensTable.id eq userId,
-            ).firstOrNull()?.mapToTokens()
-        }.throwOnDatabaseError() ?: return
+    override suspend fun revoke(userId: DiscordUserId) = tokenLocks.withPermit(userId) {
+        val stored = database.transaction(readOnly = true) {
+            DiscordUserTokensTable
+                .select()
+                .where(DiscordUserTokensTable.id eq userId)
+                .execute()
+                .firstOrNull()
+                ?.let { it.mapToTokens() to it[DiscordUserTokensTable.refreshToken] }
+        }.throwOnDatabaseError() ?: return@withPermit
+        val (tokens, storedRefreshToken) = stored
 
-        tokens.revoke()
+        check(tokens.revoke()) { "Discord rejected the OAuth2 token revocation" }
+
+        database.transaction(readOnly = false) {
+            DiscordUserTokensTable.delete(
+                where = (DiscordUserTokensTable.id eq userId) and
+                    (DiscordUserTokensTable.refreshToken eq storedRefreshToken),
+            )
+        }.throwOnDatabaseError()
     }
+
+    private val DiscordUserId.accessTokenContext get() = "discord-oauth2:$value:access-token"
+    private val DiscordUserId.refreshTokenContext get() = "discord-oauth2:$value:refresh-token"
 }
 
 private fun <T> Column<List<T>>.containsAll(values: Collection<T>) = object : Op<Boolean>() {

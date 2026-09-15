@@ -102,15 +102,18 @@ class DiscordOAuth2Client(
         return OAuth2Tokens(this, data, getCurrentUserId(data.accessToken))
     }
 
-    internal suspend fun revokeToken(tokens: OAuth2Tokens) {
-        httpClient.submitForm(
+    internal suspend fun revokeToken(tokens: OAuth2Tokens): Boolean {
+        val response = httpClient.submitForm(
             "$apiUrl/oauth2/token/revoke",
             formParameters = parameters {
-                append("token", tokens.data.accessToken)
+                append("token", tokens.data.refreshToken)
+                append("token_type_hint", "refresh_token")
             },
         ) {
             basicAuth(clientId, clientSecret)
         }
+
+        return response.status.isSuccess()
     }
 
     suspend fun updateLinkedRoleData(user: OAuth2Tokens, vararg values: LinkedRoleMetadataValue<*>) {

@@ -41,7 +41,6 @@ fun createOAuth2Dependencies(
         discordOAuth2Client = client,
         transform = AESTokenTransform(SecretKeySpec(Base64.decode(config.encryptionKey), "AES")),
     )
-
     return OAuth2Dependencies(client, tokenRepository)
 }
 
