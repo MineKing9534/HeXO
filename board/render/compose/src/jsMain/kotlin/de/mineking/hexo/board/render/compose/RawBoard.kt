@@ -15,23 +15,23 @@ import de.mineking.hexo.board.render.image.BoardRenderLayout
 import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.hexo.board.render.image.Stroke
-import de.mineking.hexo.board.render.image.center
 import de.mineking.hexo.board.render.image.createHex
 import de.mineking.hexo.board.render.image.createRenderLayout
-import de.mineking.hexo.board.render.image.div
 import de.mineking.hexo.board.render.image.drawBoard
 import de.mineking.hexo.board.render.image.plus
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.board.render.image.theme.withAlpha
+import kotlinx.browser.window
 import org.jetbrains.compose.web.css.cursor
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Canvas
 import org.jetbrains.compose.web.dom.ContentBuilder
 import org.w3c.dom.Element
 import org.w3c.dom.HTMLCanvasElement
+import org.w3c.dom.events.EventListener
+import kotlin.math.roundToInt
 
-private const val BOARD_LAYOUT_RADIUS = 255.0
 val DEFAULT_CELL_HOVER_COlOR = Color.rgb(0x7dd3fc)
 
 typealias BoardContentBuilder = @Composable BoardScope.() -> Unit
@@ -44,7 +44,7 @@ class BoardScope(
 @Composable
 fun RawBoard(
     board: Board,
-    viewport: BoardViewport?,
+    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
@@ -59,22 +59,20 @@ fun RawBoard(
     var dragging by remember { mutableStateOf(false) }
     var hoveredCell by remember { mutableStateOf<CellCoordinate?>(null) }
 
-    val zoom = viewport?.zoom ?: 0.2
-    val layout = remember(board, zoom) {
+    val layout = remember(board) {
         board.createRenderLayout(
-            layoutRadius = BOARD_LAYOUT_RADIUS * zoom,
+            layoutRadius = 128.0,
             bounds = BoardRenderBounds.IncludeSurroundings,
             visibleRadius = DEFAULT_VISIBLE_RADIUS,
         )
     }
-    val effectiveViewport = viewport ?: BoardViewport(zoom = zoom, center = layout.boundingBox.center / zoom).also { onViewportChange(it) }
 
     val renderingHook by rememberUpdatedState(renderingHook)
 
     fun redraw() {
         element?.drawBoard(
             layout = layout,
-            viewport = effectiveViewport,
+            viewport = viewport,
             hoveredCell = hoveredCell,
             theme = theme,
             cellHoverColor = cellHoverColor,
@@ -83,12 +81,12 @@ fun RawBoard(
     }
 
     ResizeHandler(element) { redraw() }
-    LaunchedEffect(effectiveViewport, layout, hoveredCell, theme, cellHoverColor, renderingHook, element) { redraw() }
+    LaunchedEffect(viewport, layout, hoveredCell, theme, cellHoverColor, renderingHook, element) { redraw() }
 
     BoardInteractions(
         element = element,
         renderLayout = { layout },
-        viewport = { effectiveViewport },
+        viewport = { viewport },
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
         onCellHoverChange = { hoveredCell = it },
@@ -120,10 +118,13 @@ private fun ResizeHandler(element: HTMLCanvasElement?, onResize: () -> Unit) {
     DisposableEffect(element) {
         val canvas = element ?: return@DisposableEffect onDispose {}
         val observer = ResizeObserver { onResize() }
+        val windowResize = EventListener { onResize() }
 
         observer.observe(canvas)
+        window.addEventListener("resize", windowResize)
         onDispose {
             observer.disconnect()
+            window.removeEventListener("resize", windowResize)
         }
     }
 }
@@ -141,13 +142,18 @@ private fun HTMLCanvasElement.drawBoard(
     cellHoverColor: Color?,
     renderingHook: BoardRenderingHook?,
 ) {
-    width = clientWidth
-    height = clientHeight
+    val pixelRatio = window.devicePixelRatio.takeIf { it.isFinite() && it > 0 } ?: 1.0
+    val pixelWidth = (clientWidth * pixelRatio).roundToInt()
+    val pixelHeight = (clientHeight * pixelRatio).roundToInt()
+    if (width != pixelWidth) width = pixelWidth
+    if (height != pixelHeight) height = pixelHeight
 
     drawBoard(
         layout = layout,
         padding = BOARD_RENDER_PADDING,
         offset = viewport.offset(this),
+        scale = viewport.zoom,
+        pixelRatio = pixelRatio,
         theme = theme,
         renderingHook = renderingHook + BoardRenderingHook.middleLayer {
             if (hoveredCell == null || cellHoverColor == null) return@middleLayer

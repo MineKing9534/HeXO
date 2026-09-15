@@ -69,7 +69,7 @@ private fun Board.findTopHighlightLineAt(coordinate: CellCoordinate) = lineHighl
 @Composable
 fun InteractiveBoard(
     board: Board,
-    viewport: BoardViewport?,
+    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
     theme: Theme = Theme.Default,
@@ -147,7 +147,7 @@ fun InteractiveBoard(
 @Composable
 fun BoardView(
     board: Board,
-    viewport: BoardViewport?,
+    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     theme: Theme = Theme.Default,
     cellHoverColor: Color? = DEFAULT_CELL_HOVER_COlOR,
