@@ -68,8 +68,8 @@ private val LocalAppLayout = staticCompositionLocalOf<AppLayout> { error("layout
 @Composable
 fun rememberAppLayout() = LocalAppLayout.current
 
+@Layout
 @Composable
-@Layout(".layout.RootLayout")
 fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
     val data = ctx.data.getValue<PageData>()
     val fullscreenParameter = rememberQueryParameter("fullscreen").map(

@@ -40,10 +40,10 @@ ktor-client-websockets = { module = "io.ktor:ktor-client-websockets", version.re
 ktor-server-core = { module = "io.ktor:ktor-server-core", version.ref = "ktor" }
 ktor-server-netty = { module = "io.ktor:ktor-server-netty", version.ref = "ktor" }
 ktor-server-statusPages = { module = "io.ktor:ktor-server-status-pages", version.ref = "ktor" }
-ktor-server-html = { module = "io.ktor:ktor-server-html-builder", version.ref = "ktor" }
 ktor-server-contentNegotiation = { module = "io.ktor:ktor-server-content-negotiation", version.ref = "ktor" }
 ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.ref = "ktor" }
 ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
+ktor-server-rateLimit = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor" }
 
 socketio-server = { module = "io.socket:socket.io-server", version = "4.1.2" }
 socketio-client = { module = "com.piasy:kmp-socketio", version = "1.4.4" }
@@ -57,13 +57,14 @@ kobweb-worker = { module = "com.varabyte.kobweb:kobweb-worker", version.ref = "k
 kobwebx-serialization-kotlinx = { module = "com.varabyte.kobwebx:kobwebx-serialization-kotlinx", version.ref = "kobweb" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
-exposed-jdbc = { module = "org.jetbrains.exposed:exposed-jdbc", version.ref = "exposed" }
+exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
 exposed-json = { module = "org.jetbrains.exposed:exposed-json", version.ref = "exposed" }
 exposed-datetime = { module = "org.jetbrains.exposed:exposed-kotlin-datetime", version.ref = "exposed" }
-exposed-migration = { module = "org.jetbrains.exposed:exposed-migration-jdbc", version.ref = "exposed" }
+exposed-migration-r2dbc = { module = "org.jetbrains.exposed:exposed-migration-r2dbc", version.ref = "exposed" }
 nanoid = { module = "io.viascom.nanoid:nanoid", version = "2.0.1" }
 
-postgres = { module = "org.postgresql:postgresql", version = "42.7.12" }
+r2dbc-postgres = { module = "org.postgresql:r2dbc-postgresql", version = "1.1.2.RELEASE" }
+r2dbc-pool = { module = "io.r2dbc:r2dbc-pool", version = "1.0.2.RELEASE" }
 
 jda = { module = "net.dv8tion:JDA", version = "6.5.0" }
 jda-emoji = { module = "dev.freya02:jda-emojis", version = "4.3.0" }
@@ -80,7 +81,7 @@ ktor-server = [ "ktor-server-core", "ktor-server-netty", "ktor-server-contentNeg
 
 compose-html = [ "compose-runtime", "compose-html-core" ]
 
-exposed = [ "exposed-core", "exposed-jdbc", "exposed-json", "exposed-datetime" ]
+exposed = [ "exposed-core", "exposed-json", "exposed-datetime" ]
 
 [plugins]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

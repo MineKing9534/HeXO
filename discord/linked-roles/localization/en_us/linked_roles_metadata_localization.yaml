@@ -1,0 +1,8 @@
+linked_roles:
+  elo:
+    name: ELO
+    description: Requires a linked HeXO profile with at least this ELO rating
+
+  rank:
+    name: World Rank
+    description: Requires a linked HeXO profile within this world-rank position

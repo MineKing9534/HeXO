@@ -1,12 +1,21 @@
 plugins {
-    id("kotlin-jvm")
+    id("kotlin-multiplatform")
 
     alias(libs.plugins.kotlin.serialization)
 }
 
-dependencies {
-    implementation(libs.jda)
-    implementation(libs.kotlin.serialization.core)
+kotlin {
+    sourceSets.commonMain {
+        dependencies {
+            implementation(libs.kotlin.serialization.core)
+        }
+    }
 
-    implementation(libs.exposed.core)
+
+    sourceSets.jvmMain {
+        dependencies {
+            api(libs.jda)
+            implementation(libs.exposed.core)
+        }
+    }
 }

@@ -34,7 +34,7 @@ class WatchParty internal constructor(
         field = MutableStateFlow(AbstractWatchPartyTargetImpl.of(this, data))
 
     override val id = data.id
-    override val url get() = "${client.host}/watchparty/${id.value}"
+    override val url get() = "${client.publicUrl}/watchparty/${id.value}"
 
     internal fun onClosed(reason: WatchPartyCloseReason) {
         val callbacks = synchronized(stateLock) {

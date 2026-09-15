@@ -34,13 +34,13 @@ kotlin {
 
     sourceSets.jvmMain {
         dependencies {
-            implementation(libs.ktor.client.cio)
+            runtimeOnly(libs.ktor.client.cio)
         }
     }
 
     sourceSets.jsMain {
         dependencies {
-            implementation(libs.ktor.client.js)
+            runtimeOnly(libs.ktor.client.js)
         }
     }
 }

@@ -26,6 +26,11 @@ kobweb {
                 link(rel = "stylesheet", type = "text/css", href = basePath.prependTo("/styles.css"))
             }
         }
+        export {
+            addExtraRoute("/games/export", exportPath = "games/dynamic.html")
+            addExtraRoute("/sessions/export", exportPath = "sessions/dynamic.html")
+            addExtraRoute("/watchparty/export", exportPath = "watchparty/dynamic.html")
+        }
     }
 }
 
@@ -40,6 +45,7 @@ kotlin {
 
             implementation(projects.board.parse)
             implementation(projects.game.hds)
+            implementation(projects.discord.oauth2.client)
 
             implementation(projects.watchparty.client)
             implementation(projects.solver)
@@ -65,20 +71,20 @@ tailwindcss {
     resourcePath = "public"
 }
 
-val webApiProxy = providers.gradleProperty("web.apiProxy")
+val webHdsApiUrl = providers.gradleProperty("web.hdsApiUrl")
     .orElse(provider { "" })
 
-val webToolsApi = providers.gradleProperty("web.toolsApi")
+val webHmdApiUrl = providers.gradleProperty("web.hmdApiUrl")
     .orElse(provider { "" })
 
 buildConfig {
-    buildConfigField<String>("API_PROXY", webApiProxy.map { Expression("\"$it\"") })
-    buildConfigField<String>("TOOLS_API", webToolsApi.map { Expression("\"$it\"") })
+    buildConfigField<String>("HDS_API_URL", webHdsApiUrl.map { Expression("\"$it\"") })
+    buildConfigField<String>("HMD_API_URL", webHmdApiUrl.map { Expression("\"$it\"") })
 }
 
 tasks.matching {
     it.name in setOf("compileKotlinJs", "compileDevelopmentExecutableKotlinJs", "compileProductionExecutableKotlinJs")
 }.configureEach {
-    inputs.property("web.apiProxy", webApiProxy)
-    inputs.property("web.toolsApi", webToolsApi)
+    inputs.property("web.hdsApiUrl", webHdsApiUrl)
+    inputs.property("web.hmdApiUrl", webHmdApiUrl)
 }

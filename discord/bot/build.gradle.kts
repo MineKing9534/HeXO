@@ -11,6 +11,7 @@ dependencies {
     implementation(projects.discord.core)
     implementation(projects.discord.config)
     implementation(projects.discord.link)
+    implementation(projects.discord.oauth2.service)
 
     implementation(projects.board)
     implementation(projects.board.parse)
@@ -18,7 +19,7 @@ dependencies {
 
     implementation(projects.game.model)
 
-    implementation(projects.server.service)
+    implementation(projects.server.api)
     implementation(projects.utils.coroutines)
     implementation(projects.utils.types)
 
@@ -26,7 +27,6 @@ dependencies {
 
     implementation(libs.cache)
 
-    implementation(libs.jda)
     implementation(libs.jda.emoji)
     implementation(libs.dtk)
 
@@ -43,6 +43,7 @@ discordLocalization {
     locationFormat = "%locale%/%name%.yaml"
 
     botPackage = "de.mineking.hexo.bot"
+    managerName = "$botPackage.localization.HexoBotLocalizationManager"
 
     import("kotlin.math.roundToInt")
 

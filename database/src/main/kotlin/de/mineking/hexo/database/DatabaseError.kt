@@ -4,7 +4,6 @@ import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.isSuccess
 import de.mineking.hexo.utils.types.orThrow
-import java.sql.SQLException
 
 sealed interface DatabaseError : IError
 
@@ -22,7 +21,7 @@ class NotNullViolationError(val columnName: String) : DatabaseError {
 
 sealed class UnexpectedDatabaseErrorException(message: String) : RuntimeException("Unexpected database error: $message") {
     class Known(val error: DatabaseError) : UnexpectedDatabaseErrorException(error.toString())
-    class Unknown(override val cause: SQLException) : UnexpectedDatabaseErrorException(cause.message.toString())
+    class Unknown(override val cause: Exception) : UnexpectedDatabaseErrorException(cause.message.toString())
 }
 
 fun <T : Any, E : IError> Result<T?, DatabaseError>.mapNullableResult(

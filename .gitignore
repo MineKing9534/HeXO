@@ -2,7 +2,8 @@ web/package-lock.json
 web/package.json
 web/.kobweb/*
 !web/.kobweb/conf.yaml
-.env
+.env.*
+!.env.example
 
 .gradle
 build/

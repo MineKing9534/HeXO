@@ -8,77 +8,68 @@ response:
     profile.verify.failed: >-
       ## Verification Failed
       
-      It doesn't seem like the linked profile belongs to you. Check that you linked the correct profile. If you think this is a mistake, please contact support.
+      We couldn't verify that this HeXO profile belongs to you. Make sure the profile uses your Discord avatar, then try again. If it still fails, contact support.
 
     profile.link.failed: >-
       ## Profile Link Failed
       
-      Could not link the given profile to your account. Make sure you don't already have a another profile linked to your account!
-
-  success.revoke: |-
-    ## Authorization Revoked
-    
-    Your discord authorization was successfully revoked. To be able to claim linked roles, you will have to authorize again.
-    
-    **TIP:** You can check your current authorization status by using `/link` in your DM's with the bot, or any server where it is installed.
+      We couldn't link this profile. Your Discord account or the HeXO profile may already be linked elsewhere.
 
 menu.link:
   link:
-    label: Link
-    title: Link your HeXO profile
+    label: Link Profile
+    title: Connect your HeXO profile
     explanation.content: >-
-      Linking your profile allows the bot to associate your discord account with your **[HeXO](https://hexo.did.science)** profile.
-      To link your profile, enter your **[HeXO](https://hexo.did.science)** profile **id** or **url** below. After verifying that the profile belongs to you, your profile will be linked.
-      You can remove that link later at any time.
+      Connect your **[HeXO](https://hexo.did.science)** profile so the bot can use your rating and rank for Discord linked roles.
+      Enter your profile **ID** or **URL** below. The bot will verify that the profile belongs to your Discord account.
+      You can disconnect it at any time.
     inputs.url:
       label: Profile URL
-      description: Your hexo.did.science profile id or url
+      description: Your hexo.did.science profile ID or URL
       placeholder: https://hexo.did.science/profile/69bdd10f3a92bf78e1b6d7a0
 
   unlink:
-    label: Unlink
-    title: Unlink your HeXO profile
+    label: Disconnect
+    title: Disconnect your HeXO profile
     inputs.confirm:
-      label: Confirm Unlink
-      description: You can link your profile again later anytime you want!
-      options.value.label: I want to unlink my profile
+      label: Confirm Disconnect
+      description: You can reconnect this profile later.
+      options.value.label: Disconnect my HeXO profile
 
   auth:
-    label: Authenticate
-    title: Authenticate Discord
+    label: Authorize
+    title: Authorize Discord linked roles
     description.content: !<url:String> |-
-      This discord bot allows server administrators to configure linked roles based on your **[HeXO](https://hexo.did.science)** profile.
-      To be able to update your accounts meta data, you have to authenticate the bot. To do so, use the following link:
+      Authorize HeXO to publish your rating and rank as Discord linked-role data. Discord will show the permission being requested before you approve it.
       
       **$url/linked-roles**
       
-      You can unauthorize the bot at any time using the button in `/link` menu.
+      You can revoke this access at any time from the `/link` menu.
 
   remove_auth:
     label: Revoke
-    title: Revoke Discord Authorization
+    title: Revoke Discord authorization
     note.content: |-
-      **NOTE:** If you have the app installed to your user, revoking the Discord authorization will also uninstall the application from your user apps. If you want to continue using it on servers where the bot isn't installed, you'll have to re-authenticate the user app.
-      If you don't have to application installed to your user, you can ignore this note.
+      **Note:** Revoking authorization also removes HeXO from your user-installed Discord apps. If you use HeXO in servers where the bot is not installed, you will need to authorize the user app again.
 
     inputs.confirm:
       label: Confirm Revoke
-      description: All stored credentials will be removed. You can authenticate the bot again later anytime you want!
-      options.value.label: I want to revoke my authentication
+      description: Stored Discord credentials will be deleted. You can authorize again later.
+      options.value.label: Revoke Discord authorization
 
 
-  title.content: '# :link: HeXO Link Status'
+  title.content: '# :link: HeXO Connection Status'
   link_status.content: !<profile:Profile?> >-
-    **Link status:** ${
+    **HeXO profile:** ${
         profile?.let {
             "[${it.displayName}](${it.url})"
-        } ?: "*Not linked*"
+        } ?: "*Not connected*"
     }
   auth_status.content: !<isAuthenticated:Boolean> >-
-    **Authentication Status:** ${
-        if (isAuthenticated) "Authenticated"
-        else "Not Authenticated"
+    **Discord access:** ${
+        if (isAuthenticated) "Authorized"
+        else "Not authorized"
     }
 
   auth_explanation.content: >-
-    :warning: Your HeXO profile is connected, but your discord account is not authenticated. This step is required to allow the bot to modify your linked roles metadata.
+    :warning: Your HeXO profile is connected, but Discord access is not authorized. Authorize access so the bot can keep your linked-role rating and rank up to date.

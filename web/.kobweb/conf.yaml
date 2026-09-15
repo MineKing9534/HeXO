@@ -1,6 +1,6 @@
 site:
   title: "HeXO"
-  basePath: "app"
+  basePath: ""
 
 server:
   files:

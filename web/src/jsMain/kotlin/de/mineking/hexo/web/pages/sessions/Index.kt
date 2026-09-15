@@ -1,5 +1,3 @@
-@file:Layout(".layout.AppLayout")
-
 package de.mineking.hexo.web.pages.sessions
 
 import androidx.compose.runtime.Composable
@@ -11,7 +9,6 @@ import com.varabyte.kobweb.core.Page
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import com.varabyte.kobweb.core.layout.Layout
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.session.Session
