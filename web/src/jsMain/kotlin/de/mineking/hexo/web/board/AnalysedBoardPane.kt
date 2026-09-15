@@ -35,6 +35,7 @@ fun AnalysedBoardPane(
 ) {
     val analyzerState = if (turn != null) rememberBoardAnalysis(boardViewManager.board, turn) else null
     var showAnalyzerOverlay by remember { mutableStateOf(true) }
+    var selectedDefenseIndex by remember(analyzerState) { mutableStateOf(0) }
 
     BoardPane(
         boardViewManager = boardViewManager,
@@ -44,7 +45,8 @@ fun AnalysedBoardPane(
         viewport = viewport,
         onViewportChange = onViewportChange,
         onBoardInteraction = onBoardInteraction,
-        renderingHook = analyzerState?.takeIf { showAnalyzerOverlay && allowAnalyzerOverlay }?.renderingHook(),
+        renderingHook = analyzerState?.takeIf { showAnalyzerOverlay && allowAnalyzerOverlay }
+            ?.renderingHook(selectedDefenseIndex),
         attrs = attrs,
     ) {
         content?.invoke(this)
@@ -55,6 +57,8 @@ fun AnalysedBoardPane(
                 allowAnalyzerOverlay = allowAnalyzerOverlay,
                 showAnalyzerOverlay = showAnalyzerOverlay,
                 onShowAnalyzerOverlayChange = { showAnalyzerOverlay = it },
+                selectedDefenseIndex = selectedDefenseIndex,
+                onSelectedDefenseIndexChange = { selectedDefenseIndex = it },
                 effectiveTurnPlayer = players[turn.player]!!,
                 otherPlayer = players[turn.player.other]!!,
             )
@@ -68,6 +72,8 @@ private fun AnalyzerStatusDisplay(
     allowAnalyzerOverlay: Boolean,
     showAnalyzerOverlay: Boolean,
     onShowAnalyzerOverlayChange: (Boolean) -> Unit,
+    selectedDefenseIndex: Int,
+    onSelectedDefenseIndexChange: (Int) -> Unit,
     effectiveTurnPlayer: GamePlayer,
     otherPlayer: GamePlayer,
 ) {
@@ -75,6 +81,8 @@ private fun AnalyzerStatusDisplay(
         state = state,
         analyzedPlayer = effectiveTurnPlayer,
         otherPlayer = otherPlayer,
+        selectedDefenseIndex = selectedDefenseIndex,
+        onSelectedDefenseIndexChange = onSelectedDefenseIndexChange,
         attrs = {
             classes(
                 "absolute", "right-3", "bottom-28",

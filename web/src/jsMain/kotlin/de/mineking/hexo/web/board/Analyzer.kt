@@ -81,12 +81,12 @@ fun rememberBoardAnalysis(board: Board, turn: AnalyzerTurn): BoardAnalyzerState 
 }
 
 @Composable
-fun BoardAnalyzerState.renderingHook(): BoardRenderingHook {
+fun BoardAnalyzerState.renderingHook(selectedDefenseIndex: Int): BoardRenderingHook {
     val theme by rememberTheme()
-    return renderingHook(theme)
+    return renderingHook(theme, selectedDefenseIndex)
 }
 
-fun BoardAnalyzerState.renderingHook(theme: BaseTheme) = object : BoardRenderingHook {
+fun BoardAnalyzerState.renderingHook(theme: BaseTheme, selectedDefenseIndex: Int = 0) = object : BoardRenderingHook {
     override fun RenderingContext.drawMiddleLayer() {
         if (this@renderingHook !is BoardAnalyzerState.Data) return
 
@@ -99,17 +99,21 @@ fun BoardAnalyzerState.renderingHook(theme: BaseTheme) = object : BoardRendering
 
     override fun RenderingContext.drawTopLayer() {
         if (this@renderingHook !is BoardAnalyzerState.Data) return
-        drawAnalyzerOverlay(theme, this@renderingHook)
+        drawAnalyzerOverlay(theme, this@renderingHook, selectedDefenseIndex)
     }
 }
 
 private val defenseOverlayColor = Color.rgb(0x34d399)
 
-private fun RenderingContext.drawAnalyzerOverlay(theme: BaseTheme, state: BoardAnalyzerState.Data) {
+private fun RenderingContext.drawAnalyzerOverlay(
+    theme: BaseTheme,
+    state: BoardAnalyzerState.Data,
+    selectedDefenseIndex: Int,
+) {
     if (state.threat is FindWinResult.Win) {
         drawThreatOverlay(theme, state.threat)
     } else if (state.defense is FindDefenseResult.Threat) {
-        drawDefenseOverlay(theme, state.defense)
+        drawDefenseOverlay(theme, state.defense, selectedDefenseIndex)
     }
 }
 
@@ -141,12 +145,23 @@ private enum class DefenseKind(val symbol: String) {
     BestDelay("~"),
 }
 
-private fun RenderingContext.drawDefenseOverlay(theme: BaseTheme, result: FindDefenseResult.Threat) {
-    val (defense, kind) = when (val temp = result.defense) {
-        is DefenseResult.Found -> temp.defenses.maxByOrNull { it.isCounterThreat }!! to DefenseKind.Found
-        is DefenseResult.BudgetExceeded -> temp.tacticalMoves.first() to DefenseKind.BudgetExceeded
-        is DefenseResult.Undefendable -> temp.bestDelay to DefenseKind.BestDelay
+internal fun FindDefenseResult.Threat.displayedDefenses() = when (val result = defense) {
+    is DefenseResult.Found -> result.defenses.sortedByDescending { it.isCounterThreat }
+    is DefenseResult.BudgetExceeded -> result.tacticalMoves
+    is DefenseResult.Undefendable -> listOfNotNull(result.bestDelay)
+}
+
+private fun RenderingContext.drawDefenseOverlay(
+    theme: BaseTheme,
+    result: FindDefenseResult.Threat,
+    selectedDefenseIndex: Int,
+) {
+    val kind = when (result.defense) {
+        is DefenseResult.Found -> DefenseKind.Found
+        is DefenseResult.BudgetExceeded -> DefenseKind.BudgetExceeded
+        is DefenseResult.Undefendable -> DefenseKind.BestDelay
     }
+    val defense = result.displayedDefenses().getOrNull(selectedDefenseIndex)
 
     val defenseCells = defense?.toSet().orEmpty()
 
