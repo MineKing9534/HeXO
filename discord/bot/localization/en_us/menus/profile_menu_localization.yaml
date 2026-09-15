@@ -6,22 +6,21 @@ error:
 menu.profile:
   view.label: View in Browser
   reload.label: Reload
-  stats.content: !<profile:RichProfile> |-
+  stats.content: !<profile:ProfileWithStatistics> |-
     **Member Since:** ${TimeFormat.DATE_SHORT.format(profile.registeredAt.toJavaInstant())}
-    **Last Seen:** ${TimeFormat.RELATIVE.format(profile.lastActiveAt.toJavaInstant())}
-    **ELO:** ${profile.statistics.elo}${ profile.statistics.eloHistory.highestPoint?.elo?.takeIf { it > profile.statistics.elo }?.let { " (Highest $it)" } ?: "" }
+    **ELO:** ${profile.statistics.rating.elo}${ profile.statistics.highestRating.elo.takeIf { it > profile.statistics.rating.elo }?.let { " (Highest $it)" } ?: "" }
 
     ### :seedling: Overall Games
     ${menu_profile_stats_game(locale, profile.statistics.totalGames)}
 
     ### :trophy: Ranked Games
-    ${menu_profile_stats_game(locale, profile.statistics.rankedGames)}
-    **Streak:** ${profile.statistics.rankedGames.currentWinStreak} (Longest ${profile.statistics.rankedGames.longestWinStreak})
+    ${menu_profile_stats_game(locale, profile.statistics.ratedGames)}
+    **Streak:** ${profile.statistics.ratedGames.currentWinStreak} (Longest ${profile.statistics.ratedGames.longestWinStreak})
 
   # Internal helper to avoid duplication
-  stats.game: !<stats:de.mineking.hexo.hds.model.profile.ProfileStatistics.GameStatistics> |-
-    **Games Played:** ${stats.played}
+  stats.game: !<stats:ProfileGameStatistics> |-
+    **Games Played:** ${stats.total}
     **Games Won:** ${stats.won}${
-      if (stats.played == 0) ""
+      if (stats.total == 0) ""
       else " (${(stats.winRate * 100).roundToInt()}%)"
     }

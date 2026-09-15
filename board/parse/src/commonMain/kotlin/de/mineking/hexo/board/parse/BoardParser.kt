@@ -31,7 +31,7 @@ fun BoardParser.focusWinningRows() = object : BoardParser {
         .focusWinningRows()
 }
 
-fun BoardParser.or(other: BoardParser) = when (this) {
+infix fun BoardParser.or(other: BoardParser) = when (this) {
     BoardParser.Companion.None -> other
     else -> object : BoardParser {
         override suspend fun parse(notation: String) = try {

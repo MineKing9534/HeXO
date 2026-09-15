@@ -3,9 +3,10 @@
 package de.mineking.hexo.launcher
 
 import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.RemoteBoardParser
 import de.mineking.hexo.board.parse.cached
 import de.mineking.hexo.board.parse.focusWinningRows
-import de.mineking.hexo.board.parse.hds.createWithHdsSupport
+import de.mineking.hexo.board.parse.or
 import de.mineking.hexo.board.render.caching
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
 import de.mineking.hexo.board.render.image.outputPngBytes
@@ -15,8 +16,8 @@ import de.mineking.hexo.bot.utils.LinkedRolesUpdateService
 import de.mineking.hexo.bot.web.LinkedRolesRedirectWebService
 import de.mineking.hexo.database.HexoDatabaseManager
 import de.mineking.hexo.discord.bot.config.UserThemeRepository
+import de.mineking.hexo.game.model.caching.CachingRepositoryWrapper
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.hds.implementation.caching.CachingRepositoryWrapper
 import de.mineking.hexo.launcher.web.OAUth2CallbackWebService
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.oauth2.AESTokenTransform
@@ -25,7 +26,7 @@ import de.mineking.hexo.link.oauth2.DiscordUserAuthenticationRepository
 import de.mineking.hexo.link.oauth2.OAuth2Tokens
 import de.mineking.hexo.server.HttpServer
 import de.mineking.hexo.sever.service.WebService
-import de.mineking.hexo.sync.server.WatchPartyWebService
+import de.mineking.hexo.watchparty.server.WatchPartyWebService
 import javax.crypto.spec.SecretKeySpec
 import kotlin.contracts.ExperimentalContracts
 import kotlin.contracts.ExperimentalExtendedContracts
@@ -44,8 +45,13 @@ fun main() {
 
     val userThemeRepository = database?.let { UserThemeRepository(it) }
 
-    val parser = BoardParser.createWithHdsSupport(client.finishedGameRepository, client.formationRepository).focusWinningRows().cached()
-    val pngRenderer = BufferedImageBoardRenderer.Default.outputPngBytes().caching()
+    val parser = (RemoteBoardParser(client) or BoardParser.Default)
+        .focusWinningRows()
+        .cached()
+
+    val pngRenderer = BufferedImageBoardRenderer.Default
+        .outputPngBytes()
+        .caching()
 
     val bot = HeXODiscordBot(
         repositories = client,

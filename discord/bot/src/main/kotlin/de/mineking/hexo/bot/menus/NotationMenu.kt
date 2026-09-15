@@ -17,17 +17,17 @@ import de.mineking.discord.ui.localize
 import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.render
-import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.hexo.board.render.notation.NotationType
 import de.mineking.hexo.board.render.render
+import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.main
 import de.mineking.hexo.bot.utils.effectiveLocale
-import de.mineking.hexo.hds.model.asBoard
-import de.mineking.hexo.hds.model.game.FinishedGameRepository
-import de.mineking.hexo.hds.model.game.GameId
+import de.mineking.hexo.game.model.game.FinishedGameRepository
+import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.utils.types.orElse
 import net.dv8tion.jda.api.components.separator.Separator.Spacing
 import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.interactions.DiscordLocale
@@ -35,7 +35,7 @@ import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.utils.FileUpload
 
 // TODO support arbitrary board inputs - how to encode to fit into state?
-//      Maybe decode the previous upload instead of staving the board in ui state?
+//      Maybe decode the previous upload instead of saving the board in ui state?
 data class NotationMenuParameter(
     val gameId: GameId,
     val notationType: NotationType,
@@ -58,19 +58,17 @@ fun UIManager.notationMenu(
         bindParameter("id", gameId)
     }
 
-    val notation = renderValue {
-        gameRepository.getGame(gameId)
-            ?.asBoard()
-            ?.let { notationType.renderer.render(it) }
-    }
-
     +container {
         +localizedTextDisplay("title")
 
         render {
-            if (notation == null) {
+            val game = gameRepository.getGame(gameId).orElse {
                 +localizedTextDisplay("game_not_found")
-            } else if (notation.length > Message.MAX_CONTENT_LENGTH_COMPONENT_V2 - 100) {
+                return@render
+            }
+
+            val notation = notationType.renderer.render(game.position.toBoard())
+            if (notation.length > Message.MAX_CONTENT_LENGTH_COMPONENT_V2 - 100) {
                 +localizedTextDisplay("notation_too_long")
                 +fileDisplay(FileUpload.fromData(notation.toByteArray(), "notation.txt"))
             } else {

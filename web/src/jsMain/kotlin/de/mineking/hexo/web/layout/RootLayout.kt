@@ -7,8 +7,8 @@ import androidx.compose.runtime.rememberUpdatedState
 import com.varabyte.kobweb.core.PageContext
 import com.varabyte.kobweb.core.data.getValue
 import com.varabyte.kobweb.core.layout.Layout
-import de.mineking.hexo.sync.common.WatchPartyNavigateTarget
-import de.mineking.hexo.sync.common.WatchPartyTarget
+import de.mineking.hexo.watchparty.common.WatchPartyNavigateTarget
+import de.mineking.hexo.watchparty.common.WatchPartyTarget
 import de.mineking.hexo.web.rememberWatchPartyController
 import kotlinx.coroutines.delay
 import kotlin.time.Duration.Companion.milliseconds

@@ -1,15 +1,16 @@
 package de.mineking.hexo.web.pages.sessions
 
 import androidx.compose.runtime.Composable
-import de.mineking.hexo.hds.model.TimeControl
-import de.mineking.hexo.hds.model.game.Player
-import de.mineking.hexo.hds.model.session.LobbySession
+import de.mineking.hexo.game.model.game.Player
+import de.mineking.hexo.game.model.session.LobbySession
+import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.ContentCard
 import de.mineking.hexo.web.components.LoadingIndicator
 import de.mineking.hexo.web.components.SubCard
+import de.mineking.hexo.web.format
 import de.mineking.hexo.web.layout.AppRoute
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.H1
@@ -29,7 +30,7 @@ fun LobbyOverlay(session: LobbySession) {
             LoadingIndicator { classes("size-9") }
         }
 
-        if (session.tournamentInfo == null) {
+        if (session.tournament == null) {
             Div({ classes("grid", "gap-4", "md:grid-cols-2") }) {
                 LobbyPlayerCard(session.players.singleOrNull())
                 LobbyDetailsCard(session)
@@ -46,8 +47,7 @@ fun LobbyOverlay(session: LobbySession) {
 
 @Composable
 private fun TournamentLobbyCard(session: LobbySession) {
-    val tournament = session.tournamentInfo ?: return
-    val requiredWins = tournament.bestOf / 2 + 1
+    val tournament = session.tournament ?: return
 
     SubCard({ classes("p-4") }) {
         Div({ classes("flex", "flex-col", "gap-4") }) {
@@ -57,17 +57,17 @@ private fun TournamentLobbyCard(session: LobbySession) {
                         Text("Tournament")
                     }
                     P({ classes("mt-1", "truncate", "font-semibold", "text-slate-100") }) {
-                        Text(tournament.tournamentName)
+                        Text(tournament.tournament.info.name)
                     }
                 }
                 Badge(Color.Neutral, { classes("shrink-0") }) {
-                    Text("Game ${tournament.currentGameNumber} of ${tournament.bestOf}")
+                    Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")
                 }
             }
 
             Div({ classes("grid", "gap-3") }) {
                 session.players.forEach { player ->
-                    TournamentLobbyPlayer(player, requiredWins)
+                    TournamentLobbyPlayer(player, tournament.matchInfo.requiredWins)
                 }
             }
         }
@@ -192,10 +192,4 @@ private fun LobbyDetail(label: String, value: String) {
             Text(value)
         }
     }
-}
-
-private fun TimeControl.format() = when (this) {
-    TimeControl.Unlimited -> "Unlimited"
-    is TimeControl.Turn -> "Turn $turnTime"
-    is TimeControl.Match -> "Match $mainTime +$increment"
 }

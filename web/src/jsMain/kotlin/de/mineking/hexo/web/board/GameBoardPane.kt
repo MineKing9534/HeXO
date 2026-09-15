@@ -10,16 +10,21 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
+import de.mineking.hexo.board.Move
+import de.mineking.hexo.board.moves
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.image.div
-import de.mineking.hexo.hds.model.EntityState
-import de.mineking.hexo.hds.model.Move
-import de.mineking.hexo.hds.model.game.FinishedGamePlayer
-import de.mineking.hexo.hds.model.game.Game
-import de.mineking.hexo.hds.model.game.Player
-import de.mineking.hexo.hds.model.session.LiveSessionPlayer
+import de.mineking.hexo.game.model.EntityState
+import de.mineking.hexo.game.model.game.FinishedGamePlayer
+import de.mineking.hexo.game.model.game.Game
+import de.mineking.hexo.game.model.game.GameWithPosition
+import de.mineking.hexo.game.model.game.Player
+import de.mineking.hexo.game.model.game.playerWithColor
+import de.mineking.hexo.game.model.session.LiveSessionPlayer
+import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.components.ActionButton
 import de.mineking.hexo.web.components.ButtonSize
@@ -56,7 +61,7 @@ import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
-fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewManager) {
+fun GameBoardPane(game: GameWithPosition, isLive: Boolean, boardViewManager: GameBoardViewManager) {
     val viewport = remember { mutableStateOf<BoardViewport?>(null) }
 
     val watchPartyController = rememberWatchPartyController()
@@ -70,17 +75,15 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
     }
 
     val move by boardViewManager.currentMove
-    val board = game.rememberBoard(
-        overlay = boardViewManager.board.value,
-        move = move,
-    )
+    val position = game.rememberPosition(move)
+    val board = position.rememberBoard(overlay = boardViewManager.board.value)
 
-    val (effectiveTurnPlayer, effectivePlacementsRemaining) = game.effectiveTurn(move)
+    val (effectiveTurnPlayer, effectivePlacementsRemaining) = position.nextTurn
     val allowAnalyzerOverlay = !(isLive && game.options.rated)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
     val analyzerTurn = if (shouldAnalyze && (isLive || move < game.moveCount)) {
-        AnalyzerTurn(effectiveTurnPlayer.color, effectivePlacementsRemaining)
+        AnalyzerTurn(effectiveTurnPlayer, effectivePlacementsRemaining)
     } else {
         null
     }
@@ -98,19 +101,9 @@ fun GameBoardPane(game: Game, isLive: Boolean, boardViewManager: GameBoardViewMa
             boardViewManager.apply(interaction)
         },
     ) {
-        TurnIndicator(game, isLive, effectiveTurnPlayer, effectivePlacementsRemaining)
+        TurnIndicator(game, isLive, game.playerWithColor(effectiveTurnPlayer), effectivePlacementsRemaining)
         BoardControls(game, boardViewManager, viewport)
     }
-}
-
-private fun Game.effectiveTurn(move: Int): Pair<Player, Int> {
-    val move = move.coerceIn(0, moveCount) + 1
-
-    val index = (move / MOVES_PER_TURN) % 2
-    val player = players[index] // Game players are ordered by first placement
-    val remaining = MOVES_PER_TURN - (move % MOVES_PER_TURN)
-
-    return player to remaining
 }
 
 @Composable
@@ -134,17 +127,17 @@ private fun BoardActionButton(
 
 @Composable
 private fun BoardScope.BoardControls(
-    game: Game,
+    game: GameWithPosition,
     boardViewManager: GameBoardViewManager,
     viewport: MutableState<BoardViewport?>,
 ) {
     val layout = rememberAppLayout()
-    val totalMoves = game.moves.size
+    val totalMoves = game.moveCount
     val hasClearableHighlights by boardViewManager.hasClearableHighlights
     var currentMove by boardViewManager.currentMove
 
     MoveKeyboardShortcuts(
-        moves = game.moves,
+        moves = game.position.moves,
         move = boardViewManager.currentMove,
         viewport = viewport,
     )
@@ -312,7 +305,7 @@ private fun TurnIndicator(
         Div({
             classes("pointer-events-auto", "shadow-xl", "bg-slate-800/85", "rounded-lg", "p-3", "max-w-xl", "w-full", "backdrop-blur-xs")
         }) {
-            if (game.tournamentInfo != null) TournamentInfoCard(game)
+            if (game.tournament != null) TournamentInfoCard(game)
             if (game.options.rated) RatedInfoCard(game)
 
             Div({ classes("grid", "grid-cols-2", "gap-2", "items-start") }) {
@@ -354,9 +347,9 @@ private fun RatedInfoCard(game: Game) {
 
                         Span({ classes("ml-1", "text-xs") }) {
                             if (player is LiveSessionPlayer) {
-                                EloDiff(player.eloAdjustment?.eloGain ?: 0)
+                                EloDiff(player.ratingAdjustment?.eloGain ?: 0)
                                 Text("/")
-                                EloDiff(player.eloAdjustment?.eloLoss ?: 0)
+                                EloDiff(player.ratingAdjustment?.eloLoss ?: 0)
                             } else if (player is FinishedGamePlayer) {
                                 EloDiff(player.eloChange ?: 0)
                             }
@@ -370,18 +363,17 @@ private fun RatedInfoCard(game: Game) {
 
 @Composable
 private fun TournamentInfoCard(game: Game) {
-    val tournament = game.tournamentInfo ?: return
-    val requiredWins = tournament.bestOf / 2 + 1
+    val tournament = game.tournament ?: return
 
     Div({
         classes("rounded-md", "border", "border-slate-700/70", "bg-slate-900/60", "px-3", "py-2", "mb-3")
     }) {
         Div({ classes("mb-1.5", "flex", "items-center", "justify-between", "gap-3", "text-xs") }) {
             Span({ classes("min-w-0", "truncate", "font-semibold", "text-slate-200") }) {
-                Text(tournament.tournamentName)
+                Text(tournament.tournament.info.name)
             }
             Span({ classes("shrink-0", "font-medium", "text-slate-400") }) {
-                Text("Game ${tournament.currentGameNumber} of ${tournament.bestOf}")
+                Text("Game ${tournament.matchInfo.currentGameNumber} of ${tournament.matchInfo.bestOf}")
             }
         }
 
@@ -392,12 +384,16 @@ private fun TournamentInfoCard(game: Game) {
                     Span({ classes("shrink-0", "tabular-nums") }) {
                         Span({
                             classes("font-bold", "text-sm")
-                            classes(if ((player.tournamentMatchWins ?: 0) == requiredWins - 1) "text-emerald-500" else "text-slate-300")
+                            classes(if ((player.tournamentMatchWins ?: 0) == tournament.matchInfo.requiredWins - 1) {
+                                "text-emerald-500"
+                            } else {
+                                "text-slate-300"
+                            })
                         }) {
                             Text("${player.tournamentMatchWins ?: 0}")
                         }
                         Span({ classes("font-semibold", "text-slate-400", "text-xs") }) {
-                            Text("/$requiredWins")
+                            Text("/${tournament.matchInfo.requiredWins}")
                         }
                     }
                 }
@@ -433,7 +429,7 @@ fun Player(
 private fun PlacementsRemainingIndicator(color: CellOwner, remaining: Int) {
     val theme by rememberTheme()
     Div({ classes("flex", "gap-1", "flex-row-reverse", "mx-auto", "justify-center") }) {
-        repeat(MOVES_PER_TURN) {
+        repeat(DEFAULT_MOVES_PER_TURN) {
             Div({
                 classes("rounded-full", "w-6", "h-1.5")
                 if (it < remaining) {

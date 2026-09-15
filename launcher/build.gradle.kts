@@ -14,13 +14,12 @@ dependencies {
 
     implementation(projects.board)
     implementation(projects.board.parse)
-    implementation(projects.board.parse.hds)
     implementation(projects.board.render)
 
     implementation(projects.database)
-    implementation(projects.hds.implementation)
+    implementation(projects.game.hds)
 
-    implementation(projects.sync.service)
+    implementation(projects.watchparty.service)
 
     implementation(libs.ktor.server.html)
     implementation(libs.cache)
