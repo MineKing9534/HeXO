@@ -1,4 +1,4 @@
-package de.mineking.hexo.discord.oauth2.protocol
+package de.mineking.hexo.discord.oauth2.model
 
 import kotlinx.serialization.Serializable
 
@@ -6,4 +6,4 @@ import kotlinx.serialization.Serializable
 data class OAuth2AuthorizationResponse(val url: String)
 
 @Serializable
-data class OAuth2CallbackResponse(val success: Boolean)
+data class OAuth2CallbackResponse(val success: Boolean, val flow: OAuth2Flow?)

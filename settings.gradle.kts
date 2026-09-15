@@ -38,7 +38,6 @@ include(":discord:linked-roles")
 include(":discord:oauth2:service")
 include(":discord:oauth2:client")
 include(":discord:oauth2:model")
-include(":discord:oauth2:protocol")
 include(":discord:config")
 
 include(":server")

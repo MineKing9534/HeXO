@@ -3,7 +3,6 @@ package de.mineking.hexo.discord.oauth2
 import de.mineking.discord.DiscordToolKit
 import de.mineking.discord.commands.LocalizationInfo
 import de.mineking.discord.localization.LocalizationFile
-import de.mineking.discord.localization.read
 import de.mineking.discord.utils.await
 import net.dv8tion.jda.api.entities.RoleConnectionMetadata
 import net.dv8tion.jda.api.entities.RoleConnectionMetadata.MetadataType

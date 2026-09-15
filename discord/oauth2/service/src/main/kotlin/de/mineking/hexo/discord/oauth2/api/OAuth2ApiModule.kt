@@ -1,9 +1,10 @@
 package de.mineking.hexo.discord.oauth2.api
 
+import de.mineking.hexo.discord.oauth2.model.OAuth2AuthorizationResponse
+import de.mineking.hexo.discord.oauth2.model.OAuth2CallbackResponse
 import de.mineking.hexo.discord.oauth2.model.OAuth2Flow
-import de.mineking.hexo.discord.oauth2.protocol.OAuth2AuthorizationResponse
-import de.mineking.hexo.discord.oauth2.protocol.OAuth2CallbackResponse
 import de.mineking.hexo.server.api.ApiModule
+import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.isSuccess
 import io.ktor.http.HttpStatusCode
 import io.ktor.server.plugins.BadRequestException
@@ -30,12 +31,17 @@ class OAuth2ApiModule(
             val code = call.queryParameters.getOrFail("code")
             val state = call.queryParameters.getOrFail("state")
 
-            if (!authorizationService.completeAuthorization(code, state).isSuccess()) {
-                call.respond(HttpStatusCode.Unauthorized, OAuth2CallbackResponse(false))
-                return@get
+            when (val result = authorizationService.completeAuthorization(code, state)) {
+                is Result.Success -> call.respond(OAuth2CallbackResponse(success = true, flow = result.value))
+                is Result.Error -> {
+                    val flow = when (val error = result.error) {
+                        is OAuth2CodeExchangeFailed -> error.flow
+                        is OAuth2FlowCompletionFailed -> error.flow
+                        else -> null
+                    }
+                    call.respond(HttpStatusCode.Unauthorized, OAuth2CallbackResponse(success = false, flow = flow))
+                }
             }
-
-            call.respond(OAuth2CallbackResponse(true))
         }
     }
 }

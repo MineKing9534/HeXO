@@ -7,7 +7,6 @@ plugins {
 
 dependencies {
     api(projects.discord.oauth2.model)
-    implementation(projects.discord.oauth2.protocol)
 
     implementation(projects.server.api)
 

@@ -7,7 +7,6 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.discord.oauth2.model)
-            implementation(projects.discord.oauth2.protocol)
 
             implementation(libs.bundles.ktor.client)
         }

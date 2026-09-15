@@ -9,8 +9,8 @@ sealed interface OAuth2AuthorizationError : IError
 
 data object UnsupportedOAuth2Flow : OAuth2AuthorizationError
 data object InvalidOAuth2AuthorizationState : OAuth2AuthorizationError
-data object OAuth2CodeExchangeFailed : OAuth2AuthorizationError
-data class OAuth2FlowCompletionFailed(val cause: OAuth2FlowError) : OAuth2AuthorizationError
+data class OAuth2CodeExchangeFailed(val flow: OAuth2Flow) : OAuth2AuthorizationError
+data class OAuth2FlowCompletionFailed(val flow: OAuth2Flow, val cause: OAuth2FlowError) : OAuth2AuthorizationError
 
 class OAuth2AuthorizationService(
     private val discordOAuth2Client: DiscordOAuth2Client,
@@ -31,17 +31,17 @@ class OAuth2AuthorizationService(
         return Result.Success(url)
     }
 
-    suspend fun completeAuthorization(code: String, state: String): Result<Unit, OAuth2AuthorizationError> {
+    suspend fun completeAuthorization(code: String, state: String): Result<OAuth2Flow, OAuth2AuthorizationError> {
         val session = sessionStore.consume(state) ?: return Result.Error(InvalidOAuth2AuthorizationState)
         val handler = handlers[session.flow] ?: return Result.Error(UnsupportedOAuth2Flow)
         val tokens = when (val result = discordOAuth2Client.exchangeAuthorizationCode(code)) {
             is Result.Success -> result.value
-            is Result.Error -> return Result.Error(OAuth2CodeExchangeFailed)
+            is Result.Error -> return Result.Error(OAuth2CodeExchangeFailed(session.flow))
         }
 
         return when (val result = handler.complete(tokens)) {
-            is Result.Success -> result
-            is Result.Error -> Result.Error(OAuth2FlowCompletionFailed(result.error))
+            is Result.Success -> Result.Success(session.flow)
+            is Result.Error -> Result.Error(OAuth2FlowCompletionFailed(session.flow, result.error))
         }
     }
 }

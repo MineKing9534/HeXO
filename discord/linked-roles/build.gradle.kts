@@ -9,7 +9,6 @@ dependencies {
     implementation(projects.discord.core)
     implementation(projects.discord.link)
     implementation(projects.discord.oauth2.service)
-    implementation(projects.discord.oauth2.protocol)
     implementation(projects.game.model)
     implementation(projects.utils.coroutines)
     implementation(projects.utils.types)

@@ -1,8 +1,8 @@
 package de.mineking.hexo.discord.oauth2.client
 
+import de.mineking.hexo.discord.oauth2.model.OAuth2AuthorizationResponse
+import de.mineking.hexo.discord.oauth2.model.OAuth2CallbackResponse
 import de.mineking.hexo.discord.oauth2.model.OAuth2Flow
-import de.mineking.hexo.discord.oauth2.protocol.OAuth2AuthorizationResponse
-import de.mineking.hexo.discord.oauth2.protocol.OAuth2CallbackResponse
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -28,14 +28,12 @@ class DiscordOAuth2ApiClient(
         return response.body<OAuth2AuthorizationResponse>().url
     }
 
-    suspend fun completeAuthorization(code: String, state: String): Boolean {
+    suspend fun completeAuthorization(code: String, state: String): OAuth2CallbackResponse {
         val response = client.get("${apiUrl.trimEnd('/')}/oauth2/callback") {
             parameter("code", code)
             parameter("state", state)
         }
-        if (!response.status.isSuccess()) return false
-
-        return response.body<OAuth2CallbackResponse>().success
+        return response.body()
     }
 
     override fun close() = client.close()

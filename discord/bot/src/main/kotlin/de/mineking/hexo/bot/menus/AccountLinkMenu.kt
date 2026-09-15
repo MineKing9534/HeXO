@@ -64,7 +64,7 @@ fun UIManager.accountLinkMenu(
     val unlinkConfirmModalButton = register(unlinkConfirmModalButton(accountLinkRepository))
 
     val authModalButton = register(authModalButton())
-    val authRemoveConfirmModalButton = register(authRemoveConfirmModalButton(localization, discordAuthRepository))
+    val authRemoveConfirmModalButton = register(authRemoveConfirmModalButton(discordAuthRepository))
 
     // Define this *after* the submenus, so that this is not executed for submenu renders
     render {
@@ -89,7 +89,7 @@ fun UIManager.accountLinkMenu(
 
         +container {
             +localizedTextDisplay("title")
-            +separator()
+            +separator(spacing = Separator.Spacing.LARGE)
             +section(
                 accessory = if (profile == null) linkModalButton else unlinkConfirmModalButton,
                 localizedTextDisplay("link_status"),
@@ -172,7 +172,6 @@ private fun MessageMenuConfig<out Interaction, *>.authModalButton() = modalButto
 }
 
 private fun MessageMenuConfig<*, *>.authRemoveConfirmModalButton(
-    localization: AccountLinkMenuLocalization,
     discordAuthRepository: OAuth2TokenRepository,
 ) = modalButton(
     "remove_auth",
@@ -185,11 +184,6 @@ private fun MessageMenuConfig<*, *>.authRemoveConfirmModalButton(
         produce {}
     },
 ) {
-    preventUpdate()
-    deferEdit().queue()
-    hook.deleteOriginal().await()
-    respond(MessageColor.Success, localization.responseSuccessRevoke(userLocale), forceNew = true)
-
     discordAuthRepository.revoke(user.userId)
 }
 
@@ -202,7 +196,4 @@ interface AccountLinkMenuLocalization : LocalizationFile {
 
     @Localize
     fun responseErrorProfileLinkFailed(@Locale locale: DiscordLocale): String
-
-    @Localize
-    fun responseSuccessRevoke(@Locale locale: DiscordLocale): String
 }
