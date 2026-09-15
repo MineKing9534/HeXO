@@ -65,6 +65,7 @@ import kotlin.js.Date
 import kotlin.time.Duration.Companion.milliseconds
 
 private const val PAGE_SIZE = 10
+private const val MAX_GAMES = 500
 
 private class GamePreviewState {
     var selection by mutableStateOf<FinishedGame?>(null)
@@ -151,16 +152,20 @@ private fun GameList(
     val coroutineScope = rememberCoroutineScope()
 
     var games by remember { mutableStateOf(emptyList<FinishedGame>()) }
+    var totalGameCount by remember { mutableStateOf<Int?>(null) }
     var loading by remember { mutableStateOf(true) }
     val preview = remember { GamePreviewState() }
 
     LaunchedEffect(finishedGameRepository, page, filter) {
         loading = true
+        totalGameCount = null
         preview.reset()
-        games = finishedGameRepository.getGlobalHistory(
+        val result = finishedGameRepository.getGlobalHistory(
             Selector.page(page, PAGE_SIZE)
                 .rated(filter.rated),
-        ).toList()
+        )
+        games = result.toList()
+        totalGameCount = result.totalCount
         loading = false
     }
 
@@ -177,6 +182,7 @@ private fun GameList(
         GameListCard(
             filter = filter,
             page = page,
+            totalGameCount = totalGameCount,
             games = games,
             loading = loading,
             previewGame = preview.selection,
@@ -201,6 +207,7 @@ private fun GameList(
 private fun GameListCard(
     filter: RatedFilter,
     page: Int,
+    totalGameCount: Int?,
     games: List<FinishedGame>,
     loading: Boolean,
     previewGame: FinishedGame?,
@@ -209,11 +216,11 @@ private fun GameListCard(
     onPreview: (FinishedGame) -> Unit,
 ) {
     GameListShell(expanded = games.isNotEmpty()) {
-        GameListHeader(filter, onFilterChange)
+        GameListHeader(filter, totalGameCount, onFilterChange)
         when {
             loading && games.isEmpty() -> CardLoadingState("Loading finished games")
-            games.isEmpty() -> EmptyGameState(filter, page, onPrevious = { onPageChange(page - 1) })
-            else -> LoadedGameList(games, page, loading, previewGame, onPageChange, onPreview)
+            games.isEmpty() -> EmptyGameState(filter, page, onPageChange)
+            else -> LoadedGameList(games, page, totalGameCount, loading, previewGame, onPageChange, onPreview)
         }
     }
 }
@@ -232,6 +239,7 @@ private fun GameListShell(expanded: Boolean, content: @Composable () -> Unit) {
 private fun LoadedGameList(
     games: List<FinishedGame>,
     page: Int,
+    totalGameCount: Int?,
     loading: Boolean,
     previewGame: FinishedGame?,
     onPageChange: (Int) -> Unit,
@@ -250,7 +258,12 @@ private fun LoadedGameList(
                 }
             }
         }
-        Pagination(page, games.size == PAGE_SIZE, onPageChange = onPageChange)
+        Pagination(
+            currentPage = page,
+            totalPages = ((totalGameCount ?: 0).coerceAtMost(MAX_GAMES) + PAGE_SIZE - 1) / PAGE_SIZE,
+            onPageChange = onPageChange,
+            surroundingPageCount = 4,
+        )
         if (loading) {
             Div({
                 classes(
@@ -266,11 +279,22 @@ private fun LoadedGameList(
 }
 
 @Composable
-private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) -> Unit, filterEnabled: Boolean = true) {
+private fun GameListHeader(
+    filter: RatedFilter,
+    totalGameCount: Int? = null,
+    onFilterChange: (RatedFilter) -> Unit,
+    filterEnabled: Boolean = true,
+) {
+    val supportingText = when (totalGameCount) {
+        null -> "Review recently completed games"
+        1 -> "Review 1 completed game"
+        else -> "Review $totalGameCount completed games"
+    }
+
     Div({ classes("flex", "shrink-0", "flex-wrap", "items-center", "justify-between", "gap-3") }) {
         CardHeader(
             title = "Match history",
-            supportingText = "Review recently completed games",
+            supportingText = supportingText,
             iconAttrs = { classes("border-sky-400/25", "bg-sky-400/10", "text-sky-300") },
         ) {
             TimeControlIcon { classes("size-4", "fill-none", "stroke-current") }
@@ -283,7 +307,7 @@ private fun GameListHeader(filter: RatedFilter, onFilterChange: (RatedFilter) ->
 }
 
 @Composable
-private fun EmptyGameState(filter: RatedFilter, page: Int, onPrevious: () -> Unit) {
+private fun EmptyGameState(filter: RatedFilter, page: Int, onPageChange: (Int) -> Unit) {
     val description = if (page == 1 && filter != RatedFilter.All) {
         "No ${filter.label.lowercase()} games have been recorded yet."
     } else {
@@ -292,12 +316,13 @@ private fun EmptyGameState(filter: RatedFilter, page: Int, onPrevious: () -> Uni
     EmptyStateCard(
         title = if (page == 1) "No finished games" else "No more games",
         description = description,
-        action = if (page > 1) {
-            @Composable { ActionButton(label = "Previous page", tooltip = "Go to the previous page of games", onClick = onPrevious) }
-        } else {
-            null
-        },
-    )
+    ) {
+        if (page > 1) {
+            ActionButton(label = "Previous page", tooltip = "Go to the previous page of games", onClick = {
+                onPageChange(MAX_GAMES / PAGE_SIZE)
+            })
+        }
+    }
 }
 
 @Composable

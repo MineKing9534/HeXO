@@ -12,11 +12,11 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun Pagination(
     currentPage: Int,
-    hasNextPage: Boolean,
+    totalPages: Int,
     surroundingPageCount: Int = 2,
     onPageChange: (Int) -> Unit,
 ) {
-    val surroundingPages = surroundingPages(currentPage, surroundingPageCount, hasNextPage)
+    val surroundingPages = surroundingPages(currentPage, surroundingPageCount, totalPages)
 
     Div({
         classes(
@@ -29,7 +29,8 @@ fun Pagination(
     }) {
         PaginationArrowButton("Previous page", currentPage > 1, { onPageChange(currentPage - 1) }) {
             ChevronLeftIcon {
-                classes("size-4", "transition-transform", "group-hover:-translate-x-0.5")
+                classes("size-4", "transition-transform")
+                if (currentPage > 1) classes("group-hover:-translate-x-0.5")
             }
         }
 
@@ -41,9 +42,10 @@ fun Pagination(
             }
         }
 
-        PaginationArrowButton("Next page", hasNextPage, { onPageChange(currentPage + 1) }) {
+        PaginationArrowButton("Next page", currentPage < totalPages, { onPageChange(currentPage + 1) }) {
             ChevronRightIcon {
-                classes("size-4", "transition-transform", "group-hover:translate-x-0.5")
+                classes("size-4", "transition-transform")
+                if (currentPage < totalPages) classes("group-hover:translate-x-0.5")
             }
         }
     }
@@ -106,8 +108,8 @@ private fun PaginationPageButton(page: Int, current: Boolean, distance: Int, onP
 
 private val Int.absoluteValue get() = if (this < 0) -this else this
 
-private fun surroundingPages(currentPage: Int, surroundingPageCount: Int, hasNextPage: Boolean): IntRange {
+private fun surroundingPages(currentPage: Int, surroundingPageCount: Int, totalPages: Int): IntRange {
     val firstPage = maxOf(1, currentPage - surroundingPageCount)
-    val lastPage = if (hasNextPage) currentPage + surroundingPageCount else currentPage
+    val lastPage = minOf(totalPages, currentPage + surroundingPageCount)
     return firstPage..lastPage
 }
