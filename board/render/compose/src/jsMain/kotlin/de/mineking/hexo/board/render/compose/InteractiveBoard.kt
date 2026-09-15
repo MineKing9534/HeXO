@@ -110,8 +110,8 @@ fun InteractiveBoard(
             }
 
             val color = when {
-                modifiers.ctrlKey -> CellOwner.X
-                modifiers.altKey || modifiers.shiftKey -> CellOwner.O
+                modifiers.ctrlKey || modifiers.shiftKey -> CellOwner.X
+                modifiers.altKey -> CellOwner.O
                 else -> null
             }
 

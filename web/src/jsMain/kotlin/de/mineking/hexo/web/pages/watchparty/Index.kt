@@ -14,6 +14,7 @@ import de.mineking.hexo.watchparty.common.WatchPartyId
 import de.mineking.hexo.web.components.Anchor
 import de.mineking.hexo.web.components.CopyButton
 import de.mineking.hexo.web.components.LoadingIndicator
+import de.mineking.hexo.web.components.LoadingIndicatorSize
 import de.mineking.hexo.web.components.StatusCard
 import de.mineking.hexo.web.components.TextInput
 import de.mineking.hexo.web.icons.BroadcastIcon
@@ -129,27 +130,10 @@ private fun VisibleButton(visible: Boolean, onVisibleChange: (Boolean) -> Unit) 
 @Composable
 private fun WatchPartyCard() {
     StatusCard({ classes("lg:max-w-4xl") }) {
-        Div({ classes("flex", "max-w-2xl", "flex-col", "items-center", "gap-3", "text-center") }) {
-            Span({
-                classes(
-                    "grid", "size-12", "place-items-center", "rounded-xl", "border", "border-emerald-400/40",
-                    "bg-emerald-500/15", "text-emerald-300", "shadow-lg", "shadow-emerald-950/20",
-                )
-            }) {
-                BroadcastIcon { classes("size-6") }
-            }
-            Div {
-                P({ classes("mb-1", "text-xs", "font-bold", "uppercase", "tracking-[0.2em]", "text-emerald-400") }) {
-                    Text("Live board sync")
-                }
-                H1({ classes("text-3xl", "font-extrabold", "tracking-tight", "text-slate-100", "sm:text-4xl") }) {
-                    Text("Watch together")
-                }
-            }
-            P({ classes("max-w-xl", "text-sm", "leading-relaxed", "text-slate-400", "sm:text-base") }) {
-                Text("Share a board in real time. Everyone follows the same game, move, highlights, and sandbox position.")
-            }
-        }
+        WatchPartyHero(
+            title = "Watch together",
+            description = "Share a board in real time. Everyone follows the same game, move, highlights, and sandbox position.",
+        )
 
         Div({ classes("mt-3", "grid", "w-full", "gap-4", "md:grid-cols-2") }) {
             JoinWatchPartyPanel()
@@ -159,11 +143,36 @@ private fun WatchPartyCard() {
 }
 
 @Composable
+internal fun WatchPartyHero(title: String, description: String) {
+    Div({ classes("flex", "max-w-2xl", "flex-col", "items-center", "gap-3", "text-center") }) {
+        Span({
+            classes(
+                "grid", "size-10", "place-items-center", "rounded-xl", "border", "border-emerald-400/40",
+                "bg-emerald-500/15", "text-emerald-300", "shadow-lg", "shadow-emerald-950/20", "sm:size-12",
+            )
+        }) {
+            BroadcastIcon { classes("size-6") }
+        }
+        Div {
+            P({ classes("mb-1", "text-xs", "font-bold", "uppercase", "tracking-[0.2em]", "text-emerald-400") }) {
+                Text("Live board sync")
+            }
+            H1({ classes("text-2xl", "font-extrabold", "tracking-tight", "text-slate-100", "sm:text-4xl") }) {
+                Text(title)
+            }
+        }
+        P({ classes("max-w-xl", "text-sm", "leading-relaxed", "text-slate-400", "sm:text-base") }) {
+            Text(description)
+        }
+    }
+}
+
+@Composable
 private fun JoinWatchPartyPanel() {
     Div({
         classes(
             "flex", "min-w-0", "flex-col", "gap-4", "rounded-xl", "border", "border-sky-500/30",
-            "bg-sky-500/5", "p-5", "text-left",
+            "bg-sky-500/5", "p-4", "text-left", "sm:p-5",
         )
     }) {
         Div {
@@ -186,7 +195,7 @@ private fun HostWatchPartyPanel() {
     Div({
         classes(
             "flex", "min-w-0", "flex-col", "gap-4", "rounded-xl", "border", "border-emerald-500/30",
-            "bg-emerald-500/5", "p-5", "text-left",
+            "bg-emerald-500/5", "p-4", "text-left", "sm:p-5",
         )
     }) {
         Div({ classes("flex-1") }) {
@@ -229,7 +238,7 @@ private fun CreateWatchPartyButton(loading: Boolean, onClick: () -> Unit) {
         onClick { if (!loading) onClick() }
     }) {
         if (loading) {
-            LoadingIndicator { classes("size-5", "border-4!") }
+            LoadingIndicator(LoadingIndicatorSize.Small)
             Text("Creating...")
         } else {
             PlusIcon { classes("size-4", "shrink-0") }

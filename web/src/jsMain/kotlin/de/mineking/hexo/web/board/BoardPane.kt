@@ -6,6 +6,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.isExporting
+import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.GamePosition
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
@@ -14,6 +15,7 @@ import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
+import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.take
 import de.mineking.hexo.game.model.game.GameMove
 import de.mineking.hexo.game.model.game.GameWithPosition
@@ -25,15 +27,19 @@ import de.mineking.hexo.web.icons.ClearHighlightsIcon
 import de.mineking.hexo.web.icons.EnterFullscreenIcon
 import de.mineking.hexo.web.icons.ExitFullscreenIcon
 import de.mineking.hexo.web.icons.ResetViewIcon
+import de.mineking.hexo.web.icons.SandboxIcon
+import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
+import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.AttrBuilderContext
 import org.jetbrains.compose.web.dom.Div
 import org.w3c.dom.HTMLButtonElement
 import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.HTMLDivElement
+import org.w3c.dom.url.URL
 
 @Composable
 fun GameWithPosition.rememberPosition(move: Int): GamePosition<GameMove> {
@@ -52,12 +58,14 @@ fun BoardViewManager.transformBoard(key: Any, transform: (Board) -> Board): Boar
 
 @Composable
 fun BoardActionButton(
+    tooltip: String,
     enabled: Boolean = true,
     color: Color = Color.Neutral,
     attrs: AttrBuilderContext<HTMLButtonElement>? = null,
     onClick: () -> Unit,
     content: @Composable () -> Unit,
 ) = ActionButton(
+    tooltip = tooltip,
     enabled = enabled,
     size = ButtonSize.Medium,
     color = color,
@@ -73,6 +81,8 @@ fun BoardActionButton(
 fun BoardPane(
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
+    plain: Boolean = false,
+    showOpenInSandbox: Boolean = true,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
@@ -87,7 +97,7 @@ fun BoardPane(
                 "bg-linear-to-br", "from-slate-900", "to-slate-900/30", "shadow-2xl", "shadow-black/30", "h-full",
             )
         }) {
-            LoadingIndicator { classes("size-9") }
+            LoadingIndicator()
         }
     }
 
@@ -116,7 +126,7 @@ fun BoardPane(
             },
         ) {
             content?.invoke(this)
-            DefaultBoardControls(boardViewManager, onViewportChange)
+            DefaultBoardControls(boardViewManager, plain, showOpenInSandbox, onViewportChange)
         }
 
         @Composable
@@ -140,22 +150,41 @@ fun BoardPane(
 @Composable
 private fun DefaultBoardControls(
     boardViewManager: BoardViewManager,
+    plain: Boolean,
+    showOpenInSandbox: Boolean,
     onViewportChange: (BoardViewport) -> Unit,
 ) {
     Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
         if (boardViewManager.hasClearableHighlights) {
-            BoardActionButton(onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
+            BoardActionButton(tooltip = "Clear highlights", onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
                 ClearHighlightsIcon { classes("size-4") }
             }
         }
 
-        BoardActionButton(onClick = {
+        if (showOpenInSandbox) OpenInSandboxButton(boardViewManager.board)
+
+        BoardActionButton(tooltip = "Reset board view", onClick = {
             onViewportChange(BoardViewport())
         }) {
             ResetViewIcon { classes("size-4") }
         }
 
-        FullScreenButton()
+        if (!plain) FullScreenButton()
+    }
+}
+
+@Composable
+private fun OpenInSandboxButton(board: Board) {
+    BoardActionButton(
+        tooltip = "Open this position in the sandbox",
+        onClick = {
+            val url = URL("${window.location.origin}${BasePath.prependTo(AppRoute.Sandbox.href)}")
+            val notation = board.renderRectilinearStateBKETurnNotation()
+            url.searchParams.set("position", notation.replace("/", "_"))
+            window.open(url.toString(), "_blank")
+        },
+    ) {
+        SandboxIcon { classes("size-4") }
     }
 }
 
@@ -170,7 +199,10 @@ private fun FullScreenButton() {
         onDispose { layout.supportsFullScreen = previousSupportsFullScreen }
     }
 
-    BoardActionButton(onClick = { layout.fullscreen = !layout.fullscreen }) {
+    BoardActionButton(
+        tooltip = if (layout.fullscreen) "Exit fullscreen" else "Enter fullscreen",
+        onClick = { layout.fullscreen = !layout.fullscreen },
+    ) {
         if (layout.fullscreen) {
             ExitFullscreenIcon { classes("size-4") }
         } else {

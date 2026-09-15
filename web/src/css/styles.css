@@ -1,6 +1,67 @@
 @import "tailwindcss";
 
+@layer base {
+    body {
+        background: var(--color-slate-950);
+    }
+}
+
 @layer components {
+    @keyframes game-preview-enter {
+        from {
+            opacity: 0;
+            transform: translateX(1.25rem) scale(0.985);
+        }
+
+        to {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+    }
+
+    @keyframes game-preview-exit {
+        from {
+            opacity: 1;
+            transform: translateX(0) scale(1);
+        }
+
+        to {
+            opacity: 0;
+            transform: translateX(1.25rem) scale(0.985);
+        }
+    }
+
+    .game-preview-enter {
+        animation: game-preview-enter 220ms cubic-bezier(0.16, 1, 0.3, 1) both;
+        transform-origin: center left;
+    }
+
+    .game-preview-exit {
+        animation: game-preview-exit 180ms ease-in both;
+        pointer-events: none;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+        .game-preview-enter,
+        .game-preview-exit {
+            animation-duration: 1ms;
+        }
+    }
+
+    .hexo-app-background {
+        background-color: var(--color-slate-950);
+        background-image:
+            radial-gradient(circle at 4% 28%, rgb(251 193 57 / 7%) 0, rgb(251 193 57 / 3%) 22%, transparent 48%),
+            radial-gradient(ellipse 38% 62% at -8% 30%, rgb(251 193 57 / 5%), transparent 72%),
+            radial-gradient(circle at 94% 13%, rgb(56 189 248 / 5%) 0, rgb(56 189 248 / 2%) 24%, transparent 50%),
+            radial-gradient(ellipse 48% 42% at 104% 4%, rgb(56 189 248 / 3%), transparent 74%),
+            radial-gradient(circle at 58% 104%, rgb(236 111 177 / 4%) 0, rgb(236 111 177 / 2%) 26%, transparent 52%),
+            radial-gradient(ellipse 48% 34% at 62% 112%, rgb(236 111 177 / 3%), transparent 76%),
+            url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='90' height='78' viewBox='0 0 90 78'%3E%3Cg fill='none' stroke='%23232d43' stroke-opacity='.08' stroke-width='1'%3E%3Cpath d='M22 1l17 10v20L22 41 5 31V11z'/%3E%3Cpath d='M68 38l17 10v20L68 78 51 68V48z'/%3E%3C/g%3E%3C/svg%3E");
+        background-size: auto, auto, auto, auto, auto, auto, 12.75rem 11.05rem;
+        background-position: center;
+    }
+
     .hexo-checkbox {
         @apply size-4 shrink-0 cursor-pointer appearance-none rounded-md border border-slate-600 bg-slate-950 transition;
 

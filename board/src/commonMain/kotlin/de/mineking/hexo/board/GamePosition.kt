@@ -28,7 +28,37 @@ data class GamePosition<out M : Move>(
 )
 
 val <M : Move> GamePosition<M>.moves get() = turns.flatMap { it.moves }
-fun <M : Move> GamePosition<M>.take(maxMoves: Int) = moves.take(maxMoves).toGamePosition()
+fun <M : Move> GamePosition<M>.take(maxMoves: Int): GamePosition<M> {
+    require(maxMoves >= 0) { "Requested move count $maxMoves is less than zero." }
+
+    val selectedTurns = mutableListOf<Turn<M>>()
+    var remainingMoves = maxMoves
+    for (turn in turns) {
+        if (remainingMoves == 0) {
+            val next = selectedTurns
+                .lastOrNull()
+                ?.takeUnless { it.isComplete() }
+                ?.meta
+                ?: turn.meta.copy(placementsRemaining = turn.moves.size + turn.meta.placementsRemaining)
+
+            return GamePosition(selectedTurns, next)
+        }
+
+        if (remainingMoves < turn.moves.size) {
+            val meta = turn.meta.copy(placementsRemaining = turn.meta.placementsRemaining + turn.moves.size - remainingMoves)
+            selectedTurns += turn.copy(
+                meta = meta,
+                moves = turn.moves.take(remainingMoves),
+            )
+            return GamePosition(selectedTurns, meta)
+        }
+
+        selectedTurns += turn
+        remainingMoves -= turn.moves.size
+    }
+
+    return this
+}
 
 fun GamePosition<*>.toBoard(
     focusWinningRows: Boolean = true,
@@ -75,7 +105,7 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPos
             turns += Turn(
                 meta = TurnMetaData(
                     player = expected,
-                    placementsRemaining = (movesPerTurn - cells.size).coerceIn(0, movesPerTurn),
+                    placementsRemaining = ((if (turn == 0) 1 else movesPerTurn) - cells.size).coerceIn(0, movesPerTurn),
                     turn = turn,
                 ),
                 moves = cells.map { Move(it.key, expected) },
@@ -126,7 +156,7 @@ fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN
             meta = TurnMetaData(
                 player = player,
                 turn = index,
-                placementsRemaining = (movesPerTurn - cells.size).coerceIn(0, movesPerTurn),
+                placementsRemaining = ((if (index == 0) 1 else movesPerTurn) - cells.size).coerceIn(0, movesPerTurn),
             ),
             moves = cells,
         )

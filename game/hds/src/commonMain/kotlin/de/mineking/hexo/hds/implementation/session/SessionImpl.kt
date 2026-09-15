@@ -16,6 +16,8 @@ import de.mineking.hexo.game.model.session.LobbySession
 import de.mineking.hexo.game.model.session.RatingAdjustment
 import de.mineking.hexo.game.model.session.Session
 import de.mineking.hexo.game.model.session.SessionGame
+import de.mineking.hexo.game.model.session.SessionPlayer
+import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
 import de.mineking.hexo.game.model.session.SessionState
 import de.mineking.hexo.game.model.session.SessionTurn
 import de.mineking.hexo.game.model.session.hasStarted
@@ -28,6 +30,7 @@ import de.mineking.hexo.hds.implementation.game.PlayerImpl
 import de.mineking.hexo.hds.implementation.game.TournamentMatchSnapshotDto
 import de.mineking.hexo.hds.implementation.game.toModel
 import kotlin.time.Clock
+import kotlin.time.Duration
 
 internal abstract class BaseSessionImpl : Session {
     internal abstract val client: HdsApiClient
@@ -84,17 +87,35 @@ internal abstract class ObservedSessionImpl : BaseSessionImpl(), DetailedSession
             client: HdsApiClient,
             dto: SessionDto,
             gameState: SessionGameStateDto,
-        ) = when (dto.state) {
-            is SessionStateDto.Lobby -> LobbySessionImpl(client, dto, dto.state, gameState)
-            is SessionStateDto.GameSessionState -> LiveSessionImpl(client, dto, dto.state, gameState)
+        ) = when {
+            dto.players.isEmpty() && dto.tournament == null -> ClosedSessionImpl(client, dto, dto.state, gameState)
+            dto.state is SessionStateDto.Lobby -> LobbySessionImpl(client, dto, dto.state, gameState)
+            dto.state is SessionStateDto.GameSessionState -> LiveSessionImpl(client, dto, dto.state, gameState)
+            else -> error("impossible")
         }
     }
+}
+
+internal class ClosedSessionImpl(
+    override val client: HdsApiClient,
+    override val dto: SessionDto,
+    stateDto: SessionStateDto,
+    override val gameState: SessionGameStateDto,
+) : ObservedSessionImpl() {
+    override val id = dto.id
+    override val createdAt = stateDto.createdAt
+    override val startedAt = null
+    override val gameOptions = dto.gameOptions
+    override val tournament = dto.tournament?.toModel(client)
+
+    override val state = SessionState.Closed
+    override val players: List<SessionPlayer> = emptyList()
 }
 
 internal class LobbySessionImpl(
     override val client: HdsApiClient,
     override val dto: SessionDto,
-    private val stateDto: SessionStateDto.Lobby,
+    stateDto: SessionStateDto.Lobby,
     override val gameState: SessionGameStateDto,
 ) : ObservedSessionImpl(), LobbySession {
     override val id = dto.id
@@ -123,14 +144,27 @@ private fun createPlayerList(
         override val profileId: ProfileId,
         override val displayName: String,
         val tournamentWins: Int,
+        override val connectionStatus: SessionPlayerConnectionStatus,
     ) : AbstractSessionPlayerDto {
         override val playerId = PlayerId("")
-        override val elo = players.find { it.profileId == profileId }?.elo ?: -1
+        override val elo = players.find { it.profileId == profileId }?.elo ?: 0
     }
 
     listOf(
-        TournamentPlayer(tournament.leftProfileId, tournament.leftDisplayName, tournament.leftWins),
-        TournamentPlayer(tournament.rightProfileId, tournament.rightDisplayName, tournament.rightWins),
+        TournamentPlayer(
+            tournament.leftProfileId,
+            tournament.leftDisplayName,
+            tournament.leftWins,
+            players.find { it.profileId == tournament.leftProfileId }?.connectionStatus
+                ?: SessionPlayerConnectionStatus.Disconnected,
+        ),
+        TournamentPlayer(
+            tournament.rightProfileId,
+            tournament.rightDisplayName,
+            tournament.rightWins,
+            players.find { it.profileId == tournament.rightProfileId }?.connectionStatus
+                ?: SessionPlayerConnectionStatus.Disconnected,
+        ),
     ).mapIndexed { index, player ->
         LobbySessionPlayerImpl(
             client = client,
@@ -146,8 +180,9 @@ internal class LobbySessionPlayerImpl(
     dto: AbstractSessionPlayerDto,
     override val color: CellOwner,
     override val tournamentMatchWins: Int?,
-) : PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
+) : SessionPlayer, PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
     override val id = PlayerId("")
+    override val connectionStatus = dto.connectionStatus
 }
 
 internal class LiveSessionImpl(
@@ -193,6 +228,13 @@ internal class LiveSessionImpl(
                     } else {
                         gameState.playerTimeRemaining[data.id]
                     }
+            }?.let { time ->
+                if (stateDto is SessionStateDto.Finished && data.id == gameState.currentTurnPlayerId) {
+                    val elapsed = (stateDto.finishedAt - time.timestamp).coerceAtLeast(Duration.ZERO)
+                    LiveDuration((time.duration - elapsed).coerceAtLeast(Duration.ZERO), stateDto.finishedAt)
+                } else {
+                    time
+                }
             },
         )
     }
@@ -227,8 +269,9 @@ internal class LiveSessionPlayerImpl(
     override val tournamentMatchWins: Int?,
     override val timeRemaining: LiveDuration?,
 ) : LiveSessionPlayer, PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
+    override val elo = dto.elo.takeIf { it != 0 }
     override val ratingAdjustment = dto.ratingAdjustment?.let { RatingAdjustment(eloGain = it.eloGain, eloLoss = it.eloLoss) }
-    override val connectionStatus = dto.connection.status
+    override val connectionStatus = dto.connectionStatus
 }
 
 internal class SessionGameImpl(

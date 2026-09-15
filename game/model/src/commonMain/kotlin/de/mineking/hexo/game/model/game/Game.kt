@@ -52,7 +52,7 @@ interface Player {
     val id: PlayerId
     val profile: ProfileReference?
     val displayName: String
-    val elo: Int
+    val elo: Int?
     val color: CellOwner
     val tournamentMatchWins: Int?
 }
