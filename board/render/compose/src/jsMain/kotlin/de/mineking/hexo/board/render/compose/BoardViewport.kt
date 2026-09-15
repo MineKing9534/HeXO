@@ -336,7 +336,9 @@ private class BoardEventListeners(
     }
 
     private fun beginRightClickDrag(event: MouseEvent) {
-        rightClickDrag = RightClickDrag(start = cellAt(event.position()))
+        val start = cellAt(event.position())
+        rightClickDrag = RightClickDrag(start = start, lastEnd = start)
+        emitRightClick(start, start, BoardRightClickPhase.Drag)
     }
 
     private fun dragRightClickTo(to: Point, force: Boolean = false) {
