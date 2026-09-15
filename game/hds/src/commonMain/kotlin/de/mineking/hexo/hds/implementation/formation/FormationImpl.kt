@@ -2,8 +2,8 @@ package de.mineking.hexo.hds.implementation.formation
 
 import de.mineking.hexo.board.toGamePosition
 import de.mineking.hexo.game.model.formation.Formation
-import de.mineking.hexo.game.model.urlOf
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.urlOf
 
 internal class FormationImpl(
     client: HdsApiClient,

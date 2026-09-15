@@ -1,63 +1,48 @@
 package de.mineking.hexo.watchparty.server
 
-import de.mineking.hexo.board.Board
-import de.mineking.hexo.board.copy
-import de.mineking.hexo.board.plusAssign
-import de.mineking.hexo.utils.types.Omissible
-import de.mineking.hexo.watchparty.common.WatchPartyCellRequest
-import de.mineking.hexo.watchparty.common.WatchPartyClearHighlightsRequest
-import de.mineking.hexo.watchparty.common.WatchPartyData
-import de.mineking.hexo.watchparty.common.WatchPartyId
-import de.mineking.hexo.watchparty.common.WatchPartyLineHighlightRequest
-import de.mineking.hexo.watchparty.common.WatchPartyMoveCountRequest
-import de.mineking.hexo.watchparty.common.WatchPartyNavigateRequest
-import de.mineking.hexo.watchparty.common.WatchPartyNavigateTarget
-import de.mineking.hexo.watchparty.common.WatchPartyPingRequest
-import de.mineking.hexo.watchparty.common.WatchPartyRequest
-import de.mineking.hexo.watchparty.common.WatchPartyUpdateRequest
+import de.mineking.hexo.utils.socketio.server.SocketId
+import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
+import de.mineking.hexo.watchparty.model.WatchPartyId
+import de.mineking.hexo.watchparty.model.WatchPartyNavigateTarget
+import de.mineking.hexo.watchparty.protocol.WatchPartyCellRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyClearHighlightsRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyLineHighlightRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyMoveCountRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyNavigateRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyRedoRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyTransactionRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyUndoRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyUpdateRequest
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.sync.Mutex
-import kotlinx.coroutines.sync.withLock
 import java.util.concurrent.atomic.AtomicReference
 import kotlin.time.Duration
 
-@JvmInline
-internal value class WatchPartyConnectionId(val value: String)
+internal class WatchPartyRequestException(
+    override val message: String,
+    cause: Throwable? = null,
+) : Exception(message, cause)
 
-internal class WatchPartyRequestException(override val message: String) : Exception(message)
-
-internal class WatchPartySession private constructor(
-    private val state: MutableStateFlow<WatchPartyState>,
+internal class WatchPartySession(
+    val id: WatchPartyId,
     private val cleanupScope: CoroutineScope,
     private val connectionCleanupTimeout: Duration,
-    private val lock: Mutex = Mutex(),
-    private val removalJob: AtomicReference<Job?> = AtomicReference(null),
 ) {
+    val state = WatchPartyState(id)
+    private val removalJob: AtomicReference<Job?> = AtomicReference(null)
+
     private data class ConnectionState(
         var count: Int = 0,
         var cleanupJob: Job? = null,
+        var detachGeneration: Long? = null,
     )
 
     private val connectionLock = Any()
     private val connectionStates = mutableMapOf<WatchPartyConnectionId, ConnectionState>()
     private var removing = false
-
-    val id get() = state.value.id
-
-    constructor(
-        id: WatchPartyId,
-        cleanupScope: CoroutineScope,
-        connectionCleanupTimeout: Duration,
-    ) : this(
-        state = MutableStateFlow(WatchPartyState(id = id, target = null)),
-        cleanupScope = cleanupScope,
-        connectionCleanupTimeout = connectionCleanupTimeout,
-    )
 
     fun acquire(connectionId: WatchPartyConnectionId): Boolean {
         synchronized(connectionLock) {
@@ -67,6 +52,7 @@ internal class WatchPartySession private constructor(
                 count++
                 cleanupJob?.cancel()
                 cleanupJob = null
+                detachGeneration = null
             }
         }
         removalJob.getAndSet(null)?.cancel()
@@ -76,11 +62,15 @@ internal class WatchPartySession private constructor(
 
     private fun isUsed() = connectionStates.values.any { it.count > 0 }
 
-    fun release(connectionId: WatchPartyConnectionId): Boolean {
+    fun release(connectionId: WatchPartyConnectionId, detachOnClose: Boolean = false): Boolean {
+        val generation = state.snapshot(connectionId).generation.takeIf { detachOnClose }
+
         synchronized(connectionLock) {
             val connection = checkNotNull(connectionStates[connectionId])
             check(connection.count > 0)
             connection.count--
+
+            if (generation != null) connection.detachGeneration = generation
 
             if (connection.count == 0) scheduleConnectionCleanup(connectionId)
             return !isUsed()
@@ -110,153 +100,68 @@ internal class WatchPartySession private constructor(
         }
     }
 
-    private suspend fun removeHighlightsIfDisconnected(connectionId: WatchPartyConnectionId) {
-        update { state ->
+    private fun removeHighlightsIfDisconnected(connectionId: WatchPartyConnectionId) {
+        state.update(connectionId) {
             synchronized(connectionLock) {
-                if (connectionStates[connectionId]?.count != 0) return
+                val connection = connectionStates[connectionId] ?: return@update
+                if (connection.count != 0) return@update
 
                 connectionStates.remove(connectionId)
-                state.copy(target = state.target?.handleDisconnect(connectionId))
-            }
-        }
-    }
-
-    suspend inline fun update(block: (WatchPartyState) -> WatchPartyState) = lock.withLock {
-        state.update(block)
-    }
-
-    suspend fun collect(
-        connectionId: WatchPartyConnectionId,
-        block: suspend (WatchPartyData) -> Unit,
-    ): Nothing = state.collect { block(it.toDto(connectionId)) }
-
-    suspend fun apply(request: WatchPartyRequest, connectionId: WatchPartyConnectionId): Unit = update {
-        when (request) {
-            is WatchPartyNavigateRequest -> applyNavigateRequest(it, request)
-            is WatchPartyUpdateRequest -> applyUpdateRequest(it, request, connectionId)
-            is WatchPartyMoveCountRequest -> applyMoveCountRequest(it, request)
-            is WatchPartyCellRequest -> applyCellRequest(it, request, connectionId)
-            is WatchPartyLineHighlightRequest -> applyLineHighlightRequest(it, request, connectionId)
-            is WatchPartyClearHighlightsRequest -> applyClearHighlightsRequest(it, connectionId)
-            is WatchPartyPingRequest -> it
-        }
-    }
-
-    private fun applyNavigateRequest(
-        state: WatchPartyState,
-        request: WatchPartyNavigateRequest,
-    ): WatchPartyState {
-        return state.copy(target = when (val target = request.target) {
-            is WatchPartyNavigateTarget.Sandbox -> WatchPartyServerTarget.Sandbox(Board.withTurnNumbers())
-            is WatchPartyNavigateTarget.Game -> WatchPartyServerTarget.Game(
-                gameId = target.id,
-                move = Int.MAX_VALUE,
-            )
-            is WatchPartyNavigateTarget.Session -> WatchPartyServerTarget.Session(
-                sessionId = target.id,
-                move = Int.MAX_VALUE,
-            )
-            null -> null
-        })
-    }
-
-    private fun applyUpdateRequest(
-        state: WatchPartyState,
-        request: WatchPartyUpdateRequest,
-        connectionId: WatchPartyConnectionId,
-    ): WatchPartyState {
-        val target = state.target
-            ?: throw WatchPartyRequestException("no watchparty target")
-
-        return state.copy(target = when (target) {
-            is WatchPartyServerTarget.AbstractGameTarget -> target.copy(
-                overlay = WatchPartyOverlay.fromBoard(request.board.removeOwners(), connectionId),
-            )
-            is WatchPartyServerTarget.Sandbox -> target.copy(board = request.board)
-        })
-    }
-
-    private fun applyMoveCountRequest(
-        state: WatchPartyState,
-        request: WatchPartyMoveCountRequest,
-    ): WatchPartyState {
-        if (state.target !is WatchPartyServerTarget.AbstractGameTarget) throw WatchPartyRequestException("invalid watchparty target")
-        return state.copy(target = state.target.copy(move = request.move))
-    }
-
-    private fun applyCellRequest(
-        state: WatchPartyState,
-        request: WatchPartyCellRequest,
-        connectionId: WatchPartyConnectionId,
-    ): WatchPartyState {
-        val target = state.target
-            ?: throw WatchPartyRequestException("no watchparty target")
-
-        return state.copy(target = when (target) {
-            is WatchPartyServerTarget.AbstractGameTarget -> {
-                val highlight = request.cell.highlight
-
-                if (highlight is Omissible.Present) {
-                    target.copy(
-                        overlay = target.overlay.updateCell(
-                            coordinate = request.coordinate,
-                            highlight = highlight.value,
-                            author = connectionId,
-                        ),
-                    )
+                if (connection.detachGeneration == generation) {
+                    target = null
                 } else {
-                    target
+                    target?.handleDisconnect()
                 }
             }
-            is WatchPartyServerTarget.Sandbox -> target.copy(board = target.board.copy().apply {
-                this@apply[request.coordinate] += request.cell.copy()
-            })
-        })
+        }
     }
 
-    private fun applyLineHighlightRequest(
-        state: WatchPartyState,
-        request: WatchPartyLineHighlightRequest,
+    fun apply(
+        action: WatchPartyRequest,
         connectionId: WatchPartyConnectionId,
-    ): WatchPartyState {
-        val target = state.target
-            ?: throw WatchPartyRequestException("no watchparty target")
+        origin: SocketId,
+        expectedGeneration: Long? = null,
+    ) {
+        state.update(connectionId, origin) {
+            if (action is WatchPartyNavigateRequest) {
+                if (!target.matches(action.target)) target = action.target.toServerTarget()
+                return@update
+            }
 
-        fun Board.applyRequest() = copy().apply {
-            if (request.remove) {
-                lineHighlights -= request.line
-            } else {
-                lineHighlights += request.line
+            if (expectedGeneration != null && expectedGeneration != generation) {
+                throw WatchPartyRequestException("Watch party target changed")
+            }
+
+            val current = target ?: throw WatchPartyRequestException("no watchparty target")
+            when (action) {
+                is WatchPartyMoveCountRequest -> current.setMove(action.move)
+                is WatchPartyUndoRequest -> current.undo()
+                is WatchPartyRedoRequest -> current.redo()
+                is WatchPartyTransactionRequest -> current.transaction(action.actions.map { it.toEdit() })
+                else -> action.toEdit().apply(current)
             }
         }
-
-        return state.copy(target = when (target) {
-            is WatchPartyServerTarget.AbstractGameTarget -> {
-                val overlay = if (request.remove) {
-                    target.overlay.removeLine(request.line)
-                } else {
-                    target.overlay.addLine(request.line, connectionId)
-                }
-
-                target.copy(overlay = overlay)
-            }
-            is WatchPartyServerTarget.Sandbox -> target.copy(board = target.board.applyRequest())
-        })
-    }
-
-    private fun applyClearHighlightsRequest(
-        state: WatchPartyState,
-        connectionId: WatchPartyConnectionId,
-    ): WatchPartyState {
-        val target = state.target
-            ?: throw WatchPartyRequestException("no watchparty target")
-
-        return state.copy(target = target.clearHighlightsBy(connectionId))
     }
 }
 
-private fun Board.removeOwners() = copy().apply {
-    cells.forEach { (_, cell) ->
-        cell.owner = null
-    }
+private fun WatchPartyRequest.toEdit(): WatchPartyEdit = when (this) {
+    is WatchPartyUpdateRequest -> WatchPartyEdit.ReplaceBoard(board)
+    is WatchPartyCellRequest -> WatchPartyEdit.UpdateCell(coordinate, cell)
+    is WatchPartyLineHighlightRequest -> WatchPartyEdit.HighlightLine(line, remove)
+    is WatchPartyClearHighlightsRequest -> WatchPartyEdit.ClearHighlights
+    else -> throw WatchPartyRequestException("invalid sandbox transaction")
+}
+
+private fun WatchPartyNavigateTarget?.toServerTarget(): WatchPartyServerTarget? = when (this) {
+    is WatchPartyNavigateTarget.Sandbox -> WatchPartyServerTarget.Sandbox()
+    is WatchPartyNavigateTarget.Game -> WatchPartyServerTarget.Game(id)
+    is WatchPartyNavigateTarget.Session -> WatchPartyServerTarget.Session(id)
+    null -> null
+}
+
+private fun WatchPartyServerTarget?.matches(destination: WatchPartyNavigateTarget?): Boolean = when (destination) {
+    is WatchPartyNavigateTarget.Sandbox -> this is WatchPartyServerTarget.Sandbox
+    is WatchPartyNavigateTarget.Game -> this is WatchPartyServerTarget.Game && gameId == destination.id
+    is WatchPartyNavigateTarget.Session -> this is WatchPartyServerTarget.Session && sessionId == destination.id
+    null -> this == null
 }

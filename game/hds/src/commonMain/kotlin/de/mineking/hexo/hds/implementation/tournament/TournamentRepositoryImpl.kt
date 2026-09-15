@@ -1,6 +1,5 @@
 package de.mineking.hexo.hds.implementation.tournament
 
-import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.tournament.Tournament
 import de.mineking.hexo.game.model.tournament.TournamentId
 import de.mineking.hexo.game.model.tournament.TournamentNotFoundError
@@ -8,9 +7,9 @@ import de.mineking.hexo.game.model.tournament.TournamentRepository
 import de.mineking.hexo.game.model.tournament.isTerminal
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.socket.TournamentUpdate
-import de.mineking.hexo.hds.implementation.socket.listen
 import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.isSuccess
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import kotlinx.atomicfu.locks.SynchronizedObject
@@ -22,7 +21,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
     override val url = "${client.publicUrl}/tournaments"
 
     init {
-        client.socketClient?.listen<TournamentUpdate> { event ->
+        client.client.socketClient?.listen<TournamentUpdate> { (event) ->
             val isObserved = cacheLock.withLock { event.tournamentId in cache }
             if (isObserved) {
                 client.coroutineScope.launch {
@@ -56,7 +55,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
     override suspend fun getTournament(id: TournamentId) = requester.fetch(id).successIfNotNullOrElse(TournamentNotFoundError)
 
     override fun observeTournament(id: TournamentId): StateFlow<EntityState<Tournament>> {
-        if (client.socketClient == null) error("Cannot observe tournaments without a SocketIO connection")
+        if (client.client.socketClient == null) error("Cannot observe tournaments without a SocketIO connection")
 
         var shouldStartFetch = false
         val flow = cacheLock.withLock {

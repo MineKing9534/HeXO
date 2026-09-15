@@ -16,7 +16,6 @@ import de.mineking.hexo.web.board.AnalysedBoardPane
 import de.mineking.hexo.web.board.BoardActionButton
 import de.mineking.hexo.web.board.GamePlayer
 import de.mineking.hexo.web.board.SandboxBoardViewManager
-import de.mineking.hexo.web.board.transformBoard
 import de.mineking.hexo.web.icons.RedoIcon
 import de.mineking.hexo.web.icons.UndoIcon
 import de.mineking.hexo.web.settings.SettingsKey
@@ -27,7 +26,7 @@ private val sandboxPlayers = CellOwner.entries.associateWith { GamePlayer(it.sym
 
 @Composable
 internal fun SandboxBoardPane(
-    history: SandboxHistory,
+    boardViewManager: SandboxBoardViewManager,
     placementMode: CellPlacementMode,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
@@ -35,34 +34,33 @@ internal fun SandboxBoardPane(
     val shouldAnalyze by SettingsKey.SandboxAnalyzer.collectAsState()
 
     AnalysedBoardPane(
-        boardViewManager = history.transformBoard(Unit) {
-            it.copy().focusWinningRows()
-        },
+        board = boardViewManager.board.copy().focusWinningRows(),
+        boardViewManager = boardViewManager,
         readOnly = false,
         showOpenInSandbox = false,
         allowAnalyzerOverlay = true,
-        turn = if (shouldAnalyze) placementMode.analyzerTurn(history.board) else null,
+        turn = if (shouldAnalyze) placementMode.analyzerTurn(boardViewManager.board) else null,
         players = sandboxPlayers,
         viewport = viewport,
         onViewportChange = onViewportChange,
         onBoardInteraction = { interaction ->
-            history.transaction {
+            boardViewManager.transaction {
                 when (interaction) {
-                    is BoardInteraction.PlaceCell -> history.placeCell(
+                    is BoardInteraction.PlaceCell -> boardViewManager.placeCell(
                         interaction.coordinate,
                         interaction.modifiers,
                         placementMode,
                     )
-                    is BoardInteraction.HighlightBoardInteraction -> history.apply(interaction)
+                    is BoardInteraction.HighlightBoardInteraction -> boardViewManager.apply(interaction)
                 }
             }
         },
     ) {
         Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
-            BoardActionButton(tooltip = "Undo", enabled = history.canUndo(), onClick = history::undo) {
+            BoardActionButton(tooltip = "Undo", enabled = boardViewManager.canUndo(), onClick = boardViewManager::undo) {
                 UndoIcon { classes("size-4") }
             }
-            BoardActionButton(tooltip = "Redo", enabled = history.canRedo(), onClick = history::redo) {
+            BoardActionButton(tooltip = "Redo", enabled = boardViewManager.canRedo(), onClick = boardViewManager::redo) {
                 RedoIcon { classes("size-4") }
             }
         }

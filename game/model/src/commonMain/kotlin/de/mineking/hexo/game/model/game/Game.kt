@@ -4,11 +4,11 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.GamePosition
 import de.mineking.hexo.board.Move
-import de.mineking.hexo.game.model.EntityId
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.tournament.TournamentMatchInfo
 import de.mineking.hexo.game.model.tournament.TournamentReference
+import de.mineking.hexo.utils.types.EntityId
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline

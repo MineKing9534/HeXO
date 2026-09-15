@@ -31,6 +31,7 @@ import de.mineking.hexo.web.icons.SandboxIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.rememberAppLayout
 import de.mineking.hexo.web.rememberTheme
+import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
@@ -44,16 +45,6 @@ import org.w3c.dom.url.URL
 @Composable
 fun GameWithPosition.rememberPosition(move: Int): GamePosition<GameMove> {
     return remember(this, move) { position.take(move) }
-}
-
-@Composable
-fun BoardViewManager.transformBoard(key: Any, transform: (Board) -> Board): BoardViewManager {
-    val board = remember(board, key) { transform(board) }
-    return remember(board) {
-        object : BoardViewManager by this {
-            override val board = board
-        }
-    }
 }
 
 @Composable
@@ -79,6 +70,7 @@ fun BoardActionButton(
 
 @Composable
 fun BoardPane(
+    board: Board,
     boardViewManager: BoardViewManager,
     readOnly: Boolean,
     plain: Boolean = false,
@@ -111,7 +103,7 @@ fun BoardPane(
         )
     }) {
         InteractiveBoard(
-            board = boardViewManager.board,
+            board = board,
             viewport = viewport,
             onViewportChange = onViewportChange,
             onBoardInteraction = onBoardInteraction,
@@ -126,7 +118,13 @@ fun BoardPane(
             },
         ) {
             content?.invoke(this)
-            DefaultBoardControls(boardViewManager, plain, showOpenInSandbox, onViewportChange)
+            DefaultBoardControls(
+                board = board,
+                boardViewManager = boardViewManager,
+                plain = plain,
+                showOpenInSandbox = showOpenInSandbox,
+                onViewportChange = onViewportChange,
+            )
         }
 
         @Composable
@@ -149,6 +147,7 @@ fun BoardPane(
 
 @Composable
 private fun DefaultBoardControls(
+    board: Board,
     boardViewManager: BoardViewManager,
     plain: Boolean,
     showOpenInSandbox: Boolean,
@@ -161,7 +160,7 @@ private fun DefaultBoardControls(
             }
         }
 
-        if (showOpenInSandbox) OpenInSandboxButton(boardViewManager.board)
+        if (showOpenInSandbox) OpenInSandboxButton(board)
 
         BoardActionButton(tooltip = "Reset board view", onClick = {
             onViewportChange(BoardViewport())
@@ -175,13 +174,15 @@ private fun DefaultBoardControls(
 
 @Composable
 private fun OpenInSandboxButton(board: Board) {
+    val watchPartyController = rememberWatchPartyController()
+
     BoardActionButton(
         tooltip = "Open this position in the sandbox",
         onClick = {
             val url = URL("${window.location.origin}${BasePath.prependTo(AppRoute.Sandbox.href)}")
             val notation = board.renderRectilinearStateBKETurnNotation()
             url.searchParams.set("position", notation.replace("/", "_"))
-            window.open(url.toString(), "_blank")
+            window.open(url.toString(), if (watchPartyController.hostWatchParty == null) "_blank" else "_self")
         },
     ) {
         SandboxIcon { classes("size-4") }

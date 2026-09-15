@@ -12,8 +12,7 @@ import com.varabyte.kobweb.core.isExporting
 import de.mineking.hexo.game.model.RepositoryContainer
 import de.mineking.hexo.hds.implementation.DEFAULT_HDS_HOST
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.hds.implementation.socket.SocketIOOptions
-import de.mineking.hexo.hds.implementation.socket.connectSocketClient
+import de.mineking.hexo.hds.implementation.HdsHttpClient
 import de.mineking.hexo.web.audio.SoundPlayer
 import de.mineking.hexo.web.pages.NotFoundPage
 import de.mineking.hexo.web.pages.initNotFoundPage
@@ -45,8 +44,8 @@ private fun rememberSharedHdsApiClient(): HdsApiClient? {
         key = apiUrl,
         initialState = null,
         load = {
-            val socketClient = connectSocketClient(options = SocketIOOptions.createDefault(apiUrl))
-            HdsApiClient(apiUrl = apiUrl, publicUrl = DEFAULT_HDS_HOST, socketClient = socketClient)
+            val client = HdsHttpClient.createDefault(apiUrl).withSocketClient()
+            HdsApiClient(client = client, publicUrl = DEFAULT_HDS_HOST)
         },
         dispose = { it?.shutdown() },
     )

@@ -12,14 +12,14 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.game.model.EntityState
 import de.mineking.hexo.game.model.game.FinishedGameWithPosition
 import de.mineking.hexo.game.model.game.GameId
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.map
 import de.mineking.hexo.utils.types.orElse
 import de.mineking.hexo.web.board.GameBoardPane
 import de.mineking.hexo.web.board.GameBoardViewManager
-import de.mineking.hexo.web.board.rememberHostBoardViewManager
+import de.mineking.hexo.web.board.rememberGameBoardViewManager
 import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.LoadingCard
 import de.mineking.hexo.web.components.NotFoundCard
@@ -40,7 +40,7 @@ fun initGamePage(ctx: InitRouteContext) {
 @Page("{id}")
 @Composable
 fun GamePage(ctx: PageContext) {
-    val boardViewManager = rememberHostBoardViewManager<GameBoardViewManager>()
+    val boardViewManager = rememberGameBoardViewManager()
     val gameId = ctx.route.gameId
     var move by rememberQueryParameter("move").map(
         transform = { it?.toIntOrNull() ?: Int.MAX_VALUE },
@@ -79,7 +79,6 @@ fun Game(id: GameId, boardViewManager: GameBoardViewManager) {
         is EntityState.Loading -> LoadingState()
         is EntityState.NotFound -> NotFoundState()
         is EntityState.Data -> {
-            val move = boardViewManager.currentMove.coerceIn(0, state.value.moveCount)
             GameBoardPane(state.value, isLive = false, boardViewManager = boardViewManager)
             FinishedGameOverlay(state.value)
         }

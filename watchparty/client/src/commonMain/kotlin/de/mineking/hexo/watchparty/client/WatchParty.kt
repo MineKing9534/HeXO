@@ -1,108 +1,92 @@
 package de.mineking.hexo.watchparty.client
 
-import de.mineking.hexo.board.Board
-import de.mineking.hexo.board.CellCoordinate
-import de.mineking.hexo.board.CellOverride
-import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.game.model.Entity
-import de.mineking.hexo.watchparty.common.WatchPartyCellRequest
-import de.mineking.hexo.watchparty.common.WatchPartyClearHighlightsRequest
-import de.mineking.hexo.watchparty.common.WatchPartyData
-import de.mineking.hexo.watchparty.common.WatchPartyId
-import de.mineking.hexo.watchparty.common.WatchPartyLineHighlightRequest
-import de.mineking.hexo.watchparty.common.WatchPartyMoveCountRequest
-import de.mineking.hexo.watchparty.common.WatchPartyNavigateRequest
-import de.mineking.hexo.watchparty.common.WatchPartyNavigateTarget
-import de.mineking.hexo.watchparty.common.WatchPartyRequest
-import de.mineking.hexo.watchparty.common.WatchPartyUpdateRequest
-import io.ktor.client.plugins.websocket.DefaultClientWebSocketSession
-import io.ktor.client.plugins.websocket.sendSerialized
-import io.ktor.websocket.close
+import de.mineking.hexo.utils.socketio.client.SocketIOClient
+import de.mineking.hexo.utils.types.Entity
+import de.mineking.hexo.watchparty.model.WatchPartyId
+import de.mineking.hexo.watchparty.model.WatchPartyNavigateTarget
+import de.mineking.hexo.watchparty.protocol.WatchPartyAcknowledgement
+import de.mineking.hexo.watchparty.protocol.WatchPartyDto
+import de.mineking.hexo.watchparty.protocol.WatchPartyNavigateRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyRequest
+import de.mineking.hexo.watchparty.protocol.WatchPartyResponse
+import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.atomicfu.locks.synchronized
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 
 data class WatchPartyCloseReason(val closedByServer: Boolean)
+class WatchPartyRequestException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
 class WatchParty internal constructor(
     private val client: WatchPartyClient,
-    private var wsSession: DefaultClientWebSocketSession,
-    data: WatchPartyData,
+    val socket: SocketIOClient<WatchPartyResponse, WatchPartyRequest>,
+    data: WatchPartyDto,
 ) : Entity<WatchPartyId> {
+    val connected = socket.connected
+
     private val onClose = mutableListOf<(WatchPartyCloseReason) -> Unit>()
+    private val stateLock = SynchronizedObject()
     private var closed = false
+    private val confirmedState = ConfirmedWatchPartyState(data)
 
-    val connected: StateFlow<Boolean>
-        field = MutableStateFlow(true)
+    val target: StateFlow<WatchPartyTarget?>
+        field = MutableStateFlow(AbstractWatchPartyTargetImpl.of(this, data))
 
-    val data: StateFlow<WatchPartyData>
-        field = MutableStateFlow(data)
-
-    internal val isClosed get() = closed
-
-    override val id get() = data.value.id
+    override val id = data.id
     override val url get() = "${client.host}/watchparty/${id.value}"
 
     internal fun onClosed(reason: WatchPartyCloseReason) {
-        closed = true
-        connected.value = false
-        onClose.forEach { it(reason) }
-        onClose.clear()
+        val callbacks = synchronized(stateLock) {
+            if (closed) return
+            closed = true
+            onClose.toList().also { onClose.clear() }
+        }
+        socket.disconnect()
+        callbacks.forEach { it(reason) }
     }
 
-    internal fun onDisconnected() {
-        connected.value = false
+    internal fun onData(data: WatchPartyDto) {
+        synchronized(stateLock) {
+            if (closed) return
+            if (confirmedState.update(data)) {
+                target.value = AbstractWatchPartyTargetImpl.of(this, confirmedState.data)
+            }
+        }
     }
 
-    internal fun onReconnected(session: DefaultClientWebSocketSession, initial: WatchPartyData) {
-        wsSession = session
-        data.value = initial
-        connected.value = true
-    }
+    @Suppress("ThrowsCount")
+    internal suspend fun request(action: WatchPartyRequest, generation: Long?) {
+        synchronized(stateLock) {
+            if (!socket.connected.value || closed) {
+                throw WatchPartyRequestException("Watch party is not connected")
+            }
+        }
 
-    internal fun onData(data: WatchPartyData) {
-        this.data.value = data
-    }
+        @Suppress("TooGenericExceptionCaught")
+        try {
+            val ack = socket.requestAwait<WatchPartyAcknowledgement>(action, generation?.toString() ?: "")
+            onData(ack.state)
 
-    private suspend fun request(request: WatchPartyRequest) {
-        wsSession.sendSerialized(request)
-    }
-
-    suspend fun updateCell(coordinate: CellCoordinate, cell: CellOverride) {
-        request(WatchPartyCellRequest(coordinate, cell))
-    }
-
-    suspend fun addLine(line: LineHighlight) {
-        request(WatchPartyLineHighlightRequest(line, remove = false))
-    }
-
-    suspend fun removeLine(line: LineHighlight) {
-        request(WatchPartyLineHighlightRequest(line, remove = true))
-    }
-
-    suspend fun clearHighlights() {
-        request(WatchPartyClearHighlightsRequest)
-    }
-
-    suspend fun update(board: Board) {
-        request(WatchPartyUpdateRequest(board))
+            ack.error?.let { throw WatchPartyRequestException(it) }
+        } catch (e: CancellationException) {
+            throw e
+        } catch (e: WatchPartyRequestException) {
+            throw e
+        } catch (error: Exception) {
+            throw WatchPartyRequestException("Watch party request failed", error)
+        }
     }
 
     suspend fun navigate(target: WatchPartyNavigateTarget?) {
-        request(WatchPartyNavigateRequest(target))
-    }
-
-    suspend fun adjustMoveCount(move: Int) {
-        request(WatchPartyMoveCountRequest(move))
+        request(WatchPartyNavigateRequest(target), generation = null)
     }
 
     fun onClose(block: (WatchPartyCloseReason) -> Unit) {
-        onClose += block
+        synchronized(stateLock) { onClose += block }
     }
 
-    suspend fun close() {
-        closed = true
-        connected.value = false
+    fun close() {
         onClosed(WatchPartyCloseReason(closedByServer = false))
-        wsSession.close()
     }
 }

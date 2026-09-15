@@ -2,7 +2,7 @@ package de.mineking.hexo.web.layout
 
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
-import de.mineking.hexo.watchparty.common.WatchPartyId
+import de.mineking.hexo.watchparty.model.WatchPartyId
 
 enum class NavBarEntry(val label: String, val route: AppRoute) {
     Sessions("Sessions", AppRoute.SessionList),

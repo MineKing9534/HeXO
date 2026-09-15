@@ -9,11 +9,12 @@ import com.varabyte.kobweb.core.RouteInfo
 import com.varabyte.kobweb.core.data.add
 import com.varabyte.kobweb.core.init.InitRoute
 import com.varabyte.kobweb.core.init.InitRouteContext
-import de.mineking.hexo.game.model.EntityState
+import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.watchparty.client.WatchParty
-import de.mineking.hexo.watchparty.common.WatchPartyId
-import de.mineking.hexo.watchparty.common.WatchPartyTarget
-import de.mineking.hexo.web.board.rememberSubscriberBoardViewManager
+import de.mineking.hexo.watchparty.client.WatchPartyTarget
+import de.mineking.hexo.watchparty.model.WatchPartyId
+import de.mineking.hexo.web.board.rememberGameBoardViewManager
+import de.mineking.hexo.web.board.rememberSandboxBoardViewManager
 import de.mineking.hexo.web.components.BackLink
 import de.mineking.hexo.web.components.CardHeader
 import de.mineking.hexo.web.components.LoadingIndicator
@@ -55,13 +56,12 @@ fun WatchPartyPage(ctx: PageContext) {
 
 @Composable
 fun WatchPartyContent(watchParty: WatchParty) {
-    val data by watchParty.data.collectAsState()
-    val boardViewManager = rememberSubscriberBoardViewManager(watchParty)
+    val currentTarget by watchParty.target.collectAsState()
 
-    when (val target = data.target) {
-        is WatchPartyTarget.Session -> Session(target.sessionId, boardViewManager)
-        is WatchPartyTarget.Game -> Game(target.gameId, boardViewManager)
-        is WatchPartyTarget.Sandbox -> Sandbox(boardViewManager)
+    when (val target = currentTarget) {
+        is WatchPartyTarget.Session -> Session(target.targetId, rememberGameBoardViewManager(watchParty))
+        is WatchPartyTarget.FinishedGame -> Game(target.targetId, rememberGameBoardViewManager(watchParty))
+        is WatchPartyTarget.Sandbox -> Sandbox(rememberSandboxBoardViewManager(watchParty))
         null -> NoSessionState()
     }
 }
