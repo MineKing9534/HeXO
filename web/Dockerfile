@@ -34,7 +34,7 @@ RUN apt-get update \
 
 COPY . .
 
-RUN --mount=type=cache,id=hexo-gradle,target=/home/gradle/.gradle,sharing=locked \
+RUN --mount=type=cache,id=hexo-gradle-web,target=/home/gradle/.gradle,sharing=locked \
     ./gradlew --no-daemon --parallel \
         :web:kobwebExport \
         -PkobwebExportLayout=STATIC \

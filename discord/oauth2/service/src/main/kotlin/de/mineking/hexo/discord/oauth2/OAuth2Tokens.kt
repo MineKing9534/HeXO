@@ -18,7 +18,7 @@ class OAuth2Tokens internal constructor(
     internal val data: OAuth2TokensDto,
     val id: DiscordUserId,
 ) {
-    internal fun isExpired() = data.expiresAt + 1.minutes < Clock.System.now()
+    internal fun isExpired() = data.expiresAt - 1.minutes < Clock.System.now()
 
     internal suspend fun refresh() = client.refreshToken(data.refreshToken)
     internal suspend fun revoke() = client.revokeToken(this)

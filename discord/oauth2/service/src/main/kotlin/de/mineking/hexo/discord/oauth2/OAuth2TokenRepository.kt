@@ -112,16 +112,18 @@ class OAuth2TokenRepositoryImpl(
         val (tokens, refreshToken) = stored
 
         if (!tokens.isExpired()) return@withPermit Result.Success(tokens)
-        val updated = tokens.refresh()
+        val refreshResult = tokens.refresh()
 
-        val storedRefreshToken = DiscordUserTokensTable.refreshToken eq refreshToken
-        val tokensUnchanged = (DiscordUserTokensTable.id eq discordUserId) and storedRefreshToken
+        if (refreshResult is Result.Error && refreshResult.error == OAuth2TokenRefreshError.TemporaryFailure) {
+            return@withPermit Result.Error(OAuth2TokenRefreshFailed)
+        }
+
+        val tokensUnchanged = (DiscordUserTokensTable.id eq discordUserId) and (DiscordUserTokensTable.refreshToken eq refreshToken)
         val writeApplied = database.transaction(readOnly = false) {
-            if (updated == null) {
-                DiscordUserTokensTable.delete(where = tokensUnchanged).isNotEmpty()
-            } else {
-                DiscordUserTokensTable.update(where = tokensUnchanged) {
-                    bindTokens(updated)
+            when (refreshResult) {
+                is Result.Error -> DiscordUserTokensTable.delete(where = tokensUnchanged).isNotEmpty()
+                is Result.Success -> DiscordUserTokensTable.update(where = tokensUnchanged) {
+                    bindTokens(refreshResult.value)
                 }.isNotEmpty()
             }
         }.throwOnDatabaseError()
@@ -137,11 +139,14 @@ class OAuth2TokenRepositoryImpl(
             }.throwOnDatabaseError().successIfNotNullOrElse(OAuth2TokensNotFound)
         }
 
-        updated.successIfNotNullOrElse(OAuth2TokenRefreshFailed)
+        when (refreshResult) {
+            is Result.Success -> refreshResult
+            is Result.Error -> Result.Error(OAuth2TokenRefreshFailed)
+        }
     }
 
     override suspend fun revoke(userId: DiscordUserId) = tokenLocks.withPermit(userId) {
-        val stored = database.transaction(readOnly = true) {
+        val (tokens, storedRefreshToken) = database.transaction(readOnly = true) {
             DiscordUserTokensTable
                 .select()
                 .where(DiscordUserTokensTable.id eq userId)
@@ -149,16 +154,16 @@ class OAuth2TokenRepositoryImpl(
                 .firstOrNull()
                 ?.let { it.mapToTokens() to it[DiscordUserTokensTable.refreshToken] }
         }.throwOnDatabaseError() ?: return@withPermit
-        val (tokens, storedRefreshToken) = stored
 
         check(tokens.revoke()) { "Discord rejected the OAuth2 token revocation" }
 
-        database.transaction(readOnly = false) {
+        val removed = database.transaction(readOnly = false) {
             DiscordUserTokensTable.delete(
-                where = (DiscordUserTokensTable.id eq userId) and
-                    (DiscordUserTokensTable.refreshToken eq storedRefreshToken),
-            )
+                where = (DiscordUserTokensTable.id eq userId) and (DiscordUserTokensTable.refreshToken eq storedRefreshToken),
+            ).isNotEmpty()
         }.throwOnDatabaseError()
+
+        check(removed) { "OAuth2 token changed while its Discord authorization was being revoked" }
     }
 
     private val DiscordUserId.accessTokenContext get() = "discord-oauth2:$value:access-token"

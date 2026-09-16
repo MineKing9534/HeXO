@@ -22,6 +22,7 @@ import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
 
@@ -35,7 +36,7 @@ suspend fun LinkedRolesUpdateService.syncLinkedRolesData(
     launch {
         while (currentCoroutineContext().isActive) {
             syncAllLinkedRolesData(oAuth2TokenRepository)
-            delay(5.minutes)
+            delay(1.hours)
         }
     }
 
