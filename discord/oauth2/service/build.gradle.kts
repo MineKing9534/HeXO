@@ -15,13 +15,13 @@ dependencies {
 
     implementation(projects.utils.coroutines)
     implementation(projects.utils.types)
+    implementation(projects.utils.cache)
 
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.ktor.client)
     implementation(libs.bundles.ktor.server)
     runtimeOnly(libs.ktor.client.cio)
 
-    implementation(libs.cache)
     implementation(libs.jda)
     implementation(libs.dtk)
 

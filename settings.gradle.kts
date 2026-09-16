@@ -52,6 +52,7 @@ include(":watchparty:model")
 include(":watchparty:client")
 
 include(":utils:coroutines")
+include(":utils:cache")
 include(":utils:types")
 include(":utils:socketio:client")
 include(":utils:socketio:server")

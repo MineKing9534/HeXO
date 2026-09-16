@@ -10,13 +10,9 @@ kotlin {
             implementation(projects.board)
             implementation(projects.game.model)
 
-            implementation(libs.kotlin.serialization.core)
-        }
-    }
+            implementation(projects.utils.cache)
 
-    sourceSets.jvmMain {
-        dependencies {
-            implementation(libs.cache)
+            implementation(libs.kotlin.serialization.core)
         }
     }
 }

@@ -22,10 +22,9 @@ dependencies {
     implementation(projects.server.api)
     implementation(projects.utils.coroutines)
     implementation(projects.utils.types)
+    implementation(projects.utils.cache)
 
     implementation(libs.kotlin.coroutines.core)
-
-    implementation(libs.cache)
 
     implementation(libs.jda.emoji)
     implementation(libs.dtk)

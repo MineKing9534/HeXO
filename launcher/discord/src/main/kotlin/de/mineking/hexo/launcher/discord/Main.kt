@@ -2,13 +2,12 @@ package de.mineking.hexo.launcher.discord
 
 import de.mineking.hexo.board.parse.BoardParser
 import de.mineking.hexo.board.parse.RemoteBoardParser
-import de.mineking.hexo.board.parse.cached
+import de.mineking.hexo.board.parse.caching
 import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.parse.or
 import de.mineking.hexo.board.render.caching
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
 import de.mineking.hexo.board.render.image.limitSize
-import de.mineking.hexo.board.render.image.megabytes
 import de.mineking.hexo.board.render.image.outputPngBytes
 import de.mineking.hexo.board.render.limitConcurrency
 import de.mineking.hexo.bot.HeXODiscordBot
@@ -17,7 +16,6 @@ import de.mineking.hexo.discord.bot.config.UserThemeRepositoryImpl
 import de.mineking.hexo.discord.linkedroles.LinkedRolesUpdateService
 import de.mineking.hexo.discord.linkedroles.installLinkedRoleMetadata
 import de.mineking.hexo.discord.linkedroles.syncLinkedRolesData
-import de.mineking.hexo.game.model.caching.CachingRepositoryWrapper
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.HdsHttpClient
 import de.mineking.hexo.launcher.createDatabase
@@ -25,6 +23,10 @@ import de.mineking.hexo.launcher.createOAuth2Dependencies
 import de.mineking.hexo.launcher.loadConfig
 import de.mineking.hexo.launcher.shutdownHook
 import de.mineking.hexo.link.AccountLinkRepositoryImpl
+import de.mineking.hexo.utils.cache.CacheConfiguration
+import de.mineking.hexo.utils.cache.EvictionStrategy
+import de.mineking.hexo.utils.cache.entries
+import de.mineking.hexo.utils.cache.megabytes
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.launch
@@ -33,7 +35,7 @@ suspend fun main() = coroutineScope {
     val config = loadConfig<BotApplicationConfig>()
     val hds = HdsApiClient(
         client = HdsHttpClient.createDefault(),
-        repositoryWrapper = CachingRepositoryWrapper(),
+        repositoryWrapper = CachingRepositoryWrapper,
     )
 
     val database = config.database.createDatabase()
@@ -53,15 +55,8 @@ suspend fun main() = coroutineScope {
         null
     }
 
-    val parser = (RemoteBoardParser(hds) or BoardParser.Default)
-        .focusWinningRows()
-        .cached()
-
-    val renderer = BufferedImageBoardRenderer.Default
-        .limitSize(64.megabytes)
-        .limitConcurrency(10)
-        .outputPngBytes()
-        .caching()
+    val parser = createBoardParser(hds)
+    val renderer = createBoardRenderer()
 
     val bot = HeXODiscordBot(
         repositories = hds,
@@ -98,6 +93,24 @@ suspend fun main() = coroutineScope {
         database?.close()
     }
 }
+
+private fun createBoardParser(hds: HdsApiClient) = (RemoteBoardParser(hds) or BoardParser.Default)
+    .focusWinningRows()
+    .caching(CacheConfiguration(
+        sizeLimit = 16.entries,
+        expiration = null,
+        evictionStrategy = EvictionStrategy.LeastFrequentlyUsed,
+    ))
+
+private fun createBoardRenderer() = BufferedImageBoardRenderer.Default
+    .limitSize(64.megabytes)
+    .limitConcurrency(10)
+    .outputPngBytes()
+    .caching(CacheConfiguration(
+        sizeLimit = 128.megabytes,
+        expiration = null,
+        evictionStrategy = EvictionStrategy.LeastFrequentlyUsed,
+    ))
 
 private fun printBanner() {
     println("""
