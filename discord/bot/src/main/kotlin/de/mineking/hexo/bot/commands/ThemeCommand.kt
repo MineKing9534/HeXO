@@ -32,6 +32,7 @@ import de.mineking.discord.ui.modal.createModalComponent
 import de.mineking.discord.ui.modal.getValue
 import de.mineking.discord.ui.modal.map
 import de.mineking.discord.ui.parameter
+import de.mineking.discord.ui.render
 import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
@@ -102,7 +103,9 @@ fun themeCommand() = localizedMenuCommand<ThemeCommandLocalization>("theme") { l
             }
         }
 
-        +mediaGallery(DEMO_BOARD.asMediaGalleryItem(selectedTheme))
+        render {
+            +mediaGallery(DEMO_BOARD.asMediaGalleryItem(locale, selectedTheme))
+        }
 
         +separator(spacing = Separator.Spacing.LARGE)
         +actionRow(themeSelect(
@@ -131,7 +134,7 @@ fun themeCommand() = localizedMenuCommand<ThemeCommandLocalization>("theme") { l
             }.enabledIf(selectedTheme != current)
 
             +deleteButton(selectedTheme, localization)
-            +editButton(selectedTheme, localization)
+            +editButton(selectedTheme, locale, localization)
             +createButton(themes, selectedTheme, localization)
         }
     }
@@ -194,7 +197,7 @@ private fun MessageMenuConfig<out Interaction, *>.createButton(
 }
 
 context(main: HeXODiscordBot)
-private fun MessageMenuConfig<*, *>.editButton(selected: Theme, localization: ThemeCommandLocalization) = menuButton(
+private fun MessageMenuConfig<*, *>.editButton(selected: Theme, locale: DiscordLocale, localization: ThemeCommandLocalization) = menuButton(
     "edit",
     emoji = Emojis.SCREWDRIVER,
     color = ButtonColor.BLUE,
@@ -211,7 +214,9 @@ private fun MessageMenuConfig<*, *>.editButton(selected: Theme, localization: Th
         )
         +separator(spacing = Separator.Spacing.LARGE)
 
-        +mediaGallery(DEMO_BOARD.asMediaGalleryItem(selected))
+        render {
+            +mediaGallery(DEMO_BOARD.asMediaGalleryItem(locale, selected))
+        }
 
         +separator(spacing = Separator.Spacing.LARGE)
 

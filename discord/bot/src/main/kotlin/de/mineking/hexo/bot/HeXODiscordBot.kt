@@ -3,6 +3,7 @@ package de.mineking.hexo.bot
 import de.mineking.discord.Manager
 import de.mineking.discord.discordToolKit
 import de.mineking.discord.localization.LocalizationFile
+import de.mineking.discord.localization.LocalizationManager
 import de.mineking.discord.localization.read
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.utils.await
@@ -43,11 +44,13 @@ import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Activity
 import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
+import net.dv8tion.jda.api.interactions.DiscordLocale
 import net.dv8tion.jda.api.interactions.Interaction
 import net.dv8tion.jda.api.interactions.callbacks.IModalCallback
 import net.dv8tion.jda.api.utils.MarkdownSanitizer
 import net.dv8tion.jda.api.utils.messages.MessageRequest
 import java.time.Duration
+import kotlin.coroutines.CoroutineContext
 
 internal val logger = KotlinLogging.logger {}
 
@@ -140,6 +143,11 @@ class HeXODiscordBot(
             jda.awaitShutdown()
         }
     }
+}
+
+class DiscordLocalization(val localizationManager: LocalizationManager, val locale: DiscordLocale) : CoroutineContext.Element {
+    override val key = Key
+    companion object Key : CoroutineContext.Key<DiscordLocalization>
 }
 
 private fun JDA.registerMessageDeleteListener() {

@@ -39,7 +39,7 @@ fun renderHexoSlashCommand() = localizedSlashCommand<RenderHexoCommandLocalizati
         hook.editOriginal(
             MessageEditBuilder()
                 .setReplace(true)
-                .setComponents(MediaGallery.of(main.run { board.asMediaGalleryItem(theme) }))
+                .setComponents(MediaGallery.of(main.run { board.asMediaGalleryItem(userLocale, theme) }))
                 .build(),
         ).queue()
     }

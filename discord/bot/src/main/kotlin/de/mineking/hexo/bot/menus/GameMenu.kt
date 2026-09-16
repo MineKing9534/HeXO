@@ -132,7 +132,7 @@ fun UIManager.gameMenu(
                 +game.gameDetails(localization, locale)
 
                 +separator(spacing = Separator.Spacing.LARGE)
-                +mediaGallery(board.asMediaGalleryItem(theme))
+                +mediaGallery(board.asMediaGalleryItem(locale, theme))
                 +separator(spacing = Separator.Spacing.LARGE)
             }
         }
