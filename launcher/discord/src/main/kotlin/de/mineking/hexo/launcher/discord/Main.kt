@@ -7,7 +7,10 @@ import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.parse.or
 import de.mineking.hexo.board.render.caching
 import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
+import de.mineking.hexo.board.render.image.limitSize
+import de.mineking.hexo.board.render.image.megabytes
 import de.mineking.hexo.board.render.image.outputPngBytes
+import de.mineking.hexo.board.render.limitConcurrency
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.outputBoardAttachment
 import de.mineking.hexo.discord.bot.config.UserThemeRepositoryImpl
@@ -55,6 +58,8 @@ suspend fun main() = coroutineScope {
         .cached()
 
     val renderer = BufferedImageBoardRenderer.Default
+        .limitSize(64.megabytes)
+        .limitConcurrency(10)
         .outputPngBytes()
         .caching()
 

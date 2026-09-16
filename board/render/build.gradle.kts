@@ -11,7 +11,9 @@ kotlin {
         dependencies {
             implementation(projects.board)
 
+            implementation(libs.kotlin.coroutines.core)
             implementation(libs.kotlin.serialization.core)
+
             implementation(libs.svg)
         }
     }
