@@ -24,7 +24,7 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
   * [Contributing](#contributing)
   * [Build](#build)
     * [Backend](#backend)
-    * [Web](#web)
+    * [Frontend](#frontend)
     * [Docker Compose](#docker-compose)
 <!-- TOC -->
 
@@ -160,54 +160,90 @@ For larger changes, please open an issue first so we can align on scope and appr
 
 ### Backend
 
-To build the backend manually, run:
+The backend is split into two launchers:
+
+- `launcher:api` serves the HTTP API and OAuth2 callbacks.
+- `launcher:discord` runs the Discord bot.
+
+To build both launchers manually, run:
 
 ```shell
-./gradlew :launcher:shadowJar
+./gradlew :launcher:api:shadowJar :launcher:discord:shadowJar
 ```
 
-This creates `launcher/build/libs/launcher-[version]-all.jar`. You can run it with:
+This creates the following executable jars:
+
+- `launcher/api/build/libs/launcher-api-[version]-all.jar`
+- `launcher/discord/build/libs/launcher-discord-[version]-all.jar`
+
+Run each launcher in a separate process:
 
 ```shell
-java -jar launcher/build/libs/launcher-[version]-all.jar
+java -jar launcher/api/build/libs/launcher-api-[version]-all.jar
+java -jar launcher/discord/build/libs/launcher-discord-[version]-all.jar
 ```
 
 > [!NOTE]
 > You need a JDK 21 (or higher) installed to build the jar. To run it, a JRE is sufficient.
 
-Configuration is done using environment variables at runtime. The following environment variables are used by the backend:
-```dotenv
-bot.token=              # Discord bot token, required
+Configuration is done using environment variables at runtime. Each launcher column indicates whether the variable is required, optional, or unused (`—`).
 
-# The oauth2 block is optional
-oauth2.clientId=        # Discord client id for linked roles
-oauth2.clientSecret=    # Discord client secret for linked roles
-oauth2.encryptionKey=   # Encryption key used for encrypting discord tokens
+| Environment variable   | API      | Discord  | Description                                       |
+|------------------------|:--------:|:--------:|---------------------------------------------------|
+| `bot.token`            | —        | Required | Discord bot token                                 |
+| `oauth2.clientId`      | Optional | Optional | Discord client ID for linked roles and OAuth2     |
+| `oauth2.clientSecret`  | Optional | Optional | Discord client secret for linked roles and OAuth2 |
+| `oauth2.encryptionKey` | Optional | Optional | Key used to encrypt Discord tokens                |
+| `database.url`         | Optional | Optional | R2DBC URL for persistent storage                  |
+| `server.port`          | Optional | —        | Port on which the API listens                     |
+| `server.url`           | Optional | Optional | Public URL of the API                             |
 
-# The database block is optional
-database.url=           # R2DBC url for persisting data
+### Frontend
 
-# The server block is optional
-server.port=            # The port for the API to listen on
-server.url=             # The public url of the server
-```
-
-### Web
-
-To export the web module as a static site manually, run:
+The frontend is served by the dedicated `launcher:web` Ktor application. Building the launcher automatically exports the Kobweb site with the static layout and copies it into the launcher's resources. The two API URLs are embedded into the frontend at build time:
 
 ```shell
-./gradlew :web:kobwebExport \
-    -PkobwebExportLayout=STATIC \
-    -Pweb.hdsApiUrl=http://localhost:3001 \  # The HDS API proxy, e.g. https://hexo.mineking.dev/proxy/api
-    -Pweb.hmdApiUrl=http://localhost:1234    # The mineking hexo tools API, used for watch parties etc., e.g. https://hexo.mineking.dev/api
+./gradlew :launcher:web:shadowJar \
+    -Pweb.hdsApiUrl=http://localhost:3001 \
+    -Pweb.hmdApiUrl=http://localhost:1234
 ```
 
-The generated site is written to `web/.kobweb/site`. The two URLs are embedded into the web application at build time.
+- `web.hdsApiUrl` is the HDS API proxy, for example `https://hexo.mineking.dev/proxy/api`.
+- `web.hmdApiUrl` is the HeXO API used for watch parties and rendering, for example `https://hexo.mineking.dev/api`.
+
+For frontend development, run Kobweb's development server from the `web` directory. It watches the frontend sources and reloads the browser when they change:
+
+```shell
+kobweb run --gradle="-Pweb.hdsApiUrl=http://localhost:3001 -Pweb.hmdApiUrl=http://localhost:1234" -p web
+```
+
+The development server can also be started through its Gradle task from the repository root:
+
+```shell
+./gradlew :web:kobwebStart \
+    -Pweb.hdsApiUrl=http://localhost:3001 \
+    -Pweb.hmdApiUrl=http://localhost:1234
+```
+
+Both commands serve the frontend on the port configured in `web/.kobweb/conf.yaml`, which defaults to `8080`. The dedicated Ktor launcher is used to verify the exported site and its dynamic OpenGraph handling.
+
+This creates `launcher/web/build/libs/launcher-web-[version]-all.jar`. Set the listen port through the `server.port` environment variable when running it:
+
+```shell
+env 'server.port=8080' java -jar launcher/web/build/libs/launcher-web-[version]-all.jar
+```
+
+For local development, the launcher can be built and started directly with Gradle:
+
+```shell
+env 'server.port=8080' ./gradlew :launcher:web:run \
+    -Pweb.hdsApiUrl=http://localhost:3001 \
+    -Pweb.hmdApiUrl=http://localhost:1234
+```
 
 ### Docker Compose
 
-As an alternative to building the modules manually, Docker Compose can build both the backend and frontend images. Set the required values in a `.env` file in the project root:
+As an alternative to building the modules manually, Docker Compose builds separate API, Discord bot, and web services. The API and Discord images use `launcher/Dockerfile`. The web service uses its dedicated `launcher/web/Dockerfile`, which builds the web launcher and embeds the exported frontend in its executable jar. Set the required values in a `.env` file in the project root:
 
 ```dotenv
 BOT_TOKEN=              # Discord bot token, required
@@ -223,7 +259,7 @@ HDS_API_URL=            # The HDS API url, e.g. https://hexo.mineking.dev/proxy/
 HMD_API_URL=            # The HMD API url, e.g. https://hexo.mineking.dev/api
 ```
 
-To deploy both backend and frontend, run:
+To deploy all services, run:
 ```shell
 docker compose up
 ```
