@@ -79,16 +79,11 @@ fun InteractiveBoard(
     fallback: ContentBuilder<HTMLCanvasElement>? = null,
     content: BoardContentBuilder? = null,
 ) {
-    var temporaryLine by remember { mutableStateOf<LineHighlight?>(null) }
-    val effectiveBoard = remember(board, temporaryLine) {
-        val temporaryLine = temporaryLine
-        if (temporaryLine == null) {
-            board
-        } else {
-            board.copy().apply {
-                lineHighlights += temporaryLine
-            }
-        }
+    var overlay by remember { mutableStateOf<BoardInteraction.HighlightBoardInteraction?>(null) }
+    val effectiveBoard = remember(board, overlay) {
+        val overlay = overlay ?: return@remember board
+
+        board.copy().also { overlay.apply(it) }
     }
 
     val onBoardInteraction by rememberUpdatedState(onBoardInteraction)
@@ -105,7 +100,7 @@ fun InteractiveBoard(
         },
         onBoardRightClick = { (from, to, phase, modifiers) ->
             if (phase == BoardRightClickPhase.Abort) {
-                temporaryLine = null
+                overlay = null
                 return@RawBoard
             }
 
@@ -115,27 +110,27 @@ fun InteractiveBoard(
                 else -> null
             }
 
-            if (from == to && phase == BoardRightClickPhase.Commit) {
+            val interaction = if (to == from) {
                 val line = board.findTopHighlightLineAt(to)
                 if (line == null) {
-                    val highlight = if (board.cells[to]?.highlight == null) CellHighlight(color) else null
-                    onBoardInteraction(BoardInteraction.HighlightCell(modifiers, to, highlight))
+                    val highlight = if (board.cells[to]?.highlight == null || phase != BoardRightClickPhase.Commit) CellHighlight(color) else null
+                    BoardInteraction.HighlightCell(modifiers, to, highlight)
+                } else if (phase == BoardRightClickPhase.Commit) {
+                    BoardInteraction.HighlightLine(modifiers, line, isRemove = true)
                 } else {
-                    onBoardInteraction(BoardInteraction.HighlightLine(modifiers, line, isRemove = true))
+                    null
                 }
-                temporaryLine = null
             } else {
                 val (direction, length) = from.findClosestLineTo(to)
                 val line = LineHighlight(from, direction, length, color)
+                BoardInteraction.HighlightLine(modifiers, line, isRemove = false)
+            }
 
-                if (phase == BoardRightClickPhase.Commit) {
-                    onBoardInteraction(BoardInteraction.HighlightLine(modifiers, line, isRemove = false))
-                    temporaryLine = null
-                } else if (from != to) {
-                    temporaryLine = line
-                } else {
-                    temporaryLine = null
-                }
+            if (phase == BoardRightClickPhase.Commit) {
+                if (interaction != null) onBoardInteraction(interaction)
+                overlay = null
+            } else {
+                overlay = interaction
             }
         },
         attrs = attrs,
