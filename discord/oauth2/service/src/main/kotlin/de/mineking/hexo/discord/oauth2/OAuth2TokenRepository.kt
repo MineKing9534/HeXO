@@ -141,7 +141,7 @@ class OAuth2TokenRepositoryImpl(
     }
 
     override suspend fun revoke(userId: DiscordUserId) = tokenLocks.withPermit(userId) {
-        val stored = database.transaction(readOnly = true) {
+        val (tokens, storedRefreshToken) = database.transaction(readOnly = true) {
             DiscordUserTokensTable
                 .select()
                 .where(DiscordUserTokensTable.id eq userId)
@@ -149,16 +149,16 @@ class OAuth2TokenRepositoryImpl(
                 .firstOrNull()
                 ?.let { it.mapToTokens() to it[DiscordUserTokensTable.refreshToken] }
         }.throwOnDatabaseError() ?: return@withPermit
-        val (tokens, storedRefreshToken) = stored
 
         check(tokens.revoke()) { "Discord rejected the OAuth2 token revocation" }
 
-        database.transaction(readOnly = false) {
+        val removed = database.transaction(readOnly = false) {
             DiscordUserTokensTable.delete(
-                where = (DiscordUserTokensTable.id eq userId) and
-                    (DiscordUserTokensTable.refreshToken eq storedRefreshToken),
-            )
+                where = (DiscordUserTokensTable.id eq userId) and (DiscordUserTokensTable.refreshToken eq storedRefreshToken),
+            ).isNotEmpty()
         }.throwOnDatabaseError()
+
+        check(removed) { "OAuth2 token changed while its Discord authorization was being revoked" }
     }
 
     private val DiscordUserId.accessTokenContext get() = "discord-oauth2:$value:access-token"
