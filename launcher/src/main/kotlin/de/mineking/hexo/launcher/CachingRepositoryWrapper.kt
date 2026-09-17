@@ -1,4 +1,4 @@
-package de.mineking.hexo.launcher.discord
+package de.mineking.hexo.launcher
 
 import de.mineking.hexo.game.model.RepositoryWrapper
 import de.mineking.hexo.game.model.caching.caching

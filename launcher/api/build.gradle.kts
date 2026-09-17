@@ -10,6 +10,12 @@ dependencies {
     implementation(projects.launcher)
     implementation(projects.database)
 
+    implementation(projects.game.hds)
+
+    implementation(projects.board)
+    implementation(projects.board.parse)
+    implementation(projects.board.render)
+
     implementation(projects.discord.linkedRoles)
     implementation(projects.discord.oauth2.service)
 

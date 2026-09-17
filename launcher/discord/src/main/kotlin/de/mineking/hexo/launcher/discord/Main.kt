@@ -1,19 +1,7 @@
 package de.mineking.hexo.launcher.discord
 
 import de.mineking.discord.localization.read
-import de.mineking.hexo.board.parse.BoardParser
-import de.mineking.hexo.board.parse.RemoteBoardParser
-import de.mineking.hexo.board.parse.caching
-import de.mineking.hexo.board.parse.focusWinningRows
-import de.mineking.hexo.board.parse.or
-import de.mineking.hexo.board.render.caching
-import de.mineking.hexo.board.render.image.BufferedImageBoardRenderer
 import de.mineking.hexo.board.render.image.ErrorMessage
-import de.mineking.hexo.board.render.image.ImageSizeLimitExceededException
-import de.mineking.hexo.board.render.image.drawExceptionMessages
-import de.mineking.hexo.board.render.image.limitSize
-import de.mineking.hexo.board.render.image.outputPngBytes
-import de.mineking.hexo.board.render.limitConcurrency
 import de.mineking.hexo.bot.DiscordLocalization
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.outputBoardAttachment
@@ -24,20 +12,19 @@ import de.mineking.hexo.discord.linkedroles.installLinkedRoleMetadata
 import de.mineking.hexo.discord.linkedroles.syncLinkedRolesData
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.HdsHttpClient
+import de.mineking.hexo.launcher.CachingRepositoryWrapper
+import de.mineking.hexo.launcher.createBoardParser
+import de.mineking.hexo.launcher.createBoardRenderer
 import de.mineking.hexo.launcher.createDatabase
 import de.mineking.hexo.launcher.createOAuth2Dependencies
+import de.mineking.hexo.launcher.formatBytes
 import de.mineking.hexo.launcher.loadConfig
 import de.mineking.hexo.launcher.shutdownHook
 import de.mineking.hexo.link.AccountLinkRepositoryImpl
-import de.mineking.hexo.utils.cache.CacheConfiguration
-import de.mineking.hexo.utils.cache.EvictionStrategy
-import de.mineking.hexo.utils.cache.entries
-import de.mineking.hexo.utils.cache.megabytes
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
-import kotlin.math.roundToLong
 
 suspend fun main() = coroutineScope {
     val config = loadConfig<BotApplicationConfig>()
@@ -102,57 +89,18 @@ suspend fun main() = coroutineScope {
     }
 }
 
-private fun createBoardParser(hds: HdsApiClient) = (RemoteBoardParser(hds) or BoardParser.Default)
-    .focusWinningRows()
-    .caching(CacheConfiguration(
-        sizeLimit = 16.entries,
-        expiration = null,
-        evictionStrategy = EvictionStrategy.LeastFrequentlyUsed,
-    ))
+private fun createBoardRenderer() = createBoardRenderer { error ->
+    val context = currentCoroutineContext()[DiscordLocalization] ?: throw error
+    val localization = context.localizationManager.read<RenderLocalization>()
 
-private fun createBoardRenderer() = BufferedImageBoardRenderer.Default
-    .limitSize(64.megabytes)
-    .drawExceptionMessages { error ->
-        when (error) {
-            is ImageSizeLimitExceededException -> {
-                val context = currentCoroutineContext()[DiscordLocalization] ?: throw error
-                val localization = context.localizationManager.read<RenderLocalization>()
-
-                ErrorMessage(
-                    title = localization.responseErrorImageTooLargeTitle(context.locale),
-                    details = localization.responseErrorImageTooLargeDetails(
-                        locale = context.locale,
-                        required = error.requiredBytes.formatBytes(),
-                        limit = error.limitBytes.formatBytes(),
-                    ),
-                )
-            }
-            else -> null
-        }
-    }
-    .limitConcurrency(10)
-    .outputPngBytes()
-    .caching(CacheConfiguration(
-        sizeLimit = 128.megabytes,
-        expiration = null,
-        evictionStrategy = EvictionStrategy.LeastFrequentlyUsed,
-    ))
-
-private fun Long.formatBytes(): String {
-    val units = arrayOf("B", "KiB", "MiB", "GiB")
-    var value = toDouble()
-    var unit = 0
-
-    while (kotlin.math.abs(value) >= 1024 && unit < units.lastIndex) {
-        value /= 1024
-        unit++
-    }
-
-    if (unit == 0) return "$this ${units[unit]}"
-
-    val rounded = (value * 10).roundToLong() / 10.0
-    val formatted = if (rounded % 1.0 == 0.0) rounded.toLong().toString() else rounded.toString()
-    return "$formatted ${units[unit]}"
+    ErrorMessage(
+        title = localization.responseErrorImageTooLargeTitle(context.locale),
+        details = localization.responseErrorImageTooLargeDetails(
+            locale = context.locale,
+            required = error.requiredBytes.formatBytes(),
+            limit = error.limitBytes.formatBytes(),
+        ),
+    )
 }
 
 private fun printBanner() {

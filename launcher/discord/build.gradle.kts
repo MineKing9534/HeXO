@@ -10,6 +10,8 @@ dependencies {
     implementation(projects.launcher)
     implementation(projects.database)
 
+    implementation(projects.game.hds)
+
     implementation(projects.board)
     implementation(projects.board.parse)
     implementation(projects.board.render)
@@ -19,9 +21,6 @@ dependencies {
     implementation(projects.discord.link)
     implementation(projects.discord.linkedRoles)
     implementation(projects.discord.oauth2.service)
-
-    implementation(projects.game.hds)
-    implementation(projects.utils.cache)
 
     implementation(libs.dtk)
 

@@ -11,6 +11,8 @@ import com.varabyte.kobweb.browser.storage.getItem
 import com.varabyte.kobweb.browser.storage.setItem
 import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.utils.types.EntityState
+import de.mineking.hexo.utils.types.Result
+import de.mineking.hexo.utils.types.orNull
 import de.mineking.hexo.watchparty.client.WatchParty
 import de.mineking.hexo.watchparty.client.WatchPartyClient
 import de.mineking.hexo.watchparty.client.createAndConnectWatchParty
@@ -39,7 +41,7 @@ class WatchPartyController(host: String, private val settingsController: Setting
     val currentWatchParty get() = hostWatchParty
         ?: (subscribedWatchParty as? EntityState.Data)?.value
 
-    private val watchPartyClient = WatchPartyClient(publicUrl = BasePath.prependTo(""), apiUrl = host, coroutineScope = GlobalScope)
+    private val watchPartyClient = WatchPartyClient(publicUrl = BasePath.prependTo(""), apiUrl = host)
 
     init {
         GlobalScope.launch {
@@ -47,6 +49,7 @@ class WatchPartyController(host: String, private val settingsController: Setting
                 if (it != hostWatchParty?.id) {
                     hostWatchParty = it?.let {
                         watchPartyClient.connectWatchParty(it, detachOnClose = true, connectionId = connectionId)
+                            .orNull()
                     }
                 }
                 initialize.complete(Unit)
@@ -79,8 +82,8 @@ class WatchPartyController(host: String, private val settingsController: Setting
                     connectionId = connectionId,
                 )
             ) {
-                null -> EntityState.NotFound
-                else -> EntityState.Data(watchParty)
+                is Result.Error -> EntityState.NotFound
+                is Result.Success -> EntityState.Data(watchParty.value)
             }
         }
     }

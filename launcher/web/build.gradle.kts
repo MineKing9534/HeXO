@@ -29,12 +29,17 @@ tasks.processResources {
 dependencies {
     implementation(projects.launcher)
 
+    implementation(projects.game.hds)
+    implementation(projects.watchparty.client)
+
     implementation(libs.kotlin.serialization.core)
 
     implementation(libs.kotlin.html)
 
     implementation(libs.ktor.server.core)
     implementation(libs.ktor.server.netty)
+
+    implementation(libs.logging)
 
     runtimeOnly(libs.logback)
 }
@@ -43,10 +48,14 @@ application {
     mainClass = "de.mineking.hexo.launcher.web.MainKt"
 }
 
+val webHdsApiUrl = providers.gradleProperty("web.hdsApiUrl")
+    .orElse(provider { "" })
+
 val webHmdApiUrl = providers.gradleProperty("web.hmdApiUrl")
     .orElse(provider { "" })
 
 buildConfig {
+    buildConfigField<String>("HDS_API_URL", webHdsApiUrl.map { Expression("\"$it\"") })
     buildConfigField<String>("HMD_API_URL", webHmdApiUrl.map { Expression("\"$it\"") })
 }
 

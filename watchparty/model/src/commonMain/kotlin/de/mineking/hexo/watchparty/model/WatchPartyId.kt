@@ -1,6 +1,7 @@
 package de.mineking.hexo.watchparty.model
 
 import de.mineking.hexo.utils.types.EntityId
+import de.mineking.hexo.utils.types.IError
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.uuid.Uuid
@@ -16,3 +17,6 @@ value class WatchPartyConnectionId(val value: String) {
         fun generate() = WatchPartyConnectionId(Uuid.random().toString())
     }
 }
+
+@Serializable
+data object WatchPartyNotFoundError : IError

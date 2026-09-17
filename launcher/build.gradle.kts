@@ -7,9 +7,15 @@ dependencies {
     implementation(projects.database)
     implementation(project(projects.database.path, configuration = "r2dbc"))
 
-    implementation(projects.discord.oauth2.service)
     implementation(projects.game.hds)
-    implementation(projects.game.model)
+
+    implementation(projects.board)
+    implementation(projects.board.parse)
+    implementation(projects.board.render)
+
+    implementation(projects.utils.cache)
+
+    implementation(projects.discord.oauth2.service)
 
     implementation(libs.kotlin.serialization.properties)
 

@@ -21,4 +21,4 @@ sealed interface EntityState<out T : Entity<*>> {
     data class Data<out T : Entity<*>>(val value: T) : EntityState<T>
 }
 
-class EntityNotFoundException : RuntimeException()
+class EntityNotFoundException(override val message: String? = null) : RuntimeException()
