@@ -64,10 +64,10 @@ private fun printBanner() {
 private class HealthApiModule : ApiModule() {
     override fun Route.registerRoutes() {
         get("/health") {
-            call.respond(HealthResponse())
+            call.respond(HealthResponse("Ok"))
         }
     }
 }
 
 @Serializable
-private class HealthResponse(val status: String = "ok")
+private class HealthResponse(val status: String)
