@@ -70,7 +70,7 @@ fun Sidebar(
         attrs = {
             classes(
                 "relative", "flex", "min-h-0", "max-h-[38dvh]", "w-full", "shrink-0", "flex-col", "gap-3",
-                "overflow-y-auto", "border-t", "border-slate-800", "bg-slate-900/90", "p-3", "shadow-2xl",
+                "overflow-x-hidden", "overflow-y-auto", "border-t", "border-slate-800", "bg-slate-900/90", "p-3", "shadow-2xl",
                 "md:max-h-none", "md:w-(--sidebar-width)", "md:border-l", "md:border-t-0", "md:p-5",
             )
         },
