@@ -1,7 +1,5 @@
 package de.mineking.hexo.bot.menus
 
-import com.github.benmanes.caffeine.cache.Caffeine
-import com.sksamuel.aedile.core.asCache
 import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.LocalizationParameter
@@ -35,6 +33,10 @@ import de.mineking.hexo.game.model.leaderboard.LeaderboardEntry
 import de.mineking.hexo.game.model.leaderboard.LeaderboardRepository
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.link.AccountLinkRepository
+import de.mineking.hexo.utils.cache.CacheConfiguration
+import de.mineking.hexo.utils.cache.EvictionStrategy
+import de.mineking.hexo.utils.cache.InMemoryCache
+import de.mineking.hexo.utils.cache.entries
 import dev.freya02.jda.emojis.unicode.Emojis
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -150,11 +152,13 @@ private suspend fun MessageMenuConfig<*, *>.leaderboardEntries(
 }
 
 private class ImageScalingService {
-    private val cache = Caffeine.newBuilder()
-        .maximumSize(10)
-        .asCache<String, ByteArray>()
+    private val cache = InMemoryCache(CacheConfiguration<String, ByteArray>(
+        sizeLimit = 10.entries,
+        expiration = null,
+        evictionStrategy = EvictionStrategy.LeastRecentlyUsed,
+    ))
 
-    suspend fun getScaledImage(url: String) = cache.get(url) {
+    suspend fun getScaledImage(url: String) = cache.getOrPut(url) {
         rescaleImage(url)
     }
 

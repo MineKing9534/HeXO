@@ -15,6 +15,7 @@ import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
 import kotlinx.serialization.Serializable
+import kotlin.time.Duration.Companion.minutes
 
 suspend fun main() {
     val config = loadConfig<ApiApplicationConfig>()
@@ -25,7 +26,10 @@ suspend fun main() {
         OAuth2ApiModule(
             OAuth2AuthorizationService(
                 discordOAuth2Client = it.client,
-                sessionStore = InMemoryOAuth2AuthorizationSessionStore(),
+                sessionStore = InMemoryOAuth2AuthorizationSessionStore(
+                    expireAfter = 5.minutes,
+                    maxEntries = 100,
+                ),
                 handlers = listOf(LinkedRolesOAuth2FlowHandler(it.tokenRepository)),
             ),
         )

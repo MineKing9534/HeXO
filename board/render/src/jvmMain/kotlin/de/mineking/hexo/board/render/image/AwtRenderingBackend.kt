@@ -27,6 +27,7 @@ fun Board.renderToImage(
     padding: Int,
     visibleRadius: Int = DEFAULT_VISIBLE_RADIUS,
     theme: Theme = Theme.Default,
+    validate: ((BoardRenderLayout, Int, Int) -> Unit)? = null,
     renderingHook: BoardRenderingHook? = null,
 ): BufferedImage {
     require(!isEmpty(includeHighlights = true))
@@ -34,6 +35,8 @@ fun Board.renderToImage(
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val width = layout.boundingBox.width + 2 * padding
     val height = layout.boundingBox.height + 2 * padding
+
+    validate?.invoke(layout, width, height)
 
     val image = BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
     val graphics = image.createGraphics()

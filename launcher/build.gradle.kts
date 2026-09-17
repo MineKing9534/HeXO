@@ -11,7 +11,6 @@ dependencies {
     implementation(projects.game.hds)
     implementation(projects.game.model)
 
-    implementation(libs.cache)
     implementation(libs.kotlin.serialization.properties)
 
     runtimeOnly(libs.r2dbc.pool)

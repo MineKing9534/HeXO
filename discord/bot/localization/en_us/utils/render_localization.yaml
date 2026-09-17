@@ -1,6 +1,11 @@
-response.error: |-
-  ## Failed to parse the given input
-  
-  No valid HeXO notations found in target message!
-  
-  **NOTE:** Put HeXO notation parts of your message in code blocks!
+response.error:
+  empty: |-
+    ## Failed to parse the given input
+    
+    No valid HeXO notations found in target message!
+    
+    **NOTE:** Put HeXO notation parts of your message in code blocks!
+
+  image.too.large:
+    title: Image Too Large
+    details: The requested image requires ${required} of memory to render, but the limit is ${limit}!

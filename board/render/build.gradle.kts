@@ -10,15 +10,12 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             implementation(projects.board)
+            implementation(projects.utils.cache)
 
+            implementation(libs.kotlin.coroutines.core)
             implementation(libs.kotlin.serialization.core)
-            implementation(libs.svg)
-        }
-    }
 
-    sourceSets.jvmMain {
-        dependencies {
-            implementation(libs.cache)
+            implementation(libs.svg)
         }
     }
 
