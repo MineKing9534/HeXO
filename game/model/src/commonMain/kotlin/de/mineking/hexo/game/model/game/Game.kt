@@ -9,6 +9,8 @@ import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.tournament.TournamentMatchInfo
 import de.mineking.hexo.game.model.tournament.TournamentReference
 import de.mineking.hexo.utils.types.EntityId
+import de.mineking.hexo.utils.types.EntityNotFoundException
+import de.mineking.hexo.utils.types.orThrow
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -24,6 +26,7 @@ class GameReference(
     val id: GameId,
 ) {
     suspend fun retrieve() = repository.getGame(id)
+        .orThrow { EntityNotFoundException() }
 }
 
 interface Game {

@@ -7,10 +7,11 @@ import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
+import de.mineking.hexo.game.model.profile.getProfileStatisticsById
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.hds.implementation.utils.EntityRequestException
-import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
+import de.mineking.hexo.hds.implementation.parseBodyOrNull
 import de.mineking.hexo.utils.coroutines.awaitBoth
+import de.mineking.hexo.utils.types.EntityRequestException
 import de.mineking.hexo.utils.types.map
 import de.mineking.hexo.utils.types.orNull
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
@@ -39,7 +40,7 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
                     .parseBodyOrNull<ProfileDto, ProfileDto> { it }
                     .successIfNotNullOrElse(ProfileNotFoundError)
             },
-            second = { getProfileStatistics(id) },
+            second = { getProfileStatisticsById(id) },
         ).map { (profile, statistics) ->
             ProfileWithStatisticsImpl(client, profile, statistics)
         }.orNull()
@@ -61,7 +62,11 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
         }
     }
 
-    override suspend fun getProfileStatistics(id: ProfileId) = statisticsRequester.fetch(id).successIfNotNullOrElse(ProfileNotFoundError)
+    override suspend fun getProfileStatistics(id: ProfileIdentifier) = when (id) {
+        is ProfileIdentifier.Id -> statisticsRequester.fetch(id.id).successIfNotNullOrElse(ProfileNotFoundError)
+        is ProfileIdentifier.Name -> getProfile(id).map { it.statistics }
+    }
+
     override suspend fun getProfile(id: ProfileIdentifier) = when (id) {
         is ProfileIdentifier.Id -> requester.fetch(id.id)
         is ProfileIdentifier.Name -> getProfilesByName(id.name)

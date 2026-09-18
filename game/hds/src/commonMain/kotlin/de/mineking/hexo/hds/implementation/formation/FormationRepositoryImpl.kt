@@ -6,7 +6,7 @@ import de.mineking.hexo.game.model.formation.FormationNotFoundError
 import de.mineking.hexo.game.model.formation.FormationQueryError
 import de.mineking.hexo.game.model.formation.FormationRepository
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
+import de.mineking.hexo.hds.implementation.parseBodyOrNull
 import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 
