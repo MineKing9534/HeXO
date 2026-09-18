@@ -3,7 +3,7 @@ package de.mineking.hexo.hds.implementation.leaderboard
 import de.mineking.hexo.game.model.leaderboard.Leaderboard
 import de.mineking.hexo.game.model.leaderboard.LeaderboardRepository
 import de.mineking.hexo.hds.implementation.HdsApiClient
-import de.mineking.hexo.hds.implementation.utils.EntityRequestException
+import de.mineking.hexo.utils.types.EntityRequestException
 import io.ktor.client.call.body
 import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess

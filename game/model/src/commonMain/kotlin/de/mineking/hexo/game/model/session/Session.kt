@@ -9,7 +9,9 @@ import de.mineking.hexo.game.model.game.Player
 import de.mineking.hexo.game.model.game.TournamentMatchSnapshot
 import de.mineking.hexo.utils.types.Entity
 import de.mineking.hexo.utils.types.EntityId
+import de.mineking.hexo.utils.types.EntityNotFoundException
 import de.mineking.hexo.utils.types.EntityState
+import de.mineking.hexo.utils.types.orThrow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -24,6 +26,8 @@ class SessionReference(
     val id: SessionId,
 ) {
     suspend fun retrieve() = repository.getSession(id)
+        .orThrow { EntityNotFoundException() }
+
     fun observe() = repository.observeSession(id)
 }
 
