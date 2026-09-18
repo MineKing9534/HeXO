@@ -7,6 +7,7 @@ interface CacheEntry<out K, out V> {
     val key: K
     val value: V
     val accessCount: Long
+    val accessOrder: Long get() = insertionOrder
     val accessedAt: Instant
     val writtenAt: Instant
     val insertionOrder: Long
@@ -21,7 +22,7 @@ interface EvictionStrategy<in K, in V> {
     }
 
     object LeastRecentlyUsed : EvictionStrategy<Any?, Any?> {
-        override val comparator = compareBy<CacheEntry<Any?, Any?>> { it.accessedAt }
+        override val comparator = compareBy<CacheEntry<Any?, Any?>> { it.accessOrder }
     }
 
     object LeastFrequentlyUsed : EvictionStrategy<Any?, Any?> {

@@ -80,7 +80,11 @@ class CacheTest {
 
     @Test
     fun `least recently used eviction considers reads`() = runTest {
-        val cache = cache<String, Int>(size = 2, strategy = EvictionStrategy.LeastRecentlyUsed)
+        val cache = cache<String, Int>(
+            size = 2,
+            strategy = EvictionStrategy.LeastRecentlyUsed,
+            clock = TestClock(),
+        )
 
         cache.put("a", 1)
         cache.put("b", 2)

@@ -34,12 +34,14 @@ class InMemoryCache<K, V>(
         override var value: V,
         override var insertionOrder: Long,
         override var accessCount: Long,
+        override var accessOrder: Long,
         override var accessedAt: Instant,
         override var writtenAt: Instant,
         override var size: Long,
     ) : CacheEntry<K, V> {
         fun recordAccess() {
             accessedAt = clock.now()
+            accessOrder = nextAccessOrder()
             if (accessCount < Long.MAX_VALUE) accessCount++
         }
     }
@@ -49,6 +51,7 @@ class InMemoryCache<K, V>(
     private val inFlight = mutableMapOf<K, CompletableDeferred<V>>()
     private var currentSize = 0L
     private var nextInsertionOrder = 0L
+    private var nextAccessOrder = 0L
 
     override suspend fun get(key: K): V? {
         val load = synchronized(lock) {
@@ -135,13 +138,14 @@ class InMemoryCache<K, V>(
         }
 
         if (existing == null) {
-            entries[key] = Entry(key, value, nextInsertionOrder(), 0, now, now, valueSize)
+            entries[key] = Entry(key, value, nextInsertionOrder(), 0, nextAccessOrder(), now, now, valueSize)
         } else {
             existing.value = value
             existing.size = valueSize
             existing.writtenAt = now
             existing.accessedAt = now
             existing.accessCount = 0
+            existing.accessOrder = nextAccessOrder()
         }
 
         currentSize = if (Long.MAX_VALUE - currentSize < valueSize) Long.MAX_VALUE else currentSize + valueSize
@@ -179,5 +183,16 @@ class InMemoryCache<K, V>(
         }
 
         return nextInsertionOrder++
+    }
+
+    private fun nextAccessOrder(): Long {
+        if (nextAccessOrder == Long.MAX_VALUE) {
+            entries.values
+                .sortedBy { it.accessOrder }
+                .forEachIndexed { index, entry -> entry.accessOrder = index.toLong() }
+            nextAccessOrder = entries.size.toLong()
+        }
+
+        return nextAccessOrder++
     }
 }
