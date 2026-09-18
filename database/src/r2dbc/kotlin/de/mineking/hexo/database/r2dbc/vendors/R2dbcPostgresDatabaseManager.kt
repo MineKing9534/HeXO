@@ -11,6 +11,8 @@ import io.r2dbc.postgresql.api.ErrorDetails
 import io.r2dbc.postgresql.api.PostgresqlConnection
 import io.r2dbc.postgresql.api.PostgresqlException
 import io.r2dbc.spi.Connection
+import io.r2dbc.spi.ConnectionFactories
+import io.r2dbc.spi.ConnectionFactory
 import io.r2dbc.spi.R2dbcException
 import io.r2dbc.spi.Wrapped
 import kotlinx.coroutines.CancellationException
@@ -24,6 +26,7 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactive.awaitFirst
 import kotlinx.coroutines.reactive.awaitFirstOrNull
+import kotlinx.coroutines.reactive.awaitSingle
 import kotlinx.coroutines.reactive.collect
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.sync.Mutex
@@ -32,11 +35,19 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabase
-import org.reactivestreams.Publisher
+import org.jetbrains.exposed.v1.r2dbc.R2dbcDatabaseConfig
 
-class R2dbcPostgresDatabaseManager(
+class R2dbcPostgresDatabaseManager private constructor(
     connectionUrl: String,
-) : R2dbcDatabaseManager(R2dbcDatabase.connect(connectionUrl)) {
+    private val connectionFactory: ConnectionFactory,
+) : R2dbcDatabaseManager(
+    R2dbcDatabase.connect(
+        connectionFactory,
+        R2dbcDatabaseConfig.Builder().apply { setUrl(connectionUrl) },
+    ),
+) {
+    constructor(connectionUrl: String) : this(connectionUrl, ConnectionFactories.get(connectionUrl))
+
     override val notificationFormat = Json
 
     private val notificationLock = Mutex()
@@ -154,9 +165,7 @@ class R2dbcPostgresDatabaseManager(
     }
 
     private suspend fun createNotificationConnection(): NotificationConnection {
-        val exposed = database.connector()
-        @Suppress("UNCHECKED_CAST")
-        val source = (exposed.connection as Publisher<Connection>).awaitFirst()
+        val source = connectionFactory.create().awaitSingle()
         val postgres = source.findPostgresConnection()
 
         if (postgres == null) {
@@ -187,8 +196,7 @@ class R2dbcPostgresDatabaseManager(
         return null
     }
 
-    private fun listenStatement(command: String, channel: String) =
-        "$command \"${channel.replace("\"", "\"\"")}\""
+    private fun listenStatement(command: String, channel: String) = "$command \"${channel.replace("\"", "\"\"")}\""
 
     private enum class PostgresSqlState(val code: String) {
         NotNullViolation("23502") {
