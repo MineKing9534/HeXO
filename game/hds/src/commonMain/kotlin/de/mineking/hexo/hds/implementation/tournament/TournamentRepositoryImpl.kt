@@ -6,8 +6,8 @@ import de.mineking.hexo.game.model.tournament.TournamentNotFoundError
 import de.mineking.hexo.game.model.tournament.TournamentRepository
 import de.mineking.hexo.game.model.tournament.isTerminal
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.socket.TournamentUpdate
-import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.isSuccess
@@ -24,7 +24,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
         client.client.socketClient?.listen<TournamentUpdate> { (event) ->
             val isObserved = cacheLock.withLock { event.tournamentId in cache }
             if (isObserved) {
-                client.coroutineScope.launch {
+                client.client.httpClient.launch {
                     val _ = getTournament(event.tournamentId)
                 }
             }
@@ -66,7 +66,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
         }
 
         if (shouldStartFetch) {
-            client.coroutineScope.launch {
+            client.client.httpClient.launch {
                 val tournament = getTournament(id)
                 cacheLock.withLock {
                     flow.value = when {

@@ -1,6 +1,8 @@
 package de.mineking.hexo.hds.implementation.utils
 
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.utils.types.EntityRequester
+import de.mineking.hexo.utils.types.EntityRequesterFactory
 import de.mineking.hexo.utils.types.QueryResult
 import de.mineking.hexo.utils.types.QueryResultDto
 import de.mineking.hexo.utils.types.Selector

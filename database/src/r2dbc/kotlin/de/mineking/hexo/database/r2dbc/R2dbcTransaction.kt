@@ -4,7 +4,6 @@ import de.mineking.hexo.database.DatabaseManager
 import de.mineking.hexo.database.StatementResult
 import de.mineking.hexo.database.Transaction
 import kotlinx.serialization.SerializationStrategy
-import kotlinx.coroutines.flow.collect
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.FieldSet
 import org.jetbrains.exposed.v1.core.Op
@@ -39,6 +38,8 @@ class R2dbcTransaction(
         exposed.exec(AdvisoryLockExecutable(AdvisoryLockStatement(stringParam(key))))
             ?.collect()
     }
+
+    override suspend fun exec(statement: String) = exposed.exec(statement)
 
     override fun select(fields: FieldSet) = R2dbcQuery(fields, _columnType = null, transform = { it })
 

@@ -7,6 +7,8 @@ import de.mineking.hexo.game.model.profile.ProfileReference
 import de.mineking.hexo.game.model.session.SessionReference
 import de.mineking.hexo.utils.types.Entity
 import de.mineking.hexo.utils.types.EntityId
+import de.mineking.hexo.utils.types.EntityNotFoundException
+import de.mineking.hexo.utils.types.orThrow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
 import kotlin.time.Instant
@@ -20,6 +22,8 @@ class TournamentReference(
     val info: TournamentInfo,
 ) {
     suspend fun retrieve() = repository.getTournament(info.id)
+        .orThrow { EntityNotFoundException() }
+
     fun observe() = repository.observeTournament(info.id)
 }
 

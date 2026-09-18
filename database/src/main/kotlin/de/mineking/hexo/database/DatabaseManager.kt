@@ -9,6 +9,7 @@ import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.serializer
+import org.intellij.lang.annotations.Language
 import org.jetbrains.exposed.v1.core.ColumnSet
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
@@ -30,6 +31,7 @@ interface Transaction {
     val manager: DatabaseManager
 
     suspend fun acquireLock(key: String)
+    suspend fun exec(@Language("sql") statement: String)
 
     fun select(fields: FieldSet): Query<ResultRow>
 

@@ -29,7 +29,7 @@ private class CachingProfileRepository(
         delegate.getProfile(it)
     }
 
-    override suspend fun getProfileStatistics(id: ProfileId) = delegate.getProfileStatistics(id)
+    override suspend fun getProfileStatistics(id: ProfileIdentifier) = delegate.getProfileStatistics(id)
     override suspend fun getProfilesByName(name: String) = searchCache.getOrPut(name) {
         delegate.getProfilesByName(it)
     }
