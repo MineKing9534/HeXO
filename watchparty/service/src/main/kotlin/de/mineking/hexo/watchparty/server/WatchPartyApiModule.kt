@@ -3,8 +3,12 @@ package de.mineking.hexo.watchparty.server
 import de.mineking.hexo.server.api.ApiModule
 import de.mineking.hexo.utils.socketio.server.SocketIOSession
 import de.mineking.hexo.utils.socketio.server.socketIOSession
+import de.mineking.hexo.utils.types.isSuccess
+import de.mineking.hexo.utils.types.map
+import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 import de.mineking.hexo.watchparty.model.WatchPartyId
+import de.mineking.hexo.watchparty.model.WatchPartyNotFoundError
 import de.mineking.hexo.watchparty.protocol.WatchPartyAcknowledgement
 import de.mineking.hexo.watchparty.protocol.WatchPartyClosedResponse
 import de.mineking.hexo.watchparty.protocol.WatchPartyConnectData
@@ -18,8 +22,10 @@ import io.ktor.server.application.Application
 import io.ktor.server.application.ApplicationStopped
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.get
 import io.ktor.server.routing.post
 import io.ktor.server.routing.route
+import io.ktor.server.util.getOrFail
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -76,6 +82,18 @@ class WatchPartyApiModule(
         route("/watchparties") {
             post {
                 call.respond(HttpStatusCode.Created, WatchPartyCreatedResponse(createSession().id))
+            }
+
+            get("{id}") {
+                val id = WatchPartyId(call.parameters.getOrFail("id"))
+                val watchParty = sessions[id]
+                    .successIfNotNullOrElse(WatchPartyNotFoundError)
+                    .map { it.state.snapshot(WatchPartyConnectionId.generate()) }
+
+                call.respond(
+                    status = if (watchParty.isSuccess()) HttpStatusCode.OK else HttpStatusCode.NotFound,
+                    message = watchParty,
+                )
             }
 
             socketIOSession<WatchPartyRequest, WatchPartyResponse> {

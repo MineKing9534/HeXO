@@ -2,13 +2,15 @@ plugins {
     id("kotlin-jvm")
     id("application")
 
-    alias(libs.plugins.shadow)
     alias(libs.plugins.kotlin.serialization)
+    alias(libs.plugins.shadow)
 }
 
 dependencies {
     implementation(projects.launcher)
     implementation(projects.database)
+
+    implementation(projects.game.hds)
 
     implementation(projects.board)
     implementation(projects.board.parse)
@@ -19,9 +21,6 @@ dependencies {
     implementation(projects.discord.link)
     implementation(projects.discord.linkedRoles)
     implementation(projects.discord.oauth2.service)
-
-    implementation(projects.game.hds)
-    implementation(projects.utils.cache)
 
     implementation(libs.dtk)
 

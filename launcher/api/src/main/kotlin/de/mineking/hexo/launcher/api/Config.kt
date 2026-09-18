@@ -6,8 +6,8 @@ import kotlinx.serialization.Serializable
 
 @Serializable
 data class ApiApplicationConfig(
-    val oauth2: DiscordOAuth2Config? = null,
     val server: ServerConfig,
+    val oauth2: DiscordOAuth2Config? = null,
     val database: DatabaseConfig? = null,
 )
 

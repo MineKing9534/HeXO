@@ -43,6 +43,7 @@ include(":discord:config")
 include(":server")
 include(":server:api")
 include(":launcher")
+include(":launcher:web")
 include(":launcher:api")
 include(":launcher:discord")
 

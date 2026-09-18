@@ -2,8 +2,13 @@ package de.mineking.hexo.watchparty.client
 
 import de.mineking.hexo.utils.socketio.client.SocketIOClient
 import de.mineking.hexo.utils.socketio.client.awaitConnect
+import de.mineking.hexo.utils.types.EntityNotFoundException
+import de.mineking.hexo.utils.types.Result
+import de.mineking.hexo.utils.types.map
+import de.mineking.hexo.utils.types.orThrow
 import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 import de.mineking.hexo.watchparty.model.WatchPartyId
+import de.mineking.hexo.watchparty.model.WatchPartyNotFoundError
 import de.mineking.hexo.watchparty.protocol.WatchPartyClosedResponse
 import de.mineking.hexo.watchparty.protocol.WatchPartyConnectData
 import de.mineking.hexo.watchparty.protocol.WatchPartyCreatedResponse
@@ -15,6 +20,7 @@ import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.websocket.WebSockets
+import io.ktor.client.request.get
 import io.ktor.client.request.post
 import io.ktor.http.Url
 import io.ktor.http.isSuccess
@@ -24,7 +30,6 @@ import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CompletableDeferred
-import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.currentCoroutineContext
@@ -46,7 +51,6 @@ class WatchPartyClient(
             json(json)
         }
     },
-    private val coroutineScope: CoroutineScope,
 ) {
     suspend fun createWatchParty(): WatchPartyId {
         val response = httpClient.post("${apiUrl.trimEnd('/')}/watchparties")
@@ -55,11 +59,17 @@ class WatchPartyClient(
         return response.body<WatchPartyCreatedResponse>().id
     }
 
+    suspend fun getWatchParty(id: WatchPartyId): Result<WatchPartyView, WatchPartyNotFoundError> {
+        val response = httpClient.get("${apiUrl.trimEnd('/')}/watchparties/${id.value}")
+        return response.body<Result<WatchPartyDto, WatchPartyNotFoundError>>()
+            .map { WatchPartyView(this, it) }
+    }
+
     suspend fun connectWatchParty(
         id: WatchPartyId,
         detachOnClose: Boolean,
         connectionId: WatchPartyConnectionId? = null,
-    ): WatchParty? {
+    ): Result<WatchParty, WatchPartyNotFoundError> {
         val socket = SocketIOClient<WatchPartyResponse, WatchPartyRequest>(
             client = httpClient,
             url = Url("${apiUrl.trimEnd('/')}/watchparties"),
@@ -72,7 +82,7 @@ class WatchPartyClient(
         )
 
         val lock = SynchronizedObject()
-        val lifetime = SupervisorJob(coroutineScope.coroutineContext[Job])
+        val lifetime = SupervisorJob(httpClient.coroutineContext[Job])
 
         val initial = CompletableDeferred<WatchParty>(lifetime)
         var watchParty: WatchParty? = null
@@ -103,7 +113,7 @@ class WatchPartyClient(
         @Suppress("TooGenericExceptionCaught")
         try {
             socket.awaitConnect()
-            return initial.await()
+            return Result.Success(initial.await())
         } catch (cause: CancellationException) {
             lifetime.cancel()
             throw cause
@@ -111,14 +121,13 @@ class WatchPartyClient(
             lifetime.cancel()
             currentCoroutineContext().ensureActive()
             logger.warn(cause) { "Failed to connect to watchparty ${id.value}" }
-            return null
+            return Result.Error(WatchPartyNotFoundError)
         }
     }
 }
 
 suspend fun WatchPartyClient.createAndConnectWatchParty(detachOnClose: Boolean, connectionId: WatchPartyConnectionId? = null): WatchParty {
     val id = createWatchParty()
-    val watchParty = connectWatchParty(id, detachOnClose, connectionId)
-
-    return checkNotNull(watchParty) { "Could not connect to the created watchparty" }
+    return connectWatchParty(id, detachOnClose, connectionId)
+        .orThrow { EntityNotFoundException("Could not connect to the created watchparty") }
 }

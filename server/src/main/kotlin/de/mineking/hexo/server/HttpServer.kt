@@ -18,6 +18,8 @@ import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
+import io.ktor.server.routing.IgnoreTrailingSlash
+import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
 import io.socket.engineio.server.EngineIoServerOptions
@@ -38,6 +40,7 @@ class HttpServer(modules: List<ApiModule>, port: Int) {
             json(json)
         }
 
+        install(IgnoreTrailingSlash)
         install(CORS) {
             anyHost()
             allowMethod(HttpMethod.Post)
@@ -106,12 +109,16 @@ private fun Application.installErrorHandling() {
                 )
             }
         }
+    }
 
-        status(HttpStatusCode.NotFound) {
-            call.respondError(
-                status = HttpStatusCode.NotFound,
-                message = "There is no API endpoint at this address. Check the URL and try again.",
-            )
+    routing {
+        route("{path...}") {
+            handle {
+                call.respondError(
+                    status = HttpStatusCode.NotFound,
+                    message = "There is no API endpoint at this address. Check the URL and try again.",
+                )
+            }
         }
     }
 }

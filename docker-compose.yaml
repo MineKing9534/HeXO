@@ -90,13 +90,15 @@ services:
   web:
     build:
       context: .
-      dockerfile: web/Dockerfile
+      dockerfile: launcher/web/Dockerfile
       args:
         HDS_API_URL: ${HDS_API_URL:?}
         HMD_API_URL: ${HMD_API_URL:?}
     restart: unless-stopped
     expose:
       - "80"
+    environment:
+      server.port: 80
 
 volumes:
   hexo:

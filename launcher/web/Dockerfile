@@ -36,13 +36,14 @@ COPY . .
 
 RUN --mount=type=cache,id=hexo-gradle-web,target=/home/gradle/.gradle,sharing=locked \
     ./gradlew --no-daemon --parallel \
-        :web:kobwebExport \
-        -PkobwebExportLayout=STATIC \
+        :launcher:web:shadowJar \
         -Pweb.hdsApiUrl=${HDS_API_URL} \
-        -Pweb.hmdApiUrl=${HMD_API_URL} \
-    && cp -a web/.kobweb/site /site
+        -Pweb.hmdApiUrl=${HMD_API_URL}
 
-FROM nginx:1.31.1-alpine
+FROM eclipse-temurin:21-jre-alpine
 
-COPY --from=build /site /usr/share/nginx/html
-COPY web/nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
+
+COPY --from=build /workspace/launcher/web/build/libs/launcher-web-*-all.jar /app/launcher.jar
+
+ENTRYPOINT ["java", "-jar", "/app/launcher.jar"]

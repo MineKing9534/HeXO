@@ -1,16 +1,26 @@
 package de.mineking.hexo.launcher.api
 
+import de.mineking.hexo.board.render.image.ErrorMessage
 import de.mineking.hexo.discord.linkedroles.LinkedRolesOAuth2FlowHandler
 import de.mineking.hexo.discord.oauth2.api.InMemoryOAuth2AuthorizationSessionStore
 import de.mineking.hexo.discord.oauth2.api.OAuth2ApiModule
 import de.mineking.hexo.discord.oauth2.api.OAuth2AuthorizationService
+import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.HdsHttpClient
+import de.mineking.hexo.launcher.CachingRepositoryWrapper
+import de.mineking.hexo.launcher.api.modules.RenderApiModule
+import de.mineking.hexo.launcher.api.modules.RenderType
+import de.mineking.hexo.launcher.createBoardParser
+import de.mineking.hexo.launcher.createBoardRenderer
 import de.mineking.hexo.launcher.createDatabase
 import de.mineking.hexo.launcher.createOAuth2Dependencies
+import de.mineking.hexo.launcher.formatBytes
 import de.mineking.hexo.launcher.loadConfig
 import de.mineking.hexo.launcher.shutdownHook
 import de.mineking.hexo.server.HttpServer
 import de.mineking.hexo.server.api.ApiModule
 import de.mineking.hexo.watchparty.server.WatchPartyApiModule
+import io.ktor.http.ContentType
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -20,6 +30,14 @@ import kotlin.time.Duration.Companion.minutes
 suspend fun main() {
     val config = loadConfig<ApiApplicationConfig>()
     val database = config.database.createDatabase()
+
+    val hds = HdsApiClient(
+        client = HdsHttpClient.createDefault(),
+        repositoryWrapper = CachingRepositoryWrapper,
+    )
+
+    val parser = createBoardParser(hds)
+    val renderer = createBoardRenderer()
 
     val oauth2 = createOAuth2Dependencies(config.oauth2, config.server.url, database)
     val oauth2Module = oauth2?.let {
@@ -35,7 +53,12 @@ suspend fun main() {
         )
     }
     val server = HttpServer(
-        modules = listOfNotNull(HealthApiModule(), oauth2Module, WatchPartyApiModule()),
+        modules = listOfNotNull(
+            HealthApiModule(),
+            oauth2Module,
+            WatchPartyApiModule(),
+            RenderApiModule(parser, mapOf("png" to RenderType(renderer, ContentType.Image.PNG))),
+        ),
         port = config.server.port,
     )
 
@@ -48,6 +71,14 @@ suspend fun main() {
     printBanner()
 
     server.start(wait = true)
+}
+
+@Suppress("MaximumLineLength")
+private fun createBoardRenderer() = createBoardRenderer { error ->
+    ErrorMessage(
+        title = "Image Too Large",
+        details = "The requested image requires ${error.requiredBytes.formatBytes()} of memory to render, but the limit is ${error.limitBytes.formatBytes()}!",
+    )
 }
 
 private fun printBanner() {
@@ -64,10 +95,10 @@ private fun printBanner() {
 private class HealthApiModule : ApiModule() {
     override fun Route.registerRoutes() {
         get("/health") {
-            call.respond(HealthResponse())
+            call.respond(HealthResponse("Ok"))
         }
     }
 }
 
 @Serializable
-private class HealthResponse(val status: String = "ok")
+private class HealthResponse(val status: String)

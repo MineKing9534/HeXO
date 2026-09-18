@@ -1,6 +1,7 @@
 import com.github.gmazzo.buildconfig.BuildConfigValue.Expression
 import com.varabyte.kobweb.gradle.application.util.configAsKobwebApplication
 import kotlinx.html.link
+import kotlinx.html.unsafe
 
 plugins {
     id("kotlin-common")
@@ -24,6 +25,9 @@ kobweb {
             faviconPath = "/favicon.png"
             head.add {
                 link(rel = "stylesheet", type = "text/css", href = basePath.prependTo("/styles.css"))
+                unsafe {
+                    raw("<!-- HEXO_OPEN_GRAPH -->")
+                }
             }
         }
         export {
