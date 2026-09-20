@@ -19,7 +19,7 @@ import org.w3c.dom.events.KeyboardEvent
 
 @Composable
 fun Tooltip(
-    text: String,
+    text: String?,
     attrs: AttrBuilderContext<HTMLDivElement>? = null,
     tooltipAttrs: AttrBuilderContext<HTMLSpanElement>? = null,
     showArrow: Boolean = true,
@@ -32,6 +32,7 @@ fun Tooltip(
         attrs?.invoke(this)
     }) {
         content()
+
         Span({
             classes(
                 "fixed", "z-50", "rounded-lg", "border", "border-white/10", "bg-slate-800",
@@ -40,7 +41,7 @@ fun Tooltip(
                 "text-center", "whitespace-normal", "wrap-break-word", "shadow-md", "shadow-black/40",
             )
 
-            if (visible) {
+            if (visible && text != null) {
                 classes("pointer-events-auto", "opacity-100", "transition-opacity", "duration-150", "ease-out")
             } else {
                 classes("pointer-events-none", "opacity-0")
@@ -68,7 +69,7 @@ fun Tooltip(
                 })
             }
             Span({ classes("relative", "block") }) {
-                Text(text)
+                Text(text.orEmpty())
             }
         }
     }
