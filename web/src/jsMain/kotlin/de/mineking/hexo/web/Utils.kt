@@ -169,7 +169,7 @@ enum class DeviceType {
 @Composable
 fun rememberTheme() = SettingsKey.Theme.collectAsState().map { it.theme }
 
-private val Color.css get() = rgba(red, green, blue, alpha)
+val Color.css get() = rgba(red, green, blue, alpha / 255.0)
 fun BaseTheme.playerCssColor(owner: CellOwner) = playerColor(owner).css
 fun BaseTheme.playerColor(owner: CellOwner) = when (owner) {
     CellOwner.X -> playerXColor

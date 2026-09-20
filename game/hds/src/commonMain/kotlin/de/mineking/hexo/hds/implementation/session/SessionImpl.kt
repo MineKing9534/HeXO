@@ -218,13 +218,13 @@ internal class LiveSessionImpl(
                 is TimeControl.Unlimited -> null
                 is TimeControl.Turn ->
                     if (data.id == gameState.currentTurnPlayerId) {
-                        gameState.currentTurnExpiresIn
+                        gameState.currentTurnExpiresIn ?: gameState.playerTimeRemaining[data.id]
                     } else {
                         LiveDuration(dto.gameOptions.timeControl.turnTime, Clock.System.now())
                     }
                 is TimeControl.Match ->
                     if (data.id == gameState.currentTurnPlayerId) {
-                        gameState.currentTurnExpiresIn
+                        gameState.currentTurnExpiresIn ?: gameState.playerTimeRemaining[data.id]
                     } else {
                         gameState.playerTimeRemaining[data.id]
                     }

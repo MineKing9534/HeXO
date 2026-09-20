@@ -9,13 +9,35 @@ import org.jetbrains.compose.web.dom.Text
 internal fun PlayerConnectionStatus(
     status: SessionPlayerConnectionStatus,
     disconnectedAsWaiting: Boolean = false,
+    rematchAccepted: Boolean = false,
 ) {
     val waiting = disconnectedAsWaiting && status == SessionPlayerConnectionStatus.Disconnected
 
     Span({ classes("inline-flex", "items-center", "gap-1.5", "whitespace-nowrap") }) {
-        Span({ classes("size-1.5", "rounded-full", if (waiting) "bg-amber-400" else status.dotColor) })
-        Span({ classes(if (waiting) "text-amber-400" else status.textColor) }) {
-            Text(if (waiting) "Waiting" else status.label)
+        Span({
+            classes(
+                "size-1.5", "rounded-full",
+                when {
+                    rematchAccepted -> "bg-sky-400"
+                    waiting -> "bg-amber-400"
+                    else -> status.dotColor
+                },
+            )
+        })
+        Span({
+            classes(
+                when {
+                    rematchAccepted -> "text-sky-300"
+                    waiting -> "text-amber-400"
+                    else -> status.textColor
+                },
+            )
+        }) {
+            Text(when {
+                rematchAccepted -> "Rematch accepted"
+                waiting -> "Waiting"
+                else -> status.label
+            })
         }
     }
 }

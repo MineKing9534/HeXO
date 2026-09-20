@@ -9,6 +9,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
+import com.varabyte.kobweb.compose.css.borderColor
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
 import de.mineking.hexo.board.Move
@@ -19,6 +20,7 @@ import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardScope
 import de.mineking.hexo.board.render.compose.BoardViewport
+import de.mineking.hexo.board.render.image.theme.withAlpha
 import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.game.FinishedGamePlayer
 import de.mineking.hexo.game.model.game.Game
@@ -29,10 +31,12 @@ import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.web.components.Slider
+import de.mineking.hexo.web.css
 import de.mineking.hexo.web.icons.ChevronDownIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
 import de.mineking.hexo.web.icons.ChevronRightIcon
 import de.mineking.hexo.web.layout.rememberAppLayout
+import de.mineking.hexo.web.playerColor
 import de.mineking.hexo.web.playerCssColor
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.rememberWatchPartyController
@@ -304,9 +308,11 @@ private fun TurnIndicator(
     placementsRemaining: Int,
     timeProvider: PlayerTimeProvider,
 ) {
+    val theme by rememberTheme()
+
     @Composable
     fun PlayerIndicator(player: Player) {
-        val isCurrentTurn = player === currentPlayer
+        val isCurrentTurn = player === currentPlayer && game.result == null
         Div({ classes("flex", "flex-col", "justify-center", "gap-2") }) {
             Div({
                 classes(
@@ -315,6 +321,10 @@ private fun TurnIndicator(
                 )
                 if (isCurrentTurn) {
                     classes("border-emerald-400/70", "shadow-[inset_0_0_18px_rgb(16_185_129/0.08)]")
+                } else if (player === game.result?.winner) {
+                    style {
+                        borderColor(theme.playerColor(player.color).withAlpha(196).css)
+                    }
                 } else {
                     classes("border-slate-500/60")
                 }

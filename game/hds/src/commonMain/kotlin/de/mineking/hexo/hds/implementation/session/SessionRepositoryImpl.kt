@@ -6,6 +6,7 @@ import de.mineking.hexo.game.model.session.SessionId
 import de.mineking.hexo.game.model.session.SessionNotFoundError
 import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
 import de.mineking.hexo.game.model.session.SessionRepository
+import de.mineking.hexo.game.model.session.SessionSelector
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.socket.GameCellPlace
 import de.mineking.hexo.hds.implementation.socket.GameStateUpdated
@@ -20,12 +21,15 @@ import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
 import de.mineking.hexo.utils.socketio.client.SocketListener
 import de.mineking.hexo.utils.types.EntityState
+import de.mineking.hexo.utils.types.QueryResult
 import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.call.body
 import kotlinx.atomicfu.locks.SynchronizedObject
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 
@@ -47,16 +51,36 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         }
     }
 
+    private val listRequester = client.entityRequesterFactory.createEntityRequester<Unit, List<SessionImpl>> {
+        val response = client.request("/sessions")
+        val lobbies = response.body<List<LobbyInfoDto>>()
+
+        lobbies.map { SessionImpl(client, it) }
+    }
+
     init {
         client.client.socketClient?.registerLobbyListeners()
         client.coroutineScope.launch { populateLobbyList() }
     }
 
-    private suspend fun populateLobbyList() {
-        val response = client.request("/sessions")
-        val lobbies = response.body<List<LobbyInfoDto>>()
+    override suspend fun getSessions(selector: SessionSelector): QueryResult<Session> {
+        val sessions = listRequester.fetch(Unit)
+            .filter {
+                val filter = selector.filter?.rated ?: return@filter true
+                it.gameOptions.rated == filter
+            }
 
-        this.sessions.value = lobbies.associate { it.id to SessionImpl(client, it) }
+        val result = sessions
+            .drop(selector.offset ?: 0)
+            .take(selector.limit ?: Int.MAX_VALUE)
+
+        return object : QueryResult<Session>, Flow<Session> by result.asFlow() {
+            override val totalCount = sessions.size
+        }
+    }
+    private suspend fun populateLobbyList() {
+        this.sessions.value = listRequester.fetch(Unit)
+            .associateBy { it.id }
     }
 
     private fun HdsSocketClient.registerLobbyListeners() {
@@ -91,7 +115,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         require(client.client.socketClient != null)
 
         val listeners = mutableListOf<SocketListener>()
-        suspend fun cleanup() {
+        fun cleanup() {
             client.client.socketClient.request(HexoSocketRequest.UnwatchSession(id))
 
             sessionsLock.withLock { sessionFlows -= id }
