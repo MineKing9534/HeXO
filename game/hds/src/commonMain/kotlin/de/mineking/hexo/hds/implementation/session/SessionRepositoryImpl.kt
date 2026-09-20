@@ -91,7 +91,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         require(client.client.socketClient != null)
 
         val listeners = mutableListOf<SocketListener>()
-        suspend fun cleanup() {
+        fun cleanup() {
             client.client.socketClient.request(HexoSocketRequest.UnwatchSession(id))
 
             sessionsLock.withLock { sessionFlows -= id }

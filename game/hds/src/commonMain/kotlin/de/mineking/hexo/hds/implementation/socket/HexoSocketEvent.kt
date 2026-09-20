@@ -10,8 +10,10 @@ import de.mineking.hexo.hds.implementation.session.SessionMoveDto
 import de.mineking.hexo.hds.implementation.session.SessionPlayerDto
 import de.mineking.hexo.hds.implementation.session.SessionStateDto
 import kotlinx.serialization.KSerializer
+import kotlinx.serialization.SealedSerializationApi
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
 
@@ -74,13 +76,15 @@ internal data class LobbyRemoved(
 ) : HexoSocketEvent
 
 @Serializable(with = LobbyUpdated.LobbyUpdateSerializer::class)
-@SerialName("lobby-updated")
 internal data class LobbyUpdated(
     val id: SessionId,
     val data: LobbyInfoDto,
 ) : HexoSocketEvent {
     object LobbyUpdateSerializer : KSerializer<LobbyUpdated> {
-        override val descriptor = LobbyInfoDto.serializer().descriptor
+        @OptIn(SealedSerializationApi::class)
+        override val descriptor = object : SerialDescriptor by LobbyInfoDto.serializer().descriptor {
+            override val serialName = "lobby-updated"
+        }
 
         override fun deserialize(decoder: Decoder) = LobbyInfoDto.serializer().deserialize(decoder).let { LobbyUpdated(it.id, it) }
         override fun serialize(encoder: Encoder, value: LobbyUpdated) = throw UnsupportedOperationException()
