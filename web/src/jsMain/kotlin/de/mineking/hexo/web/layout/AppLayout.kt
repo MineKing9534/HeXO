@@ -152,7 +152,7 @@ private fun NavBar(activePage: AppRoute?, onOpenWatchPartyOptions: () -> Unit) {
                 Span({ classes("hidden", "min-w-0", "flex-col", "leading-none", "md:flex") }) {
                     Span({ classes("text-lg", "font-black", "tracking-tight", "text-slate-50") }) { Text("HeXO") }
                     Span({ classes("mt-1", "text-[10px]", "font-semibold", "uppercase", "tracking-[0.18em]", "text-emerald-300/70") }) {
-                        Text("Play · Analyse · Connect")
+                        Text("Play · Analyze · Connect")
                     }
                 }
             }

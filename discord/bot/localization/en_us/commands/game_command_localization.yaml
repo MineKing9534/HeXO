@@ -1,4 +1,4 @@
 command.game:
   description: Renders a finished game from hexo.did.science
   options:
-    id.description: The game id or url to view
+    id.description: The game ID or URL to view

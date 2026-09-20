@@ -3,7 +3,7 @@ response:
     profile.not.found: >-
       ## Profile Not Found
       
-      Profile with id **`${id.value}`** not found.
+      Profile with ID **`${id.value}`** not found.
 
     profile.verify.failed: >-
       ## Verification Failed

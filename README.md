@@ -94,7 +94,7 @@ Labels are define for the previous cell in square brackets.
 ### BKE Notation
 The bot can also render a variation of BKE notation. This is especially useful if you want turn numbers to be displayed on the rendered tiles.
 
-The basic idea of BKE notation is dividing the board in rings (identified by letters starting from 'A') around the origin and addressing cells using a ring and offset. For this to work, a zero offset line is required.
+The basic idea of BKE notation is dividing the board into rings (identified by letters starting from 'A') around the origin and addressing cells using a ring and offset. For this to work, a zero offset line is required.
 Even though the zero offset line is not required to identify a formation on an empty board, it is relevant to know in which orientation the formation should be rendered. 
 Also, when applying BKE on a non-empty board, the origin and zero offset line become vital to avoid ambiguity.
 
@@ -147,7 +147,7 @@ You can also use inline code segments (single backticks: `` ` ``) with HeXO nota
 ![example message command](assets/example_message_command.png)
 
 ### Command `game`
-Another feature is reviewing games from https://hexo.did.science in Discord. Simply use the `game` slash command and provide a game id (or link) to the game you want to review:
+Another feature is reviewing games from https://hexo.did.science in Discord. Simply use the `game` slash command and provide a game ID (or link) to the game you want to review:
 
 ![example review](assets/example_review.png)
 
@@ -184,7 +184,7 @@ java -jar launcher/discord/build/libs/launcher-discord-[version]-all.jar
 ```
 
 > [!NOTE]
-> You need a JDK 21 (or higher) installed to build the jar. To run it, a JRE is sufficient.
+> You need JDK 21 (or higher) installed to build the JAR. To run it, a JRE is sufficient.
 
 Configuration is done using environment variables at runtime. Each launcher column indicates whether the variable is required, optional, or unused (`—`).
 
@@ -249,14 +249,14 @@ As an alternative to building the modules manually, Docker Compose builds separa
 BOT_TOKEN=              # Discord bot token, required
 
 # The oauth2 block is optional
-OAUTH2_CLIENT_ID=       # Discord client id for linked roles
+OAUTH2_CLIENT_ID=       # Discord client ID for linked roles
 OAUTH2_CLIENT_SECRET=   # Discord client secret for linked roles
-OAUTH2_ENCRYPTION_KEY=  # Encryption key used for encrypting discord tokens
+OAUTH2_ENCRYPTION_KEY=  # Encryption key used for encrypting Discord tokens
 
-SERVER_URL=             # The public server url
+SERVER_URL=             # The public server URL
 
-HDS_API_URL=            # The HDS API url, e.g. https://hexo.mineking.dev/proxy/api
-HMD_API_URL=            # The HMD API url, e.g. https://hexo.mineking.dev/api
+HDS_API_URL=            # The HDS API URL, e.g. https://hexo.mineking.dev/proxy/api
+HMD_API_URL=            # The HMD API URL, e.g. https://hexo.mineking.dev/api
 ```
 
 To deploy all services, run:
