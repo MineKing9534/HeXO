@@ -11,4 +11,4 @@ response.error:
       component: ${ response_error_format(locale, "An unexpected error occurred whilst handling this component") }
       render: ${ response_error_format(locale, "An unexpected error occurred whilst rendering this menu") }
     modal:
-      handler: ${ response_error_format(locale, "An unexpected error occurred whilst handling this modal") }
+      handler: ${ response_error_format(locale, "An unexpected error occurred whilst handling this dialog") }

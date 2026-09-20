@@ -1,5 +1,5 @@
 command.render:
-  description: Opens a modal to render notation and normal text in a single message
+  description: Opens a dialog to render notation and normal text in a single message
 
 menu.hexo:
   title: Render HeXO Notation
