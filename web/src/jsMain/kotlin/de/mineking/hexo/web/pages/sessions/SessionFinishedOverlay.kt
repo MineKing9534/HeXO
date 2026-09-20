@@ -16,9 +16,7 @@ import de.mineking.hexo.game.model.session.RatingAdjustment
 import de.mineking.hexo.game.model.session.SessionState
 import de.mineking.hexo.web.board.PlayerName
 import de.mineking.hexo.web.board.gamePlayer
-import de.mineking.hexo.web.components.Badge
 import de.mineking.hexo.web.components.Card
-import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.EloBadge
 import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.components.SubCardVariant
@@ -242,7 +240,7 @@ private fun SessionFinishedMatchup(
                     Span({ classes("text-xs", "font-bold", "text-slate-600", "uppercase") }) { Text("vs") }
                 }
             }
-            SessionFinishedPlayerCard(player, game, result, rematchAcceptedPlayers)
+            SessionFinishedPlayerCard(player, game, result, player in rematchAcceptedPlayers)
         }
     }
 }
@@ -276,7 +274,7 @@ private fun SessionFinishedPlayerCard(
     player: Player,
     game: GameWithPosition,
     result: GameResult,
-    rematchAcceptedPlayers: List<Player>,
+    rematchAccepted: Boolean,
 ) {
     val winner = result.winner
 
@@ -285,20 +283,12 @@ private fun SessionFinishedPlayerCard(
             "relative", "h-full", "overflow-hidden", "p-3", "text-center", "transition",
         )
     }, if (winner == player) SubCardVariant.Highlighted else SubCardVariant.Deep) {
-        SessionFinishedPlayerHeader(result, player, game.options.rated)
-
-        if (player in rematchAcceptedPlayers) {
-            Div({ classes("mt-2", "flex", "flex-wrap", "items-center", "justify-center", "gap-1.5") }) {
-                Badge(Color.Sky) {
-                    Text("Rematch accepted")
-                }
-            }
-        }
+        SessionFinishedPlayerHeader(result, player, game.options.rated, rematchAccepted)
     }
 }
 
 @Composable
-private fun SessionFinishedPlayerHeader(result: GameResult, player: Player, rated: Boolean) {
+private fun SessionFinishedPlayerHeader(result: GameResult, player: Player, rated: Boolean, rematchAccepted: Boolean) {
     val eloAdjustment = if (rated) player.eloAdjustment(result.winner) else null
 
     Div({ classes("flex", "min-w-0", "flex-col", "items-center", "gap-1.5") }) {
@@ -310,7 +300,11 @@ private fun SessionFinishedPlayerHeader(result: GameResult, player: Player, rate
                 if (player == result.winner) classes("text-emerald-200!")
             })
             if (player is LiveSessionPlayer) {
-                SessionPlayerMeta(player, eloAdjustment = eloAdjustment)
+                SessionPlayerMeta(
+                    player = player,
+                    eloAdjustment = eloAdjustment,
+                    rematchAccepted = rematchAccepted,
+                )
             } else {
                 player.elo?.let { elo ->
                     Div({ classes("mt-2") }) { EloBadge(elo, eloAdjustment) }

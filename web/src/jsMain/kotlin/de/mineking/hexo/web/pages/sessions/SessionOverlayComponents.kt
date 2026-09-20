@@ -44,10 +44,11 @@ internal fun SessionPlayerMeta(
     player: SessionPlayer,
     disconnectedAsWaiting: Boolean = false,
     eloAdjustment: Int? = null,
+    rematchAccepted: Boolean = false,
 ) {
     Div({ classes("mt-2", "flex", "flex-col", "items-center", "justify-center", "gap-2", "text-xs") }) {
         player.elo?.let { EloBadge(it, eloAdjustment) }
-        PlayerConnectionStatus(player.connectionStatus, disconnectedAsWaiting)
+        PlayerConnectionStatus(player.connectionStatus, disconnectedAsWaiting, rematchAccepted)
     }
 }
 
