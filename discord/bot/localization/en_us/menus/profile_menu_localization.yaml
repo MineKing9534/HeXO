@@ -1,7 +1,7 @@
 error:
   profile.not.found: |-
     ## Profile not found
-    The queried profile with id **${id.value}** was not found!
+    The queried profile with ID **${id.value}** was not found!
 
 menu.profile:
   view.label: View in Browser

@@ -2,7 +2,7 @@ menu.notation:
   title.content: "# :pencil: Notation Output"
 
   game_not_found.content: The requested game was not found
-  notation_too_long.content: "The generated notation was too long to send in a discord message. It was uploaded as file instead:"
+  notation_too_long.content: "The generated notation was too long to send in a Discord message. It was uploaded as a file instead:"
 
   notation_label.content: Select the output notation
   notation.options:

@@ -1,7 +1,7 @@
 error:
   match.not.found: |-
     ## Game not found
-    The queried game with id **${id.value}** was not found!
+    The queried game with ID **${id.value}** was not found!
 
 menu.game:
   title.content: !<game:FinishedGame> |-

@@ -30,7 +30,7 @@ abstract class R2dbcDatabaseManager protected constructor(
                 } catch (e: R2dbcException) {
                     // Transform R2dbc errors to the custom DatabaseError model. If the exception does not match any
                     // of the expected errors, the exception is rethrown to be handled by exposed.
-                    // Otherwise, a UnexpectedDatabaseError is thrown to be then caught outside the transaction and transformed to a Result.
+                    // Otherwise, an UnexpectedDatabaseError is thrown to be caught outside the transaction and transformed into a Result.
                     // This is currently the only way to go about error handling in exposed.
                     throw UnexpectedDatabaseErrorException.Known(extractDatabaseError(e))
                 }

@@ -3,13 +3,13 @@ command:
   profile:
     description: Displays information about a hexo.did.science profile
     options:
-      name.description: The profile name, id or url to view
+      name.description: The profile name, ID, or URL to view
 
 response.error:
   not.found.generic: |-
     ## Profile Not Found
     
-    Unable to find a profile id associated with the given input.
+    Unable to find a profile ID associated with the given input.
 
   not.found.user: |-
     ## Profile Not Found
