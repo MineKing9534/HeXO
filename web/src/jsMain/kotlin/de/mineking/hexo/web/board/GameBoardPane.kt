@@ -31,6 +31,7 @@ import de.mineking.hexo.game.model.session.LiveSessionPlayer
 import de.mineking.hexo.game.model.tournament.requiredWins
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.web.components.Slider
+import de.mineking.hexo.web.components.Tooltip
 import de.mineking.hexo.web.css
 import de.mineking.hexo.web.icons.ChevronDownIcon
 import de.mineking.hexo.web.icons.ChevronLeftIcon
@@ -169,7 +170,7 @@ private fun MoveSliderPanel(boardViewManager: GameBoardViewManager, totalMoves: 
         classes(
             "absolute", "bottom-14", "left-0", "sm:static", "flex", "min-w-0", "sm:flex-1",
             "items-center", "gap-2", "rounded-lg", "border",
-            "border-slate-700/70", "bg-slate-950/85", "pl-1", "pr-1", "sm:pr-3", "shadow-md", "backdrop-blur-xs",
+            "border-slate-700/70", "bg-slate-950/85", "sm:pr-3", "shadow-md", "backdrop-blur-xs",
         )
     }) {
         Div {
@@ -201,29 +202,25 @@ private fun MoveSliderPanel(boardViewManager: GameBoardViewManager, totalMoves: 
 @Composable
 private fun MoveIndicatorButton(currentMove: Int, totalMoves: Int, onClick: () -> Unit) {
     val reviewingHistory = currentMove < totalMoves
-    Button({
-        classes(
-            "inline-flex", "h-9", "shrink-0", "cursor-pointer", "items-center", "gap-2", "rounded-md",
-            "px-2.5",
-            "transition-colors", "hover:bg-slate-900/85",
-        )
-        if (reviewingHistory) {
-            attr("title", "Return to latest move")
-        } else {
-            attr("title", "Latest move")
-        }
-        attr("aria-label", if (reviewingHistory) "Return to latest move" else "Latest move")
-        onClick { onClick() }
-    }) {
-        Span({ classes("text-[10px]", "font-semibold", "uppercase", "tracking-[0.16em]", "text-slate-400") }) {
-            Text("Move")
-        }
-        Span({ classes("flex", "items-baseline", "gap-1", "tabular-nums") }) {
-            Span({ classes("text-sm", "font-extrabold", if (reviewingHistory) "text-amber-200" else "text-slate-100") }) {
-                Text("$currentMove")
+    Tooltip(text = "Return to latest move".takeIf { reviewingHistory }) {
+        Button({
+            classes(
+                "inline-flex", "h-9", "shrink-0", "cursor-pointer", "items-center", "gap-2", "rounded-md",
+                "px-2.5", "transition-colors", "hover:bg-slate-900/85",
+            )
+            attr("aria-label", if (reviewingHistory) "Return to latest move" else "Latest move")
+            onClick { onClick() }
+        }) {
+            Span({ classes("text-[10px]", "font-semibold", "uppercase", "tracking-[0.16em]", "text-slate-400") }) {
+                Text("Move")
             }
-            Span({ classes("text-[10px]", "font-medium", "text-slate-600") }) { Text("/") }
-            Span({ classes("text-xs", "font-semibold", "text-slate-400") }) { Text("$totalMoves") }
+            Span({ classes("flex", "items-baseline", "gap-1", "tabular-nums") }) {
+                Span({ classes("text-sm", "font-extrabold", if (reviewingHistory) "text-amber-200" else "text-slate-100") }) {
+                    Text("$currentMove")
+                }
+                Span({ classes("text-[10px]", "font-medium", "text-slate-600") }) { Text("/") }
+                Span({ classes("text-xs", "font-semibold", "text-slate-400") }) { Text("$totalMoves") }
+            }
         }
     }
 }
