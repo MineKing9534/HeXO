@@ -23,6 +23,7 @@ import de.mineking.hexo.game.model.session.SessionTurn
 import de.mineking.hexo.game.model.session.hasStarted
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.Instant
+import de.mineking.hexo.hds.implementation.game.GameFinishReasonDto
 import de.mineking.hexo.hds.implementation.game.GameOptionsDto
 import de.mineking.hexo.hds.implementation.game.GameResultDto
 import de.mineking.hexo.hds.implementation.game.PlayerImpl
@@ -235,6 +236,14 @@ internal class LiveSessionImpl(
                 } else {
                     time
                 }
+            } ?: when (stateDto) {
+                is SessionStateDto.Finished if stateDto.finishReason == GameFinishReasonDto.Timeout && data.id != stateDto.winningPlayerId ->
+                    LiveDuration(Duration.ZERO, stateDto.finishedAt)
+
+                is SessionStateDto.Finished if dto.gameOptions.timeControl is TimeControl.Turn ->
+                    LiveDuration(dto.gameOptions.timeControl.turnTime, stateDto.finishedAt)
+
+                else -> null
             },
         )
     }
