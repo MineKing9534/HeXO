@@ -37,7 +37,11 @@ internal class FinishedGameImpl(
                 }
             },
         )
-    }.sortedBy { player -> dto.moves.indexOfFirst { it.playerId == player.id } }
+    }.sortedBy { player ->
+        dto.moves.indexOfFirst { it.playerId == player.id }
+            .takeIf { it >= 0 }
+            ?: Int.MAX_VALUE
+    }
 
     override val position = dto.moves.map {
         FinishedGameMove(

@@ -290,7 +290,12 @@ internal class SessionGameImpl(
     override val startedAt = session.startedAt
     override val result = (session.state as? SessionState.Detailed.Finished)?.result
     override val options = session.dto.gameOptions
-    override val players = session.players.sortedBy { player -> session.gameState.cells?.indexOfFirst { it.occupiedBy == player.id } }
+    override val players = session.players.sortedBy { player ->
+        session.gameState.cells
+            ?.indexOfFirst { it.occupiedBy == player.id }
+            ?.takeIf { it >= 0 }
+            ?: Int.MAX_VALUE
+    }
     override val tournament = session.tournament
     override val position = session.gameState.cells!!.map { move ->
         GameMove(
