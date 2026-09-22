@@ -24,7 +24,10 @@ import org.jetbrains.compose.web.dom.Text
 @Composable
 fun SettingsView() {
     Div({ classes("flex", "flex-col", "gap-5") }) {
-        SettingsSection("Appearance") { ThemeSettingsField() }
+        SettingsSection("Appearance") {
+            ThemeSettingsField()
+            TimerDecimalDisplaySettingsField()
+        }
         SettingsSection("Board assistance") {
             BooleanSettingsField(
                 key = SettingsKey.ReadOnlyBoardHoverIndicator,
@@ -51,6 +54,53 @@ fun SettingsView() {
             )
         }
     }
+}
+
+@Composable
+private fun TimerDecimalDisplaySettingsField() {
+    var value by SettingsKey.TimerDecimalDisplay.collectAsState()
+
+    Div({
+        classes(
+            "grid", "gap-3", "rounded-lg", "border", "border-slate-800", "bg-slate-950/40",
+            "p-3",
+        )
+    }) {
+        Div({ classes("grid", "gap-1") }) {
+            Span({ classes("text-sm", "font-semibold", "text-slate-200") }) { Text("Decimal timer") }
+            Span({ classes("text-sm", "leading-snug", "text-slate-500") }) {
+                Text("Choose when player timers show tenths of a second.")
+            }
+        }
+        DropdownMenu(label = { Text(value.displayName) }) { close ->
+            TimerDecimalDisplayMode.entries.forEach { entry ->
+                Button({
+                    classes(
+                        "flex", "w-full", "cursor-pointer", "items-center", "justify-between", "rounded-lg",
+                        "border", "px-3", "py-2.5", "text-left", "text-sm", "font-semibold", "transition",
+                    )
+                    if (entry == value) {
+                        classes("border-emerald-400/25", "bg-emerald-500/10", "text-emerald-200")
+                    } else {
+                        classes("border-transparent", "text-slate-400", "hover:bg-slate-800", "hover:text-slate-100")
+                    }
+                    onClick {
+                        value = entry
+                        close()
+                    }
+                }) {
+                    Text(entry.displayName)
+                    if (entry == value) CheckIcon { classes("size-4", "shrink-0") }
+                }
+            }
+        }
+    }
+}
+
+private val TimerDecimalDisplayMode.displayName get() = when (this) {
+    TimerDecimalDisplayMode.Always -> "Always"
+    TimerDecimalDisplayMode.Never -> "Never"
+    TimerDecimalDisplayMode.Below10Seconds -> "Below 10s"
 }
 
 @Composable

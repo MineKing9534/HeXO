@@ -42,6 +42,7 @@ import de.mineking.hexo.web.playerCssColor
 import de.mineking.hexo.web.rememberTheme
 import de.mineking.hexo.web.rememberWatchPartyController
 import de.mineking.hexo.web.settings.SettingsKey
+import de.mineking.hexo.web.settings.TimerDecimalDisplayMode
 import de.mineking.hexo.web.settings.collectAsState
 import kotlinx.browser.window
 import org.jetbrains.compose.web.attributes.disabled
@@ -58,6 +59,7 @@ import org.w3c.dom.events.KeyboardEvent
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration
 import kotlin.time.Duration.Companion.seconds
 
 @Composable
@@ -284,6 +286,7 @@ private fun nextMove(move: Int, totalMoves: Int) = if (move >= totalMoves - 1) I
 @Composable
 private fun PlayerTimer(player: Player, current: Boolean, timeProvider: PlayerTimeProvider) {
     val timer = timeProvider.remainingTime(player, current) ?: return
+    val decimalDisplay by SettingsKey.TimerDecimalDisplay.collectAsState()
     Div({
         classes("font-extrabold", "text-lg", "leading-none", "tabular-nums")
         if (current) {
@@ -292,18 +295,29 @@ private fun PlayerTimer(player: Player, current: Boolean, timeProvider: PlayerTi
             classes("text-slate-200")
         }
     }) {
-        if (timer < 10.seconds) {
-            val totalTenths = timer.inWholeMilliseconds / 100
-            val seconds = totalTenths / 10
-            val tenths = totalTenths % 10
-            Text("0$seconds.$tenths")
-        } else {
-            val totalSeconds = ceil(timer.inWholeMilliseconds / 1000.0).toInt()
-            val minutes = totalSeconds / 60
-            val seconds = totalSeconds % 60
-            Text("$minutes:${seconds.toString().padStart(2, '0')}")
+        val showTenths = when (decimalDisplay) {
+            TimerDecimalDisplayMode.Always -> true
+            TimerDecimalDisplayMode.Never -> false
+            TimerDecimalDisplayMode.Below10Seconds -> timer < 10.seconds
         }
+        Text(timer.formatTimer(showTenths))
     }
+}
+
+private fun Duration.formatTimer(showTenths: Boolean): String {
+    val totalTenths = if (showTenths) {
+        inWholeMilliseconds / 100
+    } else {
+        ceil(inWholeMilliseconds / 1000.0).toLong() * 10
+    }
+    val minutes = totalTenths / 600
+    val seconds = totalTenths / 10 % 60
+    val secondsText = seconds.toString().padStart(2, '0')
+
+    if (!showTenths) return "$minutes:$secondsText"
+
+    val time = "$secondsText.${totalTenths % 10}"
+    return if (minutes > 0) "$minutes:$time" else time
 }
 
 @Composable
