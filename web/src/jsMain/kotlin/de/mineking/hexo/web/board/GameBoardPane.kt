@@ -58,6 +58,7 @@ import org.w3c.dom.events.KeyboardEvent
 import kotlin.math.ceil
 import kotlin.math.max
 import kotlin.math.min
+import kotlin.time.Duration.Companion.seconds
 
 @Composable
 fun GameBoardPane(
@@ -291,10 +292,17 @@ private fun PlayerTimer(player: Player, current: Boolean, timeProvider: PlayerTi
             classes("text-slate-200")
         }
     }) {
-        val totalSeconds = ceil(timer.inWholeMilliseconds / 1000.0).toInt()
-        val minutes = totalSeconds / 60
-        val seconds = totalSeconds % 60
-        Text("$minutes:${seconds.toString().padStart(2, '0')}")
+        if (timer < 10.seconds) {
+            val totalTenths = timer.inWholeMilliseconds / 100
+            val seconds = totalTenths / 10
+            val tenths = totalTenths % 10
+            Text("0$seconds.$tenths")
+        } else {
+            val totalSeconds = ceil(timer.inWholeMilliseconds / 1000.0).toInt()
+            val minutes = totalSeconds / 60
+            val seconds = totalSeconds % 60
+            Text("$minutes:${seconds.toString().padStart(2, '0')}")
+        }
     }
 }
 
