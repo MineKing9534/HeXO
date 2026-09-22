@@ -152,7 +152,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
 
                 if (
                     event.session.state is SessionStateDto.Finished &&
-                    session.players.any { it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
+                    session.players.all { it.connectionStatus == SessionPlayerConnectionStatus.Disconnected }
                 ) {
                     logger.info { "Session ${id.value} removed because it has finished" }
                     cleanup()
