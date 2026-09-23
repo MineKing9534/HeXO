@@ -44,6 +44,8 @@ ktor-server-websockets = { module = "io.ktor:ktor-server-websockets", version.re
 ktor-server-cors = { module = "io.ktor:ktor-server-cors", version.ref = "ktor" }
 ktor-server-rateLimit = { module = "io.ktor:ktor-server-rate-limit", version.ref = "ktor" }
 
+jwt = { module = "com.auth0:java-jwt", version = "4.6.1" }
+
 socketio-server = { module = "io.socket:socket.io-server", version = "4.1.2" }
 socketio-client = { module = "com.piasy:kmp-socketio", version = "1.4.4" }
 jakarta-servlet = { module = "jakarta.servlet:jakarta.servlet-api", version = "6.0.0" }

@@ -17,6 +17,7 @@ import de.mineking.hexo.web.components.SubCard
 import de.mineking.hexo.web.components.SubCardVariant
 import de.mineking.hexo.web.icons.DiscordIcon
 import de.mineking.hexo.web.layout.PageData
+import de.mineking.hexo.web.rememberDiscordOAuth2Client
 import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
@@ -31,7 +32,7 @@ fun initLinkedRolesPage(ctx: InitRouteContext) {
 @Page("/linked-roles")
 @Composable
 fun LinkedRolesPage() {
-    val client = rememberDiscordOAuth2ApiClient()
+    val client = rememberDiscordOAuth2Client()
 
     LaunchedEffect(Unit) {
         if (AppGlobals.isExporting) return@LaunchedEffect

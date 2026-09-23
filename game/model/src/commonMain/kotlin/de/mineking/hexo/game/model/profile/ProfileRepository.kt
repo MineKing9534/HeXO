@@ -12,7 +12,6 @@ sealed interface ProfileQueryError : IError
 data object ProfileNotFoundError : ProfileQueryError
 
 sealed interface ProfileIdentifier {
-    data class Id(val id: ProfileId) : ProfileIdentifier
     data class Name(val name: String) : ProfileIdentifier
 }
 
@@ -31,8 +30,5 @@ interface ProfileRepository : EntityRepository<Profile> {
     }
 }
 
-suspend fun ProfileRepository.getProfileById(id: ProfileId) = getProfile(ProfileIdentifier.Id(id))
 suspend fun ProfileRepository.getProfileByName(name: String) = getProfile(ProfileIdentifier.Name(name))
-
-suspend fun ProfileRepository.getProfileStatisticsById(id: ProfileId) = getProfileStatistics(ProfileIdentifier.Id(id))
 suspend fun ProfileRepository.getProfileStatisticsByName(name: String) = getProfileStatistics(ProfileIdentifier.Name(name))

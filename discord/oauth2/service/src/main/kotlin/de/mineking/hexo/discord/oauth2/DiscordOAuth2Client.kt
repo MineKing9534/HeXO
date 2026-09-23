@@ -1,6 +1,5 @@
 package de.mineking.hexo.discord.oauth2
 
-import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
 import io.ktor.client.HttpClient
@@ -32,6 +31,8 @@ import kotlinx.serialization.json.Json
 import net.dv8tion.jda.api.requests.RestConfig
 import kotlin.time.Duration.Companion.seconds
 
+data class TokenResponse(val details: UserDetails, val tokens: OAuth2Tokens)
+
 class DiscordOAuth2Client(
     private val clientId: String,
     private val clientSecret: String,
@@ -59,12 +60,9 @@ class DiscordOAuth2Client(
         parameters.append("state", state)
     }.buildString()
 
-    private suspend fun getCurrentUserId(accessToken: String): DiscordUserId {
+    private suspend fun getUserDetails(accessToken: String): UserDetails {
         @Serializable
-        data class User(val id: DiscordUserId)
-
-        @Serializable
-        data class Response(val user: User)
+        data class Response(val user: UserDetails)
 
         val response = retryRateLimited {
             httpClient.get("$apiUrl/oauth2/@me") {
@@ -72,12 +70,12 @@ class DiscordOAuth2Client(
             }
         }.body<Response>()
 
-        return response.user.id
+        return response.user
     }
 
     suspend fun exchangeAuthorizationCode(
         code: String,
-    ): Result<OAuth2Tokens, OAuth2TokenExchangeError> {
+    ): Result<TokenResponse, OAuth2TokenExchangeError> {
         val response = retryRateLimited {
             httpClient.submitForm(
                 "$apiUrl/oauth2/token",
@@ -94,7 +92,10 @@ class DiscordOAuth2Client(
         if (!response.status.isSuccess()) return Result.Error(OAuth2TokenExchangeError)
 
         val data = response.body<OAuth2TokensDto>()
-        return Result.Success(OAuth2Tokens(this, data, getCurrentUserId(data.accessToken)))
+
+        val details = getUserDetails(data.accessToken)
+        val tokens = OAuth2Tokens(this, data, details.id)
+        return Result.Success(TokenResponse(details, tokens))
     }
 
     internal suspend fun refreshToken(refreshToken: String): Result<OAuth2Tokens, OAuth2TokenRefreshError> {
@@ -114,7 +115,7 @@ class DiscordOAuth2Client(
             when {
                 response.status.isSuccess() -> {
                     val data = response.body<OAuth2TokensDto>()
-                    Result.Success(OAuth2Tokens(this, data, getCurrentUserId(data.accessToken)))
+                    Result.Success(OAuth2Tokens(this, data, getUserDetails(data.accessToken).id))
                 }
 
                 response.status == HttpStatusCode.BadRequest && response.body<OAuth2ErrorResponse>().error == "invalid_grant" -> {

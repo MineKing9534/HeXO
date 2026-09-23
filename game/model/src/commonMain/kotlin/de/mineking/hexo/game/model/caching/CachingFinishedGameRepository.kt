@@ -12,10 +12,13 @@ import de.mineking.hexo.utils.types.Result
 
 fun FinishedGameRepository.caching(
     config: CacheConfiguration<GameId, Result<FinishedGameWithPosition, GameQueryError>>,
-): FinishedGameRepository = CachingFinishedGameRepository(this, config)
+): FinishedGameRepository {
+    require(this !is CachingFinishedGameRepository)
+    return CachingFinishedGameRepository(this, config)
+}
 
-private class CachingFinishedGameRepository(
-    val delegate: FinishedGameRepository,
+open class CachingFinishedGameRepository(
+    open val delegate: FinishedGameRepository,
     config: CacheConfiguration<GameId, Result<FinishedGameWithPosition, GameQueryError>>,
 ) : FinishedGameRepository {
     override val url by delegate::url

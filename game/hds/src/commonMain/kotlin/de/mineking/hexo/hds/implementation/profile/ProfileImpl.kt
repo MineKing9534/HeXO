@@ -4,7 +4,6 @@ import de.mineking.hexo.game.model.game.FinishedGameSelector
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
-import de.mineking.hexo.game.model.profile.getProfileStatisticsById
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.utils.types.EntityNotFoundException
 import de.mineking.hexo.utils.types.orThrow
@@ -20,7 +19,7 @@ internal class ProfileImpl(
     override val image = dto.image
     override val registeredAt = dto.registeredAt
 
-    override suspend fun retrieveStatistics(forceUpdate: Boolean) = client.profileRepository.getProfileStatisticsById(id)
+    override suspend fun retrieveStatistics(forceUpdate: Boolean) = client.profileRepository.getProfileStatistics(id)
         .orThrow { EntityNotFoundException() }
 
     override suspend fun withStatistics(forceUpdate: Boolean) = ProfileWithStatisticsImpl(client, dto, retrieveStatistics())
@@ -38,7 +37,7 @@ internal class ProfileWithStatisticsImpl(
         if (!forceUpdate) return statistics
 
         return client.profileRepository
-            .getProfileStatisticsById(id)
+            .getProfileStatistics(id)
             .orThrow { EntityNotFoundException() }
     }
 }

@@ -20,6 +20,6 @@ fun ChevronDownIcon(attrs: AttrBuilderContext<SVGElement>? = null) {
         attr("aria-hidden", "true")
         attrs?.invoke(this)
     }) {
-        Path("m18 15-6-6-6 6")
+        Path("m6 9 6 6 6-6")
     }
 }

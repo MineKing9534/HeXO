@@ -356,17 +356,11 @@ private fun GameRow(game: FinishedGame, previewing: Boolean, onPreview: () -> Un
                     }
                 }
             }
-            P({ classes("mt-1", "truncate", "text-xs", "font-mono", "text-slate-600") }) {
-                Text(game.id.value)
+            P({ classes("mt-1", "mb-4", "block", "text-xs", "text-slate-500") }) {
+                Text(Date(game.startedAt.toEpochMilliseconds().toDouble()).formatMinutePrecision())
             }
-
-            Div({ classes("mt-3", "flex", "flex-wrap", "items-center", "gap-2") }) {
+            Div({ classes("mt-2", "flex", "flex-wrap", "items-center", "gap-2") }) {
                 GameTypeBadge(game.options, game.tournament)
-                Badge(attrs = {
-                    attr("title", game.startedAt.toString())
-                }) {
-                    Text(Date(game.startedAt.toEpochMilliseconds().toDouble()).formatMinutePrecision())
-                }
                 Badge {
                     Text(game.result.duration.formatCompact())
                 }

@@ -70,16 +70,12 @@ class OAuth2ApiModule(
                     val code = call.queryParameters.getOrFail("code")
                     val state = call.queryParameters.getOrFail("state")
 
-                    when (val result = authorizationService.completeAuthorization(code, state)) {
+                    when (val result = authorizationService.completeAuthorization(call, code, state)) {
                         is Result.Success -> call.respond(OAuth2CallbackResponse(success = true, flow = result.value))
-                        is Result.Error -> {
-                            val flow = when (val error = result.error) {
-                                is OAuth2CodeExchangeFailed -> error.flow
-                                is OAuth2FlowCompletionFailed -> error.flow
-                                else -> null
-                            }
-                            call.respond(HttpStatusCode.Unauthorized, OAuth2CallbackResponse(success = false, flow = flow))
-                        }
+                        is Result.Error -> call.respond(
+                            status = HttpStatusCode.Unauthorized,
+                            message = OAuth2CallbackResponse(success = false, flow = result.error.flow),
+                        )
                     }
                 }
             }

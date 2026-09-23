@@ -6,6 +6,7 @@ import de.mineking.hexo.discord.oauth2.model.OAuth2Flow
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.get
 import io.ktor.client.request.parameter
 import io.ktor.http.isSuccess
@@ -30,6 +31,7 @@ class DiscordOAuth2ApiClient(
 
     suspend fun completeAuthorization(code: String, state: String): OAuth2CallbackResponse {
         val response = client.get("${apiUrl.trimEnd('/')}/oauth2/callback") {
+            configureCookieResponse()
             parameter("code", code)
             parameter("state", state)
         }
@@ -38,3 +40,5 @@ class DiscordOAuth2ApiClient(
 
     override fun close() = client.close()
 }
+
+internal expect fun HttpRequestBuilder.configureCookieResponse()

@@ -11,6 +11,9 @@ kotlin {
 
             implementation(projects.utils.socketio.client)
             implementation(libs.bundles.ktor.client)
+
+            implementation(projects.utils.cache)
+            implementation(libs.logging)
         }
     }
 
