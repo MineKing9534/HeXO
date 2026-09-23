@@ -3,7 +3,6 @@ package de.mineking.hexo.database
 import de.mineking.hexo.utils.types.Result
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
@@ -68,7 +67,7 @@ interface StatementResult : Flow<ResultRow> {
     suspend fun isNotEmpty() = !isEmpty()
 
     suspend fun execute() {
-        first()
+        firstOrNull()
     }
 }
 

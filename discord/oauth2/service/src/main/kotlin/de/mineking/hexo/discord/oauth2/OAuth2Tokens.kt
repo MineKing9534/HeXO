@@ -25,6 +25,13 @@ class OAuth2Tokens internal constructor(
 }
 
 @Serializable
+data class UserDetails(
+    val id: DiscordUserId,
+    val avatar: String,
+    val username: String,
+)
+
+@Serializable
 internal data class OAuth2TokensDto(
     @SerialName("access_token") val accessToken: String,
     @SerialName("refresh_token") val refreshToken: String,

@@ -11,6 +11,7 @@ dependencies {
     implementation(projects.database)
 
     implementation(projects.game.hds)
+    implementation(projects.game.implementation.service)
 
     implementation(projects.board)
     implementation(projects.board.parse)

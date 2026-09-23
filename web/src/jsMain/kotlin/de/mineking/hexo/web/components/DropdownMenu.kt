@@ -6,8 +6,11 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.web.icons.ChevronDownIcon
+import kotlinx.browser.document
 import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.w3c.dom.Node
+import org.w3c.dom.events.EventListener
 
 @Composable
 fun DropdownMenu(
@@ -16,12 +19,23 @@ fun DropdownMenu(
 ) {
     var open by remember { mutableStateOf(false) }
 
-    Div({ classes("relative", "min-w-0") }) {
+    Div({
+        classes("relative", "min-w-0")
+        ref { element ->
+            val pointerDown = EventListener { event ->
+                val target = event.target
+                if (target !is Node || !element.contains(target)) open = false
+            }
+
+            document.addEventListener("pointerdown", pointerDown)
+            onDispose { document.removeEventListener("pointerdown", pointerDown) }
+        }
+    }) {
         Button({
             classes(
                 "flex", "w-full", "cursor-pointer", "items-center", "justify-between", "gap-2", "rounded-lg",
                 "border", "border-slate-700", "bg-slate-900/90", "px-3", "py-2.5", "text-sm",
-                "font-semibold", "text-slate-200", "shadow-lg", "shadow-black/20",
+                "font-semibold", "text-slate-200", "shadow-lg", "shadow-black/20", "transition",
             )
             attr("aria-expanded", open.toString())
             onClick { open = !open }

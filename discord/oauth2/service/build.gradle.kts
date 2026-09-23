@@ -20,6 +20,8 @@ dependencies {
     implementation(libs.bundles.exposed)
     implementation(libs.bundles.ktor.client)
     implementation(libs.bundles.ktor.server)
+    api(libs.ktor.server.core)
+
     runtimeOnly(libs.ktor.client.cio)
 
     implementation(libs.jda)

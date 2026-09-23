@@ -12,7 +12,7 @@ import kotlin.time.Instant
 @Serializable
 data class ProfileDto(
     val id: ProfileId,
-    val discord: DiscordUserId,
+    val discord: DiscordUserId?,
     val displayName: String,
     val image: String?,
     val registeredAt: Instant,
