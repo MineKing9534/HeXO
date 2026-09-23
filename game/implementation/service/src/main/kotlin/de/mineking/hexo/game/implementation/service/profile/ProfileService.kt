@@ -8,6 +8,8 @@ import de.mineking.hexo.game.implementation.protocol.ProfileGameStatisticsDto
 import de.mineking.hexo.game.implementation.protocol.ProfileGameStatisticsWithStreakDto
 import de.mineking.hexo.game.implementation.protocol.ProfileRatingDto
 import de.mineking.hexo.game.implementation.protocol.ProfileStatisticsDto
+import de.mineking.hexo.game.implementation.service.auth.PrincipalTable
+import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileIdentifier
 import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileQueryError
@@ -17,6 +19,7 @@ import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.jetbrains.exposed.v1.core.BooleanColumnType
+import org.jetbrains.exposed.v1.core.ColumnSet
 import org.jetbrains.exposed.v1.core.CustomFunction
 import org.jetbrains.exposed.v1.core.CustomOperator
 import org.jetbrains.exposed.v1.core.FloatColumnType
@@ -50,7 +53,7 @@ class ProfileService(private val database: DatabaseManager) {
 
     private fun ResultRow.mapToProfile() = ProfileDto(
         id = this[ProfileTable.id].value,
-        discord = this[ProfileTable.discord],
+        discord = this[PrincipalTable.discordId],
         displayName = this[ProfileTable.displayName],
         image = this[ProfileTable.image],
         registeredAt = this[ProfileTable.registeredAt],
@@ -58,13 +61,14 @@ class ProfileService(private val database: DatabaseManager) {
     )
 
     private fun ProfileIdentifier.toCondition() = when (this) {
-        is ProfileIdentifier.Id -> ProfileTable.id eq id
+        is ProfileId -> ProfileTable.id eq this
         is ProfileIdentifier.Name -> ProfileTable.displayName eq name
     }
 
     suspend fun getProfile(id: ProfileIdentifier): Result<ProfileDto, ProfileQueryError> {
         return database.transaction(readOnly = true) {
             ProfileTable.leftJoin(ProfileStatisticsTable, onColumn = { ProfileTable.id }, otherColumn = { ProfileStatisticsTable.id })
+                .withPrincipal()
                 .select()
                 .where(id.toCondition())
                 .execute()
@@ -88,7 +92,7 @@ class ProfileService(private val database: DatabaseManager) {
 
     suspend fun searchProfiles(name: String): List<ProfileDto> {
         return database.transaction(readOnly = true) {
-            ProfileTable.select()
+            ProfileTable.withPrincipal().select()
                 .where(CustomOperator("%", BooleanColumnType(), ProfileTable.displayName, stringParam(name)))
                 .order(CustomFunction("similarity", FloatColumnType(), ProfileTable.displayName, stringParam(name)) to SortOrder.DESC)
                 .limit(10)
@@ -97,4 +101,10 @@ class ProfileService(private val database: DatabaseManager) {
                 .toList()
         }.throwOnDatabaseError()
     }
+
+    private fun ColumnSet.withPrincipal() = leftJoin(
+        otherTable = PrincipalTable,
+        onColumn = { ProfileTable.id },
+        otherColumn = { PrincipalTable.profileId },
+    )
 }

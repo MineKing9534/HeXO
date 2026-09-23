@@ -15,14 +15,14 @@ import kotlin.time.Instant
 
 @JvmInline
 @Serializable
-value class ProfileId(override val value: String) : EntityId
+value class ProfileId(override val value: String) : EntityId, ProfileIdentifier
 
 class ProfileReference(
     private val repository: ProfileRepository,
     private val gameRepository: FinishedGameRepository,
     val id: ProfileId,
 ) {
-    suspend fun retrieve() = repository.getProfileById(id)
+    suspend fun retrieve() = repository.getProfile(id)
         .orThrow { EntityNotFoundException() }
 
     suspend fun retrieveGames(selector: FinishedGameSelector) = gameRepository.getProfileHistory(id, selector)

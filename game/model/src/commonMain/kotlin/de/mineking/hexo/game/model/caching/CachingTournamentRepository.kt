@@ -15,10 +15,13 @@ import kotlinx.coroutines.flow.StateFlow
 
 fun TournamentRepository.caching(
     config: CacheConfiguration<TournamentId, Tournament>,
-): TournamentRepository = CachingTournamentRepository(this, config)
+): TournamentRepository {
+    require(this !is CachingTournamentRepository)
+    return CachingTournamentRepository(this, config)
+}
 
-private class CachingTournamentRepository(
-    val delegate: TournamentRepository,
+open class CachingTournamentRepository(
+    open val delegate: TournamentRepository,
     config: CacheConfiguration<TournamentId, Tournament>,
 ) : TournamentRepository {
     override val url by delegate::url

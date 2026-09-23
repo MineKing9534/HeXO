@@ -10,6 +10,8 @@ dependencies {
     ksp(projects.database.processor)
 
     implementation(projects.server.api)
+    implementation(projects.discord.oauth2.service)
 
+    api(libs.jwt)
     implementation(libs.bundles.exposed)
 }

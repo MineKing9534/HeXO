@@ -1,7 +1,6 @@
 package de.mineking.hexo.game.model.caching
 
 import de.mineking.hexo.game.model.profile.Profile
-import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileIdentifier
 import de.mineking.hexo.game.model.profile.ProfileQueryError
 import de.mineking.hexo.game.model.profile.ProfileRepository
@@ -13,10 +12,13 @@ import de.mineking.hexo.utils.types.Result
 fun ProfileRepository.caching(
     profileConfig: CacheConfiguration<ProfileIdentifier, Result<ProfileWithStatistics, ProfileQueryError>>,
     searchConfig: CacheConfiguration<String, List<Profile>>,
-): ProfileRepository = CachingProfileRepository(this, profileConfig, searchConfig)
+): ProfileRepository {
+    require(this !is CachingProfileRepository)
+    return CachingProfileRepository(this, profileConfig, searchConfig)
+}
 
-private class CachingProfileRepository(
-    val delegate: ProfileRepository,
+open class CachingProfileRepository(
+    open val delegate: ProfileRepository,
     profileConfig: CacheConfiguration<ProfileIdentifier, Result<ProfileWithStatistics, ProfileQueryError>>,
     searchConfig: CacheConfiguration<String, List<Profile>>,
 ) : ProfileRepository {

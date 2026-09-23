@@ -4,15 +4,15 @@ import de.mineking.hexo.discord.oauth2.DiscordOAuth2Client
 import de.mineking.hexo.discord.oauth2.model.OAuth2Flow
 import de.mineking.hexo.utils.types.IError
 import de.mineking.hexo.utils.types.Result
+import io.ktor.server.application.ApplicationCall
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 
-sealed interface OAuth2AuthorizationError : IError
+sealed class OAuth2AuthorizationError(open val flow: OAuth2Flow?) : IError
 
-data object UnsupportedOAuth2Flow : OAuth2AuthorizationError
-data object InvalidOAuth2AuthorizationState : OAuth2AuthorizationError
-data class OAuth2CodeExchangeFailed(val flow: OAuth2Flow) : OAuth2AuthorizationError
-data class OAuth2FlowCompletionFailed(val flow: OAuth2Flow, val cause: OAuth2FlowError) : OAuth2AuthorizationError
+data object UnsupportedOAuth2Flow : OAuth2AuthorizationError(null)
+data object InvalidOAuth2AuthorizationState : OAuth2AuthorizationError(null)
+data class OAuth2CodeExchangeFailed(override val flow: OAuth2Flow) : OAuth2AuthorizationError(flow)
 
 class OAuth2AuthorizationService(
     private val discordOAuth2Client: DiscordOAuth2Client,
@@ -36,7 +36,7 @@ class OAuth2AuthorizationService(
         return Result.Success(url)
     }
 
-    suspend fun completeAuthorization(code: String, state: String): Result<OAuth2Flow, OAuth2AuthorizationError> {
+    suspend fun completeAuthorization(call: ApplicationCall, code: String, state: String): Result<OAuth2Flow, OAuth2AuthorizationError> {
         val session = sessionStore.consume(state) ?: return Result.Error(InvalidOAuth2AuthorizationState)
         val handler = handlers[session.flow] ?: return Result.Error(UnsupportedOAuth2Flow)
         val tokens = when (val result = tokenExchangeSemaphore.withPermit { discordOAuth2Client.exchangeAuthorizationCode(code) }) {
@@ -44,9 +44,7 @@ class OAuth2AuthorizationService(
             is Result.Error -> return Result.Error(OAuth2CodeExchangeFailed(session.flow))
         }
 
-        return when (val result = handler.complete(tokens)) {
-            is Result.Success -> Result.Success(session.flow)
-            is Result.Error -> Result.Error(OAuth2FlowCompletionFailed(session.flow, result.error))
-        }
+        handler.run { call.complete(tokens) }
+        return Result.Success(session.flow)
     }
 }
