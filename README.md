@@ -188,15 +188,26 @@ java -jar launcher/discord/build/libs/launcher-discord-[version]-all.jar
 
 Configuration is done using environment variables at runtime. Each launcher column indicates whether the variable is required, optional, or unused (`—`).
 
-| Environment variable   | API      | Discord  | Description                                       |
-|------------------------|:--------:|:--------:|---------------------------------------------------|
-| `bot.token`            | —        | Required | Discord bot token                                 |
-| `oauth2.clientId`      | Optional | Optional | Discord client ID for linked roles and OAuth2     |
-| `oauth2.clientSecret`  | Optional | Optional | Discord client secret for linked roles and OAuth2 |
-| `oauth2.encryptionKey` | Optional | Optional | Key used to encrypt Discord tokens                |
-| `database.url`         | Optional | Optional | R2DBC URL for persistent storage                  |
-| `server.port`          | Optional | —        | Port on which the API listens                     |
-| `server.url`           | Optional | Optional | Public URL of the API                             |
+| Environment variable   | API      | Discord  | Description                                            |
+|------------------------|:--------:|:--------:|--------------------------------------------------------|
+| `bot.token`            | —        | Required | Discord bot token                                      |
+| `oauth2.clientId`      | Optional | Optional | Discord client ID for linked roles and OAuth2          |
+| `oauth2.clientSecret`  | Optional | Optional | Discord client secret for linked roles and OAuth2      |
+| `oauth2.encryptionKey` | Optional | Optional | Key used to encrypt Discord tokens                     |
+| `database.url`         | Optional | Optional | R2DBC URL for persistent storage                       |
+| `server.port`          | Optional | —        | Port on which the API listens                          |
+| `server.url`           | Optional | Optional | Public URL of the API                                  |
+| `auth.secret`          | Optional | —        | Base64-encoded secret used to sign authentication JWTs |
+| `auth.accessTokenTtl`  | Optional | —        | Access-token lifetime, for example `15m`               |
+| `auth.refreshTokenTtl` | Optional | —        | Refresh-token lifetime, for example `90d`              |
+
+The three `auth.*` variables must be configured together to enable profiles and web login. Generate a 256-bit signing secret with:
+
+```shell
+openssl rand -base64 32
+```
+
+Keep this value private and stable. Replacing it invalidates all existing login sessions.
 
 ### Frontend
 
@@ -248,10 +259,12 @@ As an alternative to building the modules manually, Docker Compose builds separa
 ```dotenv
 BOT_TOKEN=              # Discord bot token, required
 
-# The oauth2 block is optional
 OAUTH2_CLIENT_ID=       # Discord client ID for linked roles
 OAUTH2_CLIENT_SECRET=   # Discord client secret for linked roles
 OAUTH2_ENCRYPTION_KEY=  # Encryption key used for encrypting Discord tokens
+
+# Generate with: openssl rand -base64 32
+AUTH_SECRET=            # JWT signing secret; keep this private and stable
 
 SERVER_URL=             # The public server URL
 

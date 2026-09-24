@@ -63,6 +63,9 @@ services:
       database.url: r2dbc:pool:postgresql://hexo:hexo@database:5432/hexo
       server.port: 80
       server.url: ${SERVER_URL:?}
+      auth.accessTokenTtl: 15m
+      auth.refreshTokenTtl: 90d
+      auth.secret: ${AUTH_SECRET:?}
     healthcheck:
       test: [ "CMD", "wget", "--spider", "-q", "http://localhost:80/health" ]
       interval: 5s
