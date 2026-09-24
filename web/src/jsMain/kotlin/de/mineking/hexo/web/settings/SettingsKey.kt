@@ -3,9 +3,17 @@ package de.mineking.hexo.web.settings
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.watchparty.model.WatchPartyId
 import de.mineking.hexo.web.DeviceType
+import kotlinx.serialization.Serializable
 import kotlin.reflect.KProperty
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
+
+@Serializable
+enum class TimerDecimalDisplayMode {
+    Always,
+    Never,
+    Below10Seconds,
+}
 
 class SettingsKey<out T> private constructor(val name: String, val type: KType, val default: T) {
     companion object {
@@ -28,6 +36,7 @@ class SettingsKey<out T> private constructor(val name: String, val type: KType, 
         }
 
         val SessionViewTimerSounds by key(default = true)
+        val TimerDecimalDisplay by key(default = TimerDecimalDisplayMode.Below10Seconds)
         val Volume by key(default = 1f)
         val ReadOnlyBoardHoverIndicator by key(default = true)
         val SessionAnalyzer by key(default = DeviceType.Current == DeviceType.Desktop)

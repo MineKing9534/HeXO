@@ -72,7 +72,7 @@ private fun LiveDuration.rememberRemainingTime(ticking: Boolean): Duration {
     LaunchedEffect(this) {
         while (isActive) {
             remaining = remainingNow()
-            delay(250.milliseconds)
+            delay(100.milliseconds)
         }
     }
     return remaining

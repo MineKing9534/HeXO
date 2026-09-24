@@ -23,6 +23,7 @@ import de.mineking.hexo.game.model.session.SessionTurn
 import de.mineking.hexo.game.model.session.hasStarted
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.Instant
+import de.mineking.hexo.hds.implementation.game.GameFinishReasonDto
 import de.mineking.hexo.hds.implementation.game.GameOptionsDto
 import de.mineking.hexo.hds.implementation.game.GameResultDto
 import de.mineking.hexo.hds.implementation.game.PlayerImpl
@@ -235,6 +236,14 @@ internal class LiveSessionImpl(
                 } else {
                     time
                 }
+            } ?: when (stateDto) {
+                is SessionStateDto.Finished if stateDto.finishReason == GameFinishReasonDto.Timeout && data.id != stateDto.winningPlayerId ->
+                    LiveDuration(Duration.ZERO, stateDto.finishedAt)
+
+                is SessionStateDto.Finished if dto.gameOptions.timeControl is TimeControl.Turn ->
+                    LiveDuration(dto.gameOptions.timeControl.turnTime, stateDto.finishedAt)
+
+                else -> null
             },
         )
     }
@@ -281,7 +290,12 @@ internal class SessionGameImpl(
     override val startedAt = session.startedAt
     override val result = (session.state as? SessionState.Detailed.Finished)?.result
     override val options = session.dto.gameOptions
-    override val players = session.players.sortedBy { player -> session.gameState.cells?.indexOfFirst { it.occupiedBy == player.id } }
+    override val players = session.players.sortedBy { player ->
+        session.gameState.cells
+            ?.indexOfFirst { it.occupiedBy == player.id }
+            ?.takeIf { it >= 0 }
+            ?: Int.MAX_VALUE
+    }
     override val tournament = session.tournament
     override val position = session.gameState.cells!!.map { move ->
         GameMove(
