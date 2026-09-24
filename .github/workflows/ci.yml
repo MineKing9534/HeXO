@@ -22,5 +22,8 @@ jobs:
           java-version: 21
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v6
-      - name: Build with gradle
-        run: ./gradlew build
+      - name: Verify with Gradle
+        run: >-
+          ./gradlew check
+          -x :web:analysis-worker:kobwebCopyWorkerJsOutput
+          -x :launcher:web:copyWebSite
