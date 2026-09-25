@@ -143,6 +143,9 @@ internal data class SessionGameStateDto(
     val turnCount: Int,
     @SerialName("currentTurnExpiresInMs") val currentTurnExpiresIn: LiveDuration?,
     @SerialName("playerTimeRemainingMs") val playerTimeRemaining: Map<PlayerId, LiveDuration>,
+    val hasUsedGracePeriod: Map<PlayerId, Boolean?> = emptyMap(),
+    val currentTurnUsesGraceTime: Boolean? = null,
+    val graceTimerStartedAt: Instant? = null,
 )
 
 @Serializable
