@@ -4,22 +4,11 @@ plugins {
 }
 
 kotlin {
-    sourceSets.commonMain {
+    sourceSets.jsMain {
         dependencies {
             api(projects.discord.oauth2.model)
 
             implementation(libs.bundles.ktor.client)
-        }
-    }
-
-    sourceSets.jvmMain {
-        dependencies {
-            runtimeOnly(libs.ktor.client.cio)
-        }
-    }
-
-    sourceSets.jsMain {
-        dependencies {
             runtimeOnly(libs.ktor.client.js)
         }
     }

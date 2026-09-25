@@ -28,16 +28,21 @@ class OAuth2AuthorizationService(
         require(maxConcurrentTokenExchanges > 0) { "maxConcurrentTokenExchanges must be positive" }
     }
 
-    suspend fun createAuthorization(flow: OAuth2Flow): Result<String, UnsupportedOAuth2Flow> {
+    suspend fun createAuthorization(flow: OAuth2Flow, browserId: String): Result<String, UnsupportedOAuth2Flow> {
         val handler = handlers[flow] ?: return Result.Error(UnsupportedOAuth2Flow)
-        val state = sessionStore.create(flow)
+        val state = sessionStore.create(flow, browserId)
         val url = discordOAuth2Client.generateAuthorizationUrl(handler.scopes, state = state)
 
         return Result.Success(url)
     }
 
-    suspend fun completeAuthorization(call: ApplicationCall, code: String, state: String): Result<OAuth2Flow, OAuth2AuthorizationError> {
-        val session = sessionStore.consume(state) ?: return Result.Error(InvalidOAuth2AuthorizationState)
+    suspend fun completeAuthorization(
+        call: ApplicationCall,
+        code: String,
+        state: String,
+        browserId: String,
+    ): Result<OAuth2Flow, OAuth2AuthorizationError> {
+        val session = sessionStore.consume(state, browserId) ?: return Result.Error(InvalidOAuth2AuthorizationState)
         val handler = handlers[session.flow] ?: return Result.Error(UnsupportedOAuth2Flow)
         val tokens = when (val result = tokenExchangeSemaphore.withPermit { discordOAuth2Client.exchangeAuthorizationCode(code) }) {
             is Result.Success -> result.value

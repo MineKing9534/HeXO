@@ -9,11 +9,14 @@ import de.mineking.hexo.utils.cache.entries
 import java.security.SecureRandom
 import kotlin.time.Duration
 
-data class OAuth2AuthorizationSession(val flow: OAuth2Flow)
+data class OAuth2AuthorizationSession(
+    val flow: OAuth2Flow,
+    val browserId: String,
+)
 
 interface OAuth2AuthorizationSessionStore {
-    suspend fun create(flow: OAuth2Flow): String
-    suspend fun consume(state: String): OAuth2AuthorizationSession?
+    suspend fun create(flow: OAuth2Flow, browserId: String): String
+    suspend fun consume(state: String, browserId: String): OAuth2AuthorizationSession?
 }
 
 class InMemoryOAuth2AuthorizationSessionStore(
@@ -27,13 +30,14 @@ class InMemoryOAuth2AuthorizationSessionStore(
         evictionStrategy = EvictionStrategy.FirstInFirstOut,
     ))
 
-    override suspend fun create(flow: OAuth2Flow): String {
+    override suspend fun create(flow: OAuth2Flow, browserId: String): String {
         val state = ByteArray(16).also(random::nextBytes).toHexString()
-        sessions.put(state, OAuth2AuthorizationSession(flow))
+        sessions.put(state, OAuth2AuthorizationSession(flow, browserId))
         return state
     }
 
-    override suspend fun consume(state: String): OAuth2AuthorizationSession? {
-        return sessions.remove(state)
+    override suspend fun consume(state: String, browserId: String): OAuth2AuthorizationSession? {
+        val session = sessions.get(state)?.takeIf { it.browserId == browserId } ?: return null
+        return sessions.remove(state)?.takeIf { it == session }
     }
 }
