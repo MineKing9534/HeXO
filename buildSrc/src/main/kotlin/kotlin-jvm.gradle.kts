@@ -4,6 +4,8 @@ plugins {
 }
 
 dependencies {
+    testImplementation(kotlin("test"))
+
     CommonConfig.JVM_TEST_DEPENDENCIES.forEach {
         testImplementation(it)
     }

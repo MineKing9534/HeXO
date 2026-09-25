@@ -29,10 +29,12 @@ import de.mineking.hexo.web.icons.CheckIcon
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.rememberAuthenticationController
 import de.mineking.hexo.web.rememberDiscordOAuth2Client
+import kotlinx.browser.window
 import org.jetbrains.compose.web.dom.Div
 import org.jetbrains.compose.web.dom.P
 import org.jetbrains.compose.web.dom.Span
 import org.jetbrains.compose.web.dom.Text
+import org.w3c.dom.url.URL
 
 @InitRoute
 fun initOAuth2CallbackPage(ctx: InitRouteContext) {
@@ -50,6 +52,11 @@ fun OAuth2CallbackPage(ctx: PageContext) {
 
     LaunchedEffect(code, state) {
         if (AppGlobals.isExporting) return@LaunchedEffect
+        val url = URL(window.location.href)
+        url.searchParams.delete("code")
+        url.searchParams.delete("state")
+        window.history.replaceState(null, "", url.toString())
+
         result = null
         result = runCatching {
             discordOAuth2ApiClient.completeAuthorization(code, state)

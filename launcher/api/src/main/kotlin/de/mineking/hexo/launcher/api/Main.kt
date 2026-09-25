@@ -36,6 +36,8 @@ import kotlin.time.Duration.Companion.minutes
 suspend fun main() {
     val config = loadConfig<ApiApplicationConfig>()
     val database = config.database.createDatabase()
+    val apiPath = Url(config.server.apiUrl).encodedPath.trimEnd('/').ifEmpty { "/" }
+    val oauth2AuthorizationTtl = 5.minutes
 
     val hds = HdsApiClient(
         client = HdsHttpClient.createDefault(),
@@ -50,7 +52,7 @@ suspend fun main() {
             algorithm = Algorithm.HMAC256(Base64.decode(authConfig.secret)),
             accessTokenTtl = authConfig.accessTokenTtl,
             refreshTokenTtl = authConfig.refreshTokenTtl,
-            cookiePath = Url(config.server.apiUrl).encodedPath.trimEnd('/').ifEmpty { "/" },
+            cookiePath = apiPath,
         )
         val gameModule = GameApiModule(database, authManager)
         val loginHandler = LoginOAuth2FlowHandler(authManager)
@@ -67,11 +69,13 @@ suspend fun main() {
             OAuth2AuthorizationService(
                 discordOAuth2Client = it.client,
                 sessionStore = InMemoryOAuth2AuthorizationSessionStore(
-                    expireAfter = 5.minutes,
+                    expireAfter = oauth2AuthorizationTtl,
                     maxEntries = 100,
                 ),
                 handlers = listOfNotNull(LinkedRolesOAuth2FlowHandler(it.tokenRepository), loginHandler),
             ),
+            cookiePath = "${apiPath.trimEnd('/')}/oauth2",
+            authorizationTtl = oauth2AuthorizationTtl,
         )
     }
     val server = HttpServer(
