@@ -62,7 +62,8 @@ services:
       oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:?}
       database.url: r2dbc:pool:postgresql://hexo:hexo@database:5432/hexo
       server.port: 80
-      server.url: ${SERVER_URL:?}
+      server.webUrl: ${WEB_URL:?}
+      server.apiUrl: ${HMD_API_URL:?}
       auth.accessTokenTtl: 15m
       auth.refreshTokenTtl: 90d
       auth.secret: ${AUTH_SECRET:?}
@@ -88,7 +89,7 @@ services:
       oauth2.clientSecret: ${OAUTH2_CLIENT_SECRET:?}
       oauth2.encryptionKey: ${OAUTH2_ENCRYPTION_KEY:?}
       database.url: r2dbc:pool:postgresql://hexo:hexo@database:5432/hexo
-      server.url: ${SERVER_URL:?}
+      server.webUrl: ${WEB_URL:?}
 
   web:
     build:
