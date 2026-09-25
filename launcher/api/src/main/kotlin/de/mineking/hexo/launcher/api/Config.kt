@@ -22,7 +22,11 @@ data class ApiApplicationConfig(
 )
 
 @Serializable
-data class ServerConfig(val port: Int, val url: String)
+data class ServerConfig(
+    val port: Int,
+    val webUrl: String,
+    val apiUrl: String,
+)
 
 @Serializable
 data class AuthConfig(

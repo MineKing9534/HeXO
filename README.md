@@ -196,7 +196,8 @@ Configuration is done using environment variables at runtime. Each launcher colu
 | `oauth2.encryptionKey` | Optional | Optional | Key used to encrypt Discord tokens                     |
 | `database.url`         | Optional | Optional | R2DBC URL for persistent storage                       |
 | `server.port`          | Optional | —        | Port on which the API listens                          |
-| `server.url`           | Optional | Optional | Public URL of the API                                  |
+| `server.webUrl`        | Required | Optional | Public URL of the web application                     |
+| `server.apiUrl`        | Required | Optional | Externally visible URL of the API                      |
 | `auth.secret`          | Optional | —        | Base64-encoded secret used to sign authentication JWTs |
 | `auth.accessTokenTtl`  | Optional | —        | Access-token lifetime, for example `15m`               |
 | `auth.refreshTokenTtl` | Optional | —        | Refresh-token lifetime, for example `90d`              |
@@ -266,7 +267,8 @@ OAUTH2_ENCRYPTION_KEY=  # Encryption key used for encrypting Discord tokens
 # Generate with: openssl rand -base64 32
 AUTH_SECRET=            # JWT signing secret; keep this private and stable
 
-SERVER_URL=             # The public server URL
+WEB_URL=                # Public web URL, e.g. https://hexo.mineking.dev
+API_URL=                # Public API URL, e.g. https://hexo.mineking.dev/api
 
 HDS_API_URL=            # The HDS API URL, e.g. https://hexo.mineking.dev/proxy/api
 HMD_API_URL=            # The HMD API URL, e.g. https://hexo.mineking.dev/api

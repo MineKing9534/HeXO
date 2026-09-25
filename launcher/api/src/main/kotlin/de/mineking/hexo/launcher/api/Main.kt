@@ -25,6 +25,7 @@ import de.mineking.hexo.server.HttpServer
 import de.mineking.hexo.server.api.ApiModule
 import de.mineking.hexo.watchparty.server.WatchPartyApiModule
 import io.ktor.http.ContentType
+import io.ktor.http.Url
 import io.ktor.server.response.respond
 import io.ktor.server.routing.Route
 import io.ktor.server.routing.get
@@ -41,14 +42,15 @@ suspend fun main() {
         repositoryWrapper = CachingRepositoryWrapper,
     )
 
-    val (gameModule, loginHandler) = config.auth?.let { config ->
+    val (gameModule, loginHandler) = config.auth?.let { authConfig ->
         if (database == null) return@let null
 
         val authManager = AuthSessionManager(
             database = database,
-            algorithm = Algorithm.HMAC256(Base64.decode(config.secret)),
-            accessTokenTtl = config.accessTokenTtl,
-            refreshTokenTtl = config.refreshTokenTtl,
+            algorithm = Algorithm.HMAC256(Base64.decode(authConfig.secret)),
+            accessTokenTtl = authConfig.accessTokenTtl,
+            refreshTokenTtl = authConfig.refreshTokenTtl,
+            cookiePath = Url(config.server.apiUrl).encodedPath.trimEnd('/').ifEmpty { "/" },
         )
         val gameModule = GameApiModule(database, authManager)
         val loginHandler = LoginOAuth2FlowHandler(authManager)
@@ -59,7 +61,7 @@ suspend fun main() {
     val parser = createBoardParser(hds)
     val renderer = createBoardRenderer()
 
-    val oauth2 = createOAuth2Dependencies(config.oauth2, config.server.url, database)
+    val oauth2 = createOAuth2Dependencies(config.oauth2, config.server.webUrl, database)
     val oauth2Module = oauth2?.let {
         OAuth2ApiModule(
             OAuth2AuthorizationService(
