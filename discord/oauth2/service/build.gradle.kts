@@ -27,5 +27,5 @@ dependencies {
     implementation(libs.jda)
     implementation(libs.dtk)
 
-    testImplementation(kotlin("test"))
+    testImplementation(libs.kotlin.coroutines.test)
 }
