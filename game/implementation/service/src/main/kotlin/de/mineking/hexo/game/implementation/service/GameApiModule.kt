@@ -86,7 +86,7 @@ class GameApiModule(
                 ?: throw AuthenticationFailedException()
 
             val result = sessionManager.revokeSession(token)
-            if (cookie != null) call.clearSessionCookies()
+            if (cookie != null) call.clearSessionCookies(sessionManager)
 
             call.respond(
                 status = if (result.isSuccess()) HttpStatusCode.OK else HttpStatusCode.Unauthorized,

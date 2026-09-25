@@ -49,7 +49,14 @@ class AuthSessionManager(
     private val algorithm: Algorithm,
     internal val accessTokenTtl: Duration,
     internal val refreshTokenTtl: Duration,
+    internal val cookiePath: String,
 ) {
+    internal val refreshCookiePath = "${cookiePath.trimEnd('/')}/auth"
+
+    init {
+        require(cookiePath.startsWith('/')) { "Cookie path must be absolute" }
+    }
+
     companion object {
         private const val ISSUER = "HeXO"
     }

@@ -16,4 +16,6 @@ data class BotApplicationConfig(
 data class DiscordBotConfig(val token: String)
 
 @Serializable
-data class PublicServerConfig(val url: String)
+data class PublicServerConfig(
+    val webUrl: String,
+)

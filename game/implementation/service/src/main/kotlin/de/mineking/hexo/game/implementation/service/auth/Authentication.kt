@@ -13,7 +13,7 @@ import io.ktor.http.HttpStatusCode
 import io.ktor.server.application.ApplicationCall
 import io.ktor.util.date.GMTDate
 
-internal const val ACCESS_COOKIE = "__Host-hexo_access"
+internal const val ACCESS_COOKIE = "__Secure-hexo_access"
 internal const val REFRESH_COOKIE = "__Secure-hexo_refresh"
 
 class AuthenticationFailedException(status: HttpStatusCode = HttpStatusCode.Unauthorized) : HttpResponseException(status, null)
@@ -46,14 +46,12 @@ private suspend fun ApplicationCall.user0(): User {
 internal suspend inline fun <reified T : User> ApplicationCall.user() = user0() as? T
     ?: throw AuthenticationFailedException(HttpStatusCode.Forbidden)
 
-// TODO correct base path
-
 internal fun ApplicationCall.setSessionCookies(sessionManager: AuthSessionManager, session: AuthSession) {
     response.cookies.append(
         Cookie(
             name = ACCESS_COOKIE,
             value = session.accessToken.value,
-            path = "/",
+            path = sessionManager.cookiePath,
             secure = true,
             httpOnly = true,
             maxAge = sessionManager.accessTokenTtl.inWholeSeconds.toInt(),
@@ -65,7 +63,7 @@ internal fun ApplicationCall.setSessionCookies(sessionManager: AuthSessionManage
         Cookie(
             name = REFRESH_COOKIE,
             value = session.refreshToken.value,
-            path = "/auth",
+            path = sessionManager.refreshCookiePath,
             secure = true,
             httpOnly = true,
             maxAge = sessionManager.refreshTokenTtl.inWholeSeconds.toInt(),
@@ -74,12 +72,12 @@ internal fun ApplicationCall.setSessionCookies(sessionManager: AuthSessionManage
     )
 }
 
-internal fun ApplicationCall.clearSessionCookies() {
+internal fun ApplicationCall.clearSessionCookies(sessionManager: AuthSessionManager) {
     response.cookies.append(
         Cookie(
             name = ACCESS_COOKIE,
             value = "",
-            path = "/",
+            path = sessionManager.cookiePath,
             secure = true,
             httpOnly = true,
             maxAge = 0,
@@ -91,7 +89,7 @@ internal fun ApplicationCall.clearSessionCookies() {
         Cookie(
             name = REFRESH_COOKIE,
             value = "",
-            path = "/auth",
+            path = sessionManager.refreshCookiePath,
             secure = true,
             httpOnly = true,
             maxAge = 0,
