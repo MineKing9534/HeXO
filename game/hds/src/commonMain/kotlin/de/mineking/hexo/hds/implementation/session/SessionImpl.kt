@@ -2,7 +2,10 @@ package de.mineking.hexo.hds.implementation.session
 
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.board.toGamePosition
+import de.mineking.hexo.board.GamePosition
+import de.mineking.hexo.board.TurnMetaData
+import de.mineking.hexo.board.findNextTurn
+import de.mineking.hexo.board.toTurns
 import de.mineking.hexo.game.model.LiveDuration
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.GameMove
@@ -32,6 +35,7 @@ import de.mineking.hexo.hds.implementation.game.toModel
 import de.mineking.hexo.utils.types.urlOf
 import kotlin.time.Clock
 import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 
 internal abstract class BaseSessionImpl : Session {
     internal abstract val client: HdsApiClient
@@ -186,12 +190,21 @@ internal class LobbySessionPlayerImpl(
     override val connectionStatus = dto.connectionStatus
 }
 
+private val GraceTimePeriod = 10.seconds
+
 internal class LiveSessionImpl(
     override val client: HdsApiClient,
     override val dto: SessionDto,
     stateDto: SessionStateDto.GameSessionState,
     override val gameState: SessionGameStateDto,
 ) : ObservedSessionImpl(), LiveSession {
+    private val gracePeriodStartedAt = gameState.graceTimerStartedAt?.takeIf { gameState.currentTurnUsesGraceTime == true }
+    private val activeGraceTimeRemaining = gracePeriodStartedAt?.let { startedAt ->
+        val now = Clock.System.now()
+        val remaining = (GraceTimePeriod - (now - startedAt)).coerceIn(Duration.ZERO..GraceTimePeriod)
+        LiveDuration(remaining, now).takeIf { remaining > Duration.ZERO }
+    }
+
     internal fun getPlayerById(id: PlayerId) = players.first { it.id == id }
 
     override val id = dto.id
@@ -230,11 +243,28 @@ internal class LiveSessionImpl(
                         gameState.playerTimeRemaining[data.id]
                     }
             }?.let { time ->
+                val graceStartedAt = gracePeriodStartedAt.takeIf { data.id == gameState.currentTurnPlayerId }
+                val adjustedTime = graceStartedAt?.let {
+                    val duration = when (val timeControl = dto.gameOptions.timeControl) {
+                        is TimeControl.Unlimited -> Duration.ZERO
+                        is TimeControl.Turn -> timeControl.turnTime
+                        is TimeControl.Match -> {
+                            val playerTime = gameState.playerTimeRemaining[data.id]?.duration ?: time.duration
+                            (playerTime - GraceTimePeriod).coerceAtLeast(Duration.ZERO)
+                        }
+                    }
+
+                    LiveDuration(
+                        duration = duration,
+                        timestamp = it + GraceTimePeriod,
+                    )
+                } ?: time
+
                 if (stateDto is SessionStateDto.Finished && data.id == gameState.currentTurnPlayerId) {
-                    val elapsed = (stateDto.finishedAt - time.timestamp).coerceAtLeast(Duration.ZERO)
-                    LiveDuration((time.duration - elapsed).coerceAtLeast(Duration.ZERO), stateDto.finishedAt)
+                    val elapsed = (stateDto.finishedAt - adjustedTime.timestamp).coerceAtLeast(Duration.ZERO)
+                    LiveDuration((adjustedTime.duration - elapsed).coerceAtLeast(Duration.ZERO), stateDto.finishedAt)
                 } else {
-                    time
+                    adjustedTime
                 }
             } ?: when (stateDto) {
                 is SessionStateDto.Finished if stateDto.finishReason == GameFinishReasonDto.Timeout && data.id != stateDto.winningPlayerId ->
@@ -243,6 +273,13 @@ internal class LiveSessionImpl(
                 is SessionStateDto.Finished if dto.gameOptions.timeControl is TimeControl.Turn ->
                     LiveDuration(dto.gameOptions.timeControl.turnTime, stateDto.finishedAt)
 
+                else -> null
+            },
+            graceTimeRemaining = when {
+                stateDto !is SessionStateDto.InGame -> null
+                dto.gameOptions.timeControl is TimeControl.Unlimited -> null
+                data.id == gameState.currentTurnPlayerId -> activeGraceTimeRemaining
+                gameState.hasUsedGracePeriod[data.id] != true -> LiveDuration(GraceTimePeriod, Clock.System.now())
                 else -> null
             },
         )
@@ -277,6 +314,7 @@ internal class LiveSessionPlayerImpl(
     override val color: CellOwner,
     override val tournamentMatchWins: Int?,
     override val timeRemaining: LiveDuration?,
+    override val graceTimeRemaining: LiveDuration?,
 ) : LiveSessionPlayer, PlayerImpl(client.profileRepository, client.finishedGameRepository, dto) {
     override val elo = dto.elo.takeIf { it != 0 }
     override val ratingAdjustment = dto.ratingAdjustment?.let { RatingAdjustment(eloGain = it.eloGain, eloLoss = it.eloLoss) }
@@ -302,5 +340,16 @@ internal class SessionGameImpl(
             coordinate = CellCoordinate(move.q, move.r),
             player = session.getPlayerById(move.occupiedBy),
         )
-    }.toGamePosition()
+    }.toTurns().let { turns ->
+        GamePosition(
+            turns = turns,
+            nextTurn = session.gameState.currentTurnPlayerId?.let { id ->
+                TurnMetaData(
+                    player = session.getPlayerById(id).color,
+                    placementsRemaining = session.gameState.placementsRemaining,
+                    turn = session.gameState.turnCount,
+                )
+            } ?: turns.findNextTurn(hasState = false),
+        )
+    }
 }

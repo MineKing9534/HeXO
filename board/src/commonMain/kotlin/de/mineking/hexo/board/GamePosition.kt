@@ -121,7 +121,7 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPos
     ))
 }
 
-private fun List<Turn<*>>.findNextTurn(hasState: Boolean, movesPerTurn: Int): TurnMetaData {
+fun List<Turn<*>>.findNextTurn(hasState: Boolean, movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): TurnMetaData {
     val lastTurn = lastOrNull()
     if (lastTurn != null && !lastTurn.isComplete()) return lastTurn.meta
 
@@ -132,7 +132,7 @@ private fun List<Turn<*>>.findNextTurn(hasState: Boolean, movesPerTurn: Int): Tu
     )
 }
 
-fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): GamePosition<M> {
+fun <M : Move> List<M>.toTurns(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): List<Turn<M>> {
     val turnData = fold(mutableListOf<Pair<CellOwner, MutableList<M>>>()) { turns, move ->
         val lastTurn = turns.lastOrNull()
 
@@ -151,7 +151,7 @@ fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN
         require(first.first().coordinate == CellCoordinate.Zero)
     }
 
-    val turns = turnData.mapIndexed { index, (player, cells) ->
+    return turnData.mapIndexed { index, (player, cells) ->
         Turn(
             meta = TurnMetaData(
                 player = player,
@@ -161,7 +161,10 @@ fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN
             moves = cells,
         )
     }
+}
 
+fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): GamePosition<M> {
+    val turns = toTurns(movesPerTurn)
     return GamePosition(
         turns = turns,
         nextTurn = turns.findNextTurn(hasState = false, movesPerTurn = movesPerTurn),
