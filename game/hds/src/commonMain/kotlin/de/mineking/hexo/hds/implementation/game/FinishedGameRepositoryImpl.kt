@@ -10,8 +10,8 @@ import de.mineking.hexo.game.model.game.GameNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.createPaginated
-import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.utils.types.QueryResultDto
 import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.successIfNotNullOrElse

@@ -10,10 +10,13 @@ import de.mineking.hexo.utils.types.Result
 
 fun FormationRepository.caching(
     config: CacheConfiguration<FormationId, Result<Formation, FormationQueryError>>,
-): FormationRepository = CachingFormationRepository(this, config)
+): FormationRepository {
+    require(this !is CachingFormationRepository)
+    return CachingFormationRepository(this, config)
+}
 
-private class CachingFormationRepository(
-    val delegate: FormationRepository,
+open class CachingFormationRepository(
+    open val delegate: FormationRepository,
     config: CacheConfiguration<FormationId, Result<Formation, FormationQueryError>>,
 ) : FormationRepository {
     override val url by delegate::url

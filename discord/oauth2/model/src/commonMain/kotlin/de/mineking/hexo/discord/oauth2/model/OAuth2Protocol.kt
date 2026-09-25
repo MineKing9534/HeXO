@@ -6,4 +6,7 @@ import kotlinx.serialization.Serializable
 data class OAuth2AuthorizationResponse(val url: String)
 
 @Serializable
+data class OAuth2CallbackRequest(val code: String, val state: String)
+
+@Serializable
 data class OAuth2CallbackResponse(val success: Boolean, val flow: OAuth2Flow?)

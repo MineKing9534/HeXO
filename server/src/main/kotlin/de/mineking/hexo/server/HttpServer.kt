@@ -1,6 +1,7 @@
 package de.mineking.hexo.server
 
 import de.mineking.hexo.server.api.ApiModule
+import de.mineking.hexo.server.api.HttpResponseException
 import de.mineking.hexo.utils.socketio.server.SocketIO
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.http.HttpHeaders
@@ -13,12 +14,16 @@ import io.ktor.server.application.install
 import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.ContentTransformationException
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.ratelimit.RateLimit
 import io.ktor.server.plugins.statuspages.StatusPages
 import io.ktor.server.response.respond
 import io.ktor.server.routing.IgnoreTrailingSlash
+import io.ktor.server.routing.RouteSelector
+import io.ktor.server.routing.RouteSelectorEvaluation
+import io.ktor.server.routing.RoutingResolveContext
 import io.ktor.server.routing.route
 import io.ktor.server.routing.routing
 import io.ktor.server.websocket.WebSockets
@@ -29,12 +34,12 @@ import kotlinx.serialization.json.Json
 
 private val logger = KotlinLogging.logger {}
 
-class HttpServer(modules: List<ApiModule>, port: Int) {
-    private val json = Json {
-        allowStructuredMapKeys = true
-        encodeDefaults = false
-    }
+private val json = Json {
+    allowStructuredMapKeys = true
+    encodeDefaults = false
+}
 
+class HttpServer(modules: List<ApiModule>, port: Int) {
     private val server = embeddedServer(Netty, port = port) {
         install(ContentNegotiation) {
             json(json)
@@ -43,7 +48,9 @@ class HttpServer(modules: List<ApiModule>, port: Int) {
         install(IgnoreTrailingSlash)
         install(CORS) {
             anyHost()
+            allowCredentials = true
             allowMethod(HttpMethod.Post)
+            allowHeader(HttpHeaders.Authorization)
             allowHeader(HttpHeaders.ContentType)
         }
 
@@ -71,8 +78,9 @@ class HttpServer(modules: List<ApiModule>, port: Int) {
 
         routing {
             modules.forEach {
+                val route = createChild(TransparentRouteSelector)
                 it.run {
-                    registerRoutes()
+                    route.registerRoutes()
                 }
             }
         }
@@ -87,9 +95,28 @@ class HttpServer(modules: List<ApiModule>, port: Int) {
     }
 }
 
+private object TransparentRouteSelector : RouteSelector() {
+    override suspend fun evaluate(context: RoutingResolveContext, segmentIndex: Int) = RouteSelectorEvaluation.Transparent
+}
+
 private fun Application.installErrorHandling() {
     install(StatusPages) {
+        exception<HttpResponseException> { call, cause ->
+            call.respond(
+                status = cause.status,
+                message = cause.body?.let { json.encodeToString(it.type, it.body) } ?: Unit,
+            )
+        }
+
         exception<BadRequestException> { call, cause ->
+            logger.debug(cause) { "Rejected invalid HTTP request" }
+            call.respondError(
+                status = HttpStatusCode.BadRequest,
+                message = "The request is invalid. Check its parameters and body and try again.",
+            )
+        }
+
+        exception<ContentTransformationException> { call, cause ->
             logger.debug(cause) { "Rejected invalid HTTP request" }
             call.respondError(
                 status = HttpStatusCode.BadRequest,

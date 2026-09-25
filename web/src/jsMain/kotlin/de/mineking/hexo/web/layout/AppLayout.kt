@@ -128,7 +128,7 @@ fun AppLayout(ctx: PageContext, content: @Composable () -> Unit) {
 private fun NavBar(activePage: AppRoute?, onOpenWatchPartyOptions: () -> Unit) {
     Header({
         classes(
-            "relative", "z-20", "shrink-0", "border-b", "border-slate-800/80", "bg-slate-950/95", "px-3", "py-2.5",
+            "relative", "z-30", "shrink-0", "border-b", "border-slate-800/80", "bg-slate-950/95", "px-3", "py-2.5",
             "shadow-xl", "shadow-black/15", "md:px-6", "lg:px-8",
         )
     }) {
@@ -167,7 +167,10 @@ private fun NavBar(activePage: AppRoute?, onOpenWatchPartyOptions: () -> Unit) {
             DesktopNavigation(activePage)
 
             Div({ classes("col-start-3", "row-start-1", "flex", "min-w-0", "justify-self-end") }) {
-                WatchPartyIndicator(onOpenWatchPartyOptions)
+                Div({ classes("flex", "items-center", "gap-2") }) {
+                    WatchPartyIndicator(onOpenWatchPartyOptions)
+                    AuthenticationControl()
+                }
             }
         }
     }

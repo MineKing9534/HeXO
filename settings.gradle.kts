@@ -25,6 +25,9 @@ include(":web")
 
 include(":game:model")
 include(":game:hds")
+include(":game:implementation:client")
+include(":game:implementation:protocol")
+include(":game:implementation:service")
 
 include(":solver")
 

@@ -10,7 +10,6 @@ import de.mineking.hexo.discord.oauth2.bindValue
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
-import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
 import de.mineking.hexo.utils.coroutines.KeyedSemaphore
@@ -44,7 +43,7 @@ class LinkedRolesUpdateService(
             first = {
                 accountLinkRepository.getHexoProfile(discordId)
                     .successIfNotNull()
-                    .flatMap { profileRepository.getProfileById(it) }
+                    .flatMap { profileRepository.getProfile(it) }
             },
             second = { tokens() },
         ).orElse { return }
@@ -54,7 +53,7 @@ class LinkedRolesUpdateService(
 
     suspend fun updateLinkedRolesData(profile: ProfileWithStatistics) = updateLinkedRolesData(profile.id) { Result.Success(profile) }
     suspend fun updateLinkedRolesData(profileId: ProfileId) = updateLinkedRolesData(profileId) {
-        profileRepository.getProfileById(profileId)
+        profileRepository.getProfile(profileId)
     }
 
     private suspend fun updateLinkedRolesData(profileId: ProfileId, profile: suspend () -> Result<ProfileWithStatistics, *>) {

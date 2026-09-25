@@ -49,6 +49,7 @@ kotlin {
 
             implementation(projects.board.parse)
             implementation(projects.game.hds)
+            implementation(projects.game.implementation.client)
             implementation(projects.discord.oauth2.client)
 
             implementation(projects.watchparty.client)

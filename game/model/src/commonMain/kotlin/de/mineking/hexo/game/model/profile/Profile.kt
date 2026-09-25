@@ -7,6 +7,7 @@ import de.mineking.hexo.utils.types.Entity
 import de.mineking.hexo.utils.types.EntityId
 import de.mineking.hexo.utils.types.EntityNotFoundException
 import de.mineking.hexo.utils.types.QueryResult
+import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.orThrow
 import kotlinx.serialization.Serializable
 import kotlin.jvm.JvmInline
@@ -14,14 +15,14 @@ import kotlin.time.Instant
 
 @JvmInline
 @Serializable
-value class ProfileId(override val value: String) : EntityId
+value class ProfileId(override val value: String) : EntityId, ProfileIdentifier
 
 class ProfileReference(
     private val repository: ProfileRepository,
     private val gameRepository: FinishedGameRepository,
     val id: ProfileId,
 ) {
-    suspend fun retrieve() = repository.getProfileById(id)
+    suspend fun retrieve() = repository.getProfile(id)
         .orThrow { EntityNotFoundException() }
 
     suspend fun retrieveGames(selector: FinishedGameSelector) = gameRepository.getProfileHistory(id, selector)
@@ -38,7 +39,7 @@ interface Profile : Entity<ProfileId> {
     suspend fun retrieveStatistics(forceUpdate: Boolean = false): ProfileStatistics
     suspend fun withStatistics(forceUpdate: Boolean = false): ProfileWithStatistics
 
-    suspend fun retrieveGames(page: Int, pageSize: Int, rated: Boolean? = null): QueryResult<FinishedGame>
+    suspend fun retrieveGames(selector: FinishedGameSelector = Selector): QueryResult<FinishedGame>
 }
 
 interface ProfileWithStatistics : Profile {

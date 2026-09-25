@@ -8,16 +8,16 @@ import de.mineking.hexo.game.model.session.SessionPlayerConnectionStatus
 import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.session.SessionSelector
 import de.mineking.hexo.hds.implementation.HdsApiClient
+import de.mineking.hexo.hds.implementation.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.socket.GameCellPlace
 import de.mineking.hexo.hds.implementation.socket.GameStateUpdated
 import de.mineking.hexo.hds.implementation.socket.HdsSocketClient
-import de.mineking.hexo.hds.implementation.socket.HexoSocketRequest
+import de.mineking.hexo.hds.implementation.socket.HdsSocketRequest
 import de.mineking.hexo.hds.implementation.socket.LobbyRemoved
 import de.mineking.hexo.hds.implementation.socket.LobbyUpdated
 import de.mineking.hexo.hds.implementation.socket.SessionUpdated
 import de.mineking.hexo.hds.implementation.socket.SessionWatchError
 import de.mineking.hexo.hds.implementation.socket.SessionWatchStarted
-import de.mineking.hexo.hds.implementation.utils.parseBodyOrNull
 import de.mineking.hexo.hds.implementation.utils.withLock
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.QueryResult
@@ -62,7 +62,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             registerLobbyListeners()
             registerSessionListeners()
         }
-        client.coroutineScope.launch { populateLobbyList() }
+        client.client.httpClient.launch { populateLobbyList() }
     }
 
     override suspend fun getSessions(selector: SessionSelector): QueryResult<Session> {
@@ -111,7 +111,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         }
         if (created) {
             logger.info { "Watching session ${id.value}..." }
-            socketClient.request(HexoSocketRequest.WatchSession(id))
+            socketClient.request(HdsSocketRequest.WatchSession(id))
         }
         return flow
     }
@@ -119,7 +119,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
     private fun sessionFlow(id: SessionId) = sessionsLock.withLock { sessionFlows[id] }
 
     private fun HdsSocketClient.cleanupSession(id: SessionId) {
-        request(HexoSocketRequest.UnwatchSession(id))
+        request(HdsSocketRequest.UnwatchSession(id))
         sessionsLock.withLock { sessionFlows -= id }
     }
 

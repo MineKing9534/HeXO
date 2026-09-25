@@ -32,7 +32,6 @@ import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.bot.utils.respond
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileRepository
-import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.link.getDiscordProfile
 import de.mineking.hexo.utils.types.orElse
@@ -73,7 +72,7 @@ fun UIManager.profileMenu(
         val event = parameter({ error("") }, { it.event }, { event })
         val (profile, linkedAccount) = coroutineScope {
             val profile = async {
-                profileRepository.getProfileById(id).orElse {
+                profileRepository.getProfile(id).orElse {
                     event.respond(MessageColor.Error, localization.errorProfileNotFound(event.effectiveLocale, id))
                     terminateRender()
                 }

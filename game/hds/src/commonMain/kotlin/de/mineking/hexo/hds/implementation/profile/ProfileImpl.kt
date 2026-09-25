@@ -1,14 +1,12 @@
 package de.mineking.hexo.hds.implementation.profile
 
-import de.mineking.hexo.game.model.game.rated
+import de.mineking.hexo.game.model.game.FinishedGameSelector
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileStatistics
 import de.mineking.hexo.game.model.profile.ProfileWithStatistics
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.utils.types.EntityNotFoundException
-import de.mineking.hexo.utils.types.Selector
 import de.mineking.hexo.utils.types.orThrow
-import de.mineking.hexo.utils.types.page
 import de.mineking.hexo.utils.types.urlOf
 
 internal class ProfileImpl(
@@ -26,13 +24,8 @@ internal class ProfileImpl(
 
     override suspend fun withStatistics(forceUpdate: Boolean) = ProfileWithStatisticsImpl(client, dto, retrieveStatistics())
 
-    override suspend fun retrieveGames(page: Int, pageSize: Int, rated: Boolean?) =
-        client.finishedGameRepository.getProfileHistory(
-            id,
-            Selector
-                .page(page, pageSize)
-                .rated(rated),
-        ).orThrow { EntityNotFoundException() }
+    override suspend fun retrieveGames(selector: FinishedGameSelector) = client.finishedGameRepository.getProfileHistory(id, selector)
+        .orThrow { EntityNotFoundException() }
 }
 
 internal class ProfileWithStatisticsImpl(

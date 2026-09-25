@@ -3,12 +3,12 @@ package de.mineking.hexo.database
 import de.mineking.hexo.utils.types.Result
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.flow.Flow
-import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.serialization.DeserializationStrategy
 import kotlinx.serialization.SerializationStrategy
 import kotlinx.serialization.StringFormat
 import kotlinx.serialization.serializer
+import org.intellij.lang.annotations.Language
 import org.jetbrains.exposed.v1.core.ColumnSet
 import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.ExpressionWithColumnType
@@ -30,6 +30,7 @@ interface Transaction {
     val manager: DatabaseManager
 
     suspend fun acquireLock(key: String)
+    suspend fun exec(@Language("sql") statement: String)
 
     fun select(fields: FieldSet): Query<ResultRow>
 
@@ -66,7 +67,7 @@ interface StatementResult : Flow<ResultRow> {
     suspend fun isNotEmpty() = !isEmpty()
 
     suspend fun execute() {
-        first()
+        firstOrNull()
     }
 }
 
