@@ -109,6 +109,7 @@ abstract class BaseTheme : Theme() {
 @Serializable
 enum class DefaultTheme(val theme: BaseTheme) {
     HDS(HDSTheme.Default),
+    Cix(CixTheme.Default),
     HTTTX(HTTTXTheme.Default),
     Tyto(TytoTheme.Default),
     Omok(OmokTheme.Default),

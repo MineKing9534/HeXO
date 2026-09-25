@@ -212,6 +212,7 @@ private val Color.css get() = rgba(red, green, blue, alpha)
 
 private val DefaultTheme.displayName get() = when (this) {
     DefaultTheme.HDS -> "HDS"
+    DefaultTheme.Cix -> "Cix"
     DefaultTheme.HTTTX -> "HTTTX"
     DefaultTheme.Tyto -> "Tyto"
     DefaultTheme.Omok -> "Omok"

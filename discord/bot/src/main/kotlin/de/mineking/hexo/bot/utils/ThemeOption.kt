@@ -118,6 +118,7 @@ fun MenuConfig<out Interaction, *>.themeSelect(
                 } else {
                     when (it) {
                         DefaultTheme.HDS -> main.emojiManager[CustomEmoji.ThemeHDS]
+                        DefaultTheme.Cix -> Emojis.ART
                         DefaultTheme.HTTTX -> main.emojiManager[CustomEmoji.ThemeHTTTX]
                         DefaultTheme.Tyto -> main.emojiManager[CustomEmoji.ThemeTyto]
                         DefaultTheme.Omok -> main.emojiManager[CustomEmoji.ThemeOmok]
