@@ -172,7 +172,7 @@ class UserThemeRepositoryImpl(private val database: DatabaseManager) : UserTheme
 
     override suspend fun createCustomTheme(owner: DiscordUserId, name: String, theme: Theme): Result<CustomTheme, CustomThemeCreateError> {
         return database.transaction(readOnly = false) {
-            ThemeDataTable.insert {
+            ThemeDataTable.insert(returning = ThemeDataTable.columns) {
                 this[ThemeDataTable.owner] = owner
                 this[ThemeDataTable.name] = name
 
@@ -194,7 +194,7 @@ class UserThemeRepositoryImpl(private val database: DatabaseManager) : UserTheme
 
             if (owner != user) return@transaction Result.Error(MissingCustomThemePermissionError)
 
-            val result = ThemeDataTable.update(where = id.toCondition()) {
+            val result = ThemeDataTable.update(where = id.toCondition(), returning = ThemeDataTable.columns) {
                 this.bindTheme(theme)
             }.first().mapToCustomTheme()
 
