@@ -30,8 +30,6 @@ import de.mineking.hexo.utils.types.successIfNotNullOrElse
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import net.dv8tion.jda.api.utils.DiscordAssets
-import net.dv8tion.jda.api.utils.ImageFormat
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greater
@@ -97,11 +95,7 @@ class AuthSessionManager(
     private suspend fun Transaction.createProfile(details: UserDetails): PrincipalId {
         val profileId = ProfileTable.insert(returning = listOf(ProfileTable.id)) {
             this[ProfileTable.displayName] = details.username
-            this[ProfileTable.image] = DiscordAssets.userAvatar(
-                ImageFormat.PNG,
-                details.id.value.toString(),
-                details.avatar,
-            ).url
+            this[ProfileTable.image] = details.avatarUrl
         }.first()[ProfileTable.id]
 
         ProfileStatisticsTable.insert {
