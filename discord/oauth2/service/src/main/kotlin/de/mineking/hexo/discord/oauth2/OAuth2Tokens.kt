@@ -8,6 +8,8 @@ import kotlinx.serialization.descriptors.PrimitiveKind
 import kotlinx.serialization.descriptors.PrimitiveSerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
+import net.dv8tion.jda.api.utils.DiscordAssets
+import net.dv8tion.jda.api.utils.ImageFormat
 import kotlin.time.Clock
 import kotlin.time.Duration.Companion.minutes
 import kotlin.time.Duration.Companion.seconds
@@ -27,9 +29,14 @@ class OAuth2Tokens internal constructor(
 @Serializable
 data class UserDetails(
     val id: DiscordUserId,
-    val avatar: String,
+    val avatar: String?,
     val username: String,
-)
+) {
+    val avatarUrl get() = when (avatar) {
+        null -> id.defaultAvatarUrl
+        else -> DiscordAssets.userAvatar(ImageFormat.PNG, id.id, avatar).url
+    }
+}
 
 @Serializable
 internal data class OAuth2TokensDto(
