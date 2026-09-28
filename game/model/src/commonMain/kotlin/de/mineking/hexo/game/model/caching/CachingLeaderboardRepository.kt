@@ -6,9 +6,12 @@ import kotlinx.atomicfu.locks.SynchronizedObject
 import kotlinx.atomicfu.locks.synchronized
 import kotlin.time.Clock
 
-fun LeaderboardRepository.caching(): LeaderboardRepository = CachingLeaderboardRepository(this)
+fun LeaderboardRepository.caching(): LeaderboardRepository {
+    require(this !is CachingLeaderboardRepository)
+    return CachingLeaderboardRepository(this)
+}
 
-private class CachingLeaderboardRepository(private val delegate: LeaderboardRepository) : LeaderboardRepository {
+open class CachingLeaderboardRepository(open val delegate: LeaderboardRepository) : LeaderboardRepository {
     private val lock = SynchronizedObject()
     private var cache: Leaderboard? = null
 

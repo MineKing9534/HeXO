@@ -2,6 +2,7 @@ package de.mineking.hexo.web
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.staticCompositionLocalOf
 import com.varabyte.kobweb.core.App
@@ -9,6 +10,13 @@ import com.varabyte.kobweb.core.AppGlobals
 import com.varabyte.kobweb.core.init.InitKobweb
 import com.varabyte.kobweb.core.init.InitKobwebContext
 import com.varabyte.kobweb.core.isExporting
+import de.mineking.hexo.discord.oauth2.client.DiscordOAuth2ApiClient
+import de.mineking.hexo.game.implementation.client.AuthenticationController
+import de.mineking.hexo.game.implementation.client.AuthenticationControllerFactory
+import de.mineking.hexo.game.implementation.client.DEFAULT_HMD_PUBLIC_URL
+import de.mineking.hexo.game.implementation.client.HmdApiClient
+import de.mineking.hexo.game.implementation.client.HmdHttpClient
+import de.mineking.hexo.game.implementation.client.HmdRepositoryContainer
 import de.mineking.hexo.game.model.RepositoryContainer
 import de.mineking.hexo.hds.implementation.DEFAULT_HDS_PUBLIC_URL
 import de.mineking.hexo.hds.implementation.HdsApiClient
@@ -23,11 +31,23 @@ import kotlinx.browser.localStorage
 import org.jetbrains.compose.web.dom.Main
 
 private val LocalHdsApiRepositories = staticCompositionLocalOf<RepositoryContainer?> { null }
+private val LocalHmdApiRepositories = staticCompositionLocalOf<HmdRepositoryContainer?> { null }
+private val LocalAuthenticationController = staticCompositionLocalOf<AuthenticationController?> { null }
+private val LocalDiscordOAuth2Client = staticCompositionLocalOf<DiscordOAuth2ApiClient> { error("DiscordOAuth2Client not initialized!") }
 private val LocalSoundPlayer = staticCompositionLocalOf<SoundPlayer> { error("SoundPlayer not initialized!") }
-private val LocalWatchPartyController = staticCompositionLocalOf<WatchPartyController> { error("SessionSyncService not initialized!") }
+private val LocalWatchPartyController = staticCompositionLocalOf<WatchPartyController> { error("WatchPartyController not initialized!") }
 
 @Composable
 fun rememberHdsRepositories() = LocalHdsApiRepositories.current
+
+@Composable
+fun rememberHmdRepositories() = LocalHmdApiRepositories.current
+
+@Composable
+fun rememberAuthenticationController() = LocalAuthenticationController.current
+
+@Composable
+fun rememberDiscordOAuth2Client() = LocalDiscordOAuth2Client.current
 
 @Composable
 fun rememberSoundPlayer() = LocalSoundPlayer.current
@@ -51,16 +71,47 @@ private fun rememberSharedHdsApiClient(): HdsApiClient? {
     )
 }
 
+@Composable
+private fun rememberSharedHmdApiClient(): HmdApiClient? {
+    if (AppGlobals.isExporting) return null
+    val apiUrl = BuildConfig.HMD_API_URL
+
+    return rememberAsyncResourceState(
+        key = apiUrl,
+        initialState = null,
+        load = {
+            val client = HmdHttpClient.createDefault(apiUrl)
+            HmdApiClient(client = client, publicUrl = DEFAULT_HMD_PUBLIC_URL, authenticationController = AuthenticationControllerFactory.Cookie)
+        },
+        dispose = { it?.close() },
+    )
+}
+
+@Composable
+private fun rememberSharedDiscordOAuth2Client(): DiscordOAuth2ApiClient {
+    val client = remember { DiscordOAuth2ApiClient(apiUrl = BuildConfig.HMD_API_URL) }
+    DisposableEffect(client) {
+        onDispose { client.close() }
+    }
+
+    return client
+}
+
 @App
 @Composable
 fun App(content: @Composable () -> Unit) {
     SettingsControllerProvider(localStorage) { settingsController ->
         val hdsApiClient = rememberSharedHdsApiClient()
+        val hmdApiClient = rememberSharedHmdApiClient()
+        val discordOAuth2Client = rememberSharedDiscordOAuth2Client()
         val soundPlayer = remember(settingsController) { SoundPlayer(settingsController) }
         val watchPartyController = remember { WatchPartyController(BuildConfig.HMD_API_URL, settingsController) }
 
         CompositionLocalProvider(
             LocalHdsApiRepositories provides hdsApiClient,
+            LocalHmdApiRepositories provides hmdApiClient,
+            LocalAuthenticationController provides hmdApiClient?.authenticationController,
+            LocalDiscordOAuth2Client provides discordOAuth2Client,
             LocalSoundPlayer provides soundPlayer,
             LocalWatchPartyController provides watchPartyController,
         ) {

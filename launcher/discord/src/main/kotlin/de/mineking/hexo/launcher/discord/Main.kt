@@ -34,7 +34,7 @@ suspend fun main() = coroutineScope {
     )
 
     val database = config.database.createDatabase()
-    val oauth2 = createOAuth2Dependencies(config.oauth2, config.server?.url, database)
+    val oauth2 = createOAuth2Dependencies(config.oauth2, config.server?.webUrl, database)
 
     val accountLinks = database?.let { AccountLinkRepositoryImpl(it) }
     val userThemes = database?.let { UserThemeRepositoryImpl(it) }
@@ -60,7 +60,7 @@ suspend fun main() = coroutineScope {
         userThemeRepository = userThemes,
         notationParser = parser,
         boardRenderer = renderer.outputBoardAttachment("png"),
-        publicUrl = config.server?.url,
+        publicUrl = config.server?.webUrl,
         token = config.bot.token,
     )
 

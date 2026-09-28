@@ -22,7 +22,6 @@ import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.render
 import de.mineking.discord.ui.terminateRender
-import de.mineking.discord.utils.await
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.main
 import de.mineking.hexo.bot.userId
@@ -33,7 +32,6 @@ import de.mineking.hexo.discord.oauth2.OAuth2TokenRepository
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileRepository
-import de.mineking.hexo.game.model.profile.getProfileById
 import de.mineking.hexo.game.model.profile.getProfileByName
 import de.mineking.hexo.link.AccountLinkRepository
 import de.mineking.hexo.utils.types.flatMap
@@ -73,7 +71,7 @@ fun UIManager.accountLinkMenu(
             val profile = async {
                 accountLinkRepository.getHexoProfile(event.user.userId)
                     .successIfNotNullOrElse(ProfileNotFoundError)
-                    .flatMap { profileRepository.getProfileById(it) }
+                    .flatMap { profileRepository.getProfile(it) }
                     .orNull()
             }
 
@@ -132,7 +130,7 @@ private fun MessageMenuConfig<out Interaction, *>.linkModalButton(
     deferEdit().queue()
 
     val profileId = ProfileId(profileUrl.split("/").last())
-    val profile = profileRepository.getProfileById(profileId).orElse {
+    val profile = profileRepository.getProfile(profileId).orElse {
         respond(MessageColor.Error, localization.responseErrorProfileNotFound(userLocale, profileId), forceNew = true)
         terminateRender()
     }
