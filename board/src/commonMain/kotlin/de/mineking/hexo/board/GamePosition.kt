@@ -13,44 +13,49 @@ fun Move(coordinate: CellCoordinate, owner: CellOwner) = object : Move {
     override val owner = owner
 }
 
+interface AbstractTurnMetaData {
+    val player: CellOwner
+    val turn: Int
+}
+
 data class TurnMetaData(
-    val player: CellOwner,
+    override val player: CellOwner,
+    override val turn: Int,
+) : AbstractTurnMetaData
+
+data class NextTurnMetaData(
+    override val player: CellOwner,
+    override val turn: Int,
     val placementsRemaining: Int,
-    val turn: Int,
-)
+) : AbstractTurnMetaData
+
+fun AbstractTurnMetaData.withRemaining(remaining: Int) = NextTurnMetaData(player, turn, remaining)
 
 data class Turn<out M : Move>(val meta: TurnMetaData, val moves: List<M>)
-fun Turn<*>.isComplete() = meta.placementsRemaining == 0
 
 data class GamePosition<out M : Move>(
     val turns: List<Turn<M>>,
-    val nextTurn: TurnMetaData,
+    val nextTurn: NextTurnMetaData,
 )
 
 val <M : Move> GamePosition<M>.moves get() = turns.flatMap { it.moves }
 fun <M : Move> GamePosition<M>.take(maxMoves: Int): GamePosition<M> {
     require(maxMoves >= 0) { "Requested move count $maxMoves is less than zero." }
+    if (maxMoves >= moves.size) return this
 
     val selectedTurns = mutableListOf<Turn<M>>()
     var remainingMoves = maxMoves
+
     for (turn in turns) {
         if (remainingMoves == 0) {
-            val next = selectedTurns
-                .lastOrNull()
-                ?.takeUnless { it.isComplete() }
-                ?.meta
-                ?: turn.meta.copy(placementsRemaining = turn.moves.size + turn.meta.placementsRemaining)
-
-            return GamePosition(selectedTurns, next)
+            return GamePosition(selectedTurns, turn.meta.withRemaining(remainingAfter(turn, 0)))
         }
 
         if (remainingMoves < turn.moves.size) {
-            val meta = turn.meta.copy(placementsRemaining = turn.meta.placementsRemaining + turn.moves.size - remainingMoves)
             selectedTurns += turn.copy(
-                meta = meta,
                 moves = turn.moves.take(remainingMoves),
             )
-            return GamePosition(selectedTurns, meta)
+            return GamePosition(selectedTurns, turn.meta.withRemaining(remainingAfter(turn, remainingMoves)))
         }
 
         selectedTurns += turn
@@ -60,15 +65,24 @@ fun <M : Move> GamePosition<M>.take(maxMoves: Int): GamePosition<M> {
     return this
 }
 
+private fun GamePosition<*>.remainingAfter(turn: Turn<*>, selectedMoves: Int): Int {
+    val originalRemaining = nextTurn.placementsRemaining
+        .takeIf { nextTurn.player == turn.meta.player && nextTurn.turn == turn.meta.turn }
+        ?: 0
+
+    return turn.moves.size - selectedMoves + originalRemaining
+}
+
 fun GamePosition<*>.toBoard(
     focusWinningRows: Boolean = true,
     attributes: BoardAttributes = BoardAttributes(),
 ): Board = MutableBoard(attributes = attributes.copy()).apply {
-    moves.forEachIndexed { index, move ->
-        val cell = this[move.coordinate]
-        cell.owner = move.owner
-
-        cell.turn = (index + 1) / 2
+    turns.forEach { turn ->
+        turn.moves.forEach { move ->
+            val cell = this[move.coordinate]
+            cell.owner = turn.meta.player
+            cell.turn = turn.meta.turn
+        }
     }
 
     if (focusWinningRows) {
@@ -105,7 +119,6 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPos
             turns += Turn(
                 meta = TurnMetaData(
                     player = expected,
-                    placementsRemaining = ((if (turn == 0) 1 else movesPerTurn) - cells.size).coerceIn(0, movesPerTurn),
                     turn = turn,
                 ),
                 moves = cells.map { Move(it.key, expected) },
@@ -121,18 +134,21 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPos
     ))
 }
 
-private fun List<Turn<*>>.findNextTurn(hasState: Boolean, movesPerTurn: Int): TurnMetaData {
+fun List<Turn<*>>.findNextTurn(hasState: Boolean, movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): NextTurnMetaData {
     val lastTurn = lastOrNull()
-    if (lastTurn != null && !lastTurn.isComplete()) return lastTurn.meta
+    if (lastTurn != null) {
+        val remaining = (movesPerTurn - lastTurn.moves.size).coerceAtLeast(0)
+        if (remaining > 0) return lastTurn.meta.withRemaining(remaining)
+    }
 
-    return TurnMetaData(
+    return NextTurnMetaData(
         player = lastTurn?.meta?.player?.other ?: CellOwner.X,
         turn = lastTurn?.meta?.turn?.let { it + 1 } ?: if (hasState) 1 else 0,
         placementsRemaining = if (lastTurn == null) 1 else movesPerTurn,
     )
 }
 
-fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): GamePosition<M> {
+fun <M : Move> List<M>.toTurns(): List<Turn<M>> {
     val turnData = fold(mutableListOf<Pair<CellOwner, MutableList<M>>>()) { turns, move ->
         val lastTurn = turns.lastOrNull()
 
@@ -145,23 +161,19 @@ fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN
         turns
     }
 
-    if (turnData.isNotEmpty()) {
-        val first = turnData.first().second
-        require(first.size == 1)
-        require(first.first().coordinate == CellCoordinate.Zero)
-    }
-
-    val turns = turnData.mapIndexed { index, (player, cells) ->
+    return turnData.mapIndexed { index, (player, cells) ->
         Turn(
             meta = TurnMetaData(
                 player = player,
                 turn = index,
-                placementsRemaining = ((if (index == 0) 1 else movesPerTurn) - cells.size).coerceIn(0, movesPerTurn),
             ),
             moves = cells,
         )
     }
+}
 
+fun <M : Move> List<M>.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): GamePosition<M> {
+    val turns = toTurns()
     return GamePosition(
         turns = turns,
         nextTurn = turns.findNextTurn(hasState = false, movesPerTurn = movesPerTurn),

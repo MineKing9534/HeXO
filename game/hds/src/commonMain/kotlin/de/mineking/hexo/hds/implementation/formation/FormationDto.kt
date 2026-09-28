@@ -21,6 +21,8 @@ internal data class FormationDto(
 
 @Serializable
 internal data class GamePositionDto(
+    val currentTurnPlayer: @Serializable(with = FormationCellOwnerSerializer::class) CellOwner,
+    val placementsRemaining: Int,
     val cells: List<GamePositionCell>,
 )
 

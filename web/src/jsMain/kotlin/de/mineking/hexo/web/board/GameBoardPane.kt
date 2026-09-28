@@ -83,13 +83,12 @@ fun GameBoardPane(
     }
 
     val position = game.rememberPosition(boardViewManager.currentMove)
-    val (effectiveTurnPlayer, effectivePlacementsRemaining) = position.nextTurn
     val playerTimeProvider = rememberPlayerTimeProvider(game, boardViewManager.currentMove)
     val allowAnalyzerOverlay = !(isLive && game.options.rated)
 
     val shouldAnalyze by SettingsKey.SessionAnalyzer.collectAsState()
     val analyzerTurn = if (shouldAnalyze && (isLive || boardViewManager.currentMove < game.moveCount)) {
-        AnalyzerTurn(effectiveTurnPlayer, effectivePlacementsRemaining)
+        AnalyzerTurn(position.nextTurn.player, position.nextTurn.placementsRemaining)
     } else {
         null
     }
@@ -119,8 +118,8 @@ fun GameBoardPane(
         if (!plain) {
             TurnIndicator(
                 game,
-                game.playerWithColor(effectiveTurnPlayer),
-                effectivePlacementsRemaining,
+                game.playerWithColor(position.nextTurn.player),
+                position.nextTurn.placementsRemaining,
                 playerTimeProvider,
             )
             BoardControls(game, boardViewManager, viewport)

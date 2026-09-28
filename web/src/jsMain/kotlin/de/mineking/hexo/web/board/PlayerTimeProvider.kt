@@ -7,7 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.board.isComplete
+import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
 import de.mineking.hexo.board.take
 import de.mineking.hexo.game.model.LiveDuration
 import de.mineking.hexo.game.model.TimeControl
@@ -109,7 +109,7 @@ private fun reconstructPlayerTimes(game: FinishedGameWithPosition, move: Int): M
         val lastMove = turn.moves.last()
         val elapsed = (lastMove.timestamp - turnStartedAt).coerceAtLeast(Duration.ZERO)
         val playerTime = (remaining.getValue(turn.meta.player) - elapsed).coerceAtLeast(Duration.ZERO)
-        remaining[turn.meta.player] = if (turn.isComplete()) control.afterCompletedTurn(playerTime) else playerTime
+        remaining[turn.meta.player] = if (turn.moves.size == DEFAULT_MOVES_PER_TURN) control.afterCompletedTurn(playerTime) else playerTime
 
         turnStartedAt = lastMove.timestamp
     }
