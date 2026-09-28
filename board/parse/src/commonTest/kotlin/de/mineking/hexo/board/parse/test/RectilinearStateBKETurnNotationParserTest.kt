@@ -6,7 +6,7 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.TurnMetaData
+import de.mineking.hexo.board.NextTurnMetaData
 import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
 import de.mineking.hexo.board.toGamePosition
@@ -21,14 +21,14 @@ class RectilinearStateBKETurnNotationParserTest {
         val position = board.toGamePosition().turns
         assertEquals(listOf(CellOwner.O, CellOwner.X, CellOwner.O), position.turns.map { it.meta.player })
         assertEquals(listOf(1, 2, 2), position.turns.map { it.moves.size })
-        assertEquals(TurnMetaData(CellOwner.X, 2, 3), board.findNextTurn())
+        assertEquals(NextTurnMetaData(CellOwner.X, turn = 3, placementsRemaining = 2), board.findNextTurn())
     }
 
     @Test
     fun `continue an incomplete explicit X turn following the implicit opening`() {
         val board = "x A0".parseRectilinearStateBKETurnNotation(focusWinningRows = false)
 
-        assertEquals(TurnMetaData(CellOwner.X, 1, 1), board.findNextTurn())
+        assertEquals(NextTurnMetaData(CellOwner.X, turn = 1, placementsRemaining = 1), board.findNextTurn())
     }
 
     @Test
