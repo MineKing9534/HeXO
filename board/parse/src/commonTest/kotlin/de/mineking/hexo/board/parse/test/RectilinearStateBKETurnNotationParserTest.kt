@@ -6,6 +6,7 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.board.Move
 import de.mineking.hexo.board.NextTurnMetaData
 import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
@@ -14,6 +15,13 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class RectilinearStateBKETurnNotationParserTest {
+    @Test
+    fun `opening turn is complete after one move`() {
+        val position = listOf(Move(CellCoordinate.Zero, CellOwner.X)).toGamePosition()
+
+        assertEquals(NextTurnMetaData(CellOwner.O, turn = 1, placementsRemaining = 2), position.nextTurn)
+    }
+
     @Test
     fun `follow turns after an explicit X turn following the implicit opening`() {
         val board = "x A0 H2.2 o A1 G2.2".parseRectilinearStateBKETurnNotation(focusWinningRows = false)
