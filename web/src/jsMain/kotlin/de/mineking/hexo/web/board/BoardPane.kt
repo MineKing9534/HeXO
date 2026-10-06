@@ -15,7 +15,7 @@ import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
-import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.render.notation.renderCombinedNotation
 import de.mineking.hexo.board.take
 import de.mineking.hexo.game.model.game.GameMove
 import de.mineking.hexo.game.model.game.GameWithPosition
@@ -180,7 +180,7 @@ private fun OpenInSandboxButton(board: Board) {
         tooltip = "Open this position in the sandbox",
         onClick = {
             val url = URL("${window.location.origin}${BasePath.prependTo(AppRoute.Sandbox.href)}")
-            val notation = board.renderRectilinearStateBKETurnNotation()
+            val notation = board.renderCombinedNotation()
             url.searchParams.set("position", notation.replace("/", "_"))
             window.open(url.toString(), if (watchPartyController.hostWatchParty == null) "_blank" else "_self")
         },

@@ -1,6 +1,6 @@
 package de.mineking.hexo.launcher
 
-import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.parse.RemoteBoardParser
 import de.mineking.hexo.board.parse.caching
 import de.mineking.hexo.board.parse.focusWinningRows
@@ -20,7 +20,7 @@ import de.mineking.hexo.utils.cache.entries
 import de.mineking.hexo.utils.cache.megabytes
 import kotlin.math.roundToLong
 
-fun createBoardParser(hds: HdsApiClient) = (RemoteBoardParser(hds) or BoardParser.Default)
+fun createBoardParser(hds: HdsApiClient) = (RemoteBoardParser(hds) or NotationParser.Default)
     .focusWinningRows()
     .caching(CacheConfiguration(
         sizeLimit = 16.entries,

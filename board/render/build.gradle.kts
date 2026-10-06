@@ -15,6 +15,7 @@ kotlin {
             implementation(libs.kotlin.coroutines.core)
             implementation(libs.kotlin.serialization.core)
 
+            implementation(libs.okio)
             implementation(libs.svg)
         }
     }
@@ -22,11 +23,6 @@ kotlin {
     sourceSets.commonTest {
         dependencies {
             implementation(projects.board.parse)
-        }
-    }
-
-    sourceSets.jvmTest {
-        dependencies {
             implementation(libs.kotlin.coroutines.test)
         }
     }

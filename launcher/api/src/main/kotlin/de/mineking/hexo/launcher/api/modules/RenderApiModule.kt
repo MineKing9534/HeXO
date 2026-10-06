@@ -1,6 +1,6 @@
 package de.mineking.hexo.launcher.api.modules
 
-import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
@@ -15,7 +15,7 @@ import io.ktor.server.util.getOrFail
 data class RenderType(val renderer: BoardRenderer<Theme, ByteArray>, val type: ContentType)
 
 class RenderApiModule(
-    private val parser: BoardParser,
+    private val parser: NotationParser,
     private val renderers: Map<String, RenderType>,
 ) : ApiModule() {
     override fun Route.registerRoutes() {
@@ -25,7 +25,7 @@ class RenderApiModule(
             val renderer = renderers[type] ?: throw BadRequestException("Unsupported render type")
 
             val notation = call.queryParameters.getOrFail("notation")
-            val board = parser.parse(notation.replace("_", "/"))
+            val board = parser.parse(notation)
 
             call.respondBytes(renderer.type) { renderer.renderer.render(board, theme.theme) }
         }

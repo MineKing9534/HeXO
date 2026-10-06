@@ -9,7 +9,7 @@ import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.utils.await
 import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
-import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.bot.commands.accountLinkCommand
@@ -61,7 +61,7 @@ class HeXODiscordBot(
     private val accountLinkRepository: AccountLinkRepository?,
     private val discordUserAuthenticationRepository: OAuth2TokenRepository?,
     val userThemeRepository: UserThemeRepository?,
-    val notationParser: BoardParser,
+    val notationParser: NotationParser,
     val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
     val publicUrl: String?,
     token: String,

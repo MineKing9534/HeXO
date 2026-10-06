@@ -10,11 +10,11 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import com.varabyte.kobweb.compose.css.borderColor
+import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.DEFAULT_MOVES_PER_TURN
 import de.mineking.hexo.board.Move
 import de.mineking.hexo.board.focusWinningRows
-import de.mineking.hexo.board.moves
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
@@ -95,7 +95,10 @@ fun GameBoardPane(
 
     val board = remember(position, boardViewManager.overlay) {
         val board = position.toBoard(focusWinningRows = false)
-        (board + boardViewManager.overlay).focusWinningRows()
+        (board + boardViewManager.overlay).apply {
+            focusWinningRows()
+            attributes[BoardAttribute.ShowTurnNumbers] = false
+        }
     }
 
     AnalysedBoardPane(

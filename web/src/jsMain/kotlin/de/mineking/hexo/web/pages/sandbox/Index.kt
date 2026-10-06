@@ -21,7 +21,8 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.isEmpty
-import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.parse.focusWinningRows
+import de.mineking.hexo.board.parse.notation.CombinedNotationParser
 import de.mineking.hexo.board.render.compose.BoardModifierKeys
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.utils.types.present
@@ -54,21 +55,25 @@ fun initSandboxPage(ctx: InitRouteContext) {
 fun SandboxPage() {
     var positionParameter by rememberQueryParameter("position")
     val hasInitialPosition = remember { !positionParameter.isNullOrBlank() }
-    val (initialBoard, initialError) = remember {
-        val initial = positionParameter?.replace("_", "/") ?: ""
+
+    var initialBoard by remember { mutableStateOf(Board.withTurnNumbers()) }
+    var initialError by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(Unit) {
+        val notation = positionParameter ?: return@LaunchedEffect
 
         try {
-            val board = when {
-                initial.isBlank() -> Board.withTurnNumbers()
-                else -> initial.parseRectilinearStateBKETurnNotation(focusWinningRows = false)
-            }
-
-            board to null
+            initialBoard = CombinedNotationParser.Default
+                .focusWinningRows()
+                .parse(notation)
         } catch (e: HexoNotationException) {
-            Board.withTurnNumbers() to e.message
+            initialError = e.message
         }
+
+        positionParameter = null
     }
-    LaunchedEffect(Unit) { positionParameter = null }
+
+    if (positionParameter != null) return
 
     val boardViewManager = rememberSandboxBoardViewManager()
     val watchPartyController = rememberWatchPartyController()

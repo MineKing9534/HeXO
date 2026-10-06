@@ -1,16 +1,18 @@
 package de.mineking.hexo.board.render.test
 
-import de.mineking.hexo.board.BoardAttribute
+import de.mineking.hexo.board.Cell
+import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.MutableBoardAttributes
-import de.mineking.hexo.board.parse.parseRectilinearNotation
-import de.mineking.hexo.board.parse.parseRectilinearStateBKETurnNotation
+import de.mineking.hexo.board.parse.notation.CombinedNotationParser
+import de.mineking.hexo.board.parse.notation.parseRectilinearNotation
+import de.mineking.hexo.board.render.notation.BKENotationBoardRenderer
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
+import de.mineking.hexo.board.render.notation.renderCombinedNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
-import de.mineking.hexo.board.render.notation.renderRectilinearStateBKETurnNotation
-import de.mineking.hexo.board.to
+import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -85,114 +87,117 @@ class IntegrationTest {
     }
 
     @Test
-    fun `bke test 1`() {
-        val input = "o A0"
-        val parsed = input.parseRectilinearStateBKETurnNotation()
-        val rendered = parsed.renderRectilinearStateBKETurnNotation()
-
-        assertEquals(input, rendered)
-    }
-
-    @Test
-    fun `bke test 2`() {
-        val input = "o A0 A2 x A1 A4 o B1.0 B4.0"
-        val parsed = input.parseRectilinearStateBKETurnNotation()
-        val rendered = parsed.renderRectilinearStateBKETurnNotation()
-
-        assertEquals(input, rendered)
-    }
-
-    @Test
-    fun `rectilinear state bke turn test`() {
-        val input = ".x/xx, d o A0 B1 x B2.0 B2.1"
-        val parsed = input.parseRectilinearStateBKETurnNotation()
-        val rendered = parsed.renderRectilinearStateBKETurnNotation()
-
-        assertEquals(".x/xx, b @(1, 0) o A0 A1 x B3.1 B4.0", rendered)
-        val _ = rendered.parseRectilinearStateBKETurnNotation()
-    }
-
-    @Test
-    fun `rectilinear state bke turn preserves shared offset`() {
+    fun `board renderer produces BKE notation`() = runTest {
         val board = MutableBoard()
-        board[4, 0].owner = CellOwner.X
-        board[0, 0].apply {
-            owner = CellOwner.O
-            turn = 1
-        }
-
-        val rendered = board.renderRectilinearStateBKETurnNotation()
-
-        assertEquals("x, > @(-5, 0) o A0", rendered)
-    }
-
-    @Test
-    fun `focused bke moves do not extend rectilinear state`() {
-        val board = MutableBoard()
-        board[4, 0].owner = CellOwner.X
-        board[0, 0].apply {
-            owner = CellOwner.O
-            turn = 1
-            focused = true
-        }
-
-        val rendered = board.renderRectilinearStateBKETurnNotation()
-
-        assertEquals("x, > @(-5, 0) o A0", rendered)
-    }
-
-    @Test
-    fun `rectilinear state bke turn optimizes fixed origin direction`() {
-        val board = MutableBoard()
-        board[0, 0].owner = CellOwner.X
-        board[1, 0].apply {
-            owner = CellOwner.O
-            turn = 0
-        }
-        board[1, 1].apply {
-            owner = CellOwner.O
-            turn = 1
-        }
-
-        val rendered = board.renderRectilinearStateBKETurnNotation()
-
-        assertEquals("x, q @(1, 0) o A0", rendered)
-    }
-
-    @Test
-    fun `bke origin is not placed on a bke move`() {
-        val board = MutableBoard(attributes = MutableBoardAttributes(BoardAttribute.ShowTurnNumbers to true))
-        board[0, 0].owner = CellOwner.X
-        board[2, 0].apply {
-            owner = CellOwner.O
-            turn = 1
-        }
-        board[1, 0].apply {
-            owner = CellOwner.O
-            turn = 1
-        }
-
-        val rendered = board.renderRectilinearStateBKETurnNotation()
-
-        assertEquals("x, q @(2, -1) o A0 A1", rendered)
-        assertEquals(board, rendered.parseRectilinearStateBKETurnNotation())
-    }
-
-    @Test
-    fun `bke supports multi-letter rings`() {
-        val board = MutableBoard(attributes = MutableBoardAttributes(BoardAttribute.ShowTurnNumbers to true))
         board[0, 0].apply {
             owner = CellOwner.X
             turn = 0
         }
-        board[27, -27].apply {
+        board[1, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+        assertEquals("o A0", BKENotationBoardRenderer.render(board, Unit))
+    }
+
+    @Test
+    fun `combined notation includes every turn with its original orientation`() = runTest {
+        val board = MutableBoard()
+        board[0, 0].owner = CellOwner.X
+        board[1, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+        board[0, 1].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+        board[0, -1].apply {
+            owner = CellOwner.X
+            turn = 2
+        }
+
+        val notation = board.renderCombinedNotation()
+        val parsed = CombinedNotationParser.Default.parse(notation)
+        assertEquals(board.cells, parsed.cells)
+    }
+
+    @Test
+    fun `combined origin uses an initial cell away from zero even when zero is a move`() = runTest {
+        val board = MutableBoard()
+        board[5, 3].owner = CellOwner.X
+        board[0, 0].apply {
             owner = CellOwner.O
             turn = 1
         }
 
-        val rendered = board.renderRectilinearStateBKETurnNotation()
+        val notation = board.renderCombinedNotation()
+        val parsed = CombinedNotationParser.Default.parse(notation)
+        assertEquals("x[*]", notation.substringBefore(" --- "))
+        assertEquals(
+            mapOf(
+                CellCoordinate.Zero to Cell(CellOwner.X),
+                CellCoordinate(-5, -3) to Cell(CellOwner.O, turn = 1),
+            ),
+            parsed.cells,
+        )
+        assertEquals("", board[5, 3].label)
+    }
 
-        assertEquals("o AA0", rendered)
-        assertEquals(board, rendered.parseRectilinearStateBKETurnNotation())
+    @Test
+    fun `combined origin minimizes ring sizes among initial cells`() = runTest {
+        val board = MutableBoard()
+        board[0, 0].owner = CellOwner.X
+        board[10, 0].owner = CellOwner.X
+        board[11, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+
+        val notation = board.renderCombinedNotation()
+        val parsed = CombinedNotationParser.Default.parse(notation)
+        assertEquals("x9x[*] --- > CW o A0", notation)
+        assertEquals(board.cells, parsed.cells)
+    }
+
+    @Test
+    fun `combined origin preserves existing labels and avoids later moves`() = runTest {
+        val board = MutableBoard()
+        board[0, 0].apply {
+            owner = CellOwner.X
+            label = "keep"
+        }
+        board[1, 0].apply {
+            owner = CellOwner.O
+            turn = 1
+        }
+
+        val notation = board.renderCombinedNotation()
+        val parsed = CombinedNotationParser.Default.parse(notation)
+        assertEquals(board.cells + (CellCoordinate(0, 1) to Cell.EMPTY), parsed.cells)
+        assertEquals("keep", board[0, 0].label)
+    }
+
+    @Test
+    fun `combined origin fallback skips all occupied neighboring moves`() = runTest {
+        val board = MutableBoard()
+        board[0, 0].apply {
+            owner = CellOwner.X
+            label = "keep"
+        }
+        val moves = Direction.entries.map { it.direction }
+        moves.forEach { coordinate ->
+            board[coordinate].apply {
+                owner = CellOwner.O
+                turn = 1
+            }
+        }
+
+        val notation = board.renderCombinedNotation()
+        val initialState = notation.substringBefore(" --- ").parseRectilinearNotation()
+        val parsed = CombinedNotationParser.Default.parse(notation)
+        assertEquals(CellCoordinate(2, 0), initialState.cells.entries.single { it.value.label == "*" }.key)
+        assertEquals(board.cells + (CellCoordinate(2, 0) to Cell.EMPTY), parsed.cells)
+        assertEquals(7, board.cells.size)
     }
 }

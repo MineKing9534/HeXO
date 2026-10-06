@@ -45,7 +45,6 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.BoardAttributes
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.board.moves
 import de.mineking.hexo.board.render.notation.NotationType
 import de.mineking.hexo.board.take
 import de.mineking.hexo.board.to
