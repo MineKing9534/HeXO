@@ -137,7 +137,8 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPos
 fun List<Turn<*>>.findNextTurn(hasState: Boolean, movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): NextTurnMetaData {
     val lastTurn = lastOrNull()
     if (lastTurn != null) {
-        val remaining = (movesPerTurn - lastTurn.moves.size).coerceAtLeast(0)
+        val placements = if (lastTurn.meta.turn == 0) 1 else movesPerTurn
+        val remaining = (placements - lastTurn.moves.size).coerceAtLeast(0)
         if (remaining > 0) return lastTurn.meta.withRemaining(remaining)
     }
 
