@@ -44,6 +44,7 @@ kotlin {
     sourceSets.jsMain {
         dependencies {
             implementation(projects.board)
+            implementation(projects.board.binary)
             implementation(projects.board.render)
             implementation(projects.board.render.compose)
 

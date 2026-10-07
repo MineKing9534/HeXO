@@ -17,12 +17,10 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.isEmpty
-import de.mineking.hexo.board.parse.focusWinningRows
-import de.mineking.hexo.board.parse.notation.CombinedNotationParser
 import de.mineking.hexo.board.render.compose.BoardModifierKeys
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.utils.types.present
@@ -63,10 +61,8 @@ fun SandboxPage() {
         val notation = positionParameter ?: return@LaunchedEffect
 
         try {
-            initialBoard = CombinedNotationParser.Default
-                .focusWinningRows()
-                .parse(notation)
-        } catch (e: HexoNotationException) {
+            initialBoard = BoardBinary.decodeFromString(notation)
+        } catch (e: IllegalArgumentException) {
             initialError = e.message
         }
 

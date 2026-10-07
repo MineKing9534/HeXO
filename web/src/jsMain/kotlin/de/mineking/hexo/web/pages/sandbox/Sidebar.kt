@@ -12,8 +12,10 @@ import com.varabyte.kobweb.compose.css.borderColor
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findNextTurn
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.parse.focusWinningRows
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
@@ -134,7 +136,7 @@ private fun SidebarNotationSection(
             updateNotation(value, coroutineScope, onNotationChange, onParseErrorChange, onBoardChange)
         }
         SidebarNotationInfo(board, onBoardChange, parseError) {
-            NotationActions(repositories, notation) { value ->
+            NotationActions(repositories, board) { value ->
                 updateNotation(value, coroutineScope, onNotationChange, onParseErrorChange, onBoardChange)
                 onImportPosition()
             }
@@ -388,7 +390,7 @@ private fun NotationField(
 @Composable
 private fun NotationActions(
     repositories: RepositoryContainer?,
-    notation: String,
+    board: Board,
     onChange: (String) -> Unit,
 ) {
     var importDialogOpen by remember { mutableStateOf(false) }
@@ -396,13 +398,13 @@ private fun NotationActions(
         var link by remember { mutableStateOf<String?>(null) }
         ActionButton(
             tooltip = "Copy a link to this position",
-            enabled = notation.isNotBlank(),
+            enabled = !board.isEmpty(includeHighlights = true),
             attrs = {
                 classes("grid", "size-7!", "place-items-center", "p-0!")
             },
             onClick = {
                 val url = URL(window.location.href)
-                url.searchParams.set("position", notation)
+                url.searchParams.set("position", BoardBinary.encodeToString(board))
                 link = url.toString()
             },
         ) {

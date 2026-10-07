@@ -1,5 +1,6 @@
 package de.mineking.hexo.launcher.api.modules
 
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
@@ -24,10 +25,14 @@ class RenderApiModule(
             val theme = call.queryParameters["theme"]?.let { DefaultTheme.valueOf(it) } ?: DefaultTheme.HDS
             val renderer = renderers[type] ?: throw BadRequestException("Unsupported render type")
 
-            val notation = call.queryParameters.getOrFail("notation")
-            val board = parser.parse(notation)
+            try {
+                val notation = call.queryParameters.getOrFail("notation")
+                val board = parser.parse(notation)
 
-            call.respondBytes(renderer.type) { renderer.renderer.render(board, theme.theme) }
+                call.respondBytes(renderer.type) { renderer.renderer.render(board, theme.theme) }
+            } catch (e: HexoNotationException) {
+                throw BadRequestException(e.message, e)
+            }
         }
     }
 }
