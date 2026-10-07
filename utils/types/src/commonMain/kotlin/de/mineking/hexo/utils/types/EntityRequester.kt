@@ -11,10 +11,13 @@ interface EntityRequester<K, T> {
 }
 
 interface EntityRequesterFactory {
-    fun <K, T> createEntityRequester(resolver: suspend (K) -> T): EntityRequester<K, T>
+    fun <K, T> createEntityRequester(coroutineScope: CoroutineScope, resolver: suspend (K) -> T): EntityRequester<K, T>
 
-    class Debouncing(private val coroutineScope: CoroutineScope) : EntityRequesterFactory {
-        override fun <K, T> createEntityRequester(resolver: suspend (K) -> T) = DebouncingEntityRequester(coroutineScope, resolver)
+    class Debouncing : EntityRequesterFactory {
+        override fun <K, T> createEntityRequester(
+            coroutineScope: CoroutineScope,
+            resolver: suspend (K) -> T,
+        ) = DebouncingEntityRequester(coroutineScope, resolver)
     }
 }
 

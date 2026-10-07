@@ -22,7 +22,7 @@ import kotlinx.serialization.Serializable
 internal class FinishedGameRepositoryImpl(private val client: HdsApiClient) : FinishedGameRepository {
     override val url = "${client.publicUrl}/games"
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<GameId, FinishedGameWithPosition?> { id ->
+    private val requester = client.entityRequesterFactory.createEntityRequester<GameId, FinishedGameWithPosition?>(client.coroutineScope) { id ->
         val response = client.request("/finished-games/${id.value}")
         response.parseBodyOrNull<FinishedGameDto, FinishedGameWithPosition> {
             FinishedGameImpl(client, it)
