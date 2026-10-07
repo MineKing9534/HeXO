@@ -4,14 +4,13 @@ package de.mineking.hexo.board.parse
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.BoardAttribute
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.HexoNotationFormatException
 import de.mineking.hexo.board.InternalBoardApi
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.mutable
-import de.mineking.hexo.board.parse.notation.BKENotationParser
 import de.mineking.hexo.board.parse.notation.CombinedNotationParser
 import de.mineking.hexo.board.parse.notation.HTTTXNotationParser
-import de.mineking.hexo.board.parse.notation.RectilinearNotationParser
 import de.mineking.hexo.board.parse.notation.TytoLinkParser
 
 interface NotationParser {
@@ -25,8 +24,6 @@ interface NotationParser {
         val Default = None
             .or(TytoLinkParser.allowTurnLabels())
             .or(HTTTXNotationParser.allowTurnLabels())
-            .or(RectilinearNotationParser)
-            .or(BKENotationParser)
             .or(CombinedNotationParser.Default)
     }
 }
@@ -68,7 +65,7 @@ abstract class LinkParser(private val prefix: String) : NotationParser {
         if (!trimmedNotation.startsWith(prefix)) throw HexoNotationFormatException("Invalid link")
 
         val param = trimmedNotation.substring(startIndex = prefix.length)
-        if (""".*\s.*""".toRegex().containsMatchIn(param)) throw HexoNotationFormatException("Invalid parameter")
+        if (""".*\s.*""".toRegex().containsMatchIn(param)) throw HexoNotationException("Invalid parameter")
 
         return parseLink(param)
     }

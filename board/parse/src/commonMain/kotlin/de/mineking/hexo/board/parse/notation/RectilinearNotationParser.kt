@@ -15,8 +15,6 @@ import de.mineking.hexo.board.parse.generated.RectilinearParser
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
-import org.antlr.v4.kotlinruntime.CharStreams
-import org.antlr.v4.kotlinruntime.CommonTokenStream
 
 object RectilinearNotationParser : NotationParser {
     override suspend fun parse(notation: String) = notation.parseRectilinearNotation()
@@ -38,23 +36,14 @@ fun String.parseRectilinearNotation(): Board {
         }
     }
 
-    requireHexo(!builder.board.isEmpty(includeHighlights = true)) { "Cannot parse an empty board" }
+    val hasBoardStructure = root.column != null || root.item().any { it.gap() == null && it.text.isNotBlank() }
+    requireHexo(!builder.board.isEmpty(includeHighlights = true), notationCheck = !hasBoardStructure) {
+        "Cannot parse an empty board"
+    }
     return builder.board
 }
 
-private fun parseInternal(input: String): RectilinearParser.RootContext {
-    val errorListener = CustomErrorListener()
-    val lexer = RectilinearLexer(CharStreams.fromString(input)).apply {
-        removeErrorListeners()
-        addErrorListener(errorListener)
-    }
-    val parser = RectilinearParser(CommonTokenStream(lexer)).apply {
-        removeErrorListeners()
-        addErrorListener(errorListener)
-    }
-
-    return parser.root()
-}
+private fun parseInternal(input: String) = parseANTLRNotation(input, ::RectilinearLexer, ::RectilinearParser, RectilinearParser::root)
 
 private fun RectilinearParser.HighlightColorContext.toOwner() = when (text) {
     "x" -> CellOwner.X

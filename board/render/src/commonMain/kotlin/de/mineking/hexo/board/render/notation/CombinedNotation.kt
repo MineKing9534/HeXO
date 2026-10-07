@@ -21,10 +21,18 @@ object CombinedNotationBoardRenderer : BoardRenderer<Unit, String> {
 
 @OptIn(InternalBoardApi::class)
 fun Board.renderCombinedNotation(
-    separator: String = "---",
+    separator: String = "||",
     originLabel: String = "*",
 ): String {
     val position = toGamePosition()
+    if (position.turns.moves.isEmpty()) {
+        return position.state.renderRectilinearNotation(RectilinearNotationType.Compact)
+    }
+
+    if (position.state.isEmpty(includeHighlights = true)) {
+        val origin = if (position.turns.turns.first().moves.size == 1) null else position.findBKEOrigin()
+        return position.turns.renderBKENotation(origin = origin)
+    }
 
     val origin = position.findBKEOrigin()
     val state = position.state.mutable().apply {

@@ -6,7 +6,6 @@ import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.HexoNotationFormatException
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.parse.notation.parseRectilinearNotation
 import kotlin.test.Test
@@ -169,10 +168,10 @@ class RectilinearNotationParserTest {
 
     @Test
     fun `parse with unterminated label at eof`() {
-        val e = assertFailsWith<HexoNotationFormatException> {
+        val e = assertFailsWith<HexoNotationException> {
             "x.[ab".parseRectilinearNotation()
         }
         assertContains(e.message, "Invalid notation at 1:6:")
-        assertContains(e.message, "<EOF>")
+        assertContains(e.message, "<eof>")
     }
 }

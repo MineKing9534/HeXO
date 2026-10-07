@@ -16,8 +16,6 @@ import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
 import de.mineking.hexo.board.to
 import de.mineking.hexo.board.withAttributes
-import org.antlr.v4.kotlinruntime.CharStreams
-import org.antlr.v4.kotlinruntime.CommonTokenStream
 
 object BKENotationParser : NotationParser {
     override suspend fun parse(notation: String) = notation.parseBKENotation()
@@ -72,20 +70,7 @@ fun String.parseBKENotation(): Board {
     return board
 }
 
-private fun parseInternal(input: String): BKEParser.RootContext {
-    val errorListener = CustomErrorListener()
-
-    val lexer = BKELexer(CharStreams.fromString(input)).apply {
-        removeErrorListeners()
-        addErrorListener(errorListener)
-    }
-    val parser = BKEParser(CommonTokenStream(lexer)).apply {
-        removeErrorListeners()
-        addErrorListener(errorListener)
-    }
-
-    return parser.root()
-}
+private fun parseInternal(input: String) = parseANTLRNotation(input, ::BKELexer, ::BKEParser, BKEParser::root)
 
 private data class ParsedTurn(
     val player: CellOwner,

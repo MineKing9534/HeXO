@@ -133,7 +133,7 @@ class IntegrationTest {
 
         val notation = board.renderCombinedNotation()
         val parsed = CombinedNotationParser.Default.parse(notation)
-        assertEquals("x[*]", notation.substringBefore(" --- "))
+        assertEquals("x[*]", notation.substringBefore(" || "))
         assertEquals(
             mapOf(
                 CellCoordinate.Zero to Cell(CellOwner.X),
@@ -156,7 +156,7 @@ class IntegrationTest {
 
         val notation = board.renderCombinedNotation()
         val parsed = CombinedNotationParser.Default.parse(notation)
-        assertEquals("x9x[*] --- > CW o A0", notation)
+        assertEquals("x9x[*] || > CW o A0", notation)
         assertEquals(board.cells, parsed.cells)
     }
 
@@ -194,7 +194,7 @@ class IntegrationTest {
         }
 
         val notation = board.renderCombinedNotation()
-        val initialState = notation.substringBefore(" --- ").parseRectilinearNotation()
+        val initialState = notation.substringBefore(" || ").parseRectilinearNotation()
         val parsed = CombinedNotationParser.Default.parse(notation)
         assertEquals(CellCoordinate(2, 0), initialState.cells.entries.single { it.value.label == "*" }.key)
         assertEquals(board.cells + (CellCoordinate(2, 0) to Cell.EMPTY), parsed.cells)

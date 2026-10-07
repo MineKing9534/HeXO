@@ -11,8 +11,6 @@ import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.parse.generated.HTTTXLexer
 import de.mineking.hexo.board.parse.generated.HTTTXParser
 import de.mineking.hexo.board.requireHexo
-import org.antlr.v4.kotlinruntime.CharStreams
-import org.antlr.v4.kotlinruntime.CommonTokenStream
 
 object HTTTXNotationParser : NotationParser {
     override suspend fun parse(notation: String) = notation.parseHTTTXNotation()
@@ -79,20 +77,7 @@ fun String.parseHTTTXNotation(): Board {
     return board
 }
 
-private fun parseInternal(input: String): HTTTXParser.RootContext {
-    val errorListener = CustomErrorListener()
-
-    val lexer = HTTTXLexer(CharStreams.fromString(input)).apply {
-        removeErrorListeners()
-        addErrorListener(errorListener)
-    }
-    val parser = HTTTXParser(CommonTokenStream(lexer)).apply {
-        removeErrorListeners()
-        addErrorListener(errorListener)
-    }
-
-    return parser.root()
-}
+private fun parseInternal(input: String) = parseANTLRNotation(input, ::HTTTXLexer, ::HTTTXParser, HTTTXParser::root)
 
 private fun HTTTXParser.CoordinateContext.toCellCoordinate(turn: Int): CellCoordinate {
     val (q, r) = INTEGER().map { token ->
