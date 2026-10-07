@@ -97,6 +97,7 @@ fun UIManager.notationMenu(
             selectOption(it, default = it == notationType, emoji = when (it) {
                 NotationType.CompactRectilinear -> main.emojiManager[CustomEmoji.NotationCRN]
                 NotationType.MultilineRectilinear -> main.emojiManager[CustomEmoji.NotationMRN]
+                NotationType.Combined -> main.emojiManager[CustomEmoji.NotationCombined]
                 NotationType.HTTTX -> main.emojiManager[CustomEmoji.NotationHTTTX]
                 NotationType.Tyto -> main.emojiManager[CustomEmoji.NotationTyto]
             }) {

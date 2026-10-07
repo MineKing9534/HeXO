@@ -11,6 +11,7 @@ import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.parse.notation.CombinedNotationParser
 import de.mineking.hexo.board.parse.notation.parseBKENotation
 import de.mineking.hexo.board.parse.notation.parseRectilinearNotation
+import de.mineking.hexo.board.render.notation.NotationType
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderCombinedNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
@@ -21,6 +22,19 @@ import kotlin.test.assertContains
 import kotlin.test.assertEquals
 
 class CombinedNotationRenderTest {
+    @Test
+    fun `combined notation type exports initial state and turns`() = runTest {
+        val board = Board(cells = mapOf(
+            CellCoordinate.Zero to Cell(CellOwner.X),
+            CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1),
+            CellCoordinate(0, 1) to Cell(CellOwner.O, turn = 1),
+        ))
+        val notation = NotationType.Combined.renderer.render(board, Unit)
+
+        assertEquals("x[*] || > CW o A0 A1", notation)
+        assertEquals(board.cells, CombinedNotationParser.Default.parse(notation).cells)
+    }
+
     @Test
     fun `state only renders without a separator or synthetic origin label`() = runTest {
         val board = "x[keep].o".parseRectilinearNotation()
