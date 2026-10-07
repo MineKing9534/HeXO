@@ -11,10 +11,11 @@ import de.mineking.hexo.hds.implementation.socket.HdsSocketClient
 import de.mineking.hexo.hds.implementation.socket.HdsSocketOptions
 import de.mineking.hexo.hds.implementation.socket.connectHdsSocket
 import de.mineking.hexo.hds.implementation.tournament.TournamentRepositoryImpl
-import de.mineking.hexo.hds.implementation.utils.EntityRequesterFactory
-import de.mineking.hexo.utils.coroutines.createCoroutineScope
+import de.mineking.hexo.utils.types.EntityRequestException
+import de.mineking.hexo.utils.types.EntityRequesterFactory
 import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
+import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
 import io.ktor.client.plugins.websocket.WebSockets
@@ -22,13 +23,14 @@ import io.ktor.client.request.HttpRequestBuilder
 import io.ktor.client.request.header
 import io.ktor.client.request.request
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.HttpHeaders
+import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
+import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 
 const val DEFAULT_HDS_PUBLIC_URL = "https://hexo.did.science"
@@ -85,9 +87,8 @@ data class HdsHttpClient(
 
 class HdsApiClient(
     internal val client: HdsHttpClient,
-    internal val coroutineScope: CoroutineScope = createCoroutineScope(logger),
     internal val publicUrl: String = DEFAULT_HDS_PUBLIC_URL,
-    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(coroutineScope),
+    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(client.httpClient),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
 ) : RepositoryContainer, AutoCloseable {
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
@@ -101,9 +102,14 @@ class HdsApiClient(
     override val tournamentRepository = repositoryWrapper.run { TournamentRepositoryImpl(this@HdsApiClient).wrap() }
 
     override fun close() {
-        coroutineScope.cancel()
         client.close()
     }
 }
 
-expect val HEXO_USER_AGENT: String?
+internal suspend inline fun <reified D, T> HttpResponse.parseBodyOrNull(parse: (D) -> T) = when {
+    status.isSuccess() -> parse(body())
+    status == HttpStatusCode.NotFound -> null
+    else -> throw EntityRequestException(bodyAsText())
+}
+
+internal expect val HEXO_USER_AGENT: String?

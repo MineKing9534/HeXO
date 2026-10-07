@@ -37,6 +37,7 @@ COPY . .
 RUN --mount=type=cache,id=hexo-gradle-web,target=/home/gradle/.gradle,sharing=locked \
     ./gradlew --no-daemon --parallel \
         :launcher:web:shadowJar \
+        -PkobwebBuildTarget=RELEASE \
         -Pweb.hdsApiUrl=${HDS_API_URL} \
         -Pweb.hmdApiUrl=${HMD_API_URL}
 

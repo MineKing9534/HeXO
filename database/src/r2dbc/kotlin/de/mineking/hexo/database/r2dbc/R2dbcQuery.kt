@@ -12,6 +12,7 @@ import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.andIfNotNull
+import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.vendors.ForUpdateOption
 import org.jetbrains.exposed.v1.r2dbc.selectAll
 import org.jetbrains.exposed.v1.r2dbc.Query as ExposedR2dbcQuery
@@ -20,8 +21,8 @@ data class R2dbcQuery<T>(
     private val set: FieldSet,
     @Suppress("ConstructorParameterNaming")
     private val _columnType: IColumnType<T & Any>?,
-    private val limit: UInt? = null,
-    private val offset: UInt? = null,
+    private val limit: Int? = null,
+    private val offset: Int? = null,
     private val filter: Op<Boolean>? = null,
     private val order: Pair<Expression<*>, SortOrder>? = null,
     private val forUpdate: Boolean = false,
@@ -30,17 +31,22 @@ data class R2dbcQuery<T>(
     override val columnType: IColumnType<T & Any>
         get() = _columnType ?: error("")
 
-    override fun offset(offset: UInt?) = copy(offset = offset)
-    override fun limit(limit: UInt?) = copy(limit = limit)
+    override fun offset(offset: Int?) = copy(offset = offset)
+    override fun limit(limit: Int?) = copy(limit = limit)
 
     override fun order(order: Pair<Expression<*>, SortOrder>?) = copy(order = order)
-    override fun where(filter: Op<Boolean>?): R2dbcQuery<T> {
-        return copy(filter = if (this.filter == null) filter else this.filter andIfNotNull filter)
+    override fun where(filter: Expression<Boolean>?): R2dbcQuery<T> {
+        return copy(filter = (if (this.filter == null) filter else this.filter andIfNotNull filter)?.toOp())
+    }
+
+    private fun Expression<Boolean>.toOp() = when (this) {
+        is Op -> this
+        else -> this eq Op.TRUE
     }
 
     @OptIn(InternalApi::class)
     override fun createQuery() = ExposedR2dbcQuery(set, filter).apply {
-        if (this@R2dbcQuery.limit != null) limit(this@R2dbcQuery.limit.toInt())
+        if (this@R2dbcQuery.limit != null) limit(this@R2dbcQuery.limit)
         if (this@R2dbcQuery.offset != null) offset(this@R2dbcQuery.offset.toLong())
         if (this@R2dbcQuery.order != null) orderBy(this@R2dbcQuery.order)
     }.forUpdate(if (forUpdate) ForUpdateOption.ForUpdate else ForUpdateOption.NoForUpdateOption)
@@ -66,7 +72,7 @@ data class R2dbcQuery<T>(
         transform = transform,
     )
 
-    override suspend fun count() = ExposedR2dbcQuery(set, filter).count().toUInt()
+    override suspend fun count() = ExposedR2dbcQuery(set, filter).count().toInt()
     override fun execute() = createQuery().map { transform(it) }
 
     override fun toQueryBuilder(queryBuilder: QueryBuilder) = queryBuilder {
