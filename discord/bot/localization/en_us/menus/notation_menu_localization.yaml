@@ -1,3 +1,6 @@
+response.error:
+  export: ":warning:  This board cannot be exported as the target notation: `${message}`"
+
 menu.notation:
   title.content: "# :pencil: Notation Output"
 

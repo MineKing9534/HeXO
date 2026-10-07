@@ -1,6 +1,9 @@
 package de.mineking.hexo.bot.menus
 
+import de.mineking.discord.localization.Locale
 import de.mineking.discord.localization.LocalizationFile
+import de.mineking.discord.localization.LocalizationParameter
+import de.mineking.discord.localization.Localize
 import de.mineking.discord.ui.UIManager
 import de.mineking.discord.ui.builder.codeBlock
 import de.mineking.discord.ui.builder.components.buildTextDisplay
@@ -11,6 +14,7 @@ import de.mineking.discord.ui.builder.components.message.fileDisplay
 import de.mineking.discord.ui.builder.components.message.separator
 import de.mineking.discord.ui.builder.components.selectOption
 import de.mineking.discord.ui.builder.components.stringSelect
+import de.mineking.discord.ui.builder.components.textDisplay
 import de.mineking.discord.ui.getValue
 import de.mineking.discord.ui.initialize
 import de.mineking.discord.ui.localize
@@ -19,6 +23,7 @@ import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.render
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.board.render.notation.NotationType
 import de.mineking.hexo.board.render.render
@@ -56,7 +61,7 @@ sealed interface BoardReference {
 
 fun UIManager.notationMenu(
     gameRepository: FinishedGameRepository,
-) = registerLocalizedMenu<NotationMenuParameter, NotationMenuLocalization>("notation") {
+) = registerLocalizedMenu<NotationMenuParameter, NotationMenuLocalization>("notation") { localization ->
     var reference by state<BoardReference>(BoardReference.Game(GameId("")))
     var notationType by state<NotationType>(NotationType.CompactRectilinear)
 
@@ -80,14 +85,18 @@ fun UIManager.notationMenu(
                 is BoardReference.Binary -> BoardBinary.decode(reference.data)
             }
 
-            val notation = notationType.renderer.render(board)
-            if (notation.length > Message.MAX_CONTENT_LENGTH_COMPONENT_V2 - 100) {
-                +localizedTextDisplay("notation_too_long")
-                +fileDisplay(FileUpload.fromData(notation.toByteArray(), "notation.txt"))
-            } else {
-                +buildTextDisplay {
-                    +codeBlock("hexo", notation)
+            try {
+                val notation = notationType.renderer.render(board)
+                if (notation.length > Message.MAX_CONTENT_LENGTH_COMPONENT_V2 - 100) {
+                    +localizedTextDisplay("notation_too_long")
+                    +fileDisplay(FileUpload.fromData(notation.toByteArray(), "notation.txt"))
+                } else {
+                    +buildTextDisplay {
+                        +codeBlock("hexo", notation)
+                    }
                 }
+            } catch (e: HexoNotationException) {
+                +textDisplay(localization.responseErrorExport(locale, e.message))
             }
         }
 
@@ -107,4 +116,7 @@ fun UIManager.notationMenu(
     }
 }
 
-interface NotationMenuLocalization : LocalizationFile
+interface NotationMenuLocalization : LocalizationFile {
+    @Localize
+    fun responseErrorExport(@Locale locale: DiscordLocale, @LocalizationParameter message: String): String
+}
