@@ -22,7 +22,7 @@ fun <C, E : Any, F : SelectorFilter<E>> EntityRequesterFactory.createPaginated(
     path: (C) -> String,
     config: HttpRequestBuilder.(F?) -> Unit = {},
     parse: suspend (HttpResponse) -> QueryResultDto<E>?,
-) = PaginatedEntityRequester<C, E, F>(createEntityRequester {
+) = PaginatedEntityRequester<C, E, F>(createEntityRequester(client.coroutineScope) {
     val response = client.request(path(it.scope)) {
         parameter("page", it.page)
         parameter("pageSize", it.pageSize)

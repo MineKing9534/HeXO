@@ -9,6 +9,7 @@ kotlin {
         dependencies {
             implementation(projects.game.implementation.protocol)
 
+            implementation(projects.utils.coroutines)
             implementation(projects.utils.socketio.client)
             implementation(libs.bundles.ktor.client)
 

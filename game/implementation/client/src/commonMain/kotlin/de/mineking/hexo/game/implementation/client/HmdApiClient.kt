@@ -6,7 +6,9 @@ import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.leaderboard.LeaderboardRepository
 import de.mineking.hexo.game.model.session.SessionRepository
 import de.mineking.hexo.game.model.tournament.TournamentRepository
+import de.mineking.hexo.utils.coroutines.createSupervised
 import de.mineking.hexo.utils.types.EntityRequesterFactory
+import io.github.oshai.kotlinlogging.KotlinLogging
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.plugins.defaultRequest
@@ -19,10 +21,13 @@ import io.ktor.http.HttpHeaders
 import io.ktor.http.HttpStatusCode
 import io.ktor.http.contentType
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.serialization.json.Json
 
 const val DEFAULT_HMD_PUBLIC_URL = "https://hexo.mineking.dev"
 const val DEFAULT_HMD_API_URL = "$DEFAULT_HMD_PUBLIC_URL/api"
+
+private val logger = KotlinLogging.logger {}
 
 internal val json = Json {
     ignoreUnknownKeys = true
@@ -61,10 +66,14 @@ data class HmdHttpClient(
 class HmdApiClient(
     internal val client: HmdHttpClient,
     internal val publicUrl: String = DEFAULT_HMD_PUBLIC_URL,
-    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(client.httpClient),
+    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(),
     authenticationController: AuthenticationControllerFactory,
     repositoryWrapper: HmdRepositoryWrapper = HmdRepositoryWrapper,
 ) : HmdRepositoryContainer, AutoCloseable by client {
+    internal val coroutineScope = client.httpClient.createSupervised(CoroutineExceptionHandler { _, cause ->
+        logger.error(cause) { "HMD background task failed" }
+    })
+
     val authenticationController = authenticationController.create(this)
 
     internal suspend fun doRequest(path: String, builder: suspend HttpRequestBuilder.() -> Unit = {}) =

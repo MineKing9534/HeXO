@@ -42,7 +42,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
     private val sessionsLock = SynchronizedObject()
     private val sessionFlows = mutableMapOf<SessionId, MutableStateFlow<EntityState<ObservedSessionImpl>>>()
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<SessionId, Session?> { id ->
+    private val requester = client.entityRequesterFactory.createEntityRequester<SessionId, Session?>(client.coroutineScope) { id ->
         val response = client.request("/session/${id.value}")
 
         response.parseBodyOrNull<SessionDto, Session> {
@@ -50,7 +50,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
         }
     }
 
-    private val listRequester = client.entityRequesterFactory.createEntityRequester<Unit, List<SessionImpl>> {
+    private val listRequester = client.entityRequesterFactory.createEntityRequester<Unit, List<SessionImpl>>(client.coroutineScope) {
         val response = client.request("/sessions")
         val lobbies = response.body<List<LobbyInfoDto>>()
 
@@ -62,7 +62,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
             registerLobbyListeners()
             registerSessionListeners()
         }
-        client.client.httpClient.launch { populateLobbyList() }
+        client.coroutineScope.launch { populateLobbyList() }
     }
 
     override suspend fun getSessions(selector: SessionSelector): QueryResult<Session> {

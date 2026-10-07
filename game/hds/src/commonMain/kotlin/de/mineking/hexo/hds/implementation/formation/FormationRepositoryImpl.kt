@@ -17,7 +17,7 @@ internal class FormationRepositoryImpl(private val client: HdsApiClient) : Forma
         private val ID_PATTERN = "^[a-zA-Z0-9]{7}$".toRegex()
     }
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<FormationId, Formation?> { id ->
+    private val requester = client.entityRequesterFactory.createEntityRequester<FormationId, Formation?>(client.coroutineScope) { id ->
         val response = client.request("/sandbox-positions/${id.value}")
         response.parseBodyOrNull<FormationDto, Formation> { FormationImpl(client, it) }
     }

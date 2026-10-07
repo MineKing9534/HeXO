@@ -11,6 +11,7 @@ import de.mineking.hexo.hds.implementation.socket.HdsSocketClient
 import de.mineking.hexo.hds.implementation.socket.HdsSocketOptions
 import de.mineking.hexo.hds.implementation.socket.connectHdsSocket
 import de.mineking.hexo.hds.implementation.tournament.TournamentRepositoryImpl
+import de.mineking.hexo.utils.coroutines.createSupervised
 import de.mineking.hexo.utils.types.EntityRequestException
 import de.mineking.hexo.utils.types.EntityRequesterFactory
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -31,6 +32,8 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.KotlinxWebsocketSerializationConverter
 import io.ktor.serialization.kotlinx.json.json
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.cancel
 import kotlinx.serialization.json.Json
 
 const val DEFAULT_HDS_PUBLIC_URL = "https://hexo.did.science"
@@ -88,9 +91,13 @@ data class HdsHttpClient(
 class HdsApiClient(
     internal val client: HdsHttpClient,
     internal val publicUrl: String = DEFAULT_HDS_PUBLIC_URL,
-    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(client.httpClient),
+    internal val entityRequesterFactory: EntityRequesterFactory = EntityRequesterFactory.Debouncing(),
     repositoryWrapper: RepositoryWrapper = RepositoryWrapper,
 ) : RepositoryContainer, AutoCloseable {
+    internal val coroutineScope = client.httpClient.createSupervised(CoroutineExceptionHandler { _, cause ->
+        logger.error(cause) { "HDS background task failed" }
+    })
+
     internal suspend fun request(path: String, builder: HttpRequestBuilder.() -> Unit = {}): HttpResponse =
         client.httpClient.request("${client.apiUrl.trimEnd('/')}$path", builder)
 
@@ -102,6 +109,7 @@ class HdsApiClient(
     override val tournamentRepository = repositoryWrapper.run { TournamentRepositoryImpl(this@HdsApiClient).wrap() }
 
     override fun close() {
+        coroutineScope.cancel()
         client.close()
     }
 }

@@ -52,7 +52,7 @@ internal class ProfileRepositoryImpl(
     }
 
     private val requester = client.entityRequesterFactory
-        .createEntityRequester<ProfileIdentifier, Result<HmdProfileWithStatistics, ProfileQueryError>> { id ->
+        .createEntityRequester<ProfileIdentifier, Result<HmdProfileWithStatistics, ProfileQueryError>>(client.coroutineScope) { id ->
             client.request("/profiles") {
                 url {
                     when (id) {
@@ -65,7 +65,7 @@ internal class ProfileRepositoryImpl(
         }
 
     private val statisticsRequester = client.entityRequesterFactory
-        .createEntityRequester<ProfileIdentifier, Result<ProfileStatistics, ProfileQueryError>> { id ->
+        .createEntityRequester<ProfileIdentifier, Result<ProfileStatistics, ProfileQueryError>>(client.coroutineScope) { id ->
             client.request("/profiles") {
                 url {
                     when (id) {
@@ -78,7 +78,7 @@ internal class ProfileRepositoryImpl(
             }.body<Result<ProfileStatisticsDto, ProfileQueryError>>()
         }
 
-    private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<HmdProfile>> { name ->
+    private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<HmdProfile>>(client.coroutineScope) { name ->
         if (name.isBlank()) return@createEntityRequester emptyList()
 
         client.request("/profiles") { parameter("name", name) }

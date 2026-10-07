@@ -1,7 +1,6 @@
 @file:OptIn(ExperimentalKotlinGradlePluginApi::class)
 
 import org.jetbrains.kotlin.gradle.ExperimentalKotlinGradlePluginApi
-import org.jetbrains.kotlin.gradle.tasks.KotlinCompilationTask
 
 plugins {
     id("kotlin-multiplatform")
@@ -29,6 +28,12 @@ kotlin {
             implementation(libs.ktor.client.websockets)
 
             implementation(libs.logging)
+        }
+    }
+
+    sourceSets.commonTest {
+        dependencies {
+            implementation(libs.kotlin.coroutines.test)
         }
     }
 

@@ -24,7 +24,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
         client.client.socketClient?.listen<TournamentUpdate> { (event) ->
             val isObserved = cacheLock.withLock { event.tournamentId in cache }
             if (isObserved) {
-                client.client.httpClient.launch {
+                client.coroutineScope.launch {
                     val _ = getTournament(event.tournamentId)
                 }
             }
@@ -34,7 +34,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
     private val cacheLock = SynchronizedObject()
     private val cache = mutableMapOf<TournamentId, MutableStateFlow<EntityState<Tournament>>>()
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament?> { id ->
+    private val requester = client.entityRequesterFactory.createEntityRequester<TournamentId, Tournament?>(client.coroutineScope) { id ->
         val response = client.request("/tournaments/${id.value}")
         val tournament = response.parseBodyOrNull<TournamentDto, Tournament> {
             TournamentImpl(client, it)
@@ -66,7 +66,7 @@ internal class TournamentRepositoryImpl(private val client: HdsApiClient) : Tour
         }
 
         if (shouldStartFetch) {
-            client.client.httpClient.launch {
+            client.coroutineScope.launch {
                 val tournament = getTournament(id)
                 cacheLock.withLock {
                     flow.value = when {

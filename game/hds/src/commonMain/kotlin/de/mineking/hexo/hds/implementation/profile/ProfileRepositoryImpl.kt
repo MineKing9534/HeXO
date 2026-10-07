@@ -25,16 +25,17 @@ import kotlinx.serialization.Serializable
 internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : ProfileRepository {
     override val url = "${client.publicUrl}/profile"
 
-    private val statisticsRequester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics?> { id ->
-        val response = client.request("/profiles/${id.value}/statistics")
+    private val statisticsRequester =
+        client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileStatistics?>(client.coroutineScope) { id ->
+            val response = client.request("/profiles/${id.value}/statistics")
 
-        @Serializable
-        data class Response(val statistics: ProfileStatisticsDto)
+            @Serializable
+            data class Response(val statistics: ProfileStatisticsDto)
 
-        response.parseBodyOrNull<Response, ProfileStatistics> { it.statistics }
-    }
+            response.parseBodyOrNull<Response, ProfileStatistics> { it.statistics }
+        }
 
-    private val requester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileWithStatistics?> { id ->
+    private val requester = client.entityRequesterFactory.createEntityRequester<ProfileId, ProfileWithStatistics?>(client.coroutineScope) { id ->
         awaitBoth(
             first = {
                 client.request("/profiles/${id.value}")
@@ -47,7 +48,7 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
         }.orNull()
     }
 
-    private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<Profile>> { name ->
+    private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<Profile>>(client.coroutineScope) { name ->
         if (name.isEmpty()) return@createEntityRequester emptyList()
 
         val response = client.request("/users/search") {

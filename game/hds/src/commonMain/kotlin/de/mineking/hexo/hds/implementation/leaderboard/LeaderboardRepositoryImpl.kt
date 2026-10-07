@@ -9,7 +9,7 @@ import io.ktor.client.statement.bodyAsText
 import io.ktor.http.isSuccess
 
 internal class LeaderboardRepositoryImpl(private val client: HdsApiClient) : LeaderboardRepository {
-    private val requester = client.entityRequesterFactory.createEntityRequester<Unit, Leaderboard> {
+    private val requester = client.entityRequesterFactory.createEntityRequester<Unit, Leaderboard>(client.coroutineScope) {
         val response = client.request("/leaderboard")
 
         if (!response.status.isSuccess()) throw EntityRequestException(response.bodyAsText())
