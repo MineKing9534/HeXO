@@ -17,15 +17,6 @@ menu.game:
     } ?: "" }
 
   view.label: View in Browser
-  move:
-    title: Enter the move to inspect
-    inputs:
-      move:
-        label: Move number
-        description: !<game:FinishedGame> The move to inspect [1-${game.moveCount}]
-        placeholder: 42
-  notation.label: Show Notation
-  turn.label: Show Turn Numbers
 
 finish.reason: >-
   ${

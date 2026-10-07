@@ -23,9 +23,11 @@ import de.mineking.hexo.bot.commands.renderHexoSlashCommand
 import de.mineking.hexo.bot.commands.themeCommand
 import de.mineking.hexo.bot.localization.HexoBotLocalizationManager
 import de.mineking.hexo.bot.menus.GameMenuParameter
+import de.mineking.hexo.bot.menus.InteractiveBoardMenuParameter
 import de.mineking.hexo.bot.menus.NotationMenuParameter
 import de.mineking.hexo.bot.menus.ProfileMenuParameter
 import de.mineking.hexo.bot.menus.accountLinkMenu
+import de.mineking.hexo.bot.menus.boardMenu
 import de.mineking.hexo.bot.menus.gameMenu
 import de.mineking.hexo.bot.menus.leaderboardMenu
 import de.mineking.hexo.bot.menus.notationMenu
@@ -78,6 +80,7 @@ class HeXODiscordBot(
     val emojiManager = EmojiManager(jda)
 
     private lateinit var notationMenu: MessageMenu<NotationMenuParameter, *>
+    private lateinit var boardMenu: MessageMenu<InteractiveBoardMenuParameter, *>
     private lateinit var gameMenu: MessageMenu<GameMenuParameter, *>
     private lateinit var profileMenu: MessageMenu<ProfileMenuParameter, *>
     private lateinit var leaderboardMenu: MessageMenu<Interaction, *>
@@ -90,6 +93,7 @@ class HeXODiscordBot(
             installErrorHandling()
 
             notationMenu = notationMenu(repositories.finishedGameRepository)
+            boardMenu = boardMenu(notationMenu)
             gameMenu = gameMenu(repositories.finishedGameRepository, notationMenu)
             profileMenu = profileMenu(repositories.profileRepository, accountLinkRepository)
             leaderboardMenu = leaderboardMenu(repositories.leaderboardRepository, accountLinkRepository, profileMenu)
@@ -106,7 +110,7 @@ class HeXODiscordBot(
             installErrorHandling()
 
             +renderHexoMessageCommand()
-            +renderHexoSlashCommand()
+            +renderHexoSlashCommand(boardMenu)
             +modalCommand()
 
             +gameCommand(gameMenu)
