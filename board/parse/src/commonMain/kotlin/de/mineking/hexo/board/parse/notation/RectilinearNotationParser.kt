@@ -84,7 +84,14 @@ private class RectilinearBoardBuilder(columnNotation: Boolean) {
     }
 
     fun addLabel(text: String) {
-        previousCell().label = text.substring(1, text.length - 1)
+        previousCell().label = buildString {
+            var index = 1
+            while (index < text.lastIndex) {
+                if (text[index] == '\\') index++
+                append(text[index])
+                index++
+            }
+        }
     }
 
     fun addHighlight(highlight: RectilinearParser.HighlightContext) {

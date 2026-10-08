@@ -158,6 +158,24 @@ class RectilinearNotationParserTest {
     }
 
     @Test
+    fun `parse with escaped label characters`() {
+        val labels = mapOf(
+            """x[a\]b]""" to "a]b",
+            """x[\]\]]""" to "]]",
+            """x[\[a\]]""" to "[a]",
+            """x[a\\b]""" to "a\\b",
+            """x[a\\]""" to "a\\",
+            """x[a\\\]b]""" to "a\\]b",
+            """x[[a\]b]]""" to "[a]b]",
+        )
+
+        labels.forEach { (notation, label) ->
+            val board = notation.parseRectilinearNotation()
+            assertEquals(Cell(CellOwner.X, label = label), board.cells[CellCoordinate.Zero], notation)
+        }
+    }
+
+    @Test
     fun `parse with label on empty row`() {
         val e = assertFailsWith<HexoNotationException> {
             " x/[a]".parseRectilinearNotation()
