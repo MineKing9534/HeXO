@@ -92,6 +92,6 @@ class AntlrErrorMessageTest {
             HTTTXNotationParser.parse("version[2]; 1. [1,0]<0,0:#Z>;")
         }
 
-        assertContains(e.message, "token recognition error at: 'Z'")
+        assertContains(e.message, "extraneous input 'Z'")
     }
 }

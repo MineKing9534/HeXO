@@ -6,7 +6,35 @@ package de.mineking.hexo.board.parse.generated
 }
 
 root
-    : 'version[' INTEGER ']' ';' turn+ EOF
+    : metadata (turn+ | setup turn*) EOF
+    ;
+
+metadata
+    : version tag* ';'
+    ;
+
+setup
+    : player_setup ':' player_setup visual* ';'
+    ;
+
+player_setup
+    : PLAYER ('[' coordinate ']')*
+    ;
+
+version
+    : 'version[' INTEGER extension* ']'
+    ;
+
+extension
+    : KEY | PLAYER
+    ;
+
+tag
+    : (KEY | PLAYER) '[' value ']'
+    ;
+
+value
+    : (ESCAPED | ~']')
     ;
 
 turn
@@ -14,7 +42,7 @@ turn
     ;
 
 move
-    : '[' coordinate ']' visual*
+    : '[' (coordinate | '/') ']' visual*
     ;
 
 coordinate
@@ -22,15 +50,27 @@ coordinate
     ;
 
 visual
-    : '<' coordinate (':' HIGHLIGHT)? (':' LABEL)? '>'
+    : '<' coordinate (':' '#' highlight)? (':' '$' label)? '>'
     ;
 
-HIGHLIGHT
-    : '#' [xoXO]?
+label
+    : (ESCAPED | ~'>')+
     ;
 
-LABEL
-    : '$' [a-zA-Z0-9]+
+highlight
+    : (PLAYER | 'N' | 'n')?
+    ;
+
+PLAYER
+    : [xoXO]
+    ;
+
+KEY
+    : [a-zA-Z]+
+    ;
+
+ESCAPED
+    : '\\' .
     ;
 
 INTEGER

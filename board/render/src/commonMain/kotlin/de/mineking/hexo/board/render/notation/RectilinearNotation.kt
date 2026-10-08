@@ -103,10 +103,14 @@ private fun StringBuilder.appendCell(cell: Cell?) {
     append(cell?.owner?.symbol ?: ".")
 
     if (!cell?.label.isNullOrBlank()) {
-        append("[${cell.label}]")
+        append("[${cell.label.escape()}]")
     }
 
     if (cell?.highlight != null) {
         append("(${cell.highlight?.color?.symbol ?: "!"})")
     }
+}
+
+private fun String.escape() = toCharArray().joinToString("") {
+    if (it == ']') "\\$it" else "$it"
 }

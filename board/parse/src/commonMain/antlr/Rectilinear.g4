@@ -43,7 +43,7 @@ cell
     ;
 
 label
-    : '[' (ESCAPED | label | ~']')* ']'
+    : '[' (ESCAPED | ~']')* ']'
     ;
 
 highlight

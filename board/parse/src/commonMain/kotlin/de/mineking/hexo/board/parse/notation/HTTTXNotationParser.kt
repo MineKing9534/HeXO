@@ -19,16 +19,64 @@ object HTTTXNotationParser : NotationParser {
 fun String.parseHTTTXNotation(): Board {
     val root = parseInternal(this)
 
-    val versionText = root.INTEGER().text
-    val version = versionText.toIntOrNull() ?: throw HexoNotationException("HTTTX notation version `$versionText` is too large")
-    requireHexo(version == 1 || version == 2) {
-        "Unsupported HTTTX notation version `$version`"
+    val version = root.metadata().version().validate()
+
+    val (board, nextPlayer) = createBoard(version, root.setup())
+
+    val turns = root.turn()
+    board.addTurns(version, nextPlayer, turns)
+    turns.lastOrNull()?.let { turn ->
+        board.addVisuals("turn ${turns.size}", turn.move().last().visual())
     }
 
-    val board = MutableBoard()
-    board[CellCoordinate.Zero] = MutableCell(CellOwner.X, turn = 0)
+    return board
+}
 
-    root.turn().forEachIndexed { index, turn ->
+private fun createBoard(version: HTTTXVersion, setup: HTTTXParser.SetupContext?): Pair<MutableBoard, CellOwner> {
+    val board = MutableBoard()
+
+    if (setup == null) {
+        board[CellCoordinate.Zero] = MutableCell(CellOwner.X, turn = 0)
+        return board to CellOwner.O
+    }
+
+    requireHexo(version.version >= 2) {
+        "Setup is only supported in HTTTX version 2 and onward"
+    }
+
+    fun addState(owner: CellOwner, moves: List<HTTTXParser.CoordinateContext>) {
+        moves.forEach {
+            val coordinate = it.toCellCoordinate("setup $owner")
+            requireHexo(coordinate !in board.cells) {
+                "Duplicate HTTTX setup cell at $coordinate"
+            }
+            board[coordinate].owner = owner
+        }
+    }
+
+    fun player(index: Int) = CellOwner.valueOf(setup.player_setup()[index].PLAYER().text.uppercase()) to setup.player_setup()[index].coordinate()
+
+    val (firstPlayer, firstMoves) = player(0)
+    val (secondPlayer, secondMoves) = player(1)
+
+    addState(firstPlayer, firstMoves)
+    addState(secondPlayer, secondMoves)
+
+    requireHexo(firstPlayer != secondPlayer) {
+        "HTTTX setup cannot define the same player twice"
+    }
+
+    board.addVisuals("setup", setup.visual())
+
+    return board to firstPlayer
+}
+
+private fun MutableBoard.addTurns(
+    version: HTTTXVersion,
+    firstPlayer: CellOwner,
+    turns: List<HTTTXParser.TurnContext>,
+) {
+    turns.forEachIndexed { index, turn ->
         val expectedNumber = index + 1
         val numberText = turn.INTEGER().text
         val number = numberText.toIntOrNull()
@@ -38,51 +86,95 @@ fun String.parseHTTTXNotation(): Board {
             "Expected HTTTX turn `$expectedNumber` but found `$number`"
         }
 
-        val owner = if (number % 2 == 0) CellOwner.X else CellOwner.O
+        val owner = CellOwner.entries[(index + firstPlayer.ordinal) % 2]
         turn.move().forEach { move ->
-            if (version < 2) {
+            if (version.version < 2) {
                 requireHexo(move.visual().isEmpty()) { "Visuals are only supported in HTTTX version 2 an onward" }
             }
 
-            val coordinate = move.coordinate().toCellCoordinate(number)
+            val coordinate = move.coordinate()?.toCellCoordinate("turn $number")
+            if (coordinate == null) {
+                requireHexo(version.version >= 2) { "Skipped moves are only supported in HTTTX version 2 and onward" }
+                return@forEach
+            }
 
-            requireHexo(coordinate !in board.cells) {
+            requireHexo(coordinate !in cells) {
                 "Duplicate HTTTX move at $coordinate"
             }
-            board[coordinate] = MutableCell(owner, turn = number)
+            this[coordinate] = MutableCell(owner, turn = number)
         }
     }
+}
 
-    val lastTurn = root.turn().last()
-    lastTurn.move().last().visual().forEach { visual ->
-        val coordinate = visual.coordinate().toCellCoordinate(root.turn().size)
-        val highlight = visual.HIGHLIGHT()
-        val label = visual.LABEL()
+private fun MutableBoard.addVisuals(turn: String, visuals: List<HTTTXParser.VisualContext>) {
+    visuals.forEach { visual ->
+        val coordinate = visual.coordinate().toCellCoordinate(turn)
+        val highlight = visual.highlight()
+        val label = visual.label()
 
-        board[coordinate].apply {
+        this[coordinate].apply {
             if (highlight != null) {
-                val symbol = highlight.text
-                    .substring(1)
-                    .takeIf { it.isNotBlank() }
-
+                val symbol = highlight.text.takeIf { it.isNotBlank() && it.lowercase() != "n" }
                 this.highlight = CellHighlight(symbol?.let { CellOwner.valueOf(it.uppercase()) })
             }
 
             if (label != null) {
-                this.label = label.text.substring(1)
+                this.label = label.text.unescape()
             }
         }
     }
+}
 
-    return board
+private data class HTTTXVersion(val version: Int, val extensions: Set<HTTTXExtension>)
+
+private fun HTTTXParser.VersionContext.validate(): HTTTXVersion {
+    // Whitespace is skipped by the lexer, so compare the source span with the parsed text.
+    requireHexo(stop!!.stopIndex - start!!.startIndex + 1 == text.length) {
+        "Whitespace is not allowed in HTTTX version tags"
+    }
+
+    val extensions = extension().flatMap { it.text.toList() }
+    val version = INTEGER().text.toIntOrNull()
+        ?: throw HexoNotationException("HTTTX notation version `${INTEGER().text}` is too large")
+
+    requireHexo(version == 1 || version == 2) {
+        "Unsupported HTTTX notation version `$version`"
+    }
+
+    requireHexo(version >= 2 || extensions.isEmpty()) {
+        "Extensions are only supported in HTTTX version 2 and onward"
+    }
+
+    return HTTTXVersion(
+        version = version,
+        extensions = HTTTXExtension.of(extensions),
+    )
+}
+
+private enum class HTTTXExtension(val symbol: Char) {
+    Unlimited('u'),
+    ;
+
+    companion object {
+        fun of(symbols: List<Char>) = buildSet {
+            symbols.forEach { symbol ->
+                val extension = HTTTXExtension.entries.firstOrNull { it.symbol == symbol }
+                    ?: throw HexoNotationException("Unknown HTTTX extension '$symbol'")
+
+                requireHexo(add(extension)) {
+                    "Duplicate HTTTX extension '$symbol'"
+                }
+            }
+        }
+    }
 }
 
 private fun parseInternal(input: String) = parseANTLRNotation(input, ::HTTTXLexer, ::HTTTXParser, HTTTXParser::root)
 
-private fun HTTTXParser.CoordinateContext.toCellCoordinate(turn: Int): CellCoordinate {
+private fun HTTTXParser.CoordinateContext.toCellCoordinate(turn: String): CellCoordinate {
     val (q, r) = INTEGER().map { token ->
         token.text.toIntOrNull()
-            ?: throw HexoNotationException("Coordinate `${token.text}` in HTTTX turn `$turn` is too large")
+            ?: throw HexoNotationException("Coordinate `${token.text}` in HTTTX `$turn` is too large")
     }
     val convertedQ = q.toLong() + r
     val convertedR = -r.toLong()

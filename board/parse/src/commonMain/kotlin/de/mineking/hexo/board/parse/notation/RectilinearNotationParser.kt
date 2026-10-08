@@ -31,7 +31,7 @@ fun String.parseRectilinearNotation(): Board {
             item.step() != null -> builder.step(2)
             item.gap() != null -> builder.addGap(item.gap()!!.text)
             item.row() != null -> builder.newRow()
-            item.label() != null -> builder.addLabel(item.label()!!.text)
+            item.label() != null -> builder.addLabel(item.label()!!.text.removeSurrounding("[", "]"))
             item.highlight() != null -> builder.addHighlight(item.highlight()!!)
         }
     }
@@ -84,14 +84,7 @@ private class RectilinearBoardBuilder(columnNotation: Boolean) {
     }
 
     fun addLabel(text: String) {
-        previousCell().label = buildString {
-            var index = 1
-            while (index < text.lastIndex) {
-                if (text[index] == '\\') index++
-                append(text[index])
-                index++
-            }
-        }
+        previousCell().label = text.unescape()
     }
 
     fun addHighlight(highlight: RectilinearParser.HighlightContext) {

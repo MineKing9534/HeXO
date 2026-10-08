@@ -38,7 +38,7 @@ class TytoTheme(
         val renderer = renderer(context)
         renderer.render(context, middleLayer)
 
-        renderer.finalize()
+        renderer.renderOverlays()
     }
 
     fun Cell.backgroundColor() = when (owner) {
@@ -83,7 +83,7 @@ class TytoRenderer(
         // Not supported
     }
 
-    fun finalize() = context.run {
+    fun renderOverlays() = context.run {
         occupiedCells.forEach { hex ->
             backend.drawPolygon(
                 shape = hex,

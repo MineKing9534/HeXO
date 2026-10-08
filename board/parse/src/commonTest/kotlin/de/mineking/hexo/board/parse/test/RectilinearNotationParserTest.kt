@@ -166,7 +166,7 @@ class RectilinearNotationParserTest {
             """x[a\\b]""" to "a\\b",
             """x[a\\]""" to "a\\",
             """x[a\\\]b]""" to "a\\]b",
-            """x[[a\]b]]""" to "[a]b]",
+            """x[[a\]b\]]""" to "[a]b]",
         )
 
         labels.forEach { (notation, label) ->
