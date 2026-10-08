@@ -113,8 +113,8 @@ private fun MutableBoard.addVisuals(turn: String, visuals: List<HTTTXParser.Visu
         val label = visual.label()
 
         this[coordinate].apply {
-            if (highlight != null) {
-                val symbol = highlight.text.takeIf { it.isNotBlank() && it.lowercase() != "n" }
+            if (highlight != null || label == null) { // Just <q, r> is interpreted as neutral highlight
+                val symbol = highlight?.text?.takeIf { it.isNotBlank() && it.lowercase() != "n" }
                 this.highlight = CellHighlight(symbol?.let { CellOwner.valueOf(it.uppercase()) })
             }
 

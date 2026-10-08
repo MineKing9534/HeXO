@@ -47,7 +47,7 @@ class HTTTXNotationParserTest {
         assertEquals(Cell(label = "EMPTY2"), board.cells[CellCoordinate(-1, -1)])
         assertEquals(Cell(CellOwner.X, highlight = CellHighlight(CellOwner.X), turn = 0), board.cells[CellCoordinate.Zero])
         assertEquals(Cell(highlight = CellHighlight(CellOwner.O)), board.cells[CellCoordinate(1, 2)])
-        assertEquals(Cell.EMPTY, board.cells[CellCoordinate(18, -9)])
+        assertEquals(Cell(highlight = CellHighlight(null)), board.cells[CellCoordinate(18, -9)])
         assertEquals(8, board.cells.size)
     }
 
