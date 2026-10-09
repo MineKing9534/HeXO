@@ -13,6 +13,7 @@ import de.mineking.hexo.board.render.image.RenderingContext
 import de.mineking.hexo.board.render.image.SQRT3
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.createHex
+import de.mineking.hexo.board.render.image.drawCircle
 import kotlin.math.roundToInt
 
 data class CixTheme(
@@ -41,7 +42,7 @@ data class CixTheme(
             nearestEmptyCellColor = Color.rgb(0x1e2737),
             furthestEmptyCellColor = Color.rgb(0x0f131c),
             emptyCellGradientRadius = 5.0,
-            occupiedCellScale = 0.85,
+            occupiedCellScale = 0.9,
             emptyCellLabelColor = Color.rgb(0xf8fafc),
             highlightColor = Color.rgb(0xf472b6),
             focusColor = Color.rgb(0xf8fafc),
@@ -54,8 +55,10 @@ data class CixTheme(
 
     override fun render(context: RenderingContext, middleLayer: () -> Unit) {
         val renderer = renderer(context)
-        renderer.render(context, middleLayer)
-        renderer.drawVisibleBorder()
+        renderer.render(context) {
+            middleLayer()
+            renderer.drawVisibleBorder()
+        }
     }
 
     fun CellOwner?.color(default: Color) = when (this) {
@@ -76,19 +79,15 @@ class CixRenderer(
         .keys
 
     fun drawVisibleBorder(): Unit = context.run {
-        val visibleCoordinates = visibleCoordinates
-            .filter { coordinate -> coordinate.toPixel().createHex(hexSize).isVisible() }
-            .toSet()
-
         visibleCoordinates.forEach { coordinate ->
             val hex = coordinate.toPixel().createHex(layout.size.layoutRadius)
             Direction.entries.forEachIndexed { index, direction ->
-                if (coordinate + direction.direction in visibleCoordinates) return@forEachIndexed
+                if (coordinate + direction.direction in layout.coordinates) return@forEachIndexed
 
                 backend.drawLine(
                     from = hex.points[index],
                     to = hex.points[(index + 1) % hex.points.size],
-                    stroke = Stroke(theme.boardBorderColor, borderThickness * 2),
+                    stroke = Stroke(theme.boardBorderColor, borderThickness * 3),
                 )
             }
         }
@@ -109,18 +108,7 @@ class CixRenderer(
             )
         }
 
-        val accent = when {
-            cell.highlight != null -> theme.run { cell.highlight?.color.color(highlightColor) }
-            cell.focused || (maxTurn != null && cell.turn == maxTurn) -> theme.focusColor
-            else -> null
-        }
-        if (accent != null) {
-            backend.drawPolygon(
-                shape = hex,
-                color = Color.Transparent,
-                outline = Stroke(accent, borderThickness * 3),
-            )
-        }
+        drawCellAccents(point, hex, cell)
 
         val label = cell.labelText(defaultShowTurnLabels = false) ?: return
         val labelColor = when {
@@ -137,6 +125,48 @@ class CixRenderer(
             font = FontType.SansSerifBold,
             color = labelColor,
         )
+    }
+
+    private fun drawCellAccents(point: Point, hex: Polygon, cell: Cell): Unit = context.run {
+        val highlightColor = cell.highlight?.let { theme.run { it.color.color(highlightColor) } }
+
+        if (highlightColor != null) {
+            val highlightHex = point.createHex((hexSize - borderThickness * 2 / SQRT3).coerceAtLeast(0.0))
+
+            backend.drawPolygon(
+                shape = hex,
+                color = highlightColor.withAlpha(64),
+                borderRadius = borderThickness / 4,
+            )
+
+            if (cell.owner != null) {
+                backend.drawCircle(point, Stroke(theme.focusColor, borderThickness * 8))
+            }
+
+            backend.drawPolygon(
+                shape = highlightHex,
+                color = Color.Transparent,
+                outline = Stroke(highlightColor, borderThickness * 2.5f),
+                borderRadius = borderThickness / 4,
+            )
+        }
+
+        if (cell.focused || (maxTurn != null && cell.turn == maxTurn)) {
+            val focusHex = point.createHex((hexSize * theme.occupiedCellScale - borderThickness * 2 / SQRT3).coerceAtLeast(0.0))
+
+            backend.drawPolygon(
+                shape = focusHex,
+                color = theme.focusColor.withAlpha(64),
+                borderRadius = borderThickness / 4,
+            )
+
+            backend.drawPolygon(
+                shape = focusHex,
+                color = Color.Transparent,
+                outline = Stroke(theme.focusColor, borderThickness * 2),
+                borderRadius = borderThickness / 4,
+            )
+        }
     }
 
     private fun CixTheme.emptyCellColor(point: Point): Color {
@@ -167,7 +197,7 @@ class CixRenderer(
             from = lineHighlight.start.toPixel(),
             to = lineHighlight.endInclusive.toPixel(),
             stroke = Stroke(color, lineThickness),
-            outline = Stroke(theme.nearestEmptyCellColor, lineThickness / 3),
+            outline = Stroke(theme.boardBorderColor.withAlpha(128), lineThickness / 3),
         )
     }
 }

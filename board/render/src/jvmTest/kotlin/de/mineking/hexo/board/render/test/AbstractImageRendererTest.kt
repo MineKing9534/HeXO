@@ -127,6 +127,32 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
     }
 
     @Test
+    fun `cix focus and highlights`() {
+        val board = MutableBoard()
+        listOf(null, CellOwner.X, CellOwner.O).forEachIndexed { row, owner ->
+            repeat(3) { column ->
+                board[column * 2, row * 2].apply {
+                    this.owner = owner
+                    label = "${row * 3 + column + 1}"
+                    focused = column != 0
+                    highlight = if (column != 1) CellHighlight(null) else null
+                }
+            }
+        }
+        board[0, 6].apply {
+            owner = CellOwner.X
+            turn = 1
+        }
+        board[2, 6].apply {
+            owner = CellOwner.O
+            turn = 2
+            highlight = CellHighlight(CellOwner.X)
+        }
+
+        test("focus_highlight", board, DefaultTheme.Cix)
+    }
+
+    @Test
     fun `label color test`() {
         val board = MutableBoard().apply { this[0, 0].label = "#00ff00 a" }
         test("label_color", board, DefaultTheme.HDS)

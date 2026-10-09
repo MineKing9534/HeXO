@@ -338,7 +338,7 @@ private fun TurnIndicator(
             Div({
                 classes(
                     "h-9", "min-w-0", "rounded-lg", "border-2", "px-2.5", "flex", "items-center", "justify-between", "gap-2",
-                    "bg-slate-900/75", "backdrop-blur-xs",
+                    "bg-slate-800/75", "backdrop-blur-xs",
                 )
                 if (isCurrentTurn) {
                     classes("border-emerald-400/70", "shadow-[inset_0_0_18px_rgb(16_185_129/0.08)]")
@@ -453,7 +453,7 @@ private fun HudInfoCard(accent: String, header: @Composable () -> Unit, content:
 
     Div({
         classes(
-            "pointer-events-auto", "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-900/75",
+            "pointer-events-auto", "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-800/75",
             "backdrop-blur-xs",
         )
     }) {
