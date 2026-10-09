@@ -4,8 +4,8 @@ command:
     description: Renders the given HeXO notation
     options:
       input.description: The Rectilinear HeXO notation to render
-      theme:
-        description: "The theme to use for rendering [Default: HDS]"
+      theme.description: "The theme to use for rendering [Default: HDS]"
+      interactive.description: Whether to respond with an interactive menu
 
 response.error: |-
   ## Failed to parse the given input

@@ -1,3 +1,6 @@
+response.error:
+  export: ":warning:  This board cannot be exported as the target notation: `${message}`"
+
 menu.notation:
   title.content: "# :pencil: Notation Output"
 
@@ -12,6 +15,9 @@ menu.notation:
     MultilineRectilinear:
       label: MRN
       description: Multiline Rectilinear Notation (human readable)
+    Combined:
+      label: Combined
+      description: Rectilinear initial state with BKE turns
     HTTTX:
       label: HTTTX
       description: Bracketed coordinate notation for explore.htttx.io

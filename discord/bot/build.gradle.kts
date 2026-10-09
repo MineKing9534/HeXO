@@ -14,6 +14,7 @@ dependencies {
     implementation(projects.discord.oauth2.service)
 
     implementation(projects.board)
+    implementation(projects.board.binary)
     implementation(projects.board.parse)
     implementation(projects.board.render)
 

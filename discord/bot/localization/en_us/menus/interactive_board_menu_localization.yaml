@@ -1,0 +1,10 @@
+menu.board:
+  move:
+    title: Enter the move to inspect
+    inputs:
+      move:
+        label: Move number
+        description: !<moveCount:Int> The move to inspect [1-${moveCount}]
+
+  notation.label: Show Notation
+  turn.label: Show Turn Numbers

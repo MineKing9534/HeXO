@@ -12,7 +12,7 @@ open class PartialGameStateHistory(val state: Board, val turns: GamePosition<*>)
 
     override val numberOfStates = if (hasState()) turns.numberOfStates + 1 else turns.numberOfStates
     override fun getState(index: Int): Board {
-        if (!hasState()) return turns.getState(index)
+        if (!hasState()) return state + turns.getState(index)
         return state + turns.getState(index - 1)
     }
 

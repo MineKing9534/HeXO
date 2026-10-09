@@ -126,7 +126,16 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): PartialGam
                 ?.meta?.player?.other
                 ?: requireNotNull(cells.first().value.owner)
 
-            require(cells.all { it.value.owner == expected })
+            cells.forEach { (coordinate, cell) ->
+                require(cell.owner == expected)
+
+                if (cell.label.isNotBlank() || cell.highlight != null) {
+                    state[coordinate].apply {
+                        label = cell.label
+                        highlight = cell.highlight
+                    }
+                }
+            }
 
             turns += Turn(
                 meta = TurnMetaData(

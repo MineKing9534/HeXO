@@ -23,6 +23,7 @@ enum class CustomEmoji(val path: String) {
 
     NotationCRN("notation/crn"),
     NotationMRN("notation/mrn"),
+    NotationCombined("notation/combined"),
     NotationHTTTX("notation/htttx"),
     NotationTyto("notation/tyto"),
 
