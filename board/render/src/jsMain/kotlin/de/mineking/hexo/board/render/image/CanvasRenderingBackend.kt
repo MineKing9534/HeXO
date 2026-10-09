@@ -63,13 +63,14 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
     private val textExclusions = mutableListOf<TextExclusion>()
     private val lineLayer by lazy { createLineLayer() }
 
-    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
+    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?, style: LineStyle) {
+        val dashPattern = if (from == to) null else style.dashPattern(stroke.width)
         if (outline == null && textExclusions.isEmpty()) {
             canvas.strokeStyle = stroke.color.css
             canvas.lineWidth = stroke.width.toDouble()
             canvas.lineCap = CanvasLineCap.ROUND
             canvas.lineJoin = CanvasLineJoin.ROUND
-            canvas.strokeSegment(from, to)
+            canvas.strokeSegment(from, to, dashPattern)
             return
         }
 
@@ -85,12 +86,12 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
             layer.context.lineWidth = (stroke.width + outline.width).toDouble()
             layer.context.lineCap = CanvasLineCap.ROUND
             layer.context.lineJoin = CanvasLineJoin.ROUND
-            layer.context.strokeSegment(from, to)
+            layer.context.strokeSegment(from, to, dashPattern)
 
             layer.context.save()
             layer.context.globalCompositeOperation = "destination-out"
             layer.context.lineWidth = stroke.width.toDouble()
-            layer.context.strokeSegment(from, to)
+            layer.context.strokeSegment(from, to, dashPattern)
             layer.context.restore()
         }
 
@@ -98,7 +99,7 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         layer.context.lineWidth = stroke.width.toDouble()
         layer.context.lineCap = CanvasLineCap.ROUND
         layer.context.lineJoin = CanvasLineJoin.ROUND
-        layer.context.strokeSegment(from, to)
+        layer.context.strokeSegment(from, to, dashPattern)
 
         layer.context.cutOutTextExclusions(minX, minY, maxX, maxY)
 
@@ -171,11 +172,16 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         canvas.fillText(text, textX, textY)
     }
 
-    private fun CanvasRenderingContext2D.strokeSegment(from: Point, to: Point) {
+    private fun DashPattern.toCanvasDashArray() = arrayOf(dashLength.toDouble(), gapLength.toDouble())
+
+    private fun CanvasRenderingContext2D.strokeSegment(from: Point, to: Point, dashPattern: DashPattern?) {
+        save()
+        setLineDash(dashPattern?.toCanvasDashArray() ?: emptyArray())
         beginPath()
         moveTo(from.x, from.y)
         lineTo(to.x, to.y)
         stroke()
+        restore()
     }
 
     private fun createLineLayer(): LineLayer {

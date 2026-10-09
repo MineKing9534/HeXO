@@ -5,6 +5,8 @@ import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.BoundingBox
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
+import de.mineking.hexo.board.render.image.DashPattern
+import de.mineking.hexo.board.render.image.LineStyle
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.PolygonPath
@@ -85,9 +87,10 @@ class TikZRenderingBackend(
         }
     }
 
-    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
-        if (outline != null) lines += RenderedLine(from, to, Stroke(outline.color, stroke.width + outline.width))
-        lines += RenderedLine(from, to, stroke)
+    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?, style: LineStyle) {
+        val dashPattern = style.dashPattern(stroke.width)
+        if (outline != null) lines += RenderedLine(from, to, Stroke(outline.color, stroke.width + outline.width), dashPattern)
+        lines += RenderedLine(from, to, stroke, dashPattern)
     }
 
     override fun drawPolygon(shape: Polygon, color: Color, outline: Stroke?, borderRadius: Float) {
@@ -154,7 +157,7 @@ class TikZRenderingBackend(
     }
 }
 
-private data class RenderedLine(val from: Point, val to: Point, val stroke: Stroke)
+private data class RenderedLine(val from: Point, val to: Point, val stroke: Stroke, val dashPattern: DashPattern?)
 private data class StyledPath(val value: String, val options: List<String>)
 
 private fun List<StyledPath>.commands() = buildList {
@@ -180,7 +183,13 @@ private fun lineCommand(line: RenderedLine, fadingOptions: List<String>): String
             ) + fadingOptions,
         )
     } else {
-        path("${from.tikz} -- ${to.tikz}", stroke.strokeOptions() + fadingOptions)
+        val dashOptions = dashPattern?.let {
+            listOf(
+                "dash pattern=on ${(it.dashLength * CSS_PIXEL_IN_BP).tikzNumber()}bp " +
+                    "off ${(it.gapLength * CSS_PIXEL_IN_BP).tikzNumber()}bp",
+            )
+        }.orEmpty()
+        path("${from.tikz} -- ${to.tikz}", stroke.strokeOptions() + dashOptions + fadingOptions)
     }
 }
 

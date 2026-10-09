@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.render.tikz
 
 import de.mineking.hexo.board.render.image.BoundingBox
+import de.mineking.hexo.board.render.image.LineStyle
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.Stroke
@@ -70,6 +71,23 @@ class TikZRenderingBackendTest {
         val line = picture.lineSequence().single { "circle[radius=0.75bp]" in it }
 
         assertTrue("path fading=hexotextmask\\the\\hexotextmaskid" in line)
+    }
+
+    @Test
+    fun `outlined dashed lines share their pattern and keep text fading`() {
+        val backend = TikZRenderingBackend(rawLabels = false)
+        backend.drawLine(Point.Zero, Point(10, 10), Stroke(BLUE, 4f), Stroke(GREEN, 2f), LineStyle.Dashed)
+        backend.drawLine(Point.Zero, Point(10, 0), Stroke(BLUE, 4f))
+        backend.drawLine(Point.Zero, Point.Zero, Stroke(BLUE, 4f), style = LineStyle.Dashed)
+        backend.drawString(Point.Zero, "label", 100.0, 12f, FontType.MonospaceRegular, BLUE)
+
+        val picture = backend.render(BOUNDS, Color.Transparent).substringAfterLast("\\begin{tikzpicture}")
+        val dashed = picture.lineSequence().filter { "(0, 0) -- (10, 10)" in it }.toList()
+        assertEquals(2, dashed.size)
+        assertTrue(dashed.all { "dash pattern=on 4.5bp off 9bp" in it })
+        assertTrue(dashed.all { "path fading=" in it })
+        assertFalse("dash pattern=" in picture.lineSequence().single { "(0, 0) -- (10, 0)" in it })
+        assertFalse("dash pattern=" in picture.lineSequence().single { "circle[radius=1.5bp]" in it })
     }
 
     private companion object {

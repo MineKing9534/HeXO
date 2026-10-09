@@ -25,8 +25,32 @@ data class PolygonPath(val start: Point, val segments: List<Segment>) {
 
 data class Stroke(val color: Color, val width: Float)
 
+data class DashPattern(val dashLength: Float, val gapLength: Float) {
+    init {
+        require(dashLength.isFinite() && dashLength > 0f) { "Dash length must be positive and finite" }
+        require(gapLength.isFinite() && gapLength > 0f) { "Gap length must be positive and finite" }
+    }
+
+    fun toFloatArray() = floatArrayOf(dashLength, gapLength)
+}
+
+enum class LineStyle {
+    Solid {
+        override fun dashPattern(strokeWidth: Float): DashPattern? = null
+    },
+    Dashed {
+        override fun dashPattern(strokeWidth: Float): DashPattern? {
+            if (strokeWidth <= 0f) return null
+            return DashPattern(dashLength = strokeWidth * 1.5f, gapLength = strokeWidth * 3f)
+        }
+    },
+    ;
+
+    abstract fun dashPattern(strokeWidth: Float): DashPattern?
+}
+
 interface RenderingBackend {
-    fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke? = null)
+    fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke? = null, style: LineStyle = LineStyle.Solid)
     fun drawPolygon(shape: Polygon, color: Color, outline: Stroke? = null, borderRadius: Float = 0f)
     fun drawString(point: Point, text: String, maxWidth: Double, fontSize: Float, font: FontType, color: Color)
 }

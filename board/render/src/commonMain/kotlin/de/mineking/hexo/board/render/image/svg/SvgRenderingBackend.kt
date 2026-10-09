@@ -5,6 +5,7 @@ import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.render.image.BoardRenderBounds
 import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
+import de.mineking.hexo.board.render.image.LineStyle
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.PolygonPath
@@ -47,6 +48,7 @@ import dev.jamesyox.svg4k.attr.attrs.maskUnits
 import dev.jamesyox.svg4k.attr.attrs.points
 import dev.jamesyox.svg4k.attr.attrs.r
 import dev.jamesyox.svg4k.attr.attrs.stroke
+import dev.jamesyox.svg4k.attr.attrs.strokeDasharray
 import dev.jamesyox.svg4k.attr.attrs.strokeLinecap
 import dev.jamesyox.svg4k.attr.attrs.strokeLinejoin
 import dev.jamesyox.svg4k.attr.attrs.strokeWidth
@@ -179,10 +181,11 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
         }
     }
 
-    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
+    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?, style: LineStyle) {
         val textMaskSize = textMask.size
         if (textMaskSize > 0) usedTextMaskSizes += textMaskSize
 
+        val dashPattern = style.dashPattern(stroke.width)
         configure {
             fun drawLinePart(stroke: Stroke) {
                 line {
@@ -194,6 +197,7 @@ class SvgRenderingBackend(private val topLeftCorner: Point) : RenderingBackend {
                     stroke(stroke.color.svg)
                     strokeWidth = stroke.width.none
                     strokeLinecap = StrokeLinecap.Round
+                    if (dashPattern != null) strokeDasharray = dashPattern.toFloatArray().asList()
 
                     if (textMaskSize > 0) mask(textMaskId(textMaskSize))
                 }
