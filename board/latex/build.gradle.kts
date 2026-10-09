@@ -18,6 +18,7 @@ ksp {
         "themes",
         listOf(
             "de.mineking.hexo.board.render.image.theme.HDSTheme",
+            "de.mineking.hexo.board.render.image.theme.CixTheme",
             "de.mineking.hexo.board.render.image.theme.HTTTXTheme",
             "de.mineking.hexo.board.render.image.theme.TytoTheme",
         ).joinToString()

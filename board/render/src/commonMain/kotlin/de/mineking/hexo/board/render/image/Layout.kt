@@ -4,7 +4,6 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.endInclusive
-import de.mineking.hexo.board.isEmpty
 import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
@@ -127,9 +126,13 @@ fun Board.createRenderLayout(
 }
 
 private fun Board.renderOrigins() = cells
-    .filterValues { !it.isEmpty(includeHighlights = true) }
+    .filterValues { cell -> cell.owner != null || cell.label.isNotBlank() }
     .keys
     .ifEmpty { setOf(CellCoordinate.Zero) }
+
+private fun Board.highlightCoordinates() = cells
+    .filterValues { cell -> cell.highlight != null }
+    .keys
 
 private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<CellCoordinate>): BoundingBox {
     var minX = Double.POSITIVE_INFINITY
@@ -211,6 +214,8 @@ private fun Board.findVisibleCoordinates(
                 }
             }
         }
+
+        addAll(highlightCoordinates())
     }
 }
 

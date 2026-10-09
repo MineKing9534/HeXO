@@ -55,7 +55,6 @@ class HDSRenderer(
 ) : BaseTheme.Renderer(context) {
     private val borderThickness = context.run { theme.borderThickness.relativeWidth() }
     private val lineThickness = context.run { theme.lineThickness.relativeWidth() }
-    private val labelPattern = """^(\s*#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
 
     override fun drawCell(point: Point, hex: Polygon, cell: Cell): Unit = context.run {
         backend.drawPolygon(
@@ -69,35 +68,15 @@ class HDSRenderer(
         }
 
         drawCellHighlight(cell, hex)
-        drawLabel(point, cell)
-    }
-
-    private fun drawLabel(point: Point, cell: Cell) {
-        val label = cell.labelText(defaultShowTurnLabels = false) ?: return
-        val match = labelPattern.matchEntire(label)
-
-        val drawText: String
-        val drawColor: Color
-
-        if (match != null) {
-            drawText = match.groupValues[2]
-            drawColor = Color.parse(match.groupValues[1])
-        } else {
-            drawText = label
-            drawColor = theme.run {
+        drawLabel(
+            point = point,
+            cell = cell,
+            color = theme.run {
                 cell.owner.color(default = emptyCellLabelColor) {
                     if (it.isDark()) it.brighter() else it.darker()
                 }
-            }
-        }
-
-        context.backend.drawString(
-            point = point,
-            text = drawText,
-            maxWidth = context.hexSize * SQRT3 - 4 * borderThickness,
-            fontSize = context.hexSize.toFloat() * 0.7f,
-            font = FontType.SansSerifBold,
-            color = drawColor,
+            },
+            maxWidth = hexSize * SQRT3 - 4 * borderThickness,
         )
     }
 

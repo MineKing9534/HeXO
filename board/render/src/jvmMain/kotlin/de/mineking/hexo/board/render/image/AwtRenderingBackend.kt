@@ -72,14 +72,15 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
 
     private val textExclusions = mutableListOf<TextExclusion>()
 
-    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?) {
+    override fun drawLine(from: Point, to: Point, stroke: Stroke, outline: Stroke?, style: LineStyle) {
         val segment = Line2D.Double(from.x, from.y, to.x, to.y)
 
-        val inner = segment.stroke(stroke.width)
+        val dashPattern = if (from == to) null else style.dashPattern(stroke.width)
+        val inner = segment.stroke(stroke.width, dashPattern)
         drawLinePart(inner, stroke.color)
 
         if (outline != null) {
-            val ring = segment.stroke(stroke.width + outline.width).apply {
+            val ring = segment.stroke(stroke.width + outline.width, dashPattern).apply {
                 subtract(inner)
             }
 
@@ -174,8 +175,15 @@ class AwtRenderingBackend(private val graphics: Graphics2D) : RenderingBackend {
         graphics.composite = composite
     }
 
-    private fun Line2D.Double.stroke(width: Float) = Area(
-        BasicStroke(width, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND).createStrokedShape(this),
+    private fun Line2D.Double.stroke(width: Float, dashPattern: DashPattern?) = Area(
+        BasicStroke(
+            width,
+            BasicStroke.CAP_ROUND,
+            BasicStroke.JOIN_ROUND,
+            10f,
+            dashPattern?.toFloatArray(),
+            0f,
+        ).createStrokedShape(this),
     )
 
     private fun Polygon.toShape(borderRadius: Float): Shape {

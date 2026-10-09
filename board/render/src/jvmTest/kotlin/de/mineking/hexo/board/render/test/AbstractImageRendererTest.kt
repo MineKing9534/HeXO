@@ -18,7 +18,6 @@ import kotlinx.coroutines.test.runTest
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
-import kotlin.test.Test
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -126,9 +125,10 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         test("long_label", board, theme)
     }
 
-    @Test
-    fun `label color test`() {
+    @EnumSource
+    @ParameterizedTest
+    fun `label color test`(theme: DefaultTheme) {
         val board = MutableBoard().apply { this[0, 0].label = "#00ff00 a" }
-        test("label_color", board, DefaultTheme.HDS)
+        test("label_color", board, theme)
     }
 }

@@ -121,7 +121,8 @@ fun GameBoardPane(
         if (!plain) {
             TurnIndicator(
                 game,
-                game.playerWithColor(position.nextTurn.player),
+                game.playerWithColor(position.nextTurn.player)
+                    .takeIf { (!isLive && boardViewManager.currentMove != Int.MAX_VALUE) || game.result == null },
                 position.nextTurn.placementsRemaining,
                 playerTimeProvider,
             )
@@ -325,7 +326,7 @@ private fun Duration.formatTimer(showTenths: Boolean): String {
 @Composable
 private fun TurnIndicator(
     game: Game,
-    currentPlayer: Player,
+    currentPlayer: Player?,
     placementsRemaining: Int,
     timeProvider: PlayerTimeProvider,
 ) {
@@ -333,16 +334,16 @@ private fun TurnIndicator(
 
     @Composable
     fun PlayerIndicator(player: Player) {
-        val isCurrentTurn = player === currentPlayer && game.result == null
+        val isCurrentTurn = player === currentPlayer
         Div({ classes("flex", "flex-col", "justify-center", "gap-2") }) {
             Div({
                 classes(
                     "h-9", "min-w-0", "rounded-lg", "border-2", "px-2.5", "flex", "items-center", "justify-between", "gap-2",
-                    "bg-slate-900/75", "backdrop-blur-xs",
+                    "bg-slate-800/75", "backdrop-blur-xs",
                 )
                 if (isCurrentTurn) {
                     classes("border-emerald-400/70", "shadow-[inset_0_0_18px_rgb(16_185_129/0.08)]")
-                } else if (player === game.result?.winner) {
+                } else if (player === game.result?.winner && currentPlayer == null) {
                     style {
                         borderColor(theme.playerColor(player.color).withAlpha(196).css)
                     }
@@ -453,7 +454,7 @@ private fun HudInfoCard(accent: String, header: @Composable () -> Unit, content:
 
     Div({
         classes(
-            "pointer-events-auto", "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-900/75",
+            "pointer-events-auto", "mb-3", "overflow-hidden", "rounded-lg", "border-2", accent, "bg-slate-800/75",
             "backdrop-blur-xs",
         )
     }) {

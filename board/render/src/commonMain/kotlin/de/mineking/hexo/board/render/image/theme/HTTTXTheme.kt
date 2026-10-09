@@ -80,22 +80,18 @@ class HTTTXRenderer(
             outline = Stroke(theme.cellBorderColor, borderThickness),
         )
 
-        val labelText = cell.labelText(
+        val hasLabel = drawLabel(
+            point = point,
+            cell = cell,
+            color = theme.run { cell.decorationColor() },
+            maxWidth = hexSize * SQRT3 - 4 * borderThickness,
+            fontSize = hexSize.toFloat() * 0.85f,
+            font = FontType.MonospaceRegular,
             defaultShowTurnLabels = true,
             turnTransform = { (it + 1) / 2 },
         )
 
-        if (labelText != null) {
-            val labelColor = theme.run { cell.decorationColor() }
-            backend.drawString(
-                point = point,
-                text = labelText,
-                maxWidth = hexSize * SQRT3 - 4 * borderThickness,
-                fontSize = hexSize.toFloat() * 0.85f,
-                font = FontType.MonospaceRegular,
-                color = labelColor,
-            )
-        } else {
+        if (!hasLabel) {
             drawDecoration(point, cell, color)
         }
     }
