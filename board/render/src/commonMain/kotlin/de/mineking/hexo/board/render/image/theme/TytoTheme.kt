@@ -6,6 +6,7 @@ import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.Polygon
 import de.mineking.hexo.board.render.image.RenderingContext
+import de.mineking.hexo.board.render.image.SQRT3
 import de.mineking.hexo.board.render.image.Stroke
 import de.mineking.hexo.board.render.image.createHex
 
@@ -70,6 +71,13 @@ class TytoRenderer(
             val hex = point.createHex(hexSize * 0.75)
             backend.drawPolygon(hex, Color.Transparent, Stroke(color.brighter().withAlpha(196), borderThickness * 3))
         }
+
+        drawLabel(
+            point = point,
+            cell = cell,
+            color = if (color.isDark()) color.brighter() else color.darker(),
+            maxWidth = hexSize * SQRT3 - 4 * borderThickness,
+        )
 
         if (cell.owner == null) return
         if (cell.focused) {

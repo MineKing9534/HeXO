@@ -61,7 +61,7 @@ class OmokRenderer(
     private val borderThickness = context.run { theme.borderThickness.relativeWidth() }
     private val lineThickness = context.run { theme.lineThickness.relativeWidth() }
 
-    override fun drawCell(point: Point, hex: Polygon, cell: Cell) = context.run {
+    override fun drawCell(point: Point, hex: Polygon, cell: Cell): Unit = context.run {
         drawGrid(point)
 
         val cellColor = theme.run { cell.owner.color(default = emptyCellBackgroundColor) }
@@ -77,6 +77,17 @@ class OmokRenderer(
         if (cell.highlight != null && cell.owner != null) {
             backend.drawCircle(point, Stroke(cell.focusColor, borderThickness * 8))
         }
+
+        drawLabel(
+            point = point,
+            cell = cell,
+            color = theme.run {
+                cell.owner.color(default = emptyCellLabelColor) {
+                    if (it.isDark()) it.brighter() else it.darker()
+                }
+            },
+            maxWidth = hexSize * SQRT3 - 4 * borderThickness,
+        )
     }
 
     private fun drawGrid(point: Point) = context.run {

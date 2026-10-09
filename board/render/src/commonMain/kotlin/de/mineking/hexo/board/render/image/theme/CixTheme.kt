@@ -110,20 +110,17 @@ class CixRenderer(
 
         drawCellAccents(point, hex, cell)
 
-        val label = cell.labelText(defaultShowTurnLabels = false) ?: return
         val labelColor = when {
             cell.owner == null -> theme.emptyCellLabelColor
             cellColor.isDark() -> cellColor.brighter()
             else -> cellColor.darker()
         }
 
-        backend.drawString(
+        drawLabel(
             point = point,
-            text = label,
-            maxWidth = hexSize * SQRT3 - 4 * borderThickness,
-            fontSize = hexSize.toFloat() * 0.7f,
-            font = FontType.SansSerifBold,
+            cell = cell,
             color = labelColor,
+            maxWidth = hexSize * SQRT3 - 4 * borderThickness,
         )
     }
 

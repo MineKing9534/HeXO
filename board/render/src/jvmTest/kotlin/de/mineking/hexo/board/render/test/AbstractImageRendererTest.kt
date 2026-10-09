@@ -152,9 +152,10 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         test("focus_highlight", board, DefaultTheme.Cix)
     }
 
-    @Test
-    fun `label color test`() {
+    @EnumSource
+    @ParameterizedTest
+    fun `label color test`(theme: DefaultTheme) {
         val board = MutableBoard().apply { this[0, 0].label = "#00ff00 a" }
-        test("label_color", board, DefaultTheme.HDS)
+        test("label_color", board, theme)
     }
 }

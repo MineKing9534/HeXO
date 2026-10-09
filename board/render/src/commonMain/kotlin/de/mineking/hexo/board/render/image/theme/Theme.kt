@@ -65,6 +65,10 @@ abstract class Theme {
 
 abstract class BaseTheme : Theme() {
     abstract class Renderer(val context: RenderingContext) {
+        companion object {
+            private val labelPattern = """^\s*(#(?:[0-9a-fA-F]{3}|[0-9a-fA-F]{4}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8}))\s+(.+)$""".toRegex()
+        }
+
         abstract fun drawCell(point: Point, hex: Polygon, cell: Cell)
         abstract fun drawLineHighlight(lineHighlight: LineHighlight)
 
@@ -76,6 +80,31 @@ abstract class BaseTheme : Theme() {
             ?: turn
                 ?.let { "${turnTransform(it)}" }
                 .takeIf { context.layout.board.attributes[BoardAttribute.ShowTurnNumbers] ?: defaultShowTurnLabels }
+
+        @IgnorableReturnValue
+        protected fun drawLabel(
+            point: Point,
+            cell: Cell,
+            color: Color,
+            maxWidth: Double,
+            fontSize: Float = context.hexSize.toFloat() * 0.7f,
+            font: FontType = FontType.SansSerifBold,
+            defaultShowTurnLabels: Boolean = false,
+            turnTransform: (Int) -> Int = { it },
+        ): Boolean {
+            val label = cell.labelText(defaultShowTurnLabels, turnTransform) ?: return false
+            val match = labelPattern.matchEntire(label)
+
+            context.backend.drawString(
+                point = point,
+                text = match?.groupValues?.get(2) ?: label,
+                maxWidth = maxWidth,
+                fontSize = fontSize,
+                font = font,
+                color = match?.groupValues?.get(1)?.let(Color::parse) ?: color,
+            )
+            return true
+        }
     }
 
     abstract val playerXColor: Color
