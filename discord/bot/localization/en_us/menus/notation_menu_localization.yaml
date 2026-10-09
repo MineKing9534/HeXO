@@ -12,3 +12,9 @@ menu.notation:
     MultilineRectilinear:
       label: MRN
       description: Multiline Rectilinear Notation (human readable)
+    HTTTX:
+      label: HTTTX
+      description: Bracketed coordinate notation for explore.htttx.io
+    Tyto:
+      label: Tyto
+      description: Base64-encoded notation for hexo.tyto.cc

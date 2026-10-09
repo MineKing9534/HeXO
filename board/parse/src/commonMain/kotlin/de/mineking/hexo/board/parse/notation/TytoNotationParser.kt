@@ -1,11 +1,12 @@
-package de.mineking.hexo.board.parse
+package de.mineking.hexo.board.parse.notation
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
-import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.MutableCell
+import de.mineking.hexo.board.parse.LinkParser
 import de.mineking.hexo.board.requireHexo
 import kotlin.experimental.and
 import kotlin.io.encoding.Base64
@@ -13,21 +14,17 @@ import kotlin.io.encoding.Base64
 private const val SHIFT_BYTE = 0x80.toByte()
 private const val MASK = 0x7f.toByte()
 
-object TytoNotationParser : BoardParser {
-    override suspend fun parse(notation: String) = notation.parseTytoNotation(focusWinningRows = false)
+object TytoLinkParser : LinkParser(prefix = "https://hexo.tyto.cc/analysis#c=") {
+    override suspend fun parseLink(param: String) = param.parseTytoNotation()
 }
 
-fun String.parseTytoNotation(focusWinningRows: Boolean = true): Board {
+fun String.parseTytoNotation(): Board {
     val stream = TytoNotationStream(this)
     val board = MutableBoard()
 
     fun move(coordinate: CellCoordinate, turn: Int) {
         requireHexo(coordinate !in board.cells) { "Duplicate cell at $coordinate" }
-
-        board[coordinate].apply {
-            this.owner = CellOwner.entries[turn % 2]
-            this.turn = turn
-        }
+        board[coordinate] = MutableCell(CellOwner.entries[turn % 2], turn = turn)
     }
 
     move(CellCoordinate.Zero, turn = 0)
@@ -40,10 +37,6 @@ fun String.parseTytoNotation(focusWinningRows: Boolean = true): Board {
         move(first, turn)
         if (second != null) move(second, turn)
         turn++
-    }
-
-    if (focusWinningRows) {
-        board.focusWinningRows()
     }
 
     return board

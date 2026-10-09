@@ -36,9 +36,13 @@ data class Turn<out M : Move>(val meta: TurnMetaData, val moves: List<M>)
 data class GamePosition<out M : Move>(
     val turns: List<Turn<M>>,
     val nextTurn: NextTurnMetaData,
-)
+) : GameStateHistory {
+    val moves = turns.flatMap { it.moves }
 
-val <M : Move> GamePosition<M>.moves get() = turns.flatMap { it.moves }
+    override val numberOfStates = moves.size
+    override fun getState(index: Int) = take(index + 1).toBoard()
+}
+
 fun <M : Move> GamePosition<M>.take(maxMoves: Int): GamePosition<M> {
     require(maxMoves >= 0) { "Requested move count $maxMoves is less than zero." }
     if (maxMoves >= moves.size) return this
@@ -63,6 +67,16 @@ fun <M : Move> GamePosition<M>.take(maxMoves: Int): GamePosition<M> {
     }
 
     return this
+}
+
+operator fun <M : Move> GamePosition<M>.plus(other: GamePosition<M>): GamePosition<M> {
+    if (other.turns.isEmpty()) return this
+    require(nextTurn.player == other.turns.first().meta.player)
+
+    return GamePosition(
+        turns = turns + other.turns,
+        nextTurn = other.nextTurn,
+    )
 }
 
 private fun GamePosition<*>.remainingAfter(turn: Turn<*>, selectedMoves: Int): Int {
@@ -90,10 +104,8 @@ fun GamePosition<*>.toBoard(
     }
 }
 
-data class BoardToPositionResult(val state: Board, val turns: GamePosition<*>)
-
 fun Board.findNextTurn(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN) = toGamePosition(movesPerTurn).turns.nextTurn
-fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPositionResult {
+fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): PartialGameStateHistory {
     val state = MutableBoard(attributes = attributes.copy(), lineHighlights = lineHighlights.toMutableList())
     val turns = mutableListOf<Turn<Move>>()
 
@@ -125,13 +137,24 @@ fun Board.toGamePosition(movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): BoardToPos
             )
         }
 
-    return BoardToPositionResult(state, GamePosition(
+    return PartialGameStateHistory(state, GamePosition(
         turns = turns,
         nextTurn = turns.findNextTurn(
             hasState = !state.isEmpty(includeHighlights = false),
             movesPerTurn = movesPerTurn,
         ),
     ))
+}
+
+fun Board.toGamePositionForce(): GamePosition<*> {
+    val (state, turns) = toGamePosition()
+    requireHexo(state.isEmpty(includeHighlights = false)) {
+        "This board cannot be represented as turn list"
+    }
+
+    // TODO support serializing state into turns as well
+
+    return turns
 }
 
 fun List<Turn<*>>.findNextTurn(hasState: Boolean, movesPerTurn: Int = DEFAULT_MOVES_PER_TURN): NextTurnMetaData {

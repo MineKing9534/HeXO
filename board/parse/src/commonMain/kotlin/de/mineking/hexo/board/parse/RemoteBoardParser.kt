@@ -16,17 +16,18 @@ import de.mineking.hexo.utils.types.urlOf
 class RemoteBoardParser(
     formationRepository: FormationRepository,
     gameRepository: FinishedGameRepository,
-) : BoardParser by (GameLinkBoardParser(gameRepository) or FormationLinkBoardParser(formationRepository)).allowTurnLabels() {
+) : NotationParser {
+    private val parser = GameLinkBoardParser(gameRepository) or FormationLinkBoardParser(formationRepository)
+
     constructor(repositories: RepositoryContainer) : this(repositories.formationRepository, repositories.finishedGameRepository)
+
+    override suspend fun parse(notation: String) = parser.parse(notation)
 }
 
 class FormationLinkBoardParser(private val repository: FormationRepository) : LinkParser(prefix = repository.urlOf(FormationId(""))) {
     override suspend fun parseLink(param: String): Board {
         return repository.getFormation(FormationId(param))
-            .map {
-                it.position
-                    .toBoard(focusWinningRows = false)
-            }
+            .map { it.position.toBoard(focusWinningRows = false) }
             .orThrow { HexoNotationException("Formation $param not found") }
     }
 }
@@ -49,6 +50,7 @@ class GameLinkBoardParser(private val repository: FinishedGameRepository) : Link
 
         val maxMoves = parts[1].toIntOrNull()
             ?: throw HexoNotationException("Invalid move `${parts[1]}`")
+
         return GameId(parts[0]) to maxMoves
     }
 }

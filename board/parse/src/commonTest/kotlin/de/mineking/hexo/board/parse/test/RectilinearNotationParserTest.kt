@@ -7,8 +7,9 @@ import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.LineHighlight
-import de.mineking.hexo.board.parse.parseRectilinearNotation
+import de.mineking.hexo.board.parse.notation.parseRectilinearNotation
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
@@ -157,9 +158,27 @@ class RectilinearNotationParserTest {
     }
 
     @Test
+    fun `parse with escaped label characters`() {
+        val labels = mapOf(
+            """x[a\]b]""" to "a]b",
+            """x[\]\]]""" to "]]",
+            """x[\[a\]]""" to "[a]",
+            """x[a\\b]""" to "a\\b",
+            """x[a\\]""" to "a\\",
+            """x[a\\\]b]""" to "a\\]b",
+            """x[[a\]b\]]""" to "[a]b]",
+        )
+
+        labels.forEach { (notation, label) ->
+            val board = notation.parseRectilinearNotation()
+            assertEquals(Cell(CellOwner.X, label = label), board.cells[CellCoordinate.Zero], notation)
+        }
+    }
+
+    @Test
     fun `parse with label on empty row`() {
         val e = assertFailsWith<HexoNotationException> {
-            val _ = " x/[a]".parseRectilinearNotation()
+            " x/[a]".parseRectilinearNotation()
         }
 
         assertEquals("This operations requires a cell in the current row!", e.message)
@@ -168,8 +187,9 @@ class RectilinearNotationParserTest {
     @Test
     fun `parse with unterminated label at eof`() {
         val e = assertFailsWith<HexoNotationException> {
-            val _ = "x.[ab".parseRectilinearNotation()
+            "x.[ab".parseRectilinearNotation()
         }
-        assertEquals("Unterminated symbol at end of input: `ab`", e.message)
+        assertContains(e.message, "Invalid notation at 1:6:")
+        assertContains(e.message, "<eof>")
     }
 }

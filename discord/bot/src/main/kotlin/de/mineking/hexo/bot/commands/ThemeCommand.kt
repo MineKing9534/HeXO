@@ -37,7 +37,7 @@ import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setValue
 import de.mineking.discord.ui.state
 import de.mineking.discord.ui.terminateRender
-import de.mineking.hexo.board.parse.parseRectilinearNotation
+import de.mineking.hexo.board.parse.notation.parseRectilinearNotation
 import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.DefaultTheme

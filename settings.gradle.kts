@@ -14,6 +14,7 @@ enableFeaturePreview("TYPESAFE_PROJECT_ACCESSORS")
 rootProject.name = "HeXO"
 
 include(":board")
+include(":board:binary")
 include(":board:parse")
 include(":board:render")
 include(":board:latex")

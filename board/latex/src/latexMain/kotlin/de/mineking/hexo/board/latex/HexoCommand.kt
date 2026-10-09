@@ -3,7 +3,7 @@ package de.mineking.hexo.board.latex
 import de.mineking.hexo.board.InternalBoardApi
 import de.mineking.hexo.board.focusWinningRows
 import de.mineking.hexo.board.mutable
-import de.mineking.hexo.board.parse.BoardParser
+import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.render.image.DEFAULT_VISIBLE_RADIUS
 import de.mineking.kotlinlatex.ExpandLatex
 import de.mineking.kotlinlatex.Latex
@@ -27,7 +27,7 @@ fun hexoCommand(
     @ExpandLatex notation: Latex,
 ): Latex {
     val board = runBlocking { // BoardParser.Default only has synchronous implementations so using the dummy runBlocking is safe
-        BoardParser.Default.parse(notation.source).mutable().apply {
+        NotationParser.Default.parse(notation.source).mutable().apply {
             if (focusWinningRows.source.toBooleanStrict()) focusWinningRows()
         }
     }

@@ -6,12 +6,15 @@ import kotlinx.serialization.Serializable
 annotation class InternalBoardApi
 
 @Serializable(with = BoardSerializer::class)
-interface Board {
+interface Board : GameStateHistory {
     companion object {
         const val WIN_MIN_LENGTH = 6
 
         fun withTurnNumbers() = Board(attributes = BoardAttributes(BoardAttribute.ShowTurnNumbers to true))
     }
+
+    override val numberOfStates get() = 1
+    override fun getState(index: Int) = this
 
     val lineHighlights: List<LineHighlight>
     val cells: Map<CellCoordinate, Cell>
@@ -103,6 +106,10 @@ fun MutableBoard.focusWinningRows() = apply {
             this[coordinate].focused = true
         }
     }
+}
+
+fun MutableBoard.withAttributes(vararg values: BoardAttributeValue<*>) = apply {
+    attributes += BoardAttributes(*values)
 }
 
 fun Board.copy() = MutableBoard(

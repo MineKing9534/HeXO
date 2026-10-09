@@ -2,6 +2,7 @@
 kotlin = "2.4.10"
 kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.11.0"
+kotlin-antlr = "1.0.0"
 compose = "1.11.1"
 kobweb = "0.25.0"
 
@@ -28,6 +29,11 @@ kotlin-serialization-properties = { module = "org.jetbrains.kotlinx:kotlinx-seri
 kotlin-coroutines-core = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-core", version.ref = "kotlin-coroutines" }
 kotlin-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlin-coroutines" }
 kotlin-html = { module = "org.jetbrains.kotlinx:kotlinx-html", version = "0.12.0" }
+kotlin-antlr-runtime = { module = "com.strumenta:antlr-kotlin-runtime", version.ref = "kotlin-antlr" }
+kotlin-antlr-target = { module = "com.strumenta:antlr-kotlin-target", version.ref = "kotlin-antlr" }
+antlr-tool = { module = "org.antlr:antlr4", version = "4.13.1" }
+
+okio = { module = "com.squareup.okio:okio", version = "3.18.2" }
 
 ktor-serialization-json = { module = "io.ktor:ktor-serialization-kotlinx-json", version.ref = "ktor" }
 ktor-client-core = { module = "io.ktor:ktor-client-core", version.ref = "ktor" }
@@ -88,7 +94,6 @@ exposed = [ "exposed-core", "exposed-json", "exposed-datetime" ]
 kotlin-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
 kotlin-atomicfu = { id = "org.jetbrains.kotlinx.atomicfu", version = "0.33.0" }
 kotlin-compose-compiler = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
 buildconfig = { id = "com.github.gmazzo.buildconfig", version = "6.0.10" }
 shadow = { id = "com.gradleup.shadow", version = "9.6.1" }
 

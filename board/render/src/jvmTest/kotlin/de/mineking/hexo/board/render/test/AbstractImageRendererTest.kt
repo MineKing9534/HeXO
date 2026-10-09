@@ -7,9 +7,10 @@ import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.copy
-import de.mineking.hexo.board.parse.parseBKENotation
-import de.mineking.hexo.board.parse.parseHTTTXNotation
-import de.mineking.hexo.board.parse.parseTytoNotation
+import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.parse.notation.parseBKENotation
+import de.mineking.hexo.board.parse.notation.parseHTTTXNotation
+import de.mineking.hexo.board.parse.notation.parseTytoNotation
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.Theme
@@ -18,6 +19,7 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
 import java.io.File
 import kotlin.test.Test
+import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 abstract class AbstractImageRendererTest(private val extension: String, private val renderer: BoardRenderer<Theme, ByteArray>) {
@@ -25,7 +27,8 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
         val actual = renderer.render(board, theme.theme)
         val themeName = theme.name.lowercase()
         val snapshotPath = "$extension/$themeName/$name.$extension"
-        val expected = javaClass.getResourceAsStream("/$snapshotPath")?.readAllBytes()
+        val expected = assertNotNull(javaClass.getResourceAsStream("/$snapshotPath"), "Missing snapshot: $snapshotPath")
+            .use { it.readAllBytes() }
 
         if (!actual.contentEquals(expected)) {
             val file = File("actual/$snapshotPath")
@@ -33,7 +36,7 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
 
             file.outputStream().use { it.write(actual) }
         }
-        assertTrue(actual.contentEquals(expected))
+        assertTrue(actual.contentEquals(expected), "Snapshot differs: $snapshotPath")
     }
 
     @EnumSource
@@ -55,10 +58,7 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
     @EnumSource
     @ParameterizedTest
     fun `longsword BKE`(theme: DefaultTheme) {
-        val board = "o A0 A2 x A1 A4 o B1.0 D4.0".trimIndent().parseBKENotation(
-            origin = null,
-            zeroOffsetLine = Direction.Right,
-        ).copy()
+        val board = "o A0 A2 x A1 A4 o B1.0 D4.0".parseBKENotation()
 
         test("longsword_bke", board, theme)
     }
@@ -110,8 +110,11 @@ abstract class AbstractImageRendererTest(private val extension: String, private 
 
     @EnumSource
     @ParameterizedTest
-    fun `game test`(theme: DefaultTheme) {
-        val board = "AgQEBgYBBAICCAIGBQYFEAIKBgYCAAIMBAgIBAEOCgIGBAQEAQQKBAgCCAYBBgEMCgAMAQ".parseTytoNotation()
+    fun `game with focused winning rows`(theme: DefaultTheme) {
+        val board = "AgQEBgYBBAICCAIGBQYFEAIKBgYCAAIMBAgIBAEOCgIGBAQEAQQKBAgCCAYBBgEMCgAMAQ"
+            .parseTytoNotation()
+            .copy()
+            .focusWinningRows()
 
         test("game", board, theme)
     }

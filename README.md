@@ -1,5 +1,5 @@
 <h1>HeXO Renderer</h1>
-HeXO Renderer is a small Discord bot written in Kotlin for rendering rectilinear <a href="https://hexo.did.science">HeXO</a> notation within Discord.
+HeXO Renderer is a small Discord bot written in Kotlin for rendering <a href="https://hexo.did.science">HeXO</a> notation within Discord.
 
 ## Invite
 Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https://discord.com/oauth2/authorize?client_id=1496214901713014894).
@@ -15,6 +15,7 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
       * [Custom Labels](#custom-labels)
     * [BKE Notation](#bke-notation)
     * [Combined](#combined)
+    * [HTTTX Notation](#htttx-notation)
     * [Other](#other)
   * [Features](#features)
     * [Command `hexo`](#command-hexo)
@@ -76,7 +77,7 @@ Additionally, winning rows (6 or more in a row) are highlighted automatically in
 You can also highlight lines. To do so, you have to prefix a direction and length of the line before the color in the parentheses.
 
 The direction of the line is indicated by one of the following symbols: `>`, `q`, `p`, `<`, `b`, `d` representing one of the right, bottom right, bottom left, left, top left or top right.
-The length can be specified directly after. If no length is specified, it will default to `4`.
+The length can be specified directly after. If no length is specified, it will default to `6`.
 
 `.(>4)xx/.o(q3o)/(>4o)oo`
 
@@ -85,7 +86,7 @@ The length can be specified directly after. If no length is specified, it will d
 #### Custom Labels
 Cells can also be labeled. The label will be rendered as text inside the labeled cell.
 
-Labels are define for the previous cell in square brackets.
+Labels are defined for the previous cell in square brackets.
 
 `.o.[a].[b].[c].[d]/oxxxx.[e]/.[f].[g].[h]x.[i]/...[j].[k]`
 
@@ -94,38 +95,46 @@ Labels are define for the previous cell in square brackets.
 ### BKE Notation
 The bot can also render a variation of BKE notation. This is especially useful if you want turn numbers to be displayed on the rendered tiles.
 
-The basic idea of BKE notation is dividing the board into rings (identified by letters starting from 'A') around the origin and addressing cells using a ring and offset. For this to work, a zero offset line is required.
-Even though the zero offset line is not required to identify a formation on an empty board, it is relevant to know in which orientation the formation should be rendered. 
-Also, when applying BKE on a non-empty board, the origin and zero offset line become vital to avoid ambiguity.
+BKE notation divides the board into rings around an origin. Ring `A` is one cell away from the origin, `B` is two cells away, and so on. 
+After `Z`, the labels continue with `AA`, `AB`, etc. A cell is addressed using its ring and a zero-based offset, such as `A0` or `B3`.
+Each turn starts with `x` or `o`, followed by one or more moves. Consecutive turns must alternate players.
 
-To encode the zero offset line, the actual BKE notation can be prefixed with one of these indicators: `>`, `q`, `p`, `<`, `b`, `d` representing one of the right, bottom right, bottom left, left, top left or top right zero offset lines.
-If no direction is specified, `d` is used implicitly.
-It is also optionally possible to specify the direction (chirality) in which to step from that zero offset line by adding `CCW` or `CW`, for counterclockwise and clockwise respectively, behind the direction prefix.
-If no chirality is specified, the value will default to clockwise.
+The zero offset line can be indicated by `>`, `q`, `p`, `<`, `b`, `d`, representing right, bottom right, bottom left, left, top left or top right. 
+A direction prefix must be followed by `CW` or `CCW`, for clockwise or counterclockwise respectively.
 
-For example, `p CCW o A0 A1 x A2 B3` renders as follows:
+There are two ways to specify the starting position:
+- Without a direction and chirality prefix, `d CW` is used implicitly and an opening stone is added at the origin. Its player is the opposite of the first listed player. For example, `o A0 A1` includes an initial X stone. `0` represents just an initial X stone, with no later moves.
+- With a prefix such as `p CCW`, no opening stone is added. Only the listed moves are placed. This is useful for partial turn lists and for moves on an existing board.
+
+For example, `o A3 A2 x A1 B3` renders as follows:
 
 ![example bke](assets/example_bke.png)
 
-To avoid long offset values, you can optionally use sector addressing. 
-For this, the board is split into 6 sectors divided by the possible zero offset lines. Using `sector.offset` you can use a sector-relative offset.
-For example, `p CCW o A0 A1 x A2 B1.1` would be equivalent to the example before.
+To avoid long offset values, you can optionally use sector addressing.
+For this, the board is split into 6 sectors numbered `0` through `5`. Using `sector.offset` you can specify a sector-relative offset, which must be smaller than the ring number (`0` for ring `A`, `0` or `1` for ring `B`, etc.).
+For example, `o A3 A2 x A1 B1.1` is equivalent to the example above.
 
 ### Combined
 
 It is also possible to combine rectilinear notation with BKE notation. This is useful if you want to encode an initial state and the moves made from that point on.
-For that you just write `<rectilinear>, <bke>` with each part following the corresponding rules stated above. The BKE origin will be the top left cell by default. 
-You can change this by adding a `@(q, r)` before the actual BKE notation, where q and r define the axial coordinates of the new origin relative to the top left corner.
+Write `<rectilinear> || <bke>`, with each part following the corresponding rules stated above. Mark exactly one cell in the initial state with `[*]` to select the BKE origin. This may be an occupied cell, such as `x[*]`, or an empty cell, such as `.[*]`. The origin marker is removed from the label in the combined position.
 
-The following are equivalent: 
-- `.x/xx, b @(1,0) o A0 A1 x B3.1 B3.2`
-- `.x/xx, d o A0 B1 x B2.0 B2.1`
+Include both a direction and chirality in the BKE part so only the listed moves are added. Without that prefix, BKE adds an opening stone at the marked origin; if that cell is already occupied, the notation is rejected as an overlap. Listed moves cannot overlap stones in the initial state or earlier turns either.
+
+The following describe the same position using different origins, zero offset lines, and chiralities:
+- `.x[*]/xx || b CW o A0 A1 x B7 B8`
+- `.x/x[*]x || d CCW o B1 B0 x A4 A3`
 
 ![example combined](assets/example_combined.png)
 
+### HTTTX Notation
+See the [official HTTTX specification](https://github.com/hex-tic-tac-toe/htttx-notation) for the notation's syntax.
+
+The bot supports a subset of versions 1 and 2, including version 2 highlights and labels from the last move only. HTTTX export currently uses version 1 and does not include highlights or labels.
+
 ### Other
-In addition to traditional HeXO notation, sandbox position links (like https://hexo.did.science/sandbox/i6z4ur1) are also considered valid "notation".
-You can optionally prefix sandbox position links with `#`, in which case the turn numbers will be rendered as well.
+In addition to traditional HeXO notation, sandbox position links (like https://hexo.did.science/sandbox/i6z4ur1) and game links from https://hexo.did.science are also considered valid "notation". Tyto analysis links starting with `https://hexo.tyto.cc/analysis#c=` are supported as well.
+You can prefix HTTTX notation or a Tyto analysis link with `#` to display turn numbers. BKE turn lists and combined positions display turn numbers automatically.
 
 ## Features
 ### Command `hexo`

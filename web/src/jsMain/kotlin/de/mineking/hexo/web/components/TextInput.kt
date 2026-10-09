@@ -47,6 +47,7 @@ fun TextAreaInput(
         if (readOnly) readOnly()
         if (onValueChange != null) onInput { onValueChange(it.value) }
         fieldClasses(valid, monospace)
+        scrollbarClasses()
         attrs?.invoke(this)
     }
 }

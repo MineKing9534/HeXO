@@ -8,7 +8,7 @@ open class HexoNotationException(
     override val cause: Throwable? = null,
 ) : Exception(message)
 
-class HexoNotationFormatException(message: String) : HexoNotationException(message)
+class HexoNotationFormatException(message: String, cause: Throwable? = null) : HexoNotationException(message, cause)
 
 @OptIn(ExperimentalContracts::class)
 inline fun requireHexo(value: Boolean, notationCheck: Boolean = false, lazyMessage: () -> Any) {

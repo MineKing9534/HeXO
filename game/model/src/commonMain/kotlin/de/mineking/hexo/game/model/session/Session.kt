@@ -1,6 +1,5 @@
 package de.mineking.hexo.game.model.session
 
-import de.mineking.hexo.board.moves
 import de.mineking.hexo.game.model.LiveDuration
 import de.mineking.hexo.game.model.game.GameOptions
 import de.mineking.hexo.game.model.game.GameResult
