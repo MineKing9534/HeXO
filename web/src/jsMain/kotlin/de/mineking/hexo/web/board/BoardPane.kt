@@ -91,6 +91,7 @@ fun BoardPane(
         }) {
             LoadingIndicator()
         }
+        return
     }
 
     val readOnlyBoardHoverIndicator by SettingsKey.ReadOnlyBoardHoverIndicator.collectAsState()
