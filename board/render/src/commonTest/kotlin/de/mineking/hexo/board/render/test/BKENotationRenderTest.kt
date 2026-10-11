@@ -59,22 +59,32 @@ class BKENotationRenderTest {
     }
 
     @Test
-    fun `later turns break chirality ties`() = runTest {
+    fun `later turns break zero line and chirality ties`() = runTest {
         val board = createBoard(
             listOf(CellCoordinate.Zero),
             listOf(CellCoordinate(1, 0), CellCoordinate(-1, 0)),
             listOf(CellCoordinate(0, -1)),
         )
-        assertEquals("o A0 A3 x A2", board.renderBKE())
+        assertEquals("o A0 A3 x A1", board.renderBKE())
     }
 
     @Test
-    fun `next move breaks a zero line and chirality tie between sectors`() = runTest {
+    fun `lowest offset selects the zero line regardless of ring`() = runTest {
         val board = createBoard(
             listOf(CellCoordinate.Zero),
             listOf(CellCoordinate(1, 1), CellCoordinate(0, 1)),
         )
-        assertEquals("o B1 A0", board.renderBKE())
+        assertEquals("o A0 B1", board.renderBKE())
+    }
+
+    @Test
+    fun `ring A omits sector addressing for every offset`() = runTest {
+        val expected = "o A0 A1 A2 A3 A4 A5"
+        val board = expected.parseBKENotation()
+        val notation = board.renderBKE()
+
+        assertEquals(expected, notation)
+        assertEquals(board.cells, notation.parseBKENotation().cells)
     }
 
     @Test
@@ -84,7 +94,55 @@ class BKENotationRenderTest {
             listOf(CellCoordinate(1, 0)),
             listOf(CellCoordinate(1, 2), CellCoordinate(-2, -1)),
         )
-        assertEquals("o A0 x C2 C10", board.renderBKE())
+        assertEquals("o A0 x C2 C3.1", board.renderBKE())
+    }
+
+    @Test
+    fun `earliest turn offsets take priority over later turns`() = runTest {
+        val board = "o A0 A2 x A1 B2 o C2 C3 x C12 C15".parseBKENotation()
+
+        assertEquals("o A0 A2", "o A0 A2".parseBKENotation().renderBKE())
+        assertEquals("o A0 A2 x A1 B1.0", "o A0 A2 x A1 B2".parseBKENotation().renderBKE())
+        assertEquals("o A0 A2 x A1 B1.0 o C2 C1.0 x C4.0 C5.0", board.renderBKE())
+    }
+
+    @Test
+    fun `canonical example is independent of orientation and move order`() = runTest {
+        val expected = "o A0 A2 x A1 B1.0 o C2 C1.0 x C4.0 C5.0"
+        val reordered = "o A2 A0 x B2 A1 o C3 C2 x C15 C12"
+
+        for (notation in listOf(expected, reordered)) {
+            val original = notation.parseBKENotation()
+            for (reflected in listOf(false, true)) {
+                val board = if (reflected) original.mirror(Direction.Right) else original
+                for (rotation in 0 until 6) {
+                    val transformed = board.rotate(rotation).translate(CellCoordinate(7, -4))
+                    assertEquals(expected, transformed.renderBKE())
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `equal offset sequences use ring labels as a final tie breaker`() = runTest {
+        val original = "o A0 B2 C1".parseBKENotation()
+        for (reflected in listOf(false, true)) {
+            val board = if (reflected) original.mirror(Direction.Right) else original
+            for (rotation in 0 until 6) {
+                assertEquals("o A0 C1 B1.0", board.rotate(rotation).renderBKE())
+            }
+        }
+    }
+
+    @Test
+    fun `explicit origin prioritizes the first turn regardless of move order`() = runTest {
+        for (notation in listOf("> CW x A0 A2 o A3 A4", "> CW x A2 A0 o A4 A3")) {
+            val board = notation.parseBKENotation()
+            val rendered = board.renderBKE(CellCoordinate.Zero)
+
+            assertEquals("> CW x A0 A2 o A3 A4", rendered)
+            assertEquals(board.cells, rendered.parseBKENotation().cells)
+        }
     }
 
     @Test
@@ -105,7 +163,7 @@ class BKENotationRenderTest {
             firstTurn = 1,
         )
         val notation = board.renderBKE(origin = CellCoordinate.Zero)
-        assertEquals("> CW x A4 o A0 A1", notation)
+        assertEquals("b CW x A0 o A2 A3", notation)
         assertEquals(board.cells, notation.parseBKENotation().cells)
     }
 
