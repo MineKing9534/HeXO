@@ -30,17 +30,27 @@ fun GamePosition<*>.renderBKENotation(origin: CellCoordinate? = null): String {
     if (origin == null && renderedTurns.isEmpty()) return "0"
     if (renderedTurns.isEmpty()) return ""
 
-    val ringOffsets = renderedTurns.flatMap { turn ->
+    val ringOffsets = renderedTurns.map { turn ->
         turn.moves.map { move -> (move.coordinate - ringOrigin).toBKERingOffset() }
     }
 
-    val openingMoves = if (origin == null) 0 else turns.first().moves.size
-    val comparisonOffsets = ringOffsets.drop(openingMoves) + ringOffsets.take(openingMoves)
     val orientations = (listOf(Direction.TopRight) + Direction.entries.filter { it != Direction.TopRight })
         .flatMap { direction -> listOf(BKEOrientation(direction, 1), BKEOrientation(direction, -1)) }
-    val orientation = orientations.minWith { left, right ->
-        comparisonOffsets.firstNotNullOfOrNull { move ->
-            left.offset(move).compareTo(right.offset(move)).takeIf { it != 0 }
+
+    val candidates = orientations.map { orientation ->
+        val moves = ringOffsets.flatMap { turn ->
+            turn.map { move -> BKERingOffset(move.ring, orientation.offset(move)) }
+                .sortedWith(compareBy({ it.offset }, { it.ring }))
+        }
+        orientation to moves
+    }
+    val (orientation, moves) = candidates.minWith { left, right ->
+        // Compare sorted offsets turn by turn; only later turns may break an earlier turn's tie.
+        left.second.indices.firstNotNullOfOrNull { index ->
+            left.second[index].offset.compareTo(right.second[index].offset).takeIf { it != 0 }
+        } ?: left.second.indices.firstNotNullOfOrNull { index ->
+            // Equal offset sequences still need a canonical ordering of their ring labels.
+            left.second[index].ring.compareTo(right.second[index].ring).takeIf { it != 0 }
         } ?: 0
     }
 
@@ -54,10 +64,19 @@ fun GamePosition<*>.renderBKENotation(origin: CellCoordinate? = null): String {
             if (turnIndex > 0) append(' ')
             append(turn.meta.player.symbol)
             turn.moves.forEach { _ ->
-                val move = ringOffsets[index++]
+                val move = moves[index++]
                 append(' ')
                 append(move.ring.toBKERingLabel())
-                append(orientation.offset(move))
+                if (move.ring == 1) {
+                    append(move.offset)
+                } else {
+                    val sector = move.offset / move.ring
+                    if (sector != 0L) {
+                        append(sector)
+                        append('.')
+                    }
+                    append(move.offset % move.ring)
+                }
             }
         }
     }

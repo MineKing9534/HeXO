@@ -36,6 +36,19 @@ class CombinedNotationRenderTest {
     }
 
     @Test
+    fun `highlighted initial state does not override first turn offset minimization`() = runTest {
+        val input = ".(x).(x).(x).(x)/4(!)/4(!)/x[*](>6)(b6x)3(!) || " +
+            "d CW o A1 A5 x A0 B0 o C0 C1 x C9 C12"
+        val board = CombinedNotationParser.Default.parse(input)
+        val notation = board.renderCombinedNotation()
+
+        assertEquals("> CCW o A0 A2 x A1 B1.0 o C2 C1.0 x C3.0 C4.0", notation.substringAfter(" || "))
+        val parsed = CombinedNotationParser.Default.parse(notation)
+        assertEquals(board.cells, parsed.cells)
+        assertEquals(board.lineHighlights, parsed.lineHighlights)
+    }
+
+    @Test
     fun `state only renders without a separator or synthetic origin label`() = runTest {
         val board = "x[keep].o".parseRectilinearNotation()
         val notation = board.renderCombinedNotation()
