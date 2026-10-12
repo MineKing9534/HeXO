@@ -1,9 +1,12 @@
 package de.mineking.hexo.board
 
 interface CoordinateTransform {
+    val inverse: CoordinateTransform
     fun transform(coordinate: CellCoordinate): CellCoordinate
 
     class Rotation(val sectors: Int) : CoordinateTransform {
+        override val inverse get() = Rotation(-sectors.mod(6))
+
         override fun transform(coordinate: CellCoordinate): CellCoordinate {
             var result = coordinate
             repeat(sectors.mod(6)) {
@@ -14,6 +17,8 @@ interface CoordinateTransform {
     }
 
     class Mirror(val axis: Direction) : CoordinateTransform {
+        override val inverse = this
+
         override fun transform(coordinate: CellCoordinate): CellCoordinate {
             val (dq, dr) = axis.direction
             val t = coordinate.q * (2 * dq + dr) + coordinate.r * (dq + 2 * dr)
@@ -25,8 +30,21 @@ interface CoordinateTransform {
     }
 
     class Translate(val delta: CellCoordinate) : CoordinateTransform {
+        override val inverse get() = Translate(-delta)
+
         override fun transform(coordinate: CellCoordinate) = coordinate + delta
     }
+
+    companion object : CoordinateTransform {
+        override val inverse = this
+        override fun transform(coordinate: CellCoordinate) = coordinate
+    }
+}
+
+operator fun CoordinateTransform.plus(other: CoordinateTransform): CoordinateTransform = object : CoordinateTransform {
+    override val inverse get() = other.inverse + this@plus.inverse
+
+    override fun transform(coordinate: CellCoordinate) = other.transform(this@plus.transform(coordinate))
 }
 
 fun Board.rotate(sectors: Int) = transform(CoordinateTransform.Rotation(sectors))
@@ -49,10 +67,12 @@ fun GamePosition<*>.transform(transform: CoordinateTransform): GamePosition<*> {
 
 fun Board.transform(transform: CoordinateTransform): Board {
     val cells = cells.mapKeys { (coordinate, _) -> transform.transform(coordinate) }
+    val origin = transform.transform(CellCoordinate.Zero)
     val lineHighlights = lineHighlights.map { highlight ->
+        val direction = transform.transform(highlight.direction.direction) - origin
         highlight.copy(
             start = transform.transform(highlight.start),
-            direction = Direction.entries.first { it.direction == transform.transform(highlight.direction.direction) },
+            direction = Direction.entries.first { it.direction == direction },
         )
     }
 
