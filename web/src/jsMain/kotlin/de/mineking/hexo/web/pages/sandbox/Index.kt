@@ -29,8 +29,12 @@ import de.mineking.hexo.web.audio.SoundEffect
 import de.mineking.hexo.web.board.AnalyzerTurn
 import de.mineking.hexo.web.board.SandboxBoardViewManager
 import de.mineking.hexo.web.board.rememberSandboxBoardViewManager
+import de.mineking.hexo.web.components.ActionButton
+import de.mineking.hexo.web.components.ButtonSize
+import de.mineking.hexo.web.components.Color
 import de.mineking.hexo.web.components.Dialog
-import de.mineking.hexo.web.components.TextAreaInput
+import de.mineking.hexo.web.icons.AlertTriangleIcon
+import de.mineking.hexo.web.icons.ChevronDownIcon
 import de.mineking.hexo.web.layout.AppRoute
 import de.mineking.hexo.web.layout.PageData
 import de.mineking.hexo.web.layout.PageStyle
@@ -41,7 +45,9 @@ import de.mineking.hexo.web.rememberQueryParameter
 import de.mineking.hexo.web.rememberSoundPlayer
 import de.mineking.hexo.web.rememberWatchPartyController
 import kotlinx.coroutines.flow.first
+import org.jetbrains.compose.web.dom.Button
 import org.jetbrains.compose.web.dom.Div
+import org.jetbrains.compose.web.dom.Text
 
 @InitRoute
 fun initSandboxPage(ctx: InitRouteContext) {
@@ -55,18 +61,18 @@ fun SandboxPage() {
     val hasInitialPosition = remember { !positionParameter.isNullOrBlank() }
 
     var initialBoard by remember { mutableStateOf(Board.withTurnNumbers()) }
-    var initialError by remember { mutableStateOf<String?>(null) }
+    var error by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(Unit) {
-        val notation = positionParameter ?: return@LaunchedEffect
+        val encodedPosition = positionParameter ?: return@LaunchedEffect
 
         try {
-            initialBoard = BoardBinary.decodeFromString(notation)
+            initialBoard = BoardBinary.decodeFromString(encodedPosition)
         } catch (e: IllegalArgumentException) {
-            initialError = e.message
+            error = e.message?.takeIf { it.isNotBlank() } ?: "The position data could not be decoded."
+        } finally {
+            positionParameter = null
         }
-
-        positionParameter = null
     }
 
     if (positionParameter != null) return
@@ -87,16 +93,89 @@ fun SandboxPage() {
 
     Sandbox(boardViewManager)
 
-    var error by remember { mutableStateOf(initialError) }
-    if (error != null) {
-        Dialog(title = "Invalid Position", onClose = { error = null }) {
-            TextAreaInput(
-                value = error ?: "",
-                valid = false,
-                readOnly = true,
-                monospace = true,
-                attrs = { classes("resize-y", "border-rose-400", "text-rose-100") },
+    error?.let { message ->
+        InvalidPositionDialog(message, onClose = { error = null })
+    }
+}
+
+@Composable
+private fun InvalidPositionDialog(message: String, onClose: () -> Unit) {
+    Dialog(
+        title = "Invalid position link",
+        supportingText = "The shared position could not be loaded.",
+        onClose = onClose,
+        actionRow = {
+            ActionButton(
+                label = "Continue to sandbox",
+                tooltip = "Close this message and continue using the sandbox",
+                size = ButtonSize.Medium,
+                color = Color.Neutral,
+                onClick = onClose,
             )
+        },
+    ) {
+        Div({ classes("space-y-4") }) {
+            Div({
+                classes(
+                    "flex", "items-start", "gap-3", "rounded-xl", "border", "border-rose-400/25",
+                    "bg-rose-400/8", "p-4",
+                )
+            }) {
+                Div({
+                    classes("grid", "size-9", "shrink-0", "place-items-center", "rounded-lg", "bg-rose-400/10", "text-rose-300")
+                }) {
+                    AlertTriangleIcon { classes("size-5") }
+                }
+                Div({ classes("min-w-0", "space-y-1") }) {
+                    Div({ classes("text-sm", "font-semibold", "text-rose-200") }) {
+                        Text("This link doesn't contain a valid position")
+                    }
+                    Div({ classes("text-sm", "leading-relaxed", "text-slate-300") }) {
+                        Text("It may be incomplete or use an unsupported format. Try copying the full link, or ask the sender to share it again.")
+                    }
+                }
+            }
+
+            Div({ classes("text-sm", "leading-relaxed", "text-slate-400") }) {
+                Text("You can still use the sandbox to build a position or import another link.")
+            }
+
+            InvalidPositionDetails(message)
+        }
+    }
+}
+
+@Composable
+private fun InvalidPositionDetails(message: String) {
+    var detailsExpanded by remember(message) { mutableStateOf(false) }
+
+    Div {
+        Button({
+            attr("type", "button")
+            classes(
+                "inline-flex", "items-center", "gap-1.5", "cursor-pointer", "rounded", "py-1",
+                "text-xs", "text-slate-500", "transition-colors", "hover:text-slate-300",
+                "focus-visible:outline-2", "focus-visible:outline-offset-2", "focus-visible:outline-sky-400",
+            )
+            attr("aria-expanded", detailsExpanded.toString())
+            attr("aria-controls", "sandbox-position-error-details")
+            onClick { detailsExpanded = !detailsExpanded }
+        }) {
+            ChevronDownIcon {
+                classes("size-3.5", "shrink-0", "transition-transform", "motion-reduce:transition-none")
+                if (!detailsExpanded) classes("-rotate-90")
+            }
+            Text("Technical details")
+        }
+        Div({
+            id("sandbox-position-error-details")
+            if (!detailsExpanded) attr("hidden", "")
+            classes(
+                "mt-2", "max-h-40", "overflow-y-auto", "whitespace-pre-wrap", "break-words",
+                "rounded-lg", "bg-slate-950/60", "p-3", "font-mono", "text-xs", "leading-relaxed", "text-slate-400",
+            )
+        }) {
+            Text(message)
         }
     }
 }
