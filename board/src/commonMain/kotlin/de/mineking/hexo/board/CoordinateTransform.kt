@@ -5,7 +5,7 @@ interface CoordinateTransform {
     fun transform(coordinate: CellCoordinate): CellCoordinate
 
     class Rotation(val sectors: Int) : CoordinateTransform {
-        override val inverse get() = Rotation(-sectors.mod(6))
+        override val inverse: CoordinateTransform by lazy { Rotation(-sectors.mod(6)) }
 
         override fun transform(coordinate: CellCoordinate): CellCoordinate {
             var result = coordinate
@@ -30,7 +30,7 @@ interface CoordinateTransform {
     }
 
     class Translate(val delta: CellCoordinate) : CoordinateTransform {
-        override val inverse get() = Translate(-delta)
+        override val inverse: CoordinateTransform by lazy { Translate(-delta) }
 
         override fun transform(coordinate: CellCoordinate) = coordinate + delta
     }
@@ -42,7 +42,7 @@ interface CoordinateTransform {
 }
 
 operator fun CoordinateTransform.plus(other: CoordinateTransform): CoordinateTransform = object : CoordinateTransform {
-    override val inverse get() = other.inverse + this@plus.inverse
+    override val inverse: CoordinateTransform by lazy { other.inverse + this@plus.inverse }
 
     override fun transform(coordinate: CellCoordinate) = other.transform(this@plus.transform(coordinate))
 }

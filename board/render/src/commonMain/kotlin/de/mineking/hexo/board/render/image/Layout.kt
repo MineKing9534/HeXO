@@ -2,6 +2,7 @@ package de.mineking.hexo.board.render.image
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CoordinateTransform
 import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.endInclusive
 import kotlin.math.abs
@@ -53,6 +54,7 @@ data class BoardRenderLayout(
     val boundingBox: BoundingBox,
     val coordinates: Set<CellCoordinate>,
     val board: Board,
+    val transform: CoordinateTransform = CoordinateTransform,
 ) {
     val maxTurn = board.cells.values
         .maxOfOrNull { it.turn ?: Int.MIN_VALUE }
@@ -68,7 +70,7 @@ data class BoardRenderLayout(
             val maxQ = ceil((bounds.maxX + radius) / (radius * SQRT3) - r / 2.0).toInt()
 
             for (q in minQ..maxQ) {
-                val coordinate = CellCoordinate(q, r)
+                val coordinate = transform.inverse.transform(CellCoordinate(q, r))
                 if (coordinate in coordinates) yield(coordinate)
             }
         }
@@ -78,8 +80,10 @@ data class BoardRenderLayout(
         val r = y / (size.layoutRadius * 1.5)
         val q = x / (size.layoutRadius * SQRT3) - r / 2.0
 
-        return roundAxial(q, r)
+        return transform.inverse.transform(roundAxial(q, r))
     }
+
+    fun CellCoordinate.toPixel() = size.run { transform.transform(this@toPixel).toPixel() }
 
     private fun roundAxial(q: Double, r: Double): CellCoordinate {
         var roundedQ = q.roundToInt()
@@ -105,23 +109,26 @@ fun Board.createRenderLayout(
     layoutRadius: Double,
     bounds: BoardRenderBounds,
     visibleRadius: Int,
+    transform: CoordinateTransform = CoordinateTransform,
 ): BoardRenderLayout {
     val size = RenderSize(layoutRadius)
     val compactCoordinates = cells.keys.ifEmpty { setOf(CellCoordinate.Zero) }
-    val compactBoundingBox = findBoundingBox(size, compactCoordinates)
+    val compactBoundingBox = findBoundingBox(size, compactCoordinates, transform)
     val visibleCoordinates = findVisibleCoordinates(
         distance = visibleRadius,
         size = size,
         boundingBox = compactBoundingBox.takeIf { bounds == BoardRenderBounds.Compact },
+        transform = transform,
     )
     return BoardRenderLayout(
         size = size,
         boundingBox = findBoundingBox(size, when (bounds) {
             BoardRenderBounds.IncludeSurroundings -> visibleCoordinates
             BoardRenderBounds.Compact -> compactCoordinates
-        }),
+        }, transform),
         coordinates = visibleCoordinates,
         board = this,
+        transform = transform,
     )
 }
 
@@ -134,7 +141,11 @@ private fun Board.highlightCoordinates() = cells
     .filterValues { cell -> cell.highlight != null }
     .keys
 
-private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<CellCoordinate>): BoundingBox {
+private fun Board.findBoundingBox(
+    size: RenderSize,
+    visibleCoordinates: Set<CellCoordinate>,
+    transform: CoordinateTransform,
+): BoundingBox {
     var minX = Double.POSITIVE_INFINITY
     var maxX = Double.NEGATIVE_INFINITY
     var minY = Double.POSITIVE_INFINITY
@@ -143,7 +154,7 @@ private fun Board.findBoundingBox(size: RenderSize, visibleCoordinates: Set<Cell
     val endPoints = lineHighlights.flatMap { listOf(it.start, it.endInclusive) }
     val positions = visibleCoordinates + endPoints
     for (position in positions.ifEmpty { listOf(CellCoordinate.Zero) }) {
-        val center = size.run { position.toPixel() }
+        val center = size.run { transform.transform(position).toPixel() }
         val hex = center.createHex(size.layoutRadius)
 
         hex.points.forEach { (x, y) ->
@@ -166,9 +177,10 @@ private fun Board.findVisibleCoordinates(
     distance: Int,
     size: RenderSize,
     boundingBox: BoundingBox?,
+    transform: CoordinateTransform,
 ): Set<CellCoordinate> {
     require(distance >= 0) { "Visible radius must not be negative" }
-    val occupied = renderOrigins()
+    val occupied = renderOrigins().map { transform.transform(it) }
 
     val qRange: IntRange
     val rRange: IntRange
@@ -200,7 +212,7 @@ private fun Board.findVisibleCoordinates(
         rRange = minR..maxR
     }
 
-    return buildSet {
+    val displayCoordinates = buildSet {
         for (origin in occupied) {
             val originQRange = intersect(qRange, origin.q, distance)
             val originRRange = intersect(rRange, origin.r, distance)
@@ -215,8 +227,9 @@ private fun Board.findVisibleCoordinates(
             }
         }
 
-        addAll(highlightCoordinates())
+        addAll(highlightCoordinates().map { transform.transform(it) })
     }
+    return displayCoordinates.mapTo(mutableSetOf()) { transform.inverse.transform(it) }
 }
 
 private fun intersect(range: IntRange, center: Int, radius: Int): IntRange {

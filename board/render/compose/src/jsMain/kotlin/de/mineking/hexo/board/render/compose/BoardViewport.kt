@@ -5,6 +5,7 @@ import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberUpdatedState
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.CoordinateTransform
 import de.mineking.hexo.board.render.image.BoardRenderLayout
 import de.mineking.hexo.board.render.image.Point
 import de.mineking.hexo.board.render.image.div
@@ -38,6 +39,7 @@ const val DEFAULT_ZOOM = 0.4
 data class BoardViewport(
     val zoom: Double = DEFAULT_ZOOM,
     val center: Point = Point.Zero,
+    val transform: CoordinateTransform = CoordinateTransform,
 ) {
     internal fun pan(delta: Point) = copy(center = center - delta / zoom)
 
@@ -88,28 +90,28 @@ enum class BoardRightClickPhase {
 @Composable
 internal fun BoardInteractions(
     element: HTMLCanvasElement?,
-    renderLayout: () -> BoardRenderLayout,
-    viewport: () -> BoardViewport,
+    renderLayout: BoardRenderLayout,
+    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
     onDraggingChange: (Boolean) -> Unit,
     onCellHoverChange: (CellCoordinate?) -> Unit,
     onCellClick: (BoardLeftClickEvent) -> Unit,
     onBoardRightClick: (BoardRightClickEvent) -> Unit,
 ) {
+    val renderLayout by rememberUpdatedState(renderLayout)
+    val viewport by rememberUpdatedState(viewport)
     val onViewportChange by rememberUpdatedState(onViewportChange)
     val onDraggingChange by rememberUpdatedState(onDraggingChange)
     val onCellHoverChange by rememberUpdatedState(onCellHoverChange)
     val onCellClick by rememberUpdatedState(onCellClick)
     val onBoardRightClick by rememberUpdatedState(onBoardRightClick)
-    val currentRenderLayout by rememberUpdatedState(renderLayout)
-    val currentViewport by rememberUpdatedState(viewport)
 
-    DisposableEffect(element) {
+    DisposableEffect(element, renderLayout.transform) {
         val canvas = element ?: return@DisposableEffect onDispose {}
         val listeners = BoardEventListeners(
             canvas = canvas,
-            renderLayout = { currentRenderLayout() },
-            sourceViewport = { currentViewport() },
+            renderLayout = { renderLayout },
+            sourceViewport = { viewport },
             onViewportChange = { onViewportChange(it) },
             onDraggingChange = { onDraggingChange(it) },
             onCellHoverChange = { onCellHoverChange(it) },
@@ -325,6 +327,10 @@ private class BoardEventListeners(
     fun detach() {
         canvasListeners.forEach { canvas.removeEventListener(it.type, it.listener) }
         windowListeners.forEach { window.removeEventListener(it.type, it.listener) }
+        abortRightClick()
+        touchLongPress?.takeIf { it.active }?.let {
+            triggerLongPressRightClick(it, it.lastPosition, BoardRightClickPhase.Abort)
+        }
         finishMouseInteractions()
         finishTouch()
         hoveredCell = null

@@ -11,10 +11,10 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.GamePosition
 import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
+import de.mineking.hexo.board.render.compose.BoardEditor
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
-import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
 import de.mineking.hexo.board.take
 import de.mineking.hexo.game.model.game.GameMove
@@ -103,7 +103,7 @@ fun BoardPane(
             "border", "border-slate-800", "bg-slate-900", "shadow-2xl",
         )
     }) {
-        InteractiveBoard(
+        BoardEditor(
             board = board,
             viewport = viewport,
             onViewportChange = onViewportChange,
