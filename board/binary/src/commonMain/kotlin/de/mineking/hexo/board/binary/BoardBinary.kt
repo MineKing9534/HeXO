@@ -6,6 +6,8 @@ import de.mineking.hexo.board.isEmpty
 import kotlin.io.encoding.Base64
 
 object BoardBinary {
+    val STRING_ENCODER = Base64.UrlSafe.withPadding(Base64.PaddingOption.ABSENT_OPTIONAL)
+
     fun encode(board: Board): ByteArray {
         val entries = board.cells.entries
             .filter { !it.value.isEmpty(includeHighlights = true) }
@@ -27,7 +29,7 @@ object BoardBinary {
         return output.toByteArray()
     }
 
-    fun encodeToString(board: Board) = Base64.UrlSafe.encode(encode(board))
+    fun encodeToString(board: Board) = STRING_ENCODER.encode(encode(board))
 
     fun decode(
         bytes: ByteArray,
@@ -58,5 +60,5 @@ object BoardBinary {
         maxCells: Int = 5000,
         maxLines: Int = 30,
         maxLabelBytes: Int = 1024,
-    ) = decode(Base64.UrlSafe.decode(encoded), maxCells, maxLines, maxLabelBytes)
+    ) = decode(STRING_ENCODER.decode(encoded), maxCells, maxLines, maxLabelBytes)
 }
