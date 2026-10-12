@@ -41,7 +41,7 @@ class BoardScope(
 )
 
 @Composable
-fun RawBoard(
+fun BoardCanvas(
     board: Board,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
@@ -58,11 +58,12 @@ fun RawBoard(
     var dragging by remember { mutableStateOf(false) }
     var hoveredCell by remember { mutableStateOf<CellCoordinate?>(null) }
 
-    val layout = remember(board) {
+    val layout = remember(board, viewport.transform) {
         board.createRenderLayout(
             layoutRadius = 128.0,
             bounds = BoardRenderBounds.IncludeSurroundings,
             visibleRadius = DEFAULT_VISIBLE_RADIUS,
+            transform = viewport.transform,
         )
     }
 
@@ -84,8 +85,8 @@ fun RawBoard(
 
     BoardInteractions(
         element = element,
-        renderLayout = { layout },
-        viewport = { viewport },
+        renderLayout = layout,
+        viewport = viewport,
         onViewportChange = onViewportChange,
         onDraggingChange = { dragging = it },
         onCellHoverChange = { hoveredCell = it },

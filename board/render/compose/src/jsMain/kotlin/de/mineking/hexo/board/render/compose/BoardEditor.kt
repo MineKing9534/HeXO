@@ -67,7 +67,7 @@ private fun Board.findTopHighlightLineAt(coordinate: CellCoordinate) = lineHighl
     .lastOrNull { coordinate in it }
 
 @Composable
-fun InteractiveBoard(
+fun BoardEditor(
     board: Board,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
@@ -88,7 +88,7 @@ fun InteractiveBoard(
 
     val onBoardInteraction by rememberUpdatedState(onBoardInteraction)
 
-    RawBoard(
+    BoardCanvas(
         board = effectiveBoard,
         viewport = viewport,
         onViewportChange = onViewportChange,
@@ -101,7 +101,7 @@ fun InteractiveBoard(
         onBoardRightClick = { (from, to, phase, modifiers) ->
             if (phase == BoardRightClickPhase.Abort) {
                 overlay = null
-                return@RawBoard
+                return@BoardCanvas
             }
 
             val color = when {
@@ -140,7 +140,7 @@ fun InteractiveBoard(
 }
 
 @Composable
-fun BoardView(
+fun BoardViewer(
     board: Board,
     viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
@@ -154,7 +154,7 @@ fun BoardView(
     var overlay by remember { mutableStateOf(Board()) }
     val effectiveBoard = remember(board, overlay) { board + overlay }
 
-    InteractiveBoard(
+    BoardEditor(
         board = effectiveBoard,
         viewport = viewport,
         onViewportChange = onViewportChange,
