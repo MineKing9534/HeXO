@@ -9,13 +9,13 @@ import com.varabyte.kobweb.core.isExporting
 import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.GamePosition
+import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardInteraction
 import de.mineking.hexo.board.render.compose.BoardViewport
 import de.mineking.hexo.board.render.compose.DEFAULT_CELL_HOVER_COlOR
 import de.mineking.hexo.board.render.compose.InteractiveBoard
 import de.mineking.hexo.board.render.image.BoardRenderingHook
-import de.mineking.hexo.board.render.notation.renderCombinedNotation
 import de.mineking.hexo.board.take
 import de.mineking.hexo.game.model.game.GameMove
 import de.mineking.hexo.game.model.game.GameWithPosition
@@ -181,8 +181,7 @@ private fun OpenInSandboxButton(board: Board) {
         tooltip = "Open this position in the sandbox",
         onClick = {
             val url = URL("${window.location.origin}${BasePath.prependTo(AppRoute.Sandbox.href)}")
-            val notation = board.renderCombinedNotation()
-            url.searchParams.set("position", notation.replace("/", "_"))
+            url.searchParams.set("position", BoardBinary.encodeToString(board))
             window.open(url.toString(), if (watchPartyController.hostWatchParty == null) "_blank" else "_self")
         },
     ) {
