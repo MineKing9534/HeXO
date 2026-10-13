@@ -16,6 +16,7 @@ import org.w3c.dom.HTMLCanvasElement
 import org.w3c.dom.LEFT
 import org.w3c.dom.MITER
 import org.w3c.dom.ROUND
+import kotlin.math.PI
 import kotlin.math.min
 
 fun HTMLCanvasElement.drawBoard(
@@ -70,7 +71,7 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
             canvas.lineWidth = stroke.width.toDouble()
             canvas.lineCap = CanvasLineCap.ROUND
             canvas.lineJoin = CanvasLineJoin.ROUND
-            canvas.strokeSegment(from, to, dashPattern)
+            canvas.drawSegment(from, to, dashPattern)
             return
         }
 
@@ -86,12 +87,12 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
             layer.context.lineWidth = (stroke.width + outline.width).toDouble()
             layer.context.lineCap = CanvasLineCap.ROUND
             layer.context.lineJoin = CanvasLineJoin.ROUND
-            layer.context.strokeSegment(from, to, dashPattern)
+            layer.context.drawSegment(from, to, dashPattern)
 
             layer.context.save()
             layer.context.globalCompositeOperation = "destination-out"
             layer.context.lineWidth = stroke.width.toDouble()
-            layer.context.strokeSegment(from, to, dashPattern)
+            layer.context.drawSegment(from, to, dashPattern)
             layer.context.restore()
         }
 
@@ -99,7 +100,7 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
         layer.context.lineWidth = stroke.width.toDouble()
         layer.context.lineCap = CanvasLineCap.ROUND
         layer.context.lineJoin = CanvasLineJoin.ROUND
-        layer.context.strokeSegment(from, to, dashPattern)
+        layer.context.drawSegment(from, to, dashPattern)
 
         layer.context.cutOutTextExclusions(minX, minY, maxX, maxY)
 
@@ -174,13 +175,20 @@ class CanvasRenderingBackend(val canvas: CanvasRenderingContext2D) : RenderingBa
 
     private fun DashPattern.toCanvasDashArray() = arrayOf(dashLength.toDouble(), gapLength.toDouble())
 
-    private fun CanvasRenderingContext2D.strokeSegment(from: Point, to: Point, dashPattern: DashPattern?) {
+    private fun CanvasRenderingContext2D.drawSegment(from: Point, to: Point, dashPattern: DashPattern?) {
         save()
         setLineDash(dashPattern?.toCanvasDashArray() ?: emptyArray())
         beginPath()
-        moveTo(from.x, from.y)
-        lineTo(to.x, to.y)
-        stroke()
+        if (from == to) {
+            // Zero-length strokes with round caps are not rendered consistently by mobile browsers.
+            fillStyle = strokeStyle
+            arc(from.x, from.y, lineWidth / 2.0, 0.0, 2.0 * PI)
+            fill()
+        } else {
+            moveTo(from.x, from.y)
+            lineTo(to.x, to.y)
+            stroke()
+        }
         restore()
     }
 
