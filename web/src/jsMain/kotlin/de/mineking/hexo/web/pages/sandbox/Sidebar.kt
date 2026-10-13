@@ -123,7 +123,7 @@ private fun SidebarNotationSection(
     val coroutineScope = rememberCoroutineScope()
     Div({
         classes(
-            "flex", "flex-col", "gap-3", "rounded-2xl", "border", "border-slate-800",
+            "flex", "shrink-0", "flex-col", "gap-3", "rounded-2xl", "border", "border-slate-800",
             "bg-slate-800/40", "p-4", "shadow-xl", "shadow-black/10",
         )
     }) {
@@ -170,7 +170,7 @@ private fun updateNotation(
 private fun SandboxTools(placementMode: MutableState<CellPlacementMode>, board: Board) {
     Div({
         classes(
-            "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-800/40",
+            "shrink-0", "overflow-hidden", "rounded-2xl", "border", "border-slate-800", "bg-slate-800/40",
             "shadow-xl", "shadow-black/10",
         )
     }) {
@@ -308,7 +308,7 @@ private fun CellPlacementMode.owners(board: Board) = when (this) {
 private fun SidebarHeader(parseError: String?) {
     Div({
         classes(
-            "flex", "items-center", "justify-between", "gap-3", "px-1", "py-2",
+            "flex", "shrink-0", "items-center", "justify-between", "gap-3", "px-1", "py-2",
         )
     }) {
         Div({ classes("flex", "min-w-0", "items-center", "gap-3") }) {
