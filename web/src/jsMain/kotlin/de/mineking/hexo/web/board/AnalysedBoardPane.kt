@@ -33,6 +33,7 @@ fun AnalysedBoardPane(
     onViewportChange: (BoardViewport) -> Unit,
     onBoardInteraction: (BoardInteraction) -> Unit,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
+    toolbarContent: (@Composable () -> Unit)? = null,
     content: BoardContentBuilder? = null,
 ) {
     val analyzerState = if (turn != null) rememberBoardAnalysis(board, turn) else null
@@ -51,6 +52,7 @@ fun AnalysedBoardPane(
         renderingHook = analyzerState?.takeIf { showAnalyzerOverlay && allowAnalyzerOverlay }
             ?.renderingHook(selectedDefenseIndex),
         attrs = attrs,
+        toolbarContent = toolbarContent,
     ) {
         content?.invoke(this)
 
