@@ -61,7 +61,7 @@ fun BoardActionButton(
     size = ButtonSize.Medium,
     color = color,
     attrs = {
-        classes("shadow-lg")
+        classes("shadow-lg", "@max-[40rem]/board:px-2!")
         attrs?.invoke(this)
     },
     onClick = onClick,
@@ -80,6 +80,7 @@ fun BoardPane(
     onBoardInteraction: (BoardInteraction) -> Unit,
     renderingHook: BoardRenderingHook? = null,
     attrs: AttrBuilderContext<HTMLCanvasElement>? = null,
+    toolbarContent: (@Composable () -> Unit)? = null,
     content: BoardContentBuilder? = null,
 ) {
     if (AppGlobals.isExporting) {
@@ -99,50 +100,74 @@ fun BoardPane(
 
     Div({
         classes(
-            "relative", "min-h-0", "min-w-0", "flex-1", "overflow-hidden", "rounded-2xl",
-            "border", "border-slate-800", "bg-slate-900", "shadow-2xl",
+            "relative", "@container/board", "flex", "flex-col", "min-h-0", "min-w-0", "flex-1", "overflow-hidden", "rounded-2xl",
+            "border", "border-slate-800", "shadow-2xl",
         )
+        attr("data-board-pane", "")
+        style { property("background-color", theme.backgroundColor.toString()) }
     }) {
-        BoardEditor(
-            board = board,
-            viewport = viewport,
-            onViewportChange = onViewportChange,
-            onBoardInteraction = onBoardInteraction,
-            theme = theme,
-            cellHoverColor = DEFAULT_CELL_HOVER_COlOR.takeIf { readOnlyBoardHoverIndicator || !readOnly },
-            renderingHook = renderingHook,
-            attrs = {
-                attr("width", "1200")
-                attr("height", "900")
-                classes("block", "h-full", "w-full", "touch-none")
-                attrs?.invoke(this)
-            },
-        ) {
-            content?.invoke(this)
+        Div({ classes("relative", "min-h-0", "min-w-0", "flex-1") }) {
+            BoardEditor(
+                board = board,
+                viewport = viewport,
+                onViewportChange = onViewportChange,
+                onBoardInteraction = onBoardInteraction,
+                theme = theme,
+                cellHoverColor = DEFAULT_CELL_HOVER_COlOR.takeIf { readOnlyBoardHoverIndicator || !readOnly },
+                renderingHook = renderingHook,
+                attrs = {
+                    attr("width", "1200")
+                    attr("height", "900")
+                    classes("block", "h-full", "w-full", "touch-none")
+                    attrs?.invoke(this)
+                },
+            ) {
+                content?.invoke(this)
+            }
+
+            @Composable
+            fun Edge(attrs: AttrBuilderContext<HTMLDivElement>? = null) {
+                Div({
+                    style {
+                        variable("--hexo-background", theme.backgroundColor.toString())
+                    }
+                    classes("pointer-events-none", "absolute", "z-10", "from-(--hexo-background)", "via-transparent", "to-transparent")
+                    attrs?.invoke(this)
+                })
+            }
+
+            Edge { classes("inset-x-0", "top-0", "h-4", "bg-linear-to-b") }
+            Edge { classes("inset-x-0", "bottom-0", "h-4", "bg-linear-to-t") }
+            Edge { classes("inset-y-0", "left-0", "w-4", "bg-linear-to-r") }
+            Edge { classes("inset-y-0", "right-0", "w-4", "bg-linear-to-l") }
+        }
+
+        BoardToolbar {
+            toolbarContent?.invoke()
             DefaultBoardControls(
                 board = board,
                 boardViewManager = boardViewManager,
                 plain = plain,
                 showOpenInSandbox = showOpenInSandbox,
+                viewport = viewport,
                 onViewportChange = onViewportChange,
             )
         }
+    }
+}
 
-        @Composable
-        fun Edge(attrs: AttrBuilderContext<HTMLDivElement>? = null) {
-            Div({
-                style {
-                    variable("--hexo-background", theme.backgroundColor.toString())
-                }
-                classes("pointer-events-none", "absolute", "z-10", "from-(--hexo-background)", "via-transparent", "to-transparent")
-                attrs?.invoke(this)
-            })
-        }
-
-        Edge { classes("inset-x-0", "top-0", "h-4", "bg-linear-to-b") }
-        Edge { classes("inset-x-0", "bottom-0", "h-4", "bg-linear-to-t") }
-        Edge { classes("inset-y-0", "left-0", "w-4", "bg-linear-to-r") }
-        Edge { classes("inset-y-0", "right-0", "w-4", "bg-linear-to-l") }
+@Composable
+private fun BoardToolbar(content: @Composable () -> Unit) {
+    Div({
+        classes(
+            "absolute", "inset-x-0", "bottom-0", "z-20", "flex", "flex-wrap", "items-center",
+            "gap-2", "@min-[40rem]/board:gap-3", "bg-transparent", "p-3",
+            "pointer-events-none", "[&>*]:pointer-events-auto",
+        )
+        attr("role", "group")
+        attr("aria-label", "Board controls")
+    }) {
+        content()
     }
 }
 
@@ -152,9 +177,10 @@ private fun DefaultBoardControls(
     boardViewManager: BoardViewManager,
     plain: Boolean,
     showOpenInSandbox: Boolean,
+    viewport: BoardViewport,
     onViewportChange: (BoardViewport) -> Unit,
 ) {
-    Div({ classes("absolute", "bottom-3", "right-3", "z-20", "flex", "gap-3") }) {
+    Div({ classes("ml-auto", "flex", "shrink-0", "max-w-full", "flex-wrap", "justify-end", "gap-2", "@min-[40rem]/board:gap-3") }) {
         if (boardViewManager.hasClearableHighlights) {
             BoardActionButton(tooltip = "Clear highlights", onClick = { boardViewManager.clearHighlights() }, color = Color.Yellow) {
                 ClearHighlightsIcon { classes("size-4") }
@@ -168,6 +194,8 @@ private fun DefaultBoardControls(
         }) {
             ResetViewIcon { classes("size-4") }
         }
+
+        BoardTransformationButton(viewport, onViewportChange)
 
         if (!plain) FullScreenButton()
     }

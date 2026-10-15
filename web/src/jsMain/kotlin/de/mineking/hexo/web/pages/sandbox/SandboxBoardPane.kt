@@ -55,16 +55,17 @@ internal fun SandboxBoardPane(
                 }
             }
         },
-    ) {
-        Div({ classes("absolute", "bottom-3", "left-3", "z-20", "flex", "gap-3") }) {
-            BoardActionButton(tooltip = "Undo", enabled = boardViewManager.canUndo(), onClick = boardViewManager::undo) {
-                UndoIcon { classes("size-4") }
+        toolbarContent = {
+            Div({ classes("flex", "shrink-0", "items-center", "gap-2", "@min-[40rem]/board:gap-3") }) {
+                BoardActionButton(tooltip = "Undo", enabled = boardViewManager.canUndo(), onClick = boardViewManager::undo) {
+                    UndoIcon { classes("size-4") }
+                }
+                BoardActionButton(tooltip = "Redo", enabled = boardViewManager.canRedo(), onClick = boardViewManager::redo) {
+                    RedoIcon { classes("size-4") }
+                }
             }
-            BoardActionButton(tooltip = "Redo", enabled = boardViewManager.canRedo(), onClick = boardViewManager::redo) {
-                RedoIcon { classes("size-4") }
-            }
-        }
-    }
+        },
+    )
 }
 
 private fun Board.getMaxTurn() = cells.values.maxOfOrNull { it.turn ?: -1 }?.takeIf { it >= 0 }
