@@ -81,8 +81,9 @@ class CixRenderer(
     fun drawVisibleBorder(): Unit = context.run {
         visibleCoordinates.forEach { coordinate ->
             val hex = coordinate.toPixel().createHex(layout.size.layoutRadius)
+            val displayed = layout.transform.transform(coordinate)
             Direction.entries.forEachIndexed { index, direction ->
-                if (coordinate + direction.direction in layout.coordinates) return@forEachIndexed
+                if (layout.transform.inverse.transform(displayed + direction.direction) in layout.coordinates) return@forEachIndexed
 
                 backend.drawLine(
                     from = hex.points[index],
