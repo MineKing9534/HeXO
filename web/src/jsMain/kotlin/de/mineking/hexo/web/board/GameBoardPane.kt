@@ -115,6 +115,9 @@ fun GameBoardPane(
             if (interaction !is BoardInteraction.HighlightBoardInteraction) return@AnalysedBoardPane
             boardViewManager.apply(interaction)
         },
+        toolbarContent = {
+            if (!plain) MoveControls(boardViewManager, game.moveCount)
+        },
     ) {
         content?.invoke(this)
 
@@ -126,31 +129,19 @@ fun GameBoardPane(
                 position.nextTurn.placementsRemaining,
                 playerTimeProvider,
             )
-            BoardControls(game, boardViewManager, viewport)
+            MoveKeyboardShortcuts(
+                boardViewManager = boardViewManager,
+                moves = game.position.moves,
+                viewport = viewport,
+            )
         }
     }
 }
 
 @Composable
-private fun BoardScope.BoardControls(
-    game: GameWithPosition,
-    boardViewManager: GameBoardViewManager,
-    viewport: MutableState<BoardViewport>,
-) {
-    val totalMoves = game.moveCount
-
-    MoveKeyboardShortcuts(
-        boardViewManager = boardViewManager,
-        moves = game.position.moves,
-        viewport = viewport,
-    )
-
+private fun MoveControls(boardViewManager: GameBoardViewManager, totalMoves: Int) {
     Div({
-        classes(
-            "absolute", "bottom-3", "left-3", "right-3", "z-20", "flex", "items-center", "gap-3",
-            // Reserve the board tools' width (including borders) plus the same gap as this row.
-            if (boardViewManager.hasClearableHighlights) "sm:right-[calc(15.75rem+8px)]" else "sm:right-[calc(12rem+6px)]",
-        )
+        classes("flex", "shrink-0", "items-center", "gap-2", "@min-[40rem]/board:gap-3")
     }) {
         BoardActionButton(
             enabled = boardViewManager.currentMove > 0,
@@ -163,9 +154,8 @@ private fun BoardScope.BoardControls(
             tooltip = "Next move",
             onClick = { boardViewManager.currentMove = nextMove(boardViewManager.currentMove, totalMoves) },
         ) { ChevronRightIcon { classes("size-4") } }
-
-        MoveSliderPanel(boardViewManager, totalMoves)
     }
+    MoveSliderPanel(boardViewManager, totalMoves)
 }
 
 @Composable
@@ -174,9 +164,10 @@ private fun MoveSliderPanel(boardViewManager: GameBoardViewManager, totalMoves: 
 
     Div({
         classes(
-            "absolute", "bottom-14", "left-0", "sm:static", "flex", "min-w-0", "sm:flex-1",
+            "order-last", "flex", "min-w-0", "basis-full", "flex-1",
+            "@min-[40rem]/board:order-none", "@min-[40rem]/board:basis-40", "@min-[40rem]/board:min-w-40",
             "items-center", "gap-2", "rounded-lg", "border",
-            "border-slate-700/70", "bg-slate-950/85", "sm:pr-3", "shadow-md", "backdrop-blur-xs",
+            "border-slate-700/70", "bg-slate-950/85", "pr-3", "shadow-md", "backdrop-blur-xs",
         )
     }) {
         Div {
@@ -187,7 +178,7 @@ private fun MoveSliderPanel(boardViewManager: GameBoardViewManager, totalMoves: 
             )
         }
 
-        Div({ classes("hidden", "sm:flex", "h-9", "min-w-0", "flex-1", "items-center") }) {
+        Div({ classes("flex", "h-9", "min-w-0", "flex-1", "items-center") }) {
             Slider(
                 value = currentMove.toFloat(),
                 range = 0f..totalMoves.toFloat(),
@@ -263,9 +254,8 @@ private fun BoardScope.MoveKeyboardShortcuts(
                     if (numberShortcut > max) return@EventListener
 
                     val coordinate = currentMoves[max - numberShortcut].coordinate
-                    val point = currentRenderLayout.size.run { coordinate.toPixel() }
-
                     val current = viewport.value
+                    val point = currentRenderLayout.run { coordinate.toPixel() }
                     viewport.value = current.copy(center = point)
                 }
             }
