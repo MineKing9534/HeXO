@@ -6,3 +6,7 @@ linked_roles:
   rank:
     name: World Rank
     description: Requires a linked HeXO profile within this world-rank position
+
+  overall_games:
+    name: Overall Games
+    description: Requires a linked HeXO profile with at least this many overall games played

@@ -49,7 +49,7 @@ internal class ProfileRepositoryImpl(internal val client: HdsApiClient) : Profil
     }
 
     private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<Profile>>(client.coroutineScope) { name ->
-        if (name.isEmpty()) return@createEntityRequester emptyList()
+        if (name.length <= 1) return@createEntityRequester emptyList()
 
         val response = client.request("/users/search") {
             parameter("q", name)
