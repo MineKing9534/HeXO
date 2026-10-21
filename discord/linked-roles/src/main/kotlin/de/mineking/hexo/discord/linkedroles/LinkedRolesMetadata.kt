@@ -6,11 +6,17 @@ import de.mineking.discord.DiscordToolKit
 import de.mineking.discord.localization.LocalizationFile
 import de.mineking.discord.localization.read
 import de.mineking.hexo.discord.linkedroles.localization.LinkedRolesLocalizationManager
+import de.mineking.hexo.discord.oauth2.LinkedRoleMetadataKey
+import de.mineking.hexo.discord.oauth2.LinkedRoleMetadataType
 import de.mineking.hexo.discord.oauth2.updateLinkedRoleMetadata
+
+internal object RankKey : LinkedRoleMetadataKey<Int>("rank", LinkedRoleMetadataType.IntegerLessThanOrEqual)
+internal object EloKey : LinkedRoleMetadataKey<Int>("elo", LinkedRoleMetadataType.IntegerGreaterThanOrEqual)
+internal object OverallGamesKey : LinkedRoleMetadataKey<Int>("overall_games", LinkedRoleMetadataType.IntegerGreaterThanOrEqual)
 
 interface LinkedRolesMetadataLocalization : LocalizationFile
 
 suspend fun DiscordToolKit<*>.installLinkedRoleMetadata() {
     val localization = LinkedRolesLocalizationManager(this).read<LinkedRolesMetadataLocalization>()
-    updateLinkedRoleMetadata(localization, listOf(RankKey, EloKey))
+    updateLinkedRoleMetadata(localization, listOf(RankKey, EloKey, OverallGamesKey))
 }

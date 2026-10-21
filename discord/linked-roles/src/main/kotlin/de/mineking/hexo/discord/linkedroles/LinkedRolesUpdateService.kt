@@ -2,8 +2,6 @@ package de.mineking.hexo.discord.linkedroles
 
 import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.discord.oauth2.DiscordOAuth2Client
-import de.mineking.hexo.discord.oauth2.LinkedRoleMetadataKey
-import de.mineking.hexo.discord.oauth2.LinkedRoleMetadataType
 import de.mineking.hexo.discord.oauth2.OAuth2TokenRepository
 import de.mineking.hexo.discord.oauth2.OAuth2Tokens
 import de.mineking.hexo.discord.oauth2.bindValue
@@ -19,9 +17,6 @@ import de.mineking.hexo.utils.types.flatMap
 import de.mineking.hexo.utils.types.orElse
 import de.mineking.hexo.utils.types.successIfNotNull
 import io.github.oshai.kotlinlogging.KotlinLogging
-
-internal object RankKey : LinkedRoleMetadataKey<Int>("rank", LinkedRoleMetadataType.IntegerLessThanOrEqual)
-internal object EloKey : LinkedRoleMetadataKey<Int>("elo", LinkedRoleMetadataType.IntegerGreaterThanOrEqual)
 
 private val logger = KotlinLogging.logger {}
 
@@ -79,6 +74,7 @@ class LinkedRolesUpdateService(
                 values = arrayOf(
                     RankKey.bindValue(profile.statistics.rating.worldRank),
                     EloKey.bindValue(profile.statistics.rating.elo),
+                    OverallGamesKey.bindValue(profile.statistics.totalGames.total),
                 ),
             )
         } catch (e: Exception) {
