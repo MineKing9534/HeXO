@@ -86,7 +86,10 @@ fun BoardAnalyzerState.renderingHook(selectedDefenseIndex: Int): BoardRenderingH
     return renderingHook(theme, selectedDefenseIndex)
 }
 
-fun BoardAnalyzerState.renderingHook(theme: BaseTheme, selectedDefenseIndex: Int = 0) = object : BoardRenderingHook {
+fun BoardAnalyzerState.renderingHook(
+    theme: BaseTheme,
+    selectedDefenseIndex: Int = 0,
+) = object : BoardRenderingHook {
     override fun RenderingContext.drawMiddleLayer() {
         if (this@renderingHook !is BoardAnalyzerState.Data) return
 

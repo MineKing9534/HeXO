@@ -95,6 +95,7 @@ fun CellCoordinate.distanceTo(other: CellCoordinate): Int {
 operator fun CellCoordinate.plus(other: CellCoordinate) = CellCoordinate(q + other.q, r + other.r)
 operator fun CellCoordinate.minus(other: CellCoordinate) = CellCoordinate(q - other.q, r - other.r)
 operator fun CellCoordinate.times(scalar: Int) = CellCoordinate(q * scalar, r * scalar)
+operator fun CellCoordinate.unaryMinus() = this * -1
 
 interface BoardLine : Iterable<CellCoordinate> {
     val start: CellCoordinate
