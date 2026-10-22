@@ -190,22 +190,89 @@ internal class LobbySessionPlayerImpl(
     override val connectionStatus = dto.connectionStatus
 }
 
-private val GraceTimePeriod = 10.seconds
+private val graceTimePeriod = 10.seconds
 
 internal class LiveSessionImpl(
     override val client: HdsApiClient,
     override val dto: SessionDto,
-    stateDto: SessionStateDto.GameSessionState,
+    private val stateDto: SessionStateDto.GameSessionState,
     override val gameState: SessionGameStateDto,
 ) : ObservedSessionImpl(), LiveSession {
     private val gracePeriodStartedAt = gameState.graceTimerStartedAt?.takeIf { gameState.currentTurnUsesGraceTime == true }
     private val activeGraceTimeRemaining = gracePeriodStartedAt?.let { startedAt ->
         val now = Clock.System.now()
-        val remaining = (GraceTimePeriod - (now - startedAt)).coerceIn(Duration.ZERO..GraceTimePeriod)
+        val remaining = (graceTimePeriod - (now - startedAt)).coerceIn(Duration.ZERO..graceTimePeriod)
         LiveDuration(remaining, now).takeIf { remaining > Duration.ZERO }
     }
 
     internal fun getPlayerById(id: PlayerId) = players.first { it.id == id }
+
+    private fun extractTimeRemaining(player: SessionPlayerDto): LiveDuration? {
+        val timeControl = dto.gameOptions.timeControl
+        if (timeControl is TimeControl.Unlimited) return null
+
+        val timeRemaining = baseTimeRemaining(player.id, timeControl)
+            ?: return fallbackTimeRemaining(player.id, timeControl)
+
+        val adjustedTime = adjustForGracePeriod(player.id, timeControl, timeRemaining)
+        return freezeAtFinish(player.id, adjustedTime)
+    }
+
+    private fun baseTimeRemaining(playerId: PlayerId, timeControl: TimeControl): LiveDuration? {
+        if (playerId == gameState.currentTurnPlayerId) {
+            val timestamp = (stateDto as? SessionStateDto.Finished)?.finishedAt ?: Clock.System.now()
+            return gameState.currentTurnExpiresAt?.durationSince(timestamp)
+                ?: gameState.playerTimeRemaining[playerId]
+        }
+
+        return when (timeControl) {
+            is TimeControl.Unlimited -> null
+            is TimeControl.Turn -> LiveDuration(timeControl.turnTime, Clock.System.now())
+            is TimeControl.Match -> gameState.playerTimeRemaining[playerId]
+        }
+    }
+
+    private fun fallbackTimeRemaining(playerId: PlayerId, timeControl: TimeControl): LiveDuration? {
+        val finishedState = stateDto as? SessionStateDto.Finished ?: return null
+
+        return when {
+            finishedState.finishReason == GameFinishReasonDto.Timeout && playerId != finishedState.winningPlayerId ->
+                LiveDuration(Duration.ZERO, finishedState.finishedAt)
+
+            timeControl is TimeControl.Turn -> LiveDuration(timeControl.turnTime, finishedState.finishedAt)
+            else -> null
+        }
+    }
+
+    private fun adjustForGracePeriod(
+        playerId: PlayerId,
+        timeControl: TimeControl,
+        timeRemaining: LiveDuration,
+    ): LiveDuration {
+        if (playerId != gameState.currentTurnPlayerId || gracePeriodStartedAt == null) return timeRemaining
+
+        val duration = when (timeControl) {
+            is TimeControl.Unlimited -> return timeRemaining
+            is TimeControl.Turn -> timeControl.turnTime
+            is TimeControl.Match -> {
+                val playerTime = gameState.playerTimeRemaining[playerId]?.duration ?: timeRemaining.duration
+                (playerTime - graceTimePeriod).coerceAtLeast(Duration.ZERO)
+            }
+        }
+
+        return LiveDuration(duration, gracePeriodStartedAt + graceTimePeriod)
+    }
+
+    private fun freezeAtFinish(playerId: PlayerId, timeRemaining: LiveDuration): LiveDuration {
+        val finishedState = stateDto as? SessionStateDto.Finished ?: return timeRemaining
+        if (playerId != gameState.currentTurnPlayerId) return timeRemaining
+
+        val elapsed = (finishedState.finishedAt - timeRemaining.timestamp).coerceAtLeast(Duration.ZERO)
+        return LiveDuration(
+            duration = (timeRemaining.duration - elapsed).coerceAtLeast(Duration.ZERO),
+            timestamp = finishedState.finishedAt,
+        )
+    }
 
     override val id = dto.id
     override val gameOptions = dto.gameOptions
@@ -228,58 +295,12 @@ internal class LiveSessionImpl(
                     else -> error("Inconsistent tournament snapshot")
                 }
             },
-            timeRemaining = when (dto.gameOptions.timeControl) {
-                is TimeControl.Unlimited -> null
-                is TimeControl.Turn ->
-                    if (data.id == gameState.currentTurnPlayerId) {
-                        gameState.currentTurnExpiresIn ?: gameState.playerTimeRemaining[data.id]
-                    } else {
-                        LiveDuration(dto.gameOptions.timeControl.turnTime, Clock.System.now())
-                    }
-                is TimeControl.Match ->
-                    if (data.id == gameState.currentTurnPlayerId) {
-                        gameState.currentTurnExpiresIn ?: gameState.playerTimeRemaining[data.id]
-                    } else {
-                        gameState.playerTimeRemaining[data.id]
-                    }
-            }?.let { time ->
-                val graceStartedAt = gracePeriodStartedAt.takeIf { data.id == gameState.currentTurnPlayerId }
-                val adjustedTime = graceStartedAt?.let {
-                    val duration = when (val timeControl = dto.gameOptions.timeControl) {
-                        is TimeControl.Unlimited -> Duration.ZERO
-                        is TimeControl.Turn -> timeControl.turnTime
-                        is TimeControl.Match -> {
-                            val playerTime = gameState.playerTimeRemaining[data.id]?.duration ?: time.duration
-                            (playerTime - GraceTimePeriod).coerceAtLeast(Duration.ZERO)
-                        }
-                    }
-
-                    LiveDuration(
-                        duration = duration,
-                        timestamp = it + GraceTimePeriod,
-                    )
-                } ?: time
-
-                if (stateDto is SessionStateDto.Finished && data.id == gameState.currentTurnPlayerId) {
-                    val elapsed = (stateDto.finishedAt - adjustedTime.timestamp).coerceAtLeast(Duration.ZERO)
-                    LiveDuration((adjustedTime.duration - elapsed).coerceAtLeast(Duration.ZERO), stateDto.finishedAt)
-                } else {
-                    adjustedTime
-                }
-            } ?: when (stateDto) {
-                is SessionStateDto.Finished if stateDto.finishReason == GameFinishReasonDto.Timeout && data.id != stateDto.winningPlayerId ->
-                    LiveDuration(Duration.ZERO, stateDto.finishedAt)
-
-                is SessionStateDto.Finished if dto.gameOptions.timeControl is TimeControl.Turn ->
-                    LiveDuration(dto.gameOptions.timeControl.turnTime, stateDto.finishedAt)
-
-                else -> null
-            },
+            timeRemaining = extractTimeRemaining(data),
             graceTimeRemaining = when {
                 stateDto !is SessionStateDto.InGame -> null
                 dto.gameOptions.timeControl is TimeControl.Unlimited -> null
                 data.id == gameState.currentTurnPlayerId -> activeGraceTimeRemaining
-                gameState.hasUsedGracePeriod[data.id] != true -> LiveDuration(GraceTimePeriod, Clock.System.now())
+                gameState.hasUsedGracePeriod[data.id] != true -> LiveDuration(graceTimePeriod, Clock.System.now())
                 else -> null
             },
         )
@@ -290,7 +311,7 @@ internal class LiveSessionImpl(
             currentTurn = SessionTurn(
                 player = getPlayerById(gameState.currentTurnPlayerId!!),
                 placementsRemaining = gameState.placementsRemaining,
-                expiresIn = gameState.currentTurnExpiresIn,
+                expiresIn = gameState.currentTurnExpiresAt?.durationSince(Clock.System.now()),
             ),
         )
 
@@ -352,4 +373,8 @@ internal class SessionGameImpl(
             } ?: turns.findNextTurn(hasState = false),
         )
     }
+}
+
+private fun Instant.durationSince(timestamp: Instant): LiveDuration {
+    return LiveDuration(this - timestamp, timestamp)
 }
