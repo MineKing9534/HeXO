@@ -288,22 +288,38 @@ private fun nextMove(move: Int, totalMoves: Int) = if (move >= totalMoves - 1) I
 
 @Composable
 private fun PlayerTimer(player: Player, current: Boolean, timeProvider: PlayerTimeProvider) {
-    val timer = timeProvider.remainingTime(player, current) ?: return
+    val time = timeProvider.remainingTime(player, current) ?: return
     val decimalDisplay by SettingsKey.TimerDecimalDisplay.collectAsState()
     Div({
-        classes("font-extrabold", "text-lg", "leading-none", "tabular-nums")
+        classes("flex", "items-center", "gap-1.5", "font-extrabold", "leading-none", "tabular-nums")
         if (current) {
             classes("text-emerald-200")
         } else {
             classes("text-slate-200")
         }
     }) {
+        val timer = time.remaining
         val showTenths = when (decimalDisplay) {
             TimerDecimalDisplayMode.Always -> true
             TimerDecimalDisplayMode.Never -> false
             TimerDecimalDisplayMode.Below10Seconds -> timer < 10.seconds
         }
-        Text(timer.formatTimer(showTenths))
+        Span({
+            classes("text-lg", "leading-none")
+            if (time.graceRemaining != null) classes("text-slate-300")
+        }) {
+            Text(timer.formatTimer(showTenths))
+        }
+        time.graceRemaining?.let { graceRemaining ->
+            Span({
+                classes(
+                    "rounded", "bg-amber-400/15", "px-1.5", "py-1", "text-xs", "leading-none", "text-amber-200",
+                    "ring-1", "ring-inset", "ring-amber-300/25",
+                )
+            }) {
+                Text("+${graceRemaining.formatTimer(showTenths = true)}")
+            }
+        }
     }
 }
 

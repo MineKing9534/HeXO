@@ -103,6 +103,7 @@ data class RatingAdjustment(
 interface LiveSessionPlayer : SessionPlayer {
     val ratingAdjustment: RatingAdjustment?
     val timeRemaining: LiveDuration?
+    val graceTimeRemaining: LiveDuration?
 }
 
 data class SessionTurn(
