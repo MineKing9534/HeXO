@@ -91,13 +91,13 @@ class OmokRenderer(
     }
 
     private fun drawGrid(point: Point) = context.run {
-        val coordinate = layout.run { point.toCoordinate() }
+        val displayed = layout.transform.transform(layout.run { point.toCoordinate() })
         val gridHex = point.createHex(layout.size.layoutRadius)
         fun pointAt(index: Int) = (gridHex.points[index % 6] + gridHex.points[(index + 1) % 6]) / 2.0
 
         repeat(3) { index ->
-            val forward = coordinate + Direction.entries[index].direction in layout.coordinates
-            val backward = coordinate + Direction.entries[index + 3].direction in layout.coordinates
+            val forward = layout.transform.inverse.transform(displayed + Direction.entries[index].direction) in layout.coordinates
+            val backward = layout.transform.inverse.transform(displayed + Direction.entries[index + 3].direction) in layout.coordinates
             if (!forward && !backward) return@repeat
 
             backend.drawLine(

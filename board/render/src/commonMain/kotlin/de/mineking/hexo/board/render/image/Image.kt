@@ -83,9 +83,9 @@ class RenderingContext(
     val visibleCoordinates = layout.coordinatesIn(visibleBounds)
 
     fun Polygon.isVisible() = points.any { it in visibleBounds }
-    fun CellCoordinate.toPixel() = layout.size.run { toPixel() }
-
     fun Double.relativeWidth() = (layout.size.layoutRadius * this / 64).toFloat()
+
+    fun CellCoordinate.toPixel() = layout.run { toPixel() }
 }
 
 private const val DEGREES_TO_RADIANS = 0.017453292519943295
