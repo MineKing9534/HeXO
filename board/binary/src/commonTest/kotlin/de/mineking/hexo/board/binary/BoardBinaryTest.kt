@@ -8,6 +8,7 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.Direction
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.MutableCell
@@ -18,6 +19,8 @@ import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
+import kotlin.test.assertNull
 import kotlin.test.assertTrue
 
 class BoardBinaryTest {
@@ -111,7 +114,7 @@ class BoardBinaryTest {
 
         assertTrue(bytes.size < labelBytes * 2)
         assertEquals(board, BoardBinary.decode(bytes, maxLabelBytes = labelBytes))
-        assertFailsWith<IllegalArgumentException> {
+        assertFailsWith<HexoNotationException> {
             BoardBinary.decode(bytes, maxLabelBytes = labelBytes - 1)
         }
         assertRoundTrip(board)
@@ -154,10 +157,55 @@ class BoardBinaryTest {
             overlongCount,
             bytes.copyOf(bytes.size - 1),
         )
-        for (input in malformed) assertFailsWith<IllegalArgumentException> { BoardBinary.decode(input) }
-        assertFailsWith<IllegalArgumentException> { BoardBinary.decode(bytes, maxCells = 0) }
-        assertFailsWith<IllegalArgumentException> { BoardBinary.decode(bytes, maxLines = 0) }
-        assertFailsWith<IllegalArgumentException> { BoardBinary.decode(bytes, maxLabelBytes = 0) }
+        for (input in malformed) {
+            val error = assertFailsWith<HexoNotationException> { BoardBinary.decode(input) }
+            assertNull(error.cause)
+            val stringError = assertFailsWith<HexoNotationException> {
+                BoardBinary.decodeFromString(BoardBinary.STRING_ENCODER.encode(input))
+            }
+            assertEquals(error.message, stringError.message)
+            assertNull(stringError.cause)
+        }
+        assertFailsWith<HexoNotationException> { BoardBinary.decode(bytes, maxCells = 0) }
+        assertFailsWith<HexoNotationException> { BoardBinary.decode(bytes, maxLines = 0) }
+        assertFailsWith<HexoNotationException> { BoardBinary.decode(bytes, maxLabelBytes = 0) }
+
+        val encoded = BoardBinary.STRING_ENCODER.encode(bytes)
+        assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded, maxCells = 0) }
+        assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded, maxLines = 0) }
+        assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded, maxLabelBytes = 0) }
+    }
+
+    @Test
+    fun invalidBase64IsRejectedAsNotationError() {
+        for (encoded in listOf("A", "%%%", "AQ===", "AQ=A")) {
+            val error = assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded) }
+            val cause = assertIs<IllegalArgumentException>(error.cause)
+            assertEquals(cause.message, error.message)
+        }
+    }
+
+    @Test
+    fun decodingErrorsAreThrownDirectly() {
+        val error = assertFailsWith<HexoNotationException> { BoardBinary.decode(byteArrayOf(0)) }
+        assertEquals("Unsupported BoardBinary version", error.message)
+        assertNull(error.cause)
+    }
+
+    @Test
+    fun lowLevelDecodersThrowNotationErrorsDirectly() {
+        val invalidReads = listOf(
+            { BitReader(byteArrayOf()).readBits(1) },
+            { BitReader(ByteArray(5) { 0x80.toByte() }).readUnsigned() },
+            { checkedInt(Int.MAX_VALUE.toLong() + 1) },
+            { OwnerSymbols.decode(OwnerSymbols.RADIX) },
+            { TurnCodec.read(BitReader(byteArrayOf()), 0) },
+            { LabelCodec.read(BitReader(byteArrayOf()), 0, 0) },
+        )
+        for (read in invalidReads) {
+            val error = assertFailsWith<HexoNotationException> { read() }
+            assertNull(error.cause)
+        }
     }
 
     private fun sampleBoard(): Board {
@@ -195,6 +243,7 @@ class BoardBinaryTest {
         assertEquals(board.lineHighlights, decoded.lineHighlights)
         assertEquals(board.attributes.values.filterValues { it != null }, decoded.attributes.values)
         assertEquals(before, board)
+        assertEquals(decoded, BoardBinary.decodeFromString(BoardBinary.encodeToString(board)))
         assertContentEquals(encoded, BoardBinary.encode(decoded))
     }
 }

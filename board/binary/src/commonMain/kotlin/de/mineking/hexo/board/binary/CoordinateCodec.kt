@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.binary
 
 import de.mineking.hexo.board.CellCoordinate
+import de.mineking.hexo.board.requireHexo
 
 internal object CoordinateCodec {
     private enum class Mode { Sparse, Dense }
@@ -46,7 +47,7 @@ internal object CoordinateCodec {
 
         repeat(count) {
             val coordinate = input.readCoordinateDelta(previous)
-            require(result.isEmpty() ||
+            requireHexo(result.isEmpty() ||
                 coordinate.r > previous.r ||
                 (coordinate.r == previous.r && coordinate.q > previous.q),
             ) { "Coordinates are not strictly ordered" }
@@ -141,10 +142,10 @@ internal object CoordinateCodec {
     private fun readRectangle(input: BitReader, count: Int): List<CellCoordinate> {
         val rectangle = Rectangle.readFrom(input)
         val full = input.readBoolean()
-        require(rectangle.area >= count) { "Invalid coordinate rectangle" }
+        requireHexo(rectangle.area >= count) { "Invalid coordinate rectangle" }
 
         if (full) {
-            require(rectangle.area == count.toLong()) { "Invalid coordinate rectangle" }
+            requireHexo(rectangle.area == count.toLong()) { "Invalid coordinate rectangle" }
         } else {
             input.requireBits(rectangle.area, "Invalid coordinate rectangle")
         }
@@ -154,13 +155,13 @@ internal object CoordinateCodec {
 
         while (position < rectangle.area) {
             if (full || input.readBoolean()) {
-                require(result.size < count) { "Too many coordinates" }
+                requireHexo(result.size < count) { "Too many coordinates" }
                 result += rectangle.coordinateAt(position)
             }
             position++
         }
 
-        require(result.size == count) { "Coordinate count mismatch" }
+        requireHexo(result.size == count) { "Coordinate count mismatch" }
         return result
     }
 
@@ -196,10 +197,10 @@ internal object CoordinateCodec {
                 val width = input.readPositive(MAX_DIMENSION)
                 val height = input.readPositive(MAX_DIMENSION)
 
-                require(minQ.toLong() + width - 1 <= Int.MAX_VALUE && minR.toLong() + height - 1 <= Int.MAX_VALUE) {
+                requireHexo(minQ.toLong() + width - 1 <= Int.MAX_VALUE && minR.toLong() + height - 1 <= Int.MAX_VALUE) {
                     "Coordinate rectangle exceeds integer range"
                 }
-                require(height <= Long.MAX_VALUE / width) { "Coordinate rectangle overflow" }
+                requireHexo(height <= Long.MAX_VALUE / width) { "Coordinate rectangle overflow" }
 
                 return Rectangle(minQ, minR, width, height)
             }

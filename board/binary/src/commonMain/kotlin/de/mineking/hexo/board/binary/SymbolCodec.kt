@@ -1,5 +1,7 @@
 package de.mineking.hexo.board.binary
 
+import de.mineking.hexo.board.requireHexo
+
 internal object SymbolCodec {
     private enum class Mode { Uniform, Packed, Sparse }
 
@@ -19,7 +21,7 @@ internal object SymbolCodec {
     fun read(input: BitReader, count: Int, radix: Int): IntArray = when (input.readEnum<Mode>()) {
         Mode.Uniform -> {
             val value = input.readBits(indexBitWidth(radix))
-            require(value < radix) { "Invalid uniform value" }
+            requireHexo(value < radix) { "Invalid uniform value" }
             IntArray(count) { value }
         }
         Mode.Packed -> RadixPacking.read(input, count, radix)
@@ -57,7 +59,7 @@ internal object SymbolCodec {
 
     private fun readSparse(input: BitReader, count: Int, radix: Int): IntArray {
         val default = input.readBits(indexBitWidth(radix))
-        require(default < radix) { "Invalid default value" }
+        requireHexo(default < radix) { "Invalid default value" }
 
         val exceptionCount = input.readPositive(count.toLong()).toInt()
         input.requireBits(exceptionCount.toLong() * Byte.SIZE_BITS, "Invalid exception count")
@@ -110,7 +112,7 @@ private object RadixPacking {
             val end = minOf(index + blockSize, count)
             val alphabetSize = power(radix, end - index)
             var value = input.readBits(indexBitWidth(alphabetSize))
-            require(value < alphabetSize) { "Invalid packed value" }
+            requireHexo(value < alphabetSize) { "Invalid packed value" }
             for (i in index until end) {
                 result[i] = value % radix
                 value /= radix

@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.binary
 
 import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.isEmpty
 import kotlin.io.encoding.Base64
@@ -60,5 +61,12 @@ object BoardBinary {
         maxCells: Int = 5000,
         maxLines: Int = 30,
         maxLabelBytes: Int = 1024,
-    ) = decode(STRING_ENCODER.decode(encoded), maxCells, maxLines, maxLabelBytes)
+    ): Board {
+        val bytes = try {
+            STRING_ENCODER.decode(encoded)
+        } catch (e: IllegalArgumentException) {
+            throw HexoNotationException(e.message ?: "Invalid base64", e)
+        }
+        return decode(bytes, maxCells, maxLines, maxLabelBytes)
+    }
 }

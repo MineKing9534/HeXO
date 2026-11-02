@@ -17,6 +17,7 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findNextTurn
@@ -68,8 +69,8 @@ fun SandboxPage() {
 
         try {
             initialBoard = BoardBinary.decodeFromString(encodedPosition)
-        } catch (e: IllegalArgumentException) {
-            error = e.message?.takeIf { it.isNotBlank() } ?: "The position data could not be decoded."
+        } catch (e: HexoNotationException) {
+            error = e.message.takeIf { it.isNotBlank() } ?: "The position data could not be decoded."
         } finally {
             positionParameter = null
         }
