@@ -3,6 +3,7 @@ package de.mineking.hexo.board.binary
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.board.requireHexo
 import kotlin.enums.enumEntries
 
 internal object LineCodec {
@@ -30,7 +31,7 @@ internal object LineCodec {
         return List(count) {
             val start = input.readCoordinateDelta(previous)
             val code = input.readByte()
-            require(code < VALID_CODES) { "Invalid line highlight" }
+            requireHexo(code < VALID_CODES) { "Invalid line highlight" }
 
             val line = LineHighlight(
                 start = start,

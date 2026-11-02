@@ -1,6 +1,8 @@
 package de.mineking.hexo.launcher.api.modules
 
+import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
@@ -8,8 +10,10 @@ import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.server.api.ApiModule
 import io.ktor.http.ContentType
 import io.ktor.server.plugins.BadRequestException
+import io.ktor.server.plugins.MissingRequestParameterException
 import io.ktor.server.response.respondBytes
 import io.ktor.server.routing.Route
+import io.ktor.server.routing.RoutingCall
 import io.ktor.server.routing.get
 import io.ktor.server.util.getOrFail
 
@@ -26,13 +30,24 @@ class RenderApiModule(
             val renderer = renderers[type] ?: throw BadRequestException("Unsupported render type")
 
             try {
-                val notation = call.queryParameters.getOrFail("notation")
-                val board = parser.parse(notation)
-
+                val board = call.parseBoard()
                 call.respondBytes(renderer.type) { renderer.renderer.render(board, theme.theme) }
             } catch (e: HexoNotationException) {
                 throw BadRequestException(e.message, e)
             }
+        }
+    }
+
+    private suspend fun RoutingCall.parseBoard(): Board {
+        val notation = queryParameters["notation"]
+        val encoded = queryParameters["encoded"]
+
+        if (notation == null) {
+            val encoded = encoded ?: throw MissingRequestParameterException("encoded")
+            return BoardBinary.decodeFromString(encoded)
+        } else {
+            if (encoded != null) throw BadRequestException("'notation' and 'encoded' are mutually exclusive")
+            return parser.parse(notation)
         }
     }
 }

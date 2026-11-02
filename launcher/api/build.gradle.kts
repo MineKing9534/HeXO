@@ -14,6 +14,7 @@ dependencies {
     implementation(projects.game.implementation.service)
 
     implementation(projects.board)
+    implementation(projects.board.binary)
     implementation(projects.board.parse)
     implementation(projects.board.render)
 

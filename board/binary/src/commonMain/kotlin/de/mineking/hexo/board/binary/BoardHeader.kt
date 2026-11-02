@@ -3,6 +3,7 @@ package de.mineking.hexo.board.binary
 import de.mineking.hexo.board.BoardAttribute
 import de.mineking.hexo.board.BoardAttributes
 import de.mineking.hexo.board.MutableBoardAttributes
+import de.mineking.hexo.board.requireHexo
 
 internal class BoardHeader private constructor(
     private val showTurnNumbers: StoredBoolean,
@@ -40,7 +41,7 @@ internal class BoardHeader private constructor(
         }
 
         fun readFrom(input: BitReader): BoardHeader {
-            require(input.readBits(VERSION_BITS) == VERSION) { "Unsupported BoardBinary version" }
+            requireHexo(input.readBits(VERSION_BITS) == VERSION) { "Unsupported BoardBinary version" }
             val hasCells = input.readBoolean()
             val hasLines = input.readBoolean()
             val setting = input.readEnum<StoredBoolean>()

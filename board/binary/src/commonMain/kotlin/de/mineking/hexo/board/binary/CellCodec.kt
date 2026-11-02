@@ -4,6 +4,7 @@ import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellHighlight
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.MutableCell
+import de.mineking.hexo.board.requireHexo
 
 internal object CellCodec {
     private const val BOOLEAN_RADIX = 2
@@ -102,7 +103,7 @@ internal object OwnerSymbols {
     fun encode(owner: CellOwner?) = owner?.let { it.ordinal + 1 } ?: 0
 
     fun decode(symbol: Int): CellOwner? {
-        require(symbol in 0 until RADIX) { "Invalid owner" }
+        requireHexo(symbol in 0 until RADIX) { "Invalid owner" }
         return if (symbol == 0) null else CellOwner.entries[symbol - 1]
     }
 }

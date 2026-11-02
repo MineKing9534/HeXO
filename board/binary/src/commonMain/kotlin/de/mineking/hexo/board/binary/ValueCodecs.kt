@@ -1,5 +1,7 @@
 package de.mineking.hexo.board.binary
 
+import de.mineking.hexo.board.requireHexo
+
 internal object TurnCodec {
     private enum class Mode { Absolute, Deltas }
 
@@ -8,7 +10,7 @@ internal object TurnCodec {
     }
 
     fun read(input: BitReader, count: Int): List<Int> {
-        require(count > 0) { "Empty turn section" }
+        requireHexo(count > 0) { "Empty turn section" }
         return when (input.readEnum<Mode>()) {
             Mode.Absolute -> {
                 input.requireBits(count.toLong() * Byte.SIZE_BITS, "Invalid turn count")
@@ -56,7 +58,7 @@ internal object LabelCodec {
     }
 
     fun read(input: BitReader, count: Int, maxBytes: Int): List<String> {
-        require(count > 0) { "Empty label section" }
+        requireHexo(count > 0) { "Empty label section" }
         val strings = StringEncoding.Reader(input, maxBytes)
         return if (input.readBoolean()) {
             DictionaryCodec.read(input, count, MIN_STRING_BITS) { strings.read() }
@@ -84,14 +86,14 @@ private object DictionaryCodec {
         input.requireBits(size.toLong() * minEntryBits, "Invalid dictionary size")
 
         val entries = List(size) { input.readEntry() }
-        require(entries.toSet().size == size) { "Duplicate dictionary entry" }
+        requireHexo(entries.toSet().size == size) { "Duplicate dictionary entry" }
 
         val width = indexBitWidth(size)
         input.requireBits(count.toLong() * width, "Invalid dictionary index count")
 
         return List(count) {
             val index = input.readBits(width)
-            require(index < size) { "Invalid dictionary index" }
+            requireHexo(index < size) { "Invalid dictionary index" }
             entries[index]
         }
     }
@@ -109,7 +111,7 @@ private object StringEncoding {
     class Reader(private val input: BitReader, private var remainingBytes: Int) {
         fun read(): String {
             val length = input.readPositive()
-            require(length <= remainingBytes) { "Label byte limit exceeded" }
+            requireHexo(length <= remainingBytes) { "Label byte limit exceeded" }
 
             input.requireBits(length * Byte.SIZE_BITS, "Truncated label")
             remainingBytes -= length.toInt()

@@ -1,5 +1,7 @@
 package de.mineking.hexo.board.binary
 
+import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.requireHexo
 import okio.Buffer
 import kotlin.enums.enumEntries
 
@@ -90,7 +92,7 @@ internal class BitReader(private val buffer: ByteArray) {
     val remainingBits get() = buffer.size.toLong() * Byte.SIZE_BITS - position
 
     fun readBits(width: Int): Int {
-        require(width in 0..Int.SIZE_BITS)
+        requireHexo(width in 0..Int.SIZE_BITS) { "Invalid bit width" }
         requireBits(width.toLong(), "Truncated BoardBinary payload")
         var value = 0
         var shift = 0
@@ -109,7 +111,7 @@ internal class BitReader(private val buffer: ByteArray) {
     inline fun <reified E : Enum<E>> readEnum(): E {
         val entries = enumEntries<E>()
         val ordinal = readBits(indexBitWidth(entries.size))
-        require(ordinal < entries.size) { "Invalid enum ordinal: $ordinal" }
+        requireHexo(ordinal < entries.size) { "Invalid enum ordinal: $ordinal" }
         return entries[ordinal]
     }
 
@@ -124,16 +126,16 @@ internal class BitReader(private val buffer: ByteArray) {
             val payload = byte and VARINT_PAYLOAD_MASK
             value = value or (payload.toLong() shl (index * VARINT_PAYLOAD_BITS))
             if (byte and VARINT_CONTINUATION == 0) {
-                require(index == 0 || payload != 0) { "Overlong integer" }
-                require(value <= max) { "Integer exceeds allowed range" }
+                requireHexo(index == 0 || payload != 0) { "Overlong integer" }
+                requireHexo(value <= max) { "Integer exceeds allowed range" }
                 return value
             }
         }
-        throw IllegalArgumentException("Unsigned integer overflow")
+        throw HexoNotationException("Unsigned integer overflow")
     }
 
     fun readPositive(max: Long = MAX_UNSIGNED + 1): Long {
-        require(max in 1..MAX_UNSIGNED + 1) { "Invalid positive integer limit" }
+        requireHexo(max in 1..MAX_UNSIGNED + 1) { "Invalid positive integer limit" }
         return readUnsigned(max - 1) + 1
     }
 
@@ -145,18 +147,18 @@ internal class BitReader(private val buffer: ByteArray) {
     fun readSignedInt() = checkedInt(readSigned())
 
     fun requireBits(count: Long, message: String) {
-        require(count in 0..remainingBits) { message }
+        requireHexo(count in 0..remainingBits) { message }
     }
 
     fun finish() {
-        require(remainingBits < Byte.SIZE_BITS && readBits(remainingBits.toInt()) == 0) {
+        requireHexo(remainingBits < Byte.SIZE_BITS && readBits(remainingBits.toInt()) == 0) {
             "Trailing data or nonzero padding"
         }
     }
 }
 
 internal fun checkedInt(value: Long): Int {
-    require(value in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()) { "Integer overflow" }
+    requireHexo(value in Int.MIN_VALUE.toLong()..Int.MAX_VALUE.toLong()) { "Integer overflow" }
     return value.toInt()
 }
 
