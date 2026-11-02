@@ -1,5 +1,7 @@
 package de.mineking.hexo.launcher.web
 
+import de.mineking.hexo.board.HexoNotationException
+import de.mineking.hexo.board.binary.BoardBinary
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
@@ -44,6 +46,7 @@ fun main() {
             sessionsRoute(hds)
             gamesRoute(hds)
             watchPartyRoute()
+            sandboxRoute()
 
             get("/{path...}") {
                 val path = call.request.path().trim('/')
@@ -58,6 +61,34 @@ fun main() {
             }
         }
     }.start(wait = true)
+}
+
+private fun Route.sandboxRoute() {
+    get("sandbox") {
+        val meta = call.queryParameters["position"].let { parameter ->
+            try {
+                val encoded = parameter
+                    ?.let { BoardBinary.encodeToString(BoardBinary.decodeFromString(it)) }
+                    ?: return@let OpenGraphMetadata(
+                        title = "Sandbox Mode",
+                        description = "Explore HeXO locally with the ability to freely interact with the board",
+                    )
+
+                OpenGraphMetadata(
+                    title = "Sandbox Mode",
+                    description = "Explore this position in the sandbox",
+                    imageUrl = "${BuildConfig.HMD_API_URL}/render?type=png&encoded=$encoded",
+                )
+            } catch (_: HexoNotationException) {
+                OpenGraphMetadata(
+                    title = "Sandbox Mode",
+                    description = "Invalid sandbox position",
+                )
+            }
+        }
+
+        call.respondPage("web/sandbox/index.html", meta)
+    }
 }
 
 private fun Route.sessionsRoute(hds: HdsApiClient) {

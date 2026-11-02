@@ -29,6 +29,7 @@ tasks.processResources {
 dependencies {
     implementation(projects.launcher)
 
+    implementation(projects.board.binary)
     implementation(projects.game.hds)
     implementation(projects.watchparty.client)
 
