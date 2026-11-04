@@ -1,5 +1,6 @@
 [versions]
 kotlin = "2.4.10"
+boofcv = "1.6.0"
 kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.11.0"
 kotlin-antlr = "1.0.0"
@@ -12,6 +13,9 @@ ktor = "3.5.2"
 exposed = "1.4.0"
 
 [libraries]
+boofcv-feature = { module = "org.boofcv:boofcv-feature", version.ref = "boofcv" }
+boofcv-io = { module = "org.boofcv:boofcv-io", version.ref = "boofcv" }
+ddogleg = { module = "org.ddogleg:ddogleg", version = "1.0.0" }
 build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 detekt-gradle-plugin = { module = "dev.detekt:dev.detekt.gradle.plugin", version = "2.0.0-alpha.6" }
 testlogger-gradle-plugin = { module = "com.adarshr.test-logger:com.adarshr.test-logger.gradle.plugin", version = "4.0.0" }

@@ -17,6 +17,7 @@ include(":board")
 include(":board:binary")
 include(":board:parse")
 include(":board:render")
+include(":board:recognition")
 include(":board:latex")
 include(":board:latex:processor")
 
