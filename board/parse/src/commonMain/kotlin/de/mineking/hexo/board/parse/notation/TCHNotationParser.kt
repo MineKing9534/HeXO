@@ -8,12 +8,20 @@ import de.mineking.hexo.board.mirror
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.parse.generated.TCHNLexer
 import de.mineking.hexo.board.parse.generated.TCHNParser
+import de.mineking.hexo.board.parse.or
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.rotate
 
-object TCHNotationParser : NotationParser {
-    override suspend fun parse(notation: String) = notation.parseTCHNotation()
+class TCHNotationParser(private val delegateParser: NotationParser) : NotationParser {
+    override suspend fun parse(notation: String) = notation.parseTCHNotation(delegateParser)
+
+    companion object {
+        val Default = TCHNotationParser(NotationParser.Default)
+    }
 }
+
+fun NotationParser.withTransformationComposition() =
+    TCHNotationParser(this) or this // use THCN first since it's cheap to check whether there is a notation format failure
 
 suspend fun String.parseTCHNotation(parser: NotationParser = NotationParser.Default): Board {
     val root = parseInternal(this)

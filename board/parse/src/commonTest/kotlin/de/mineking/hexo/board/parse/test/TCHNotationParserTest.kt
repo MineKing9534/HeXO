@@ -35,7 +35,7 @@ class TCHNotationParserTest {
         )) {
             assertEquals(
                 NotationParser.Default.parse(notation),
-                TCHNotationParser.parse($$"${$$notation}"),
+                TCHNotationParser.Default.parse($$"${$$notation}"),
                 notation,
             )
         }
@@ -62,7 +62,7 @@ class TCHNotationParserTest {
         for (sectors in listOf(Int.MIN_VALUE, -7, -1, 0, 1, 6, 7, Int.MAX_VALUE)) {
             assertEquals(
                 board.rotate(sectors),
-                TCHNotationParser.parse($$"$rotate($$sectors, {x.o/.x})"),
+                TCHNotationParser.Default.parse($$"$rotate($$sectors, {x.o/.x})"),
                 "sectors=$sectors",
             )
         }
@@ -86,7 +86,11 @@ class TCHNotationParserTest {
         val board = "x.o/.x".parseRectilinearNotation()
 
         for ((axis, direction) in listOf("-" to Direction.Right, "/" to Direction.TopRight, "\\" to Direction.TopLeft)) {
-            assertEquals(board.mirror(direction), TCHNotationParser.parse($$"$mirror($$axis, {x.o/.x})"), axis)
+            assertEquals(
+                board.mirror(direction),
+                TCHNotationParser.Default.parse($$"$mirror($$axis, {x.o/.x})"),
+                axis,
+            )
         }
     }
 
@@ -96,7 +100,7 @@ class TCHNotationParserTest {
         val expected = board.mirror(Direction.TopRight).rotate(1)
         assertNotEquals(expected, board.rotate(1).mirror(Direction.TopRight))
 
-        assertEquals(expected, TCHNotationParser.parse($$"$rotate(1, mirror(/, {x.o/.x}))"))
+        assertEquals(expected, TCHNotationParser.Default.parse($$"$rotate(1, mirror(/, {x.o/.x}))"))
     }
 
     @Test
@@ -104,7 +108,7 @@ class TCHNotationParserTest {
         val board = "x.o/.x".parseRectilinearNotation()
         val expected = board.rotate(-2).mirror(Direction.TopLeft).rotate(3)
 
-        assertEquals(expected, TCHNotationParser.parse($$"$rotate(3, mirror(\\, rotate(-2, {x.o/.x})))"))
+        assertEquals(expected, TCHNotationParser.Default.parse($$"$rotate(3, mirror(\\, rotate(-2, {x.o/.x})))"))
     }
 
     @Test
@@ -112,7 +116,7 @@ class TCHNotationParserTest {
         val notation = " \n$ rotate \t( -1 , mirror ( - , {x.o/.x} ) ) \r\n"
         val expected = "x.o/.x".parseRectilinearNotation().mirror(Direction.Right).rotate(-1)
 
-        assertEquals(expected, TCHNotationParser.parse(notation))
+        assertEquals(expected, TCHNotationParser.Default.parse(notation))
     }
 
     @Test
@@ -120,7 +124,11 @@ class TCHNotationParserTest {
         for (notation in listOf("x[label](o)(>3x)/.o", "version[1]; 1. [1,0];")) {
             val expected = NotationParser.Default.parse(notation).rotate(1).mirror(Direction.TopRight)
 
-            assertEquals(expected, TCHNotationParser.parse($$"$mirror(/, rotate(1, {$$notation}))"), notation)
+            assertEquals(
+                expected,
+                TCHNotationParser.Default.parse($$"$mirror(/, rotate(1, {$$notation}))"),
+                notation,
+            )
         }
     }
 
@@ -134,13 +142,13 @@ class TCHNotationParserTest {
 
         assertEquals(
             expected,
-            TCHNotationParser.parse($$"$rotate(-1, merge({x}, rotate(1, {.o}), mirror(-, {..o})))"),
+            TCHNotationParser.Default.parse($$"$rotate(-1, merge({x}, rotate(1, {.o}), mirror(-, {..o})))"),
         )
     }
 
     @Test
     fun `reject conflicting owners when merging boards`() = runTest {
-        val error = assertFailsWith<HexoNotationException> { TCHNotationParser.parse($$"$merge({x}, {o})") }
+        val error = assertFailsWith<HexoNotationException> { TCHNotationParser.Default.parse($$"$merge({x}, {o})") }
 
         assertFalse(error is HexoNotationFormatException)
         assertContains(error.message, "Owner override")
