@@ -159,6 +159,12 @@ fun Board.mergeInto(other: MutableBoard, overrideMode: OwnerOverrideMode = Owner
     }
 }
 
+fun merge(boards: Collection<Board>, overrideMode: OwnerOverrideMode = OwnerOverrideMode.AllowSame): Board {
+    val result = MutableBoard()
+    boards.forEach { it.mergeInto(result, overrideMode) }
+    return result
+}
+
 @IgnorableReturnValue
 private fun <K, V> MutableMap<K, V>.merge(key: K, value: V, merge: (V, V) -> V?): V? {
     val old = this[key]
