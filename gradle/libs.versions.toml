@@ -3,9 +3,11 @@ kotlin = "2.4.10"
 kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.11.0"
 compose = "1.11.1"
-kobweb = "0.25.0"
-dtk = "2.0.0"
 
+kobweb = "0.25.0"
+boofcv = "1.6.0"
+
+dtk = "2.0.0"
 ksp = "2.3.11"
 
 ktor = "3.5.2"
@@ -59,6 +61,10 @@ compose-runtime = { module = "androidx.compose.runtime:runtime", version.ref = "
 kobweb-core = { module = "com.varabyte.kobweb:kobweb-core", version.ref = "kobweb" }
 kobweb-worker = { module = "com.varabyte.kobweb:kobweb-worker", version.ref = "kobweb" }
 kobwebx-serialization-kotlinx = { module = "com.varabyte.kobwebx:kobwebx-serialization-kotlinx", version.ref = "kobweb" }
+
+boofcv-feature = { module = "org.boofcv:boofcv-feature", version.ref = "boofcv" }
+boofcv-io = { module = "org.boofcv:boofcv-io", version.ref = "boofcv" }
+ddogleg = { module = "org.ddogleg:ddogleg", version = "1.0.0" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
 exposed-r2dbc = { module = "org.jetbrains.exposed:exposed-r2dbc", version.ref = "exposed" }
