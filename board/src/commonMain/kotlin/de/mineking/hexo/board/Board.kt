@@ -133,6 +133,23 @@ enum class OwnerOverrideMode {
 operator fun Board.plus(other: Board) = merge(other)
 operator fun MutableBoard.plusAssign(other: Board) = other.mergeInto(this)
 
+@OptIn(InternalBoardApi::class)
+fun Board.normalized(originLabel: String = "*"): Board {
+    var offset: CellCoordinate? = null
+    cells.forEach { (coordinate, cell) ->
+        if (cell.label != originLabel) return@forEach
+        if (offset != null) throw HexoNotationException("Duplicate origin label")
+
+        offset = coordinate
+    }
+
+    if (offset == null) return this
+    return translate(-offset).mutable().also {
+        it[CellCoordinate.Zero].label = ""
+        if (it[CellCoordinate.Zero].isEmpty(includeHighlights = true)) it.cells -= CellCoordinate.Zero
+    }
+}
+
 fun Board.merge(other: Board, overrideMode: OwnerOverrideMode = OwnerOverrideMode.AllowSame): MutableBoard {
     val result = copy()
     other.mergeInto(result, overrideMode)

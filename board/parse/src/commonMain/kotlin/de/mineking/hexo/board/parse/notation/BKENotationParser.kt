@@ -11,6 +11,7 @@ import de.mineking.hexo.board.MutableCell
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.parse.generated.BKELexer
 import de.mineking.hexo.board.parse.generated.BKEParser
+import de.mineking.hexo.board.parse.isInMergeContext
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.times
@@ -18,10 +19,12 @@ import de.mineking.hexo.board.to
 import de.mineking.hexo.board.withAttributes
 
 object BKENotationParser : NotationParser {
-    override suspend fun parse(notation: String) = notation.parseBKENotation()
+    override suspend fun parse(notation: String) = notation.parseBKENotation(isInMergeContext = isInMergeContext())
 }
 
-fun String.parseBKENotation(): Board {
+fun String.parseBKENotation() = parseBKENotation(isInMergeContext = false)
+
+private fun String.parseBKENotation(isInMergeContext: Boolean): Board {
     val root = parseInternal(this)
     val board = MutableBoard().withAttributes(BoardAttribute.ShowTurnNumbers to true)
     if (root.turn().isEmpty()) {
@@ -40,9 +43,13 @@ fun String.parseBKENotation(): Board {
         )
     }
 
+    if (!isInMergeContext) {
+        board[CellCoordinate.Zero] = MutableCell(turns.first().player.other, turn = 0)
+    }
+
     val context = root.context()
     val (zeroOffsetLine, chirality) = if (context == null) {
-        board[CellCoordinate.Zero] = MutableCell(turns.first().player.other, turn = 0)
+        requireHexo(!isInMergeContext) { "BKE direction an chirality required when merging boards" }
         Direction.TopRight to 1
     } else {
         val zeroOffsetLine = Direction.fromSymbol(context.DIRECTION().text)

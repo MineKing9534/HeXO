@@ -31,7 +31,7 @@ class TCHNotationParserTest {
             "x.o",
             "d CW o A0",
             "version[1]; 1. [1,0];",
-            ".[*] || x A0",
+            ".[*] || > CW x A0",
         )) {
             assertEquals(
                 NotationParser.Default.parse(notation),

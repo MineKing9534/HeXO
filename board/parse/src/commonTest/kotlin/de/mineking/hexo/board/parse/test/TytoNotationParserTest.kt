@@ -9,7 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class TytoNotationParser {
+class TytoNotationParserTest {
     @Test
     fun `parse origin only`() {
         val board = "".parseTytoNotation()

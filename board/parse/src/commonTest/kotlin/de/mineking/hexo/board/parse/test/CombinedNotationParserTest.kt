@@ -13,8 +13,10 @@ import de.mineking.hexo.board.parse.notation.CombinedNotationParser
 import de.mineking.hexo.board.parse.notation.RectilinearNotationParser
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
+import kotlin.test.assertContains
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertFalse
 import kotlin.test.assertSame
 
 class CombinedNotationParserTest {
@@ -95,7 +97,7 @@ class CombinedNotationParserTest {
 
     @Test
     fun `reject unrecognized combined inputs as format mismatches`() = runTest {
-        for (notation in listOf("unrelated || x A0", "|| x A0", "x || x A0")) {
+        for (notation in listOf("unrelated || x A0", "|| x A0")) {
             assertFailsWith<HexoNotationFormatException>(notation) { CombinedNotationParser.Default.parse(notation) }
         }
     }
@@ -106,22 +108,22 @@ class CombinedNotationParserTest {
         val result = parser.parse(".[HOME] | > CW o A0")
 
         assertEquals(
-            mapOf(CellCoordinate.Zero to Cell.EMPTY, CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1)),
+            mapOf(CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1)),
             result.cells,
         )
     }
 
     @Test
-    fun `translate turn coordinates to the labeled cell`() = runTest {
+    fun `normalize the initial state around the labeled cell`() = runTest {
         val result = CombinedNotationParser.Default.parse(".x[*]/xx || d CW o A0 A1")
 
         assertEquals(
             mapOf(
-                CellCoordinate(1, 0) to Cell(CellOwner.X),
+                CellCoordinate.Zero to Cell(CellOwner.X),
+                CellCoordinate(-1, 1) to Cell(CellOwner.X),
                 CellCoordinate(0, 1) to Cell(CellOwner.X),
-                CellCoordinate(1, 1) to Cell(CellOwner.X),
-                CellCoordinate(2, -1) to Cell(CellOwner.O, turn = 1),
-                CellCoordinate(2, 0) to Cell(CellOwner.O, turn = 1),
+                CellCoordinate(1, -1) to Cell(CellOwner.O, turn = 1),
+                CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1),
             ),
             result.cells,
         )
@@ -138,11 +140,11 @@ class CombinedNotationParserTest {
     }
 
     @Test
-    fun `reject overlap after translating to a nonzero origin`() = runTest {
+    fun `reject overlap after normalizing a nonzero origin`() = runTest {
         val e = assertFailsWith<HexoNotationException> {
             CombinedNotationParser.Default.parse(".x[*]x || > CW o A0")
         }
-        assertEquals("Turn move at (2, 0) overlaps the initial state", e.message)
+        assertEquals("Turn move at (1, 0) overlaps the initial state", e.message)
     }
 
     @Test
@@ -154,12 +156,32 @@ class CombinedNotationParserTest {
     }
 
     @Test
-    fun `reject implicit opening moves on occupied origins`() = runTest {
-        for (turns in listOf("o A0", "x A0")) {
-            val e = assertFailsWith<HexoNotationException> {
-                CombinedNotationParser.Default.parse("x[*] || $turns")
+    fun `require direction and chirality for combined BKE turns`() = runTest {
+        for (state in listOf("x", "x[*]", ".[*]")) {
+            for (turns in listOf("o A0", "x A0")) {
+                val notation = "$state || $turns"
+                val e = assertFailsWith<HexoNotationException>(notation) {
+                    CombinedNotationParser.Default.parse(notation)
+                }
+                assertFalse(e is HexoNotationFormatException, notation)
+                assertContains(e.message, "chirality required when merging boards", message = notation)
             }
-            assertEquals("Turn move at (0, 0) overlaps the initial state", e.message)
+        }
+    }
+
+    @Test
+    fun `omit implicit opening moves in combined notation`() = runTest {
+        for (state in listOf("x", "x[*]")) {
+            for ((player, owner) in listOf("x" to CellOwner.X, "o" to CellOwner.O)) {
+                val notation = "$state || > CW $player A0"
+                val result = CombinedNotationParser.Default.parse(notation)
+
+                assertEquals(
+                    mapOf(CellCoordinate.Zero to Cell(CellOwner.X), CellCoordinate(1, 0) to Cell(owner, turn = 1)),
+                    result.cells,
+                    notation,
+                )
+            }
         }
     }
 

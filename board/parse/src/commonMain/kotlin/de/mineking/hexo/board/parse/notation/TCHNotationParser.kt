@@ -5,27 +5,37 @@ import de.mineking.hexo.board.Direction
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.merge
 import de.mineking.hexo.board.mirror
+import de.mineking.hexo.board.normalized
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.parse.generated.TCHNLexer
 import de.mineking.hexo.board.parse.generated.TCHNParser
+import de.mineking.hexo.board.parse.inMergeContext
 import de.mineking.hexo.board.parse.or
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.rotate
 
-class TCHNotationParser(private val delegateParser: NotationParser) : NotationParser {
-    override suspend fun parse(notation: String) = notation.parseTCHNotation(delegateParser)
+class TCHNotationParser(
+    private val delegateParser: NotationParser = NotationParser.Default,
+    private val originLabel: String = "*",
+) : NotationParser {
+    override suspend fun parse(notation: String) = notation.parseTCHNotation(delegateParser, originLabel)
 
     companion object {
-        val Default = TCHNotationParser(NotationParser.Default)
+        val Default = TCHNotationParser()
     }
 }
 
 fun NotationParser.withTransformationComposition() =
     TCHNotationParser(this) or this // use THCN first since it's cheap to check whether there is a notation format failure
 
-suspend fun String.parseTCHNotation(parser: NotationParser = NotationParser.Default): Board {
+suspend fun String.parseTCHNotation(
+    parser: NotationParser = NotationParser.Default,
+    originLabel: String = "*",
+): Board {
     val root = parseInternal(this)
-    return root.boardExpression().parse(parser)
+    return root.boardExpression().parse(object : NotationParser {
+        override suspend fun parse(notation: String) = parser.parse(notation).normalized(originLabel)
+    })
 }
 
 private suspend fun TCHNParser.BoardExpressionContext.parse(parser: NotationParser): Board {
@@ -59,7 +69,9 @@ private suspend fun TCHNParser.BoardExpressionContext.parse(parser: NotationPars
         }
         "merge" -> {
             requireHexo(arguments.size >= 2) { "Need at least 2 boards to merge" }
-            merge(arguments.remaining().map { it.asBoard() })
+            inMergeContext {
+                merge(arguments.remaining().map { it.asBoard() })
+            }
         }
         else -> throw HexoNotationException("Unknown function $function")
     }
