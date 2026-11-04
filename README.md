@@ -1,5 +1,5 @@
 <h1>HeXO Renderer</h1>
-HeXO Renderer is a small Discord bot written in Kotlin for rendering <a href="https://hexo.did.science">HeXO</a> notation within Discord.
+HeXO Renderer is a Kotlin project for rendering <a href="https://hexo.did.science">HeXO</a> notation, with a Discord bot, web sandbox, and HTTP API.
 
 ## Invite
 Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https://discord.com/oauth2/authorize?client_id=1496214901713014894).
@@ -15,6 +15,7 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
       * [Custom Labels](#custom-labels)
     * [BKE Notation](#bke-notation)
     * [Combined](#combined)
+    * [Transformation and Composition Notation (TCHN)](#transformation-and-composition-notation-tchn)
     * [HTTTX Notation](#htttx-notation)
     * [Other](#other)
   * [Features](#features)
@@ -22,6 +23,7 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
     * [Command `render`](#command-render)
     * [Message command](#message-command)
     * [Command `game`](#command-game)
+    * [Other commands](#other-commands)
   * [Contributing](#contributing)
   * [Build](#build)
     * [Backend](#backend)
@@ -46,6 +48,8 @@ The general syntax has the following characters:
 | /         | New row. A newline character can also be used instead |
 
 It is also possible to use numbers to indicate the number of empty cells, so the following are equivalent: `x...x`, `x-.x`, `x3x`.
+
+Prefix the notation with `c` to write columns instead of rows. In column notation, `/` or a newline starts a new column.
 
 The following image is produced by the notation `x-x/o.o//x`:
 
@@ -102,9 +106,9 @@ Each turn starts with `x` or `o`, followed by one or more moves. Consecutive tur
 The zero offset line can be indicated by `>`, `q`, `p`, `<`, `b`, `d`, representing right, bottom right, bottom left, left, top left or top right. 
 A direction prefix must be followed by `CW` or `CCW`, for clockwise or counterclockwise respectively.
 
-There are two ways to specify the starting position:
-- Without a direction and chirality prefix, `d CW` is used implicitly and an opening stone is added at the origin. Its player is the opposite of the first listed player. For example, `o A0 A1` includes an initial X stone. `0` represents just an initial X stone, with no later moves.
-- With a prefix such as `p CCW`, no opening stone is added. Only the listed moves are placed. This is useful for partial turn lists and for moves on an existing board.
+Standalone BKE turn lists always include an opening stone at the origin, even when a direction and chirality prefix is given. Its player is the opposite of the first listed player, and its turn number is `0`. For example, both `o A0 A1` and `p CCW o A0 A1` include an initial X stone. Without a prefix, `d CW` is used implicitly. `0` represents just an initial X stone, with no later moves.
+
+In [combined notation](#combined) or a TCHN [`merge`](#transformation-and-composition-notation-tchn), BKE turn lists instead add only the listed moves and require an explicit direction and chirality. This lets you place moves on an existing board without adding an opening stone.
 
 For example, `o A3 A2 x A1 B3` renders as follows:
 
@@ -117,9 +121,9 @@ For example, `o A3 A2 x A1 B1.1` is equivalent to the example above.
 ### Combined
 
 It is also possible to combine rectilinear notation with BKE notation. This is useful if you want to encode an initial state and the moves made from that point on.
-Write `<rectilinear> || <bke>`, with each part following the corresponding rules stated above. Mark exactly one cell in the initial state with `[*]` to select the BKE origin. This may be an occupied cell, such as `x[*]`, or an empty cell, such as `.[*]`. The origin marker is removed from the label in the combined position.
+Write `<rectilinear> || <bke>`, with each part following the corresponding rules stated above. You can mark one cell in the initial state with `[*]` to select the BKE origin. This may be an occupied cell, such as `x[*]`, or an empty cell, such as `.[*]`. The initial state is shifted so that the marked cell is at the origin, and the marker is removed. An empty origin marker leaves no cell behind unless it has a highlight. Without a marker, the initial state's existing origin is used. Multiple origin markers are rejected.
 
-Include both a direction and chirality in the BKE part so only the listed moves are added. Without that prefix, BKE adds an opening stone at the marked origin; if that cell is already occupied, the notation is rejected as an overlap. Listed moves cannot overlap stones in the initial state or earlier turns either.
+The BKE part must include both a direction and chirality. Only the listed moves are added; no opening stone is inserted. Listed moves cannot overlap stones in the initial state or earlier turns.
 
 The following describe the same position using different origins, zero offset lines, and chiralities:
 - `.x[*]/xx || b CW o A0 A1 x B7 B8`
@@ -127,10 +131,34 @@ The following describe the same position using different origins, zero offset li
 
 ![example combined](assets/example_combined.png)
 
+### Transformation and Composition Notation (TCHN)
+TCHN lets you rotate, mirror, and merge boards in Discord, the web sandbox, and the rendering API. Start an expression with `$` and wrap embedded notation in `{...}`. For example, `$rotate(1, {x.o/.x})` rotates a rectilinear board by one 60-degree sector.
+
+| Function                   | Meaning                                                                                                                                          |
+|----------------------------|--------------------------------------------------------------------------------------------------------------------------------------------------|
+| `rotate(sectors, board)`   | Rotate around the origin in 60-degree steps. Positive integers rotate counterclockwise, negative integers clockwise; six steps make a full turn. |
+| `mirror(axis, board)`      | Reflect across an axis through the origin: `-` for horizontal, `/` for bottom left to top right, or `\` for top left to bottom right.            |
+| `merge(board, board, ...)` | Overlay two or more boards at their origins. Empty cells and stones of the same player may overlap; stones of different players may not.         |
+
+Functions can be nested. Only the outermost expression has a `$` prefix; nested function calls do not need braces. Braces enclose existing notation, such as rectilinear, BKE, combined, or HTTTX notation.
+
+```text
+$mirror(/, {x.o/.x})
+$rotate(-1, mirror(\, {x.o/.x}))
+$merge({x}, rotate(2, {.o}))
+$merge({x[*]}, {> CW o A0 A1})
+```
+
+Each embedded board can use a single `[*]` label to choose its origin before any transformations or merging. The board is shifted to that origin and the marker is removed, just as in combined notation. Without a marker, its existing origin is kept. For example, `$rotate(1, {.x[*]o})` rotates around the X stone rather than the empty cell before it. Rotation and reflection preserve other labels, highlights, and turn numbers.
+
+BKE turn lists inside `merge` require a direction and chirality and do not add an opening stone. In the final example above, `{x[*]}` supplies the initial stone and `{> CW o A0 A1}` supplies only the two O moves. Outside `merge`, embedded BKE uses the standalone opening rules.
+
 ### HTTTX Notation
 See the [official HTTTX specification](https://github.com/hex-tic-tac-toe/htttx-notation) for the notation's syntax.
 
-The bot supports a subset of versions 1 and 2, including version 2 highlights and labels from the last move only. HTTTX export currently uses version 1 and does not include highlights or labels.
+The bot supports a subset of versions 1 and 2, including version 2 setups, skipped moves, and the `u` extension for unrestricted move counts. Highlights and labels are read from the setup and the last move of the final turn only.
+
+HTTTX export uses version 1 for standard turn lists, version 2 when a setup or cell visuals are needed, and `version[2u]` for turns with move counts other than two. Cell highlights and labels are exported in the setup; line highlights are not exported.
 
 ### Other
 In addition to traditional HeXO notation, sandbox position links (like https://hexo.did.science/sandbox/i6z4ur1) and game links from https://hexo.did.science are also considered valid "notation". Tyto analysis links starting with `https://hexo.tyto.cc/analysis#c=` are supported as well.
@@ -159,6 +187,12 @@ You can also use inline code segments (single backticks: `` ` ``) with HeXO nota
 Another feature is reviewing games from https://hexo.did.science in Discord. Simply use the `game` slash command and provide a game ID (or link) to the game you want to review:
 
 ![example review](assets/example_review.png)
+
+### Other commands
+- `profile` looks up a HeXO profile. With a linked account, omit the name to view your own profile.
+- `leaderboard` displays the HeXO leaderboard.
+- `link` manages the link between your Discord and HeXO accounts. It requires database and OAuth2 configuration.
+- `theme` selects or customizes your rendering theme. It requires database configuration.
 
 ## Contributing
 Contributions are very welcome.
@@ -193,25 +227,29 @@ java -jar launcher/discord/build/libs/launcher-discord-[version]-all.jar
 ```
 
 > [!NOTE]
-> You need JDK 21 (or higher) installed to build the JAR. To run it, a JRE is sufficient.
+> The build uses a JDK 21 toolchain. Running the jars requires Java 21 or later.
 
 Configuration is done using environment variables at runtime. Each launcher column indicates whether the variable is required, optional, or unused (`—`).
 
-| Environment variable   | API      | Discord  | Description                                            |
+| Environment variable   |   API    | Discord  | Description                                            |
 |------------------------|:--------:|:--------:|--------------------------------------------------------|
-| `bot.token`            | —        | Required | Discord bot token                                      |
+| `bot.token`            |    —     | Required | Discord bot token                                      |
 | `oauth2.clientId`      | Optional | Optional | Discord client ID for linked roles and OAuth2          |
 | `oauth2.clientSecret`  | Optional | Optional | Discord client secret for linked roles and OAuth2      |
 | `oauth2.encryptionKey` | Optional | Optional | Key used to encrypt Discord tokens                     |
 | `database.url`         | Optional | Optional | R2DBC URL for persistent storage                       |
-| `server.port`          | Optional | —        | Port on which the API listens                          |
-| `server.webUrl`        | Required | Optional | Public URL of the web application                     |
-| `server.apiUrl`        | Required | Optional | Externally visible URL of the API                      |
-| `auth.secret`          | Optional | —        | Base64-encoded secret used to sign authentication JWTs |
-| `auth.accessTokenTtl`  | Optional | —        | Access-token lifetime, for example `15m`               |
-| `auth.refreshTokenTtl` | Optional | —        | Refresh-token lifetime, for example `90d`              |
+| `server.port`          | Required |    —     | Port on which the API listens                          |
+| `server.webUrl`        | Required | Optional | Public URL of the web application                      |
+| `server.apiUrl`        | Required |    —     | Externally visible URL of the API                      |
+| `auth.secret`          | Optional |    —     | Base64-encoded secret used to sign authentication JWTs |
+| `auth.accessTokenTtl`  | Optional |    —     | Access-token lifetime, for example `15m`               |
+| `auth.refreshTokenTtl` | Optional |    —     | Refresh-token lifetime, for example `90d`              |
 
-The three `auth.*` variables must be configured together to enable profiles and web login. Generate a 256-bit signing secret with:
+Configure each optional group (`oauth2.*` or `auth.*`) in full if you use it. API-hosted profiles and web login require database configuration and all three `auth.*` variables. Web login also requires OAuth2 configuration.
+
+The Discord bot needs `server.webUrl` as well as database and OAuth2 configuration to enable account linking and linked roles.
+
+Generate a 256-bit signing secret with:
 
 ```shell
 openssl rand -base64 32
@@ -232,7 +270,7 @@ The frontend is served by the dedicated `launcher:web` Ktor application. Buildin
 - `web.hdsApiUrl` is the HDS API proxy, for example `https://hexo.mineking.dev/proxy/api`.
 - `web.hmdApiUrl` is the HeXO API used for watch parties and rendering, for example `https://hexo.mineking.dev/api`.
 
-For frontend development, run Kobweb's development server from the `web` directory. It watches the frontend sources and reloads the browser when they change:
+For frontend development, run Kobweb's development server from the repository root. It watches the frontend sources and reloads the browser when they change:
 
 ```shell
 kobweb run --gradle="-Pweb.hdsApiUrl=http://localhost:3001 -Pweb.hmdApiUrl=http://localhost:1234" -p web
@@ -248,7 +286,7 @@ The development server can also be started through its Gradle task from the repo
 
 Both commands serve the frontend on the port configured in `web/.kobweb/conf.yaml`, which defaults to `8080`. The dedicated Ktor launcher is used to verify the exported site and its dynamic OpenGraph handling.
 
-This creates `launcher/web/build/libs/launcher-web-[version]-all.jar`. Set the listen port through the `server.port` environment variable when running it:
+The `:launcher:web:shadowJar` command creates `launcher/web/build/libs/launcher-web-[version]-all.jar`. Set the listen port through the `server.port` environment variable when running it:
 
 ```shell
 env 'server.port=8080' java -jar launcher/web/build/libs/launcher-web-[version]-all.jar
@@ -277,11 +315,12 @@ OAUTH2_ENCRYPTION_KEY=  # Encryption key used for encrypting Discord tokens
 AUTH_SECRET=            # JWT signing secret; keep this private and stable
 
 WEB_URL=                # Public web URL, e.g. https://hexo.mineking.dev
-API_URL=                # Public API URL, e.g. https://hexo.mineking.dev/api
 
 HDS_API_URL=            # The HDS API URL, e.g. https://hexo.mineking.dev/proxy/api
 HMD_API_URL=            # The HMD API URL, e.g. https://hexo.mineking.dev/api
 ```
+
+All variables shown above are required by the supplied Compose configuration, even where the corresponding feature is optional when running a launcher manually. `HMD_API_URL` is used both by the frontend and as the API's public URL.
 
 To deploy all services, run:
 ```shell
