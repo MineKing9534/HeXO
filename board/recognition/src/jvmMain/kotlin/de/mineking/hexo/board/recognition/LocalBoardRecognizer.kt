@@ -37,7 +37,7 @@ class LocalBoardRecognizer(
             if (input.readAtMostTo(buffer, remaining) == -1L) break
         }
 
-        if (buffer.size > maxImageBytes) throw BoardRecognitionException("Image too large")
+        if (buffer.size > maxImageBytes) throw BoardRecognitionImageTooLargeException()
 
         MemoryCacheImageInputStream(buffer.asInputStream()).use { source ->
             val readers = ImageIO.getImageReaders(source)
@@ -51,7 +51,7 @@ class LocalBoardRecognizer(
                 val height = reader.getHeight(0)
 
                 if (width.toLong() * height > maxImagePixels) {
-                    throw BoardRecognitionException("Image too large")
+                    throw BoardRecognitionImageTooLargeException()
                 }
 
                 return reader.read(0)

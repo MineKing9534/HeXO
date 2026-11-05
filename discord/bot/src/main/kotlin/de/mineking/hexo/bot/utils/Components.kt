@@ -3,12 +3,27 @@ package de.mineking.hexo.bot.utils
 import de.mineking.discord.ui.IdGenerator
 import de.mineking.discord.ui.MenuConfig
 import de.mineking.discord.ui.currentLocalizationConfig
+import de.mineking.discord.ui.localize
 import de.mineking.discord.ui.modal.ModalComponent
 import de.mineking.discord.ui.modal.ModalComponentBuilder
 import de.mineking.discord.ui.modal.ModalContext
+import de.mineking.discord.ui.parameter
+import de.mineking.hexo.bot.userId
+import de.mineking.hexo.discord.core.DiscordUserId
 import net.dv8tion.jda.api.components.ModalTopLevelComponent
+import net.dv8tion.jda.api.interactions.DiscordLocale
+import net.dv8tion.jda.api.interactions.Interaction
 import kotlin.reflect.KType
 import kotlin.reflect.typeOf
+
+internal fun <P> MenuConfig<P, *>.localizationData(interaction: (P) -> Interaction): Pair<DiscordUserId, DiscordLocale> {
+    val user = parameter({ DiscordUserId(0) }, { interaction(it).user.userId }, { user.userId })
+    val locale = parameter({ DiscordLocale.UNKNOWN }, { interaction(it).effectiveLocale }, { event.effectiveLocale })
+
+    localize(locale)
+
+    return user to locale
+}
 
 internal inline fun <reified T> MenuConfig<*, *>.bindLocalizationParameter(name: String, param: T) {
     val config = currentLocalizationConfig ?: return

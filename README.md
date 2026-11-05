@@ -183,6 +183,11 @@ You can also use inline code segments (single backticks: `` ` ``) with HeXO nota
 
 ![example message command](assets/example_message_command.png)
 
+### Message command `Recognize Board`
+Right-click a message containing exactly one image and select `Apps > HeXO Renderer > Recognize Board`.
+The private result menu shows confidence, warnings, and the number of recognized cells.
+Use `Open Interactive Board` to inspect the recognized position.
+
 ### Command `game`
 Another feature is reviewing games from https://hexo.did.science in Discord. Simply use the `game` slash command and provide a game ID (or link) to the game you want to review:
 
