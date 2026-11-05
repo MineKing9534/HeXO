@@ -46,17 +46,17 @@ class R2dbcTransaction(
     override fun Table.update(
         where: Op<Boolean>,
         returning: List<Expression<*>>,
-        config: (UpdateStatement) -> Unit
+        config: (UpdateStatement) -> Unit,
     ) = StatementResult(
         updateReturning(returning.ifEmpty { listOf(intLiteral(0)) }, where = { where }) {
             config(it)
-        }
+        },
     )
 
     override fun Table.insert(returning: List<Expression<*>>, config: (InsertStatement<*>) -> Unit) = StatementResult(
         insertReturning(returning.ifEmpty { listOf(intLiteral(0)) }) {
             config(it)
-        }
+        },
     )
 
     override fun Table.upsert(
@@ -65,15 +65,15 @@ class R2dbcTransaction(
     ) = StatementResult(
         upsertReturning(returning = returning.ifEmpty { listOf(intLiteral(0)) }) {
             config(it)
-        }
+        },
     )
 
     override suspend fun <T> Table.batchInsert(elements: Collection<T>, config: BatchInsertStatement.(T) -> Unit) {
         batchInsert(elements, shouldReturnGeneratedValues = false, body = config)
     }
 
-    override suspend fun Table.delete(returning: List<Expression<*>>, where: Op<Boolean>) = StatementResult(
-        deleteReturning(returning = returning.ifEmpty { listOf(intLiteral(0)) }, where = { where })
+    override fun Table.delete(returning: List<Expression<*>>, where: Op<Boolean>) = StatementResult(
+        deleteReturning(returning = returning.ifEmpty { listOf(intLiteral(0)) }, where = { where }),
     )
 
     override suspend fun <T> notify(type: SerializationStrategy<T>, event: T) {
@@ -121,7 +121,7 @@ private class AdvisoryLockExecutable(
 
 private class NotifyStatement(
     private val channel: Expression<String>,
-    private val payload: Expression<String>
+    private val payload: Expression<String>,
 ) : Statement<R2dbcResult>(StatementType.OTHER, emptyList()) {
     override fun arguments() = QueryBuilder(true).run {
         channel.toQueryBuilder(this)

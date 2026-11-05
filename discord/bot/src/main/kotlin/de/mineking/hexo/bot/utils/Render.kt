@@ -153,7 +153,7 @@ private enum class SegmentParser(val symbol: String?, val keepAsText: Boolean) {
                 val notation = if (lang == "hexo" || lang == null) code else "$lang\n$code"
                 MediaGallery.of(main.notationParser.parse(notation).asMediaGalleryItem(state.locale, theme))
             } catch (_: HexoNotationException) {
-                TextDisplay.of("$symbol${lang?.let { "$it\n" } ?: ""}$code$symbol")
+                TextDisplay.of("$symbol${lang?.let { "$it\n" }.orEmpty()}$code$symbol")
             }
         }
 

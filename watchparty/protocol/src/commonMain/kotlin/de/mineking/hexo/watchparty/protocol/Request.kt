@@ -1,9 +1,9 @@
 package de.mineking.hexo.watchparty.protocol
 
-import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.LineHighlight
+import de.mineking.hexo.board.binary.SerializableBoard
 import de.mineking.hexo.watchparty.model.WatchPartyConnectionId
 import de.mineking.hexo.watchparty.model.WatchPartyId
 import de.mineking.hexo.watchparty.model.WatchPartyNavigateTarget
@@ -38,7 +38,7 @@ data class WatchPartyMoveCountRequest(
 @Serializable
 @SerialName("update")
 data class WatchPartyUpdateRequest(
-    val board: Board,
+    val board: SerializableBoard,
 ) : WatchPartyTransactionChildRequest
 
 @Serializable

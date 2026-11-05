@@ -206,7 +206,7 @@ internal class SessionRepositoryImpl(private val client: HdsApiClient) : Session
                     client = client,
                     dto = value.dto,
                     gameState = event.state.copy(
-                        cells = (value.gameState.cells ?: emptyList()) + event.cell,
+                        cells = (value.gameState.cells.orEmpty()) + event.cell,
                         playerTiles = value.gameState.playerTiles,
                     ),
                 ))

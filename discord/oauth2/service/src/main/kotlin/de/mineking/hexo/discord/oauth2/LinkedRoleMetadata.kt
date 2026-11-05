@@ -40,5 +40,5 @@ suspend fun DiscordToolKit<*>.updateLinkedRoleMetadata(
 
 private fun LocalizationFile.createLinkedRoleMetadataLocalization(key: String, suffix: String): LocalizationInfo {
     val localization = manager.locales.associateWith { readString("linked_roles.$key.$suffix", it) }
-    return LocalizationInfo(localization[manager.defaultLocale]!!, localization)
+    return LocalizationInfo(requireNotNull(localization[manager.defaultLocale]), localization)
 }

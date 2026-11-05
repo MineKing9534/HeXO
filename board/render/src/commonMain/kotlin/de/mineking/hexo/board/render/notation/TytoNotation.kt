@@ -6,7 +6,8 @@ import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.GamePosition
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.toGamePositionForce
-import okio.Buffer
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import kotlin.io.encoding.Base64
 
 private const val SHIFT_BYTE = 0x80
@@ -47,11 +48,11 @@ private class TytoNotationStream(private val out: Buffer) {
     private fun writeInt(value: Int) {
         var z = value
         while (z > MASK) {
-            out.writeByte(z and MASK or SHIFT_BYTE)
+            out.writeByte((z and MASK or SHIFT_BYTE).toByte())
             z /= 128
         }
 
-        out.writeByte(z)
+        out.writeByte(z.toByte())
     }
 
     private fun Int.zig() = if (this >= 0) {

@@ -124,7 +124,7 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
             append(player.displayName)
 
             player.elo?.let { elo ->
-                val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
+                val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" }.orEmpty()
                 append("　`$elo ELO$eloChange`")
             }
             if (result.winner?.id == player.id) append(" :first_place:")

@@ -3,6 +3,12 @@ package de.mineking.hexo.board.binary
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.MutableBoard
+import de.mineking.hexo.board.binary.internal.BitReader
+import de.mineking.hexo.board.binary.internal.BitWriter
+import de.mineking.hexo.board.binary.internal.BoardHeader
+import de.mineking.hexo.board.binary.internal.CellCodec
+import de.mineking.hexo.board.binary.internal.CoordinateCodec
+import de.mineking.hexo.board.binary.internal.LineCodec
 import de.mineking.hexo.board.isEmpty
 import kotlin.io.encoding.Base64
 

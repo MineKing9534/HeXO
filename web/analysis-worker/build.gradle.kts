@@ -22,6 +22,7 @@ kotlin {
     sourceSets.jsMain {
         dependencies {
             implementation(projects.board)
+            implementation(projects.board.binary)
             implementation(projects.solver)
 
             api(libs.kotlin.serialization.json)

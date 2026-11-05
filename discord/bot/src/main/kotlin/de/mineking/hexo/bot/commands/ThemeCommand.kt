@@ -270,7 +270,7 @@ private fun MessageMenuConfig<*, *>.themeParameterModal(
 
     val value by +textInput(
         "value",
-        value = theme?.overrides[property]?.value?.toString() ?: "",
+        value = theme?.overrides[property]?.value?.toString().orEmpty(),
         placeholder = default?.toString(),
         required = false,
     ).withLocalizedLabel().map {

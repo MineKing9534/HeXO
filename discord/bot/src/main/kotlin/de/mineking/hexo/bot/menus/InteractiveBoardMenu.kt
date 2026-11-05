@@ -19,7 +19,6 @@ import de.mineking.discord.ui.currentLocalizationConfig
 import de.mineking.discord.ui.disabledIf
 import de.mineking.discord.ui.getValue
 import de.mineking.discord.ui.initialize
-import de.mineking.discord.ui.localize
 import de.mineking.discord.ui.message.MessageComponent
 import de.mineking.discord.ui.message.MessageMenu
 import de.mineking.discord.ui.message.MessageMenuConfig
@@ -28,7 +27,6 @@ import de.mineking.discord.ui.message.parameter
 import de.mineking.discord.ui.message.replyMenu
 import de.mineking.discord.ui.message.withParameter
 import de.mineking.discord.ui.modal.map
-import de.mineking.discord.ui.parameter
 import de.mineking.discord.ui.registerLocalizedMenu
 import de.mineking.discord.ui.renderValue
 import de.mineking.discord.ui.setValue
@@ -46,7 +44,6 @@ import de.mineking.hexo.board.toGamePosition
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
-import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.asMediaGalleryItem
 import de.mineking.hexo.bot.utils.effectiveLocale
 import de.mineking.hexo.discord.core.DiscordUserId

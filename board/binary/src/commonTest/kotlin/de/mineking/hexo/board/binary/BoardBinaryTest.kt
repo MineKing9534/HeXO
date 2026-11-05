@@ -12,6 +12,13 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.MutableCell
+import de.mineking.hexo.board.binary.internal.BitReader
+import de.mineking.hexo.board.binary.internal.BitWriter
+import de.mineking.hexo.board.binary.internal.BoardHeader
+import de.mineking.hexo.board.binary.internal.LabelCodec
+import de.mineking.hexo.board.binary.internal.OwnerSymbols
+import de.mineking.hexo.board.binary.internal.TurnCodec
+import de.mineking.hexo.board.binary.internal.checkedInt
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.to
