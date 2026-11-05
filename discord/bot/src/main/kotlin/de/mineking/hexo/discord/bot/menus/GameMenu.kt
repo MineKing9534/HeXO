@@ -42,7 +42,7 @@ fun MenuRuntime.gameMenu(notationMenu: MessageMenu<NotationMenuParameter>) = reg
     localize()
     val localization = translation<GameMenuLocalization>()
 
-    var id by state<GameId>(fromInput { input.id })
+    val id by state<GameId>(fromInput { input.id })
     val move by state<Int>(fromInput { input.move })
     val showTurnNumbers by state(false)
 
@@ -114,7 +114,7 @@ private fun ComponentScope<TextDisplay>.gameDetails(game: FinishedGame) {
                 player.elo?.let { elo ->
                     val eloChange = player.eloChange
                         ?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" }
-                        ?: ""
+                        .orEmpty()
                     raw("　`$elo ELO$eloChange`")
                 }
                 if (game.result.winner?.id == player.id) raw(" :first_place:")

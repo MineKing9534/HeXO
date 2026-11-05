@@ -54,7 +54,7 @@ context(_: DiscordToolKitContext<HeXODiscordBot>)
 fun MenuRuntime.boardMenu(notationMenu: MessageMenu<NotationMenuParameter>) = registerMessageMenu<Board>("board") {
     localizeForUser()
 
-    var reference by state(fromInput { BoardReference.Binary(input.encodeBinary()) })
+    val reference by state(fromInput { BoardReference.Binary(input.encodeBinary()) })
     val move by state(fromInput { input.toGamePosition().numberOfStates })
     val showTurnNumbers by state(fromInput { input.attributes[BoardAttribute.ShowTurnNumbers] ?: false })
 

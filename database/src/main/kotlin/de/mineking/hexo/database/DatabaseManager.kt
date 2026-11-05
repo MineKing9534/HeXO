@@ -52,7 +52,7 @@ interface Transaction {
 
     suspend fun <T> Table.batchInsert(elements: Collection<T>, config: BatchInsertStatement.(T) -> Unit)
 
-    suspend fun Table.delete(
+    fun Table.delete(
         returning: List<Expression<*>> = emptyList(),
         where: Op<Boolean>,
     ): StatementResult

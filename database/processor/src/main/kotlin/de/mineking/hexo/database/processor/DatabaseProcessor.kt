@@ -1,5 +1,6 @@
 package de.mineking.hexo.database.processor
 
+import com.google.devtools.ksp.KSApiFeatures
 import com.google.devtools.ksp.processing.CodeGenerator
 import com.google.devtools.ksp.processing.Dependencies
 import com.google.devtools.ksp.processing.Resolver
@@ -9,6 +10,8 @@ import com.google.devtools.ksp.symbol.KSClassDeclaration
 import com.google.devtools.ksp.validate
 
 class DatabaseProcessor(private val codeGenerator: CodeGenerator) : SymbolProcessor {
+    override val apiFeatures = KSApiFeatures(enableBackingFields = true, enableContextParameters = true)
+
     private var generated = false
 
     override fun process(resolver: Resolver): List<KSAnnotated> {
@@ -17,7 +20,7 @@ class DatabaseProcessor(private val codeGenerator: CodeGenerator) : SymbolProces
         val implementations = resolver
             .getSymbolsWithAnnotation("de.mineking.hexo.database.RegisterMigration")
             .filterIsInstance<KSClassDeclaration>()
-            .filter { it.validate() }
+            .filter { it.validate(apiFeatures = apiFeatures) }
             .toList()
 
         if (implementations.isEmpty()) return emptyList()

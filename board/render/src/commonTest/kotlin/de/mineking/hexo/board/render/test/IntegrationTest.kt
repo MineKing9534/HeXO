@@ -18,7 +18,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class IntegrationTest {
-    private fun integrationTest(type: RectilinearNotationType) {
+    private fun assertRoundTrip(type: RectilinearNotationType) {
         val board = MutableBoard()
         board[0, 0].owner = CellOwner.X
         board[3, 0].owner = CellOwner.X
@@ -34,12 +34,12 @@ class IntegrationTest {
 
     @Test
     fun `compact integration test`() {
-        integrationTest(RectilinearNotationType.Compact)
+        assertRoundTrip(RectilinearNotationType.Compact)
     }
 
     @Test
     fun `multiline integration test`() {
-        integrationTest(RectilinearNotationType.Multiline)
+        assertRoundTrip(RectilinearNotationType.Multiline)
     }
 
     @Test

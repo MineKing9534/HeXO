@@ -9,8 +9,9 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.board)
-            implementation(libs.okio)
+
             implementation(libs.kotlin.serialization.core)
+            implementation(libs.kotlin.io)
         }
     }
 }

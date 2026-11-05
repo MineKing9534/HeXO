@@ -15,6 +15,7 @@ import io.ktor.server.engine.embeddedServer
 import io.ktor.server.netty.Netty
 import io.ktor.server.plugins.BadRequestException
 import io.ktor.server.plugins.ContentTransformationException
+import io.ktor.server.plugins.MissingRequestParameterException
 import io.ktor.server.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.server.plugins.cors.routing.CORS
 import io.ktor.server.plugins.ratelimit.RateLimit
@@ -105,6 +106,13 @@ private fun Application.installErrorHandling() {
             call.respond(
                 status = cause.status,
                 message = cause.body?.let { json.encodeToString(it.type, it.body) } ?: Unit,
+            )
+        }
+
+        exception<MissingRequestParameterException> { call, cause ->
+            call.respondError(
+                status = HttpStatusCode.BadRequest,
+                message = "Missing required parameter: ${cause.parameterName}",
             )
         }
 

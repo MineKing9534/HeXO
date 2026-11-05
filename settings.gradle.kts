@@ -13,10 +13,16 @@ rootProject.name = "HeXO"
 include(":board")
 include(":board:binary")
 include(":board:parse")
-include(":board:render")
-include(":board:recognition")
 include(":board:latex")
 include(":board:latex:processor")
+
+include(":board:render")
+include(":board:render:client")
+include(":board:render:server")
+
+include(":board:recognition")
+include(":board:recognition:client")
+include(":board:recognition:server")
 
 include(":board:render:compose")
 include(":web:analysis-worker")
@@ -60,3 +66,6 @@ include(":utils:cache")
 include(":utils:types")
 include(":utils:socketio:client")
 include(":utils:socketio:server")
+
+include(":detekt-rules")
+project(":detekt-rules").projectDir = file("config/detekt-rules")
