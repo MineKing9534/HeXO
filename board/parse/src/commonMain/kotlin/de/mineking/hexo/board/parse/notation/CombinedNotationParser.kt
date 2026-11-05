@@ -7,11 +7,12 @@ import de.mineking.hexo.board.HexoNotationFormatException
 import de.mineking.hexo.board.InternalBoardApi
 import de.mineking.hexo.board.finalState
 import de.mineking.hexo.board.mutable
+import de.mineking.hexo.board.normalized
 import de.mineking.hexo.board.parse.NotationParser
+import de.mineking.hexo.board.parse.inMergeContext
 import de.mineking.hexo.board.plus
 import de.mineking.hexo.board.requireHexo
 import de.mineking.hexo.board.to
-import de.mineking.hexo.board.translate
 import de.mineking.hexo.board.withAttributes
 
 class CombinedNotationParser(
@@ -53,21 +54,17 @@ class CombinedNotationParser(
         }
         requireHexo(stateHistory.numberOfStates > 0) { "The initial state is empty" }
 
-        val state = stateHistory.finalState.mutable()
-        val origins = state.cells.filterValues {
-            it.turn = null
+        val state = stateHistory.finalState.normalized(originLabel).mutable()
+        state.cells.values.forEach { it.turn = null }
 
-            val isOrigin = it.label == originLabel
-            if (isOrigin) it.label = ""
-
-            isOrigin
-        }.keys
-
-        requireHexo(origins.size == 1, notationCheck = origins.isEmpty()) {
-            "The initial state must contain exactly one cell labeled `$originLabel`, but found ${origins.size}"
+        val turns = try {
+            inMergeContext {
+                turnParser.parse(parts[1].trim())
+            }
+        } catch (e: HexoNotationException) {
+            throw HexoNotationException(e.message, e)
         }
 
-        val turns = parsePart(turnParser, parts[1].trim()).translate(origins.single())
         turns.cells.forEach { (coordinate, cell) ->
             requireHexo(cell.turn != null) { "Turn move at $coordinate missing turn" }
             requireHexo(state.cells[coordinate]?.owner == null) {
@@ -76,12 +73,5 @@ class CombinedNotationParser(
         }
 
         return (state + turns).withAttributes(BoardAttribute.ShowTurnNumbers to true)
-    }
-
-    private suspend fun parsePart(parser: NotationParser, notation: String) = try {
-        parser.parse(notation)
-    } catch (e: HexoNotationFormatException) {
-        // The separator identifies combined notation even if a component is unrecognizable.
-        throw HexoNotationException(e.message, e)
     }
 }

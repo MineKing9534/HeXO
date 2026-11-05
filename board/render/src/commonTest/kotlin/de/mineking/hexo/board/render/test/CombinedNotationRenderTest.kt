@@ -76,7 +76,7 @@ class CombinedNotationRenderTest {
 
     @Test
     fun `single move partial turn renders as an implicit opening`() = runTest {
-        val board = "> CW o A0".parseBKENotation()
+        val board = Board(cells = mapOf(CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1)))
         val notation = board.renderCombinedNotation()
 
         assertEquals("0", notation)
@@ -106,10 +106,13 @@ class CombinedNotationRenderTest {
 
     @Test
     fun `multiple move first turn renders with an explicit origin`() = runTest {
-        val board = "> CW o A0 A1".parseBKENotation()
+        val board = Board(cells = mapOf(
+            CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1),
+            CellCoordinate(0, 1) to Cell(CellOwner.O, turn = 1),
+        ))
         val notation = board.renderCombinedNotation()
 
-        assertEquals("< CCW o A0 B1", notation)
+        assertEquals(".[*] || < CCW o A0 B1", notation)
         assertEquals(
             board.translate(CellCoordinate(-2, 0)).cells,
             CombinedNotationParser.Default.parse(notation).cells,
@@ -123,9 +126,14 @@ class CombinedNotationRenderTest {
             CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1),
             CellCoordinate(-1, 0) to Cell(CellOwner.X, turn = 2),
         ))
-        val parsed = CombinedNotationParser.Default.parse(board.renderCombinedNotation())
+        val notation = board.renderCombinedNotation()
+        val parsed = CombinedNotationParser.Default.parse(notation)
 
-        assertEquals(board.translate(CellCoordinate(0, -1)).cells, parsed.cells)
+        assertEquals(".[*]", notation.substringBefore(" || "))
+        assertEquals(
+            board.translate(CellCoordinate(0, -1)).cells,
+            parsed.cells,
+        )
     }
 
     @Test

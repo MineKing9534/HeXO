@@ -83,3 +83,32 @@ data class CacheConfiguration<in K, in V>(
     val evictionStrategy: EvictionStrategy<K, V>,
     val expiration: ExpirationStrategy<K, V>?,
 )
+
+fun <K, V, R> CacheConfiguration<K, V>.mapKeys(transform: (R) -> K): CacheConfiguration<R, V> {
+    fun CacheEntry<R, V>.mapped() = MappedKeyCacheEntry(transform(key), this)
+
+    return CacheConfiguration(
+        sizeLimit = sizeLimit,
+        evictionStrategy = EvictionStrategy(Comparator { left, right ->
+            evictionStrategy.comparator.compare(left.mapped(), right.mapped())
+        }),
+        expiration = expiration?.let { strategy ->
+            object : ExpirationStrategy<R, V> {
+                override fun isExpired(now: Instant, entry: CacheEntry<R, V>) = strategy.isExpired(now, entry.mapped())
+            }
+        },
+    )
+}
+
+private class MappedKeyCacheEntry<K, V>(
+    override val key: K,
+    private val entry: CacheEntry<*, V>,
+) : CacheEntry<K, V> {
+    override val value get() = entry.value
+    override val accessCount get() = entry.accessCount
+    override val accessOrder get() = entry.accessOrder
+    override val accessedAt get() = entry.accessedAt
+    override val writtenAt get() = entry.writtenAt
+    override val insertionOrder get() = entry.insertionOrder
+    override val size get() = entry.size
+}

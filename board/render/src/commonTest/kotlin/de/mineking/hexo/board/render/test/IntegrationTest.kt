@@ -12,6 +12,7 @@ import de.mineking.hexo.board.render.notation.BKENotationBoardRenderer
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderCombinedNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
+import de.mineking.hexo.board.translate
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -157,7 +158,7 @@ class IntegrationTest {
         val notation = board.renderCombinedNotation()
         val parsed = CombinedNotationParser.Default.parse(notation)
         assertEquals("x9x[*] || > CW o A0", notation)
-        assertEquals(board.cells, parsed.cells)
+        assertEquals(board.translate(CellCoordinate(-10, 0)).cells, parsed.cells)
     }
 
     @Test
@@ -174,7 +175,10 @@ class IntegrationTest {
 
         val notation = board.renderCombinedNotation()
         val parsed = CombinedNotationParser.Default.parse(notation)
-        assertEquals(board.cells + (CellCoordinate(0, 1) to Cell.EMPTY), parsed.cells)
+        assertEquals(
+            board.translate(CellCoordinate(0, -1)).cells,
+            parsed.cells,
+        )
         assertEquals("keep", board[0, 0].label)
     }
 
@@ -197,7 +201,10 @@ class IntegrationTest {
         val initialState = notation.substringBefore(" || ").parseRectilinearNotation()
         val parsed = CombinedNotationParser.Default.parse(notation)
         assertEquals(CellCoordinate(2, 0), initialState.cells.entries.single { it.value.label == "*" }.key)
-        assertEquals(board.cells + (CellCoordinate(2, 0) to Cell.EMPTY), parsed.cells)
+        assertEquals(
+            board.translate(CellCoordinate(-2, 0)).cells,
+            parsed.cells,
+        )
         assertEquals(7, board.cells.size)
     }
 }

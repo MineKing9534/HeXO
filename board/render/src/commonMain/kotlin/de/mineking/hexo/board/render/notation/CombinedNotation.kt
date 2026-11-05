@@ -29,9 +29,8 @@ fun Board.renderCombinedNotation(
         return position.state.renderRectilinearNotation(RectilinearNotationType.Compact)
     }
 
-    if (position.state.isEmpty(includeHighlights = true)) {
-        val origin = if (position.turns.turns.first().moves.size == 1) null else position.findBKEOrigin()
-        return position.turns.renderBKENotation(origin = origin)
+    if (position.state.isEmpty(includeHighlights = true) && position.turns.turns.first().moves.size == 1) {
+        return position.turns.renderBKENotation()
     }
 
     val origin = position.findBKEOrigin()

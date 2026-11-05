@@ -18,6 +18,7 @@ import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.parse.focusWinningRows
+import de.mineking.hexo.board.parse.notation.withTransformationComposition
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderCombinedNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
@@ -55,7 +56,7 @@ private const val DEFAULT_SIDEBAR_WIDTH = 380
 private const val MIN_SIDEBAR_WIDTH = 330
 private const val MAX_SIDEBAR_WIDTH = 560
 
-private val boardParser = NotationParser.Default.focusWinningRows()
+private val boardParser = NotationParser.Default.withTransformationComposition().focusWinningRows()
 
 @Composable
 fun Sidebar(

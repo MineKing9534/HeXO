@@ -10,9 +10,7 @@ import de.mineking.hexo.board.distanceTo
 import de.mineking.hexo.board.mirror
 import de.mineking.hexo.board.parse.notation.parseBKENotation
 import de.mineking.hexo.board.render.notation.BKENotationBoardRenderer
-import de.mineking.hexo.board.render.notation.renderBKENotation
 import de.mineking.hexo.board.rotate
-import de.mineking.hexo.board.toGamePositionForce
 import de.mineking.hexo.board.translate
 import kotlinx.coroutines.test.runTest
 import kotlin.test.Test
@@ -20,21 +18,16 @@ import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
 class BKENotationRenderTest {
-    private fun createBoard(vararg turns: List<CellCoordinate>, firstTurn: Int = 0): Board = MutableBoard().apply {
+    private fun createBoard(vararg turns: List<CellCoordinate>): Board = MutableBoard().apply {
         turns.forEachIndexed { index, coordinates ->
             val owner = if (index % 2 == 0) CellOwner.X else CellOwner.O
             coordinates.forEach { coordinate ->
-                this[coordinate] = MutableCell(owner, turn = firstTurn + index)
+                this[coordinate] = MutableCell(owner, turn = index)
             }
         }
     }
 
-    private suspend fun Board.renderBKE(origin: CellCoordinate? = null): String = if (origin == null) {
-        BKENotationBoardRenderer.render(this, Unit)
-    } else {
-        // Explicit origins are only supported by the turn-based rendering API.
-        toGamePositionForce().renderBKENotation(origin)
-    }
+    private suspend fun Board.renderBKE() = BKENotationBoardRenderer.render(this, Unit)
 
     @Test
     fun `single opening move renders zero`() = runTest {
@@ -135,12 +128,12 @@ class BKENotationRenderTest {
     }
 
     @Test
-    fun `explicit origin prioritizes the first turn regardless of move order`() = runTest {
-        for (notation in listOf("> CW x A0 A2 o A3 A4", "> CW x A2 A0 o A4 A3")) {
+    fun `first listed turn takes priority regardless of move order`() = runTest {
+        for (notation in listOf("x A0 A2 o A3 A4", "x A2 A0 o A4 A3")) {
             val board = notation.parseBKENotation()
-            val rendered = board.renderBKE(CellCoordinate.Zero)
+            val rendered = board.renderBKE()
 
-            assertEquals("> CW x A0 A2 o A3 A4", rendered)
+            assertEquals("x A0 A2 o A3 A4", rendered)
             assertEquals(board.cells, rendered.parseBKENotation().cells)
         }
     }
@@ -156,33 +149,23 @@ class BKENotationRenderTest {
     }
 
     @Test
-    fun `explicit origin includes opening turn and preserves orientation`() = runTest {
+    fun `opening move is omitted from rendered turns`() = runTest {
         val board = createBoard(
-            listOf(CellCoordinate(0, -1)),
+            listOf(CellCoordinate.Zero),
+            listOf(CellCoordinate(1, -1)),
             listOf(CellCoordinate(1, 0), CellCoordinate(0, 1)),
-            firstTurn = 1,
         )
-        val notation = board.renderBKE(origin = CellCoordinate.Zero)
-        assertEquals("b CW x A0 o A2 A3", notation)
+        val notation = board.renderBKE()
+
+        assertEquals("o A0 x A1 A2", notation)
         assertEquals(board.cells, notation.parseBKENotation().cells)
     }
 
     @Test
-    fun `explicit origin allows multiple opening moves and counterclockwise context`() = runTest {
-        val origin = CellCoordinate(9, -4)
-        val coordinates = listOf(CellCoordinate(1, 0), CellCoordinate(0, -1))
-        val original = createBoard(coordinates, firstTurn = 1)
-        val board = original.translate(origin)
-        val notation = board.renderBKE(origin)
-        assertEquals("> CCW x A0 A2", notation)
-        assertEquals(original.cells, notation.parseBKENotation().cells)
-    }
+    fun `counterclockwise context renders as canonical standalone notation`() = runTest {
+        val board = "> CCW o A0 A2".parseBKENotation().translate(CellCoordinate(9, -4))
 
-    @Test
-    fun `explicit origin cannot be occupied by a move`() = runTest {
-        assertFailsWith<IllegalArgumentException> {
-            createBoard(listOf(CellCoordinate.Zero)).renderBKE(CellCoordinate.Zero)
-        }
+        assertEquals("o A0 A2", board.renderBKE())
     }
 
     @Test
@@ -203,7 +186,7 @@ class BKENotationRenderTest {
     }
 
     @Test
-    fun `explicit context round trips all ring sectors in both chiralities`() = runTest {
+    fun `standalone notation round trips all ring sectors`() = runTest {
         val coordinates = (-5..5).flatMap { q ->
             (-5..5).map { r -> CellCoordinate(q, r) }
         }.filter { it.distanceTo(CellCoordinate.Zero) in 1..5 }
@@ -211,8 +194,8 @@ class BKENotationRenderTest {
         for (first in listOf(CellCoordinate(1, 0), CellCoordinate(0, 1))) {
             for (second in listOf(CellCoordinate(0, -1), CellCoordinate(-1, 1))) {
                 val ordered = listOf(first, second) + coordinates.filter { it != first && it != second }
-                val board = createBoard(ordered, firstTurn = 1)
-                val notation = board.renderBKE(CellCoordinate.Zero)
+                val board = createBoard(listOf(CellCoordinate.Zero), ordered)
+                val notation = board.renderBKE()
                 assertEquals(board.cells, notation.parseBKENotation().cells)
             }
         }

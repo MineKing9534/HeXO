@@ -146,7 +146,7 @@ class NotationErrorHandlingTest {
 
     @Test
     fun `malformed combined structure is a format mismatch`() = runTest {
-        for (input in listOf("x[*] || x A0 || x A1", "x[*] ||", "|| x A0", "x||?")) {
+        for (input in listOf("x[*] || x A0 || x A1", "x[*] ||", "|| x A0")) {
             assertFailsWith<HexoNotationFormatException>(input) { CombinedNotationParser.Default.parse(input) }
             assertFailsWith<HexoNotationFormatException>(input) { NotationParser.Default.parse(input) }
         }
@@ -163,7 +163,7 @@ class NotationErrorHandlingTest {
             RectilinearNotationParser to "x[*]---x",
             BKENotationParser to "x A0",
             BKENotationParser to "d CW o A0",
-            CombinedNotationParser.Default to ".[*] || x A0",
+            CombinedNotationParser.Default to ".[*] || > CW x A0",
             TytoLinkParser to "https://hexo.tyto.cc/analysis#c=",
         )) {
             assertEquals(parser.parse(input), NotationParser.Default.parse(input), input)

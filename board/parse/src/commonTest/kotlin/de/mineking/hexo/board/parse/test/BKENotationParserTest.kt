@@ -9,7 +9,7 @@ import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 
-class BKENotationParser {
+class BKENotationParserTest {
     @Test
     fun `parse long sword`() {
         val board = "o A0 A2 x A1 A4 o B1.0 D4.0".parseBKENotation()
@@ -31,11 +31,13 @@ class BKENotationParser {
     }
 
     @Test
-    fun `parse counterclockwise context without an implicit opening move`() {
+    fun `parse counterclockwise context with an implicit opening move`() {
         val board = "p CCW x A0 A1 o A3 A4 x B0 B1".parseBKENotation()
 
         assertEquals(
             mapOf(
+                CellCoordinate.Zero to Cell(CellOwner.O, turn = 0),
+
                 CellCoordinate(-1, 1) to Cell(CellOwner.X, turn = 1),
                 CellCoordinate(0, 1) to Cell(CellOwner.X, turn = 1),
 
@@ -112,10 +114,12 @@ class BKENotationParser {
     }
 
     @Test
-    fun `parse clockwise context without an implicit opening move`() {
+    fun `parse clockwise context with an implicit opening move`() {
         val board = "> CW x A0 A1 o B11".parseBKENotation()
         assertEquals(
             mapOf(
+                CellCoordinate.Zero to Cell(CellOwner.O, turn = 0),
+
                 CellCoordinate(1, 0) to Cell(CellOwner.X, turn = 1),
                 CellCoordinate(0, 1) to Cell(CellOwner.X, turn = 1),
                 CellCoordinate(2, -1) to Cell(CellOwner.O, turn = 2),

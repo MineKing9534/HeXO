@@ -12,6 +12,11 @@ import de.mineking.hexo.board.mutable
 import de.mineking.hexo.board.parse.notation.CombinedNotationParser
 import de.mineking.hexo.board.parse.notation.HTTTXNotationParser
 import de.mineking.hexo.board.parse.notation.TytoLinkParser
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.startCoroutine
+import kotlin.coroutines.suspendCoroutine
 
 interface NotationParser {
     suspend fun parse(notation: String): Board
@@ -71,4 +76,18 @@ abstract class LinkParser(private val prefix: String) : NotationParser {
     }
 
     abstract suspend fun parseLink(param: String): Board
+}
+
+private object MergeContext : CoroutineContext.Element, CoroutineContext.Key<MergeContext> {
+    override val key = this
+}
+
+internal suspend fun isInMergeContext() = coroutineContext[MergeContext] != null
+internal suspend fun <T> inMergeContext(
+    block: suspend () -> T,
+): T = suspendCoroutine { continuation ->
+    block.startCoroutine(object : Continuation<T> {
+        override val context: CoroutineContext = continuation.context + MergeContext
+        override fun resumeWith(result: Result<T>) = continuation.resumeWith(result)
+    })
 }
