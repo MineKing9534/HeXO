@@ -1,7 +1,11 @@
 package de.mineking.hexo.launcher.api
 
 import com.auth0.jwt.algorithms.Algorithm
+import de.mineking.hexo.board.recognition.LocalBoardRecognizer
+import de.mineking.hexo.board.recognition.server.BoardRecognizerApiModule
 import de.mineking.hexo.board.render.image.ErrorMessage
+import de.mineking.hexo.board.render.server.BoardRenderApiModule
+import de.mineking.hexo.board.render.server.RenderType
 import de.mineking.hexo.discord.linkedroles.LinkedRolesOAuth2FlowHandler
 import de.mineking.hexo.discord.oauth2.api.InMemoryOAuth2AuthorizationSessionStore
 import de.mineking.hexo.discord.oauth2.api.OAuth2ApiModule
@@ -12,8 +16,6 @@ import de.mineking.hexo.game.implementation.service.auth.LoginOAuth2FlowHandler
 import de.mineking.hexo.hds.implementation.HdsApiClient
 import de.mineking.hexo.hds.implementation.HdsHttpClient
 import de.mineking.hexo.launcher.CachingRepositoryWrapper
-import de.mineking.hexo.launcher.api.modules.RenderApiModule
-import de.mineking.hexo.launcher.api.modules.RenderType
 import de.mineking.hexo.launcher.createBoardParser
 import de.mineking.hexo.launcher.createBoardRenderer
 import de.mineking.hexo.launcher.createDatabase
@@ -84,7 +86,8 @@ suspend fun main() {
             oauth2Module,
             gameModule,
             WatchPartyApiModule(),
-            RenderApiModule(parser, mapOf("png" to RenderType(renderer, ContentType.Image.PNG))),
+            BoardRenderApiModule(parser, mapOf("png" to RenderType(renderer, ContentType.Image.PNG))),
+            BoardRecognizerApiModule(LocalBoardRecognizer.Default),
         ),
         port = config.server.port,
     )

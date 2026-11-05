@@ -81,7 +81,7 @@ private fun StringBuilder.appendVisuals(board: Board) {
 
         if (highlight != null) {
             append(":#")
-            append(highlight.color?.symbol ?: "")
+            append(highlight.color?.symbol.orEmpty())
         }
 
         if (label != null) {

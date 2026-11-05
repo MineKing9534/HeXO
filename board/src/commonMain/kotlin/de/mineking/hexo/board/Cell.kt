@@ -8,7 +8,6 @@ import de.mineking.hexo.utils.types.omittedIfNull
 import kotlinx.serialization.Serializable
 import kotlin.math.abs
 
-@Serializable(with = CellSerializer::class)
 sealed interface Cell {
     companion object {
         val EMPTY = Cell()

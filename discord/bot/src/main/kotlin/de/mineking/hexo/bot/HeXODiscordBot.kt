@@ -10,6 +10,7 @@ import de.mineking.discord.utils.await
 import de.mineking.discord.utils.listen
 import de.mineking.discord.withLocalization
 import de.mineking.hexo.board.parse.NotationParser
+import de.mineking.hexo.board.recognition.BoardRecognizer
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.bot.commands.accountLinkCommand
@@ -18,6 +19,7 @@ import de.mineking.hexo.bot.commands.leaderboardCommand
 import de.mineking.hexo.bot.commands.modalCommand
 import de.mineking.hexo.bot.commands.profileCommand
 import de.mineking.hexo.bot.commands.profileUserCommand
+import de.mineking.hexo.bot.commands.recognizeBoardMessageCommand
 import de.mineking.hexo.bot.commands.renderHexoMessageCommand
 import de.mineking.hexo.bot.commands.renderHexoSlashCommand
 import de.mineking.hexo.bot.commands.themeCommand
@@ -44,6 +46,7 @@ import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.JDABuilder
 import net.dv8tion.jda.api.OnlineStatus
 import net.dv8tion.jda.api.entities.Activity
+import net.dv8tion.jda.api.entities.Message
 import net.dv8tion.jda.api.entities.UserSnowflake
 import net.dv8tion.jda.api.events.message.react.MessageReactionAddEvent
 import net.dv8tion.jda.api.interactions.DiscordLocale
@@ -65,11 +68,14 @@ class HeXODiscordBot(
     val userThemeRepository: UserThemeRepository?,
     val notationParser: NotationParser,
     val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
+    val boardRecognizer: BoardRecognizer,
     val publicUrl: String?,
     token: String,
 ) {
     init {
         MessageRequest.setDefaultUseComponentsV2(true)
+        // Message context commands provide their target content without the privileged intent.
+        Message.suppressContentIntentWarning()
     }
 
     val jda = JDABuilder.createLight(token)
@@ -110,6 +116,7 @@ class HeXODiscordBot(
             installErrorHandling()
 
             +renderHexoMessageCommand()
+            +recognizeBoardMessageCommand(notationMenu)
             +renderHexoSlashCommand(boardMenu)
             +modalCommand()
 

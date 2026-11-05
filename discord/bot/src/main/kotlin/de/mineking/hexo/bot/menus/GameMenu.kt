@@ -29,11 +29,10 @@ import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.bot.CustomEmoji
 import de.mineking.hexo.bot.HeXODiscordBot
 import de.mineking.hexo.bot.main
-import de.mineking.hexo.bot.userId
 import de.mineking.hexo.bot.utils.MessageColor
 import de.mineking.hexo.bot.utils.effectiveLocale
+import de.mineking.hexo.bot.utils.localizationData
 import de.mineking.hexo.bot.utils.respond
-import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.game.model.game.FinishedGameRepository
@@ -62,9 +61,7 @@ fun UIManager.gameMenu(
         moveState.value = it.move
     }
 
-    val user = parameter({ DiscordUserId(0) }, { it.event.user.userId }, { user.userId })
-    val locale = parameter({ DiscordLocale.UNKNOWN }, { it.event.effectiveLocale }, { event.effectiveLocale })
-    localize(locale) // Predefine locale for potential error handling
+    val (user, locale) = localizationData { it.event }
 
     val game = renderValue {
         val event = parameter({ error("") }, { it.event }, { event })
@@ -124,7 +121,7 @@ private fun FinishedGame.gameDetails(localization: GameMenuLocalization, locale:
             append(player.displayName)
 
             player.elo?.let { elo ->
-                val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" } ?: ""
+                val eloChange = player.eloChange?.let { "　[${if (it < 0) "▼" else "▲"} ${it.absoluteValue}]" }.orEmpty()
                 append("　`$elo ELO$eloChange`")
             }
             if (result.winner?.id == player.id) append(" :first_place:")

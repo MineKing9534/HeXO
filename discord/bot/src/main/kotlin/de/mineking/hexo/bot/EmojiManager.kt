@@ -78,7 +78,7 @@ class EmojiManager(val jda: JDA) {
         emojis[this] = action.await()
     }
 
-    operator fun get(type: CustomEmoji) = emojis[type]!!
+    operator fun get(type: CustomEmoji) = requireNotNull(emojis[type])
 }
 
 private fun loadIcon(type: CustomEmoji) = EmojiManager::class.java.classLoader

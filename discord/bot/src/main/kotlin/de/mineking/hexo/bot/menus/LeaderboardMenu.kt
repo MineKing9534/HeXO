@@ -81,7 +81,7 @@ fun UIManager.leaderboardMenu(
             +leaderboardEntries(localization, locale, accountLinkRepository, leaderboard)
 
             leaderboard.players
-        } ?: emptyList()
+        }.orEmpty()
 
         +separator(spacing = Separator.Spacing.LARGE)
         +actionRow(stringSelect("details", options = entries.map {
@@ -123,7 +123,7 @@ private suspend fun MessageMenuConfig<*, *>.leaderboardEntries(
 
     val discordProfiles = accountLinkRepository
         ?.getDiscordProfiles(leaderboard.players.map { it.profileId })
-        ?: emptyMap()
+        .orEmpty()
 
     createMessageComponent(
         leaderboard.players.mapIndexed { index, entry ->
