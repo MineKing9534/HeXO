@@ -43,7 +43,9 @@ data class BoardRecognitionResult(
     val warnings: Set<RecognitionWarning>,
 )
 
-class BoardRecognitionException(message: String) : IllegalArgumentException(message)
+open class BoardRecognitionException(message: String) : IllegalArgumentException(message)
+
+class BoardRecognitionImageTooLargeException : BoardRecognitionException("Image too large")
 
 interface BoardRecognizer {
     suspend fun recognizeBoard(

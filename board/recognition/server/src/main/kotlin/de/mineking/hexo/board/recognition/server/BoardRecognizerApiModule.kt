@@ -1,6 +1,7 @@
 package de.mineking.hexo.board.recognition.server
 
 import de.mineking.hexo.board.recognition.BoardRecognitionException
+import de.mineking.hexo.board.recognition.BoardRecognitionImageTooLargeException
 import de.mineking.hexo.board.recognition.BoardRecognitionOptions
 import de.mineking.hexo.board.recognition.BoardRecognizer
 import de.mineking.hexo.server.api.ApiModule
@@ -39,7 +40,8 @@ class BoardRecognizerApiModule(
             val result = channel.readRemaining(limit).use { image ->
                 if (image.request(limit)) {
                     channel.cancel(null)
-                    throw BadRequestException("Image too large")
+                    call.respondText("Image too large", status = HttpStatusCode.PayloadTooLarge)
+                    return@post
                 }
                 if (image.exhausted()) throw BadRequestException("Image is required")
 
@@ -47,6 +49,9 @@ class BoardRecognizerApiModule(
                     withContext(Dispatchers.Default) {
                         delegate.recognizeBoard(image, options)
                     }
+                } catch (_: BoardRecognitionImageTooLargeException) {
+                    call.respondText("Image too large", status = HttpStatusCode.PayloadTooLarge)
+                    return@post
                 } catch (e: BoardRecognitionException) {
                     call.respondText(e.message ?: "Board recognition failed", status = HttpStatusCode.UnprocessableEntity)
                     return@post

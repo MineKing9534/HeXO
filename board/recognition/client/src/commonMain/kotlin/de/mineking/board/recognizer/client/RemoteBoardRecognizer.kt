@@ -1,6 +1,7 @@
 package de.mineking.board.recognizer.client
 
 import de.mineking.hexo.board.recognition.BoardRecognitionException
+import de.mineking.hexo.board.recognition.BoardRecognitionImageTooLargeException
 import de.mineking.hexo.board.recognition.BoardRecognitionOptions
 import de.mineking.hexo.board.recognition.BoardRecognitionResult
 import de.mineking.hexo.board.recognition.BoardRecognizer
@@ -40,6 +41,9 @@ class RemoteBoardRecognizer(
             setBody(ByteReadChannel(image))
         }
 
+        if (response.status == HttpStatusCode.PayloadTooLarge) {
+            throw BoardRecognitionImageTooLargeException()
+        }
         if (response.status == HttpStatusCode.UnprocessableEntity) {
             throw BoardRecognitionException(response.bodyAsText())
         }

@@ -9,6 +9,7 @@ import de.mineking.discord.extensions.localization.translation
 import de.mineking.discord.localization.LocalizationBundle
 import de.mineking.discord.menu.Defer
 import de.mineking.discord.menu.action
+import de.mineking.discord.menu.components.ComponentScope
 import de.mineking.discord.menu.components.onlyIf
 import de.mineking.discord.menu.message.MessageMenu
 import de.mineking.discord.menu.message.components.MessageComponentScope
@@ -81,7 +82,7 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
     reference: BoardReference,
     history: GameStateHistory?,
     moveState: MutableState<Int>,
-    showTurnNumbersState: MutableState<Boolean>,
+    showTurnNumbersState: MutableState<Boolean>?,
 ) {
     val localization = translation<InteractiveBoardMenuLocalization>()
 
@@ -92,7 +93,9 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
         move = move.coerceIn(1, moveCount)
         it.getState(move - 1).mutable().apply {
             focusWinningRows()
-            attributes[BoardAttribute.ShowTurnNumbers] = showTurnNumbersState.value
+            if (showTurnNumbersState != null) {
+                attributes[BoardAttribute.ShowTurnNumbers] = showTurnNumbersState.value
+            }
         }
     }
 
@@ -100,6 +103,16 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
         val theme = context.main.getUserTheme(requireInteraction().user.userId)
         mediaGallery(boardImage(visibleBoard, theme))
         separator(Separator.Spacing.LARGE)
+    }
+
+    fun ComponentScope<Button>.sandboxButton() {
+        visibleBoard?.sandboxUrl(context.main.publicUrl)?.let { url ->
+            linkButton(
+                url = url,
+                label = localization.exploreLabel(),
+                emoji = Emojis.TEST_TUBE,
+            )
+        }
     }
 
     moveSelector(moveState, max = moveCount)
@@ -113,16 +126,16 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
             NotationMenuParameter(reference, NotationType.CompactRectilinear)
         }
 
-        neutralSwitch(showTurnNumbersState, label = localization.showTurnNumbers())
+        if (showTurnNumbersState != null) {
+            neutralSwitch(showTurnNumbersState, label = localization.showTurnNumbers())
+        } else {
+            sandboxButton()
+        }
     }
 
-    actionRow {
-        visibleBoard?.sandboxUrl(context.main.publicUrl)?.let { url ->
-            linkButton(
-                url = url,
-                label = localization.exploreLabel(),
-                emoji = Emojis.TEST_TUBE,
-            )
+    if (showTurnNumbersState != null) {
+        actionRow {
+            sandboxButton()
         }
     }
 }
