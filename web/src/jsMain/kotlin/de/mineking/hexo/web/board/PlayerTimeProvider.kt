@@ -28,8 +28,10 @@ import kotlin.time.Duration.Companion.seconds
 
 internal interface PlayerTimeProvider {
     @Composable
-    fun remainingTime(player: Player, current: Boolean): Duration?
+    fun remainingTime(player: Player, current: Boolean): PlayerTime?
 }
+
+internal data class PlayerTime(val remaining: Duration, val graceRemaining: Duration? = null)
 
 @Composable
 internal fun rememberPlayerTimeProvider(game: GameWithPosition, move: Int): PlayerTimeProvider =
@@ -45,15 +47,18 @@ private class LivePlayerTimeProvider(
     private val running: Boolean,
 ) : PlayerTimeProvider {
     @Composable
-    override fun remainingTime(player: Player, current: Boolean): Duration? {
+    override fun remainingTime(player: Player, current: Boolean): PlayerTime? {
         val livePlayer = player as? LiveSessionPlayer ?: return null
         val source = livePlayer.timeRemaining ?: return null
         val ticking = running && player.color == activePlayer
         val remaining = source.rememberRemainingTime(ticking)
+        val graceRemaining = livePlayer.graceTimeRemaining
+            ?.rememberRemainingTime(ticking)
+            ?.takeIf { it > Duration.ZERO }
 
-        CountdownWarning(remaining, ticking, current)
+        CountdownWarning(remaining, ticking && graceRemaining == null, current)
 
-        return remaining
+        return PlayerTime(remaining, graceRemaining)
     }
 }
 
@@ -61,7 +66,7 @@ private class FinishedPlayerTimeProvider(game: FinishedGameWithPosition, move: I
     private val remaining = reconstructPlayerTimes(game, move)
 
     @Composable
-    override fun remainingTime(player: Player, current: Boolean) = remaining[player.color]
+    override fun remainingTime(player: Player, current: Boolean) = remaining[player.color]?.let { PlayerTime(it) }
 }
 
 @Composable
