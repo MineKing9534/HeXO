@@ -45,7 +45,7 @@ private fun OptionConfig.profileIdOption(
     profileRepository: ProfileRepository,
     name: String,
 ) = nullableStringOption(name) {
-    val search = profileRepository.getProfilesByName(currentValue ?: "")
+    val search = profileRepository.getProfilesByName(currentValue.orEmpty())
     val options = search.map { choice(it.id.value, it.displayName) }
     replyChoices(options)
 }.map { input ->

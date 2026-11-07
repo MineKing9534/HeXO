@@ -1,0 +1,27 @@
+command.recognizeMessage.description: Recognize Board
+
+response:
+  image.count: Select a message containing exactly one image.
+  invalid.image: The image could not be downloaded or read. Try uploading a PNG or JPEG screenshot directly.
+  image.too.large: The image is too large. Use an image no larger than 16 MiB and 16 million pixels.
+  download.timeout: The image download timed out. Please try again.
+  recognition.failed: No hex board could be detected. Try a clear, upright screenshot cropped to the board.
+
+menu.recognition:
+  summary.content: !<data:de.mineking.hexo.bot.commands.BoardRecognitionData> |-
+    # Board Recognition
+    **Confidence:** ${(data.confidence * 100).roundToInt()}%
+    **Recognized cells:** ${data.board.cells.size}
+
+    ${
+      if (data.warnings.isEmpty()) ""
+      else {
+        "### :warning:  Warnings\n" + data.warnings.joinToString("\n") {
+          when (it) {
+            de.mineking.hexo.board.recognition.RecognitionWarning.SingleStoneColor -> "Only one stone color was found; it was assigned to X."
+            de.mineking.hexo.board.recognition.RecognitionWarning.SimilarBrightness -> "The stone colors have similar brightness; the X/O assignment may be ambiguous."
+            de.mineking.hexo.board.recognition.RecognitionWarning.UnclassifiedCells -> "Additional color groups were omitted; review the recognized position."
+          }
+        }
+      }
+    }

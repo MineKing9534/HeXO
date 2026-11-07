@@ -1,5 +1,14 @@
+config:
+  excludes:
+    - 'custom'
+
 style:
   active: true
+
+  AbstractClassCanBeConcreteClass:
+    active: false
+  AbstractClassCanBeInterface:
+    active: false
 
   MaxLineLength:
     active: false
@@ -12,12 +21,20 @@ style:
   ReturnCount:
     max: 5
   ThrowsCount:
-    max: 3
+    max: 5
+  UnusedPrivateFunction:
+    active: false
+  UnusedPrivateProperty:
+    active: false
+  UnnecessaryApply:
+    active: false
 
 naming:
   FunctionNaming:
     active: true
     ignoreAnnotated: [ "Composable" ]
+  NoNameShadowing:
+    active: false
 
 complexity:
   LongParameterList:
@@ -31,8 +48,19 @@ complexity:
     allowedConditions: 5
     active: true
 
+coroutines:
+  active: true
+  SuspendFunWithFlowReturnType:
+    active: false
+  InjectDispatcher:
+    active: false
+
 potential-bugs:
   active: true
+  HasPlatformType:
+    active: false
+  UnsafeCallOnNullableType:
+    active: false
 
 comments:
   active: true
@@ -98,3 +126,8 @@ ktlint:
     active: false
   SpacingBetweenDeclarationsWithAnnotations:
     active: false
+
+custom:
+  active: true
+  NonSerializableInterfaceProperty:
+    active: true

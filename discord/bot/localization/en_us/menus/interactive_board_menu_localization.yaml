@@ -8,3 +8,4 @@ menu.board:
 
   notation.label: Show Notation
   turn.label: Show Turn Numbers
+  browser.label: Open in Browser

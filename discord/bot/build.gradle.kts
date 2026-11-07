@@ -16,6 +16,7 @@ dependencies {
     implementation(projects.board)
     implementation(projects.board.binary)
     implementation(projects.board.parse)
+    implementation(projects.board.recognition)
     implementation(projects.board.render)
 
     implementation(projects.game.model)

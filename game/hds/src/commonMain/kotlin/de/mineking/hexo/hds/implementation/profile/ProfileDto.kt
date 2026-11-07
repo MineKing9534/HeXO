@@ -13,6 +13,7 @@ import kotlinx.serialization.ExperimentalSerializationApi
 import kotlinx.serialization.KeepGeneratedSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import kotlinx.serialization.Transient
 
 internal object ProfileSerializer : JsonUnwrapSerializer<ProfileDto>(ProfileDto.generatedSerializer(), "user")
 
@@ -34,7 +35,10 @@ internal data class ProfileStatisticsDto(
     override val totalGames: ProfileGameStatisticsDto,
     @SerialName("rankedGames") override val ratedGames: ProfileGameStatisticsWithStreakDto,
 ) : ProfileStatistics {
+    @Transient
     override val rating = ProfileRating(worldRank, elo)
+
+    @Transient
     override val highestRating = ProfileRating(worldRank, eloHistory.highestPoint?.elo ?: elo)
 }
 

@@ -14,6 +14,7 @@ dependencies {
 
     implementation(projects.board)
     implementation(projects.board.parse)
+    implementation(projects.board.recognition)
     implementation(projects.board.render)
 
     implementation(projects.discord.bot)

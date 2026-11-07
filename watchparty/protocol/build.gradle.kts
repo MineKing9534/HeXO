@@ -9,6 +9,8 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.board)
+            implementation(projects.board.binary)
+
             api(projects.watchparty.model)
             implementation(projects.game.model)
 

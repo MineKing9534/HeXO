@@ -1,6 +1,6 @@
 package de.mineking.hexo.watchparty.protocol
 
-import de.mineking.hexo.board.Board
+import de.mineking.hexo.board.binary.SerializableBoard
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
 import de.mineking.hexo.watchparty.model.WatchPartyId
@@ -14,7 +14,7 @@ sealed interface WatchPartyTargetDto {
     data class Session(
         val sessionId: SessionId,
         val move: Int,
-        val overlay: Board,
+        val overlay: SerializableBoard,
     ) : WatchPartyTargetDto
 
     @Serializable
@@ -22,13 +22,13 @@ sealed interface WatchPartyTargetDto {
     data class Game(
         val gameId: GameId,
         val move: Int,
-        val overlay: Board,
+        val overlay: SerializableBoard,
     ) : WatchPartyTargetDto
 
     @Serializable
     @SerialName("sandbox")
     data class Sandbox(
-        val board: Board,
+        val board: SerializableBoard,
         val canUndo: Boolean,
         val canRedo: Boolean,
     ) : WatchPartyTargetDto
