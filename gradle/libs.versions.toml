@@ -6,7 +6,7 @@ kotlin-coroutines = "1.11.0"
 compose = "1.11.1"
 
 kobweb = "0.25.0"
-boofcv = "1.6.0"
+boofcv = "1.6.1-SNAPSHOT" # Waiting for https://github.com/lessthanoptimal/BoofCV/pull/506
 
 dtk = "2.0.0"
 ksp = "2.3.14"
@@ -66,8 +66,8 @@ kobweb-core = { module = "com.varabyte.kobweb:kobweb-core", version.ref = "kobwe
 kobweb-worker = { module = "com.varabyte.kobweb:kobweb-worker", version.ref = "kobweb" }
 kobwebx-serialization-kotlinx = { module = "com.varabyte.kobwebx:kobwebx-serialization-kotlinx", version.ref = "kobweb" }
 
-boofcv-feature = { module = "org.boofcv:boofcv-feature", version.ref = "boofcv" }
-boofcv-io = { module = "org.boofcv:boofcv-io", version.ref = "boofcv" }
+boofcv-feature = { module = "dev.mineking:boofcv-feature", version.ref = "boofcv" }
+boofcv-io = { module = "dev.mineking:boofcv-io", version.ref = "boofcv" }
 ddogleg = { module = "org.ddogleg:ddogleg", version = "1.0.0" }
 
 exposed-core = { module = "org.jetbrains.exposed:exposed-core", version.ref = "exposed" }
