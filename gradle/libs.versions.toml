@@ -1,7 +1,7 @@
 [versions]
 detekt = "2.0.0-alpha.6"
 kotlin = "2.4.10"
-boofcv = "1.6.0"
+boofcv = "1.6.1" # Waiting for https://github.com/lessthanoptimal/BoofCV/pull/506
 kotlin-serialization = "1.11.0"
 kotlin-coroutines = "1.11.0"
 kotlin-antlr = "1.0.0"
@@ -14,9 +14,6 @@ ktor = "3.5.2"
 exposed = "1.4.0"
 
 [libraries]
-boofcv-feature = { module = "org.boofcv:boofcv-feature", version.ref = "boofcv" }
-boofcv-io = { module = "org.boofcv:boofcv-io", version.ref = "boofcv" }
-ddogleg = { module = "org.ddogleg:ddogleg", version = "1.0.0" }
 build-gradle-plugin = { module = "org.jetbrains.kotlin:kotlin-gradle-plugin", version.ref = "kotlin" }
 detekt-api = { module = "dev.detekt:detekt-api", version.ref = "detekt" }
 detekt-analysis-api = { module = "dev.detekt:detekt-kotlin-analysis-api", version.ref = "detekt" }
@@ -28,6 +25,9 @@ node-gradle-plugin = { module = "com.github.node-gradle:gradle-node-plugin", ver
 latex-gradle-plugin = { module = "de.mineking:latex-gradle-plugin", version = "1.0.0-SNAPSHOT" }
 
 jna = { module = "net.java.dev.jna:jna", version = "5.19.1" }
+boofcv-feature = { module = "org.boofcv:boofcv-feature", version.ref = "boofcv" }
+boofcv-io = { module = "org.boofcv:boofcv-io", version.ref = "boofcv" }
+ddogleg = { module = "org.ddogleg:ddogleg", version = "1.0.0" }
 
 kotlin-poet = { module = "com.squareup:kotlinpoet-ksp", version = "2.3.0" }
 ksp-api = { module = "com.google.devtools.ksp:symbol-processing-api", version.ref = "ksp" }
