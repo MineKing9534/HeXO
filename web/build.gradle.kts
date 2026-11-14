@@ -14,11 +14,6 @@ plugins {
     id("tailwindcss")
 }
 
-repositories {
-    google()
-    mavenCentral()
-}
-
 kobweb {
     app {
         index {

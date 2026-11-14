@@ -1,0 +1,15 @@
+commandError:
+  title: Unexpected Command Execution Error
+  description: An unexpected error occurred whilest executing this command. Try again and notify the developer if the issue persists!
+
+menuError:
+  title: Unexpected Menu Error
+  description: An unexpected error occurred whilest rendering this menu. Try again and notify the developer if the issue persists!
+
+menuErrorStateTooLarge:
+  title: State Too Large
+  description: Failed to encode the menu state. The current state requires **{parameter.required}** bytes to encode, but only **{parameter.available}** bytes are available!
+
+menuErrorInvalidVersion:
+  title: Invalid State Version
+  description: The state of this menu was encoded with an incompatible version. Recreate the menu and try again!

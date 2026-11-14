@@ -6,6 +6,7 @@ plugins {
 
 dependencies {
     implementation(projects.discord.core)
+    implementation(projects.discord.database)
     implementation(projects.game.model)
 
     implementation(projects.utils.types)

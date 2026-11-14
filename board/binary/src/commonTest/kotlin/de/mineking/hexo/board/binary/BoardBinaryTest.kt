@@ -12,6 +12,13 @@ import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.LineHighlight
 import de.mineking.hexo.board.MutableBoard
 import de.mineking.hexo.board.MutableCell
+import de.mineking.hexo.board.binary.internal.BitReader
+import de.mineking.hexo.board.binary.internal.BitWriter
+import de.mineking.hexo.board.binary.internal.BoardHeader
+import de.mineking.hexo.board.binary.internal.LabelCodec
+import de.mineking.hexo.board.binary.internal.OwnerSymbols
+import de.mineking.hexo.board.binary.internal.TurnCodec
+import de.mineking.hexo.board.binary.internal.checkedInt
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.to
@@ -35,7 +42,7 @@ class BoardBinaryTest {
         attributes.forEachIndexed { index, value ->
             val board = Board(attributes = value)
             val setting = (index - 1).coerceAtLeast(0)
-            assertContentEquals(byteArrayOf((1 or (setting shl 5)).toByte()), BoardBinary.encode(board))
+            assertContentEquals(byteArrayOf((1 or (setting shl 5)).toByte()), board.encodeBinary().bytes)
             assertRoundTrip(board)
 
             for (hasCells in listOf(false, true)) {
@@ -46,16 +53,16 @@ class BoardBinaryTest {
                         attributes = value,
                     )
                     val expectedHeader = 1 or (if (hasCells) 8 else 0) or (if (hasLines) 16 else 0) or (setting shl 5)
-                    assertEquals(expectedHeader, BoardBinary.encode(withSections).first().toInt() and 0x7f)
+                    assertEquals(expectedHeader, withSections.encodeBinary().bytes.first().toInt() and 0x7f)
                     assertRoundTrip(withSections)
                 }
             }
         }
         val single = Board(cells = mapOf(CellCoordinate.Zero to Cell(CellOwner.X)))
 
-        assertContentEquals(byteArrayOf(0x09, 0, 0, 0, 8), BoardBinary.encode(single))
+        assertContentEquals(byteArrayOf(0x09, 0, 0, 0, 8), single.encodeBinary().bytes)
         assertRoundTrip(single)
-        assertEquals(emptyMap(), BoardBinary.decode(byteArrayOf(0x01), maxCells = 0, maxLines = 0, maxLabelBytes = 0).cells)
+        assertEquals(emptyMap(), EncodedBoard(byteArrayOf(0x01)).decode(maxCells = 0, maxLines = 0, maxLabelBytes = 0).cells)
     }
 
     @Test
@@ -63,19 +70,19 @@ class BoardBinaryTest {
         val board = sampleBoard()
         assertRoundTrip(board)
 
-        val decoded = BoardBinary.decode(BoardBinary.encode(board))
+        val decoded = board.encodeBinary().decode()
         assertEquals(4, decoded.cells.size)
         assertTrue(decoded.cells.values.none { it.focused })
         val unfocused = board.copy()
         unfocused.cells.values.forEach { it.focused = false }
-        assertContentEquals(BoardBinary.encode(board), BoardBinary.encode(unfocused))
+        assertContentEquals(board.encodeBinary().bytes, unfocused.encodeBinary().bytes)
 
         val reordered = Board(
             cells = board.cells.entries.reversed().associate { it.toPair() },
             lineHighlights = board.lineHighlights,
             attributes = board.attributes,
         )
-        assertContentEquals(BoardBinary.encode(board), BoardBinary.encode(reordered))
+        assertContentEquals(board.encodeBinary().bytes, reordered.encodeBinary().bytes)
     }
 
     @Test
@@ -90,7 +97,7 @@ class BoardBinaryTest {
 
         for ((coordinates, tags, size) in cases) {
             val board = Board(cells = coordinates.associateWith { Cell(CellOwner.X) })
-            val bytes = BoardBinary.encode(board)
+            val bytes = board.encodeBinary().bytes
             assertEquals(size, bytes.size)
 
             val input = BitReader(bytes)
@@ -109,13 +116,13 @@ class BoardBinaryTest {
         val board = MutableBoard().apply {
             repeat(32) { this[it, 0] = MutableCell(CellOwner.X, turn = 1_000_000 + it, label = label) }
         }
-        val bytes = BoardBinary.encode(board)
+        val encoded = board.encodeBinary()
         val labelBytes = label.encodeToByteArray().size
 
-        assertTrue(bytes.size < labelBytes * 2)
-        assertEquals(board, BoardBinary.decode(bytes, maxLabelBytes = labelBytes))
+        assertTrue(encoded.bytes.size < labelBytes * 2)
+        assertEquals(board, encoded.decode(maxLabelBytes = labelBytes))
         assertFailsWith<HexoNotationException> {
-            BoardBinary.decode(bytes, maxLabelBytes = labelBytes - 1)
+            encoded.decode(maxLabelBytes = labelBytes - 1)
         }
         assertRoundTrip(board)
     }
@@ -124,7 +131,7 @@ class BoardBinaryTest {
     fun utf8UsesDefaultReplacement() {
         val label = "a" + charArrayOf('\uD800').concatToString() + "b😀"
         val board = Board(cells = mapOf(CellCoordinate.Zero to Cell(CellOwner.X, label = label)))
-        val decoded = BoardBinary.decode(BoardBinary.encode(board))
+        val decoded = board.encodeBinary().decode()
 
         assertEquals(label.encodeToByteArray().decodeToString(), decoded.cells[CellCoordinate.Zero]?.label)
 
@@ -141,7 +148,7 @@ class BoardBinaryTest {
 
     @Test
     fun malformedInputAndAllocationLimitsAreRejected() {
-        val bytes = BoardBinary.encode(sampleBoard())
+        val encoded = sampleBoard().encodeBinary()
         val overlongCount = BitWriter().apply {
             BoardHeader.create(BoardAttributes(), hasCells = true, hasLines = false).writeTo(this)
             writeByte(0x81)
@@ -155,31 +162,31 @@ class BoardBinaryTest {
             byteArrayOf(0x81.toByte()),
             byteArrayOf(0x01, 0),
             overlongCount,
-            bytes.copyOf(bytes.size - 1),
+            encoded.bytes.copyOf(encoded.bytes.size - 1),
         )
         for (input in malformed) {
-            val error = assertFailsWith<HexoNotationException> { BoardBinary.decode(input) }
+            val error = assertFailsWith<HexoNotationException> { EncodedBoard(input).decode() }
             assertNull(error.cause)
             val stringError = assertFailsWith<HexoNotationException> {
-                BoardBinary.decodeFromString(BoardBinary.STRING_ENCODER.encode(input))
+                EncodedBoard.fromString(EncodedBoard.STRING_ENCODER.encode(input)).decode()
             }
             assertEquals(error.message, stringError.message)
             assertNull(stringError.cause)
         }
-        assertFailsWith<HexoNotationException> { BoardBinary.decode(bytes, maxCells = 0) }
-        assertFailsWith<HexoNotationException> { BoardBinary.decode(bytes, maxLines = 0) }
-        assertFailsWith<HexoNotationException> { BoardBinary.decode(bytes, maxLabelBytes = 0) }
+        assertFailsWith<HexoNotationException> { encoded.decode(maxCells = 0) }
+        assertFailsWith<HexoNotationException> { encoded.decode(maxLines = 0) }
+        assertFailsWith<HexoNotationException> { encoded.decode(maxLabelBytes = 0) }
 
-        val encoded = BoardBinary.STRING_ENCODER.encode(bytes)
-        assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded, maxCells = 0) }
-        assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded, maxLines = 0) }
-        assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded, maxLabelBytes = 0) }
+        val stringEncoded = EncodedBoard.fromString(EncodedBoard.STRING_ENCODER.encode(encoded.bytes))
+        assertFailsWith<HexoNotationException> { stringEncoded.decode(maxCells = 0) }
+        assertFailsWith<HexoNotationException> { stringEncoded.decode(maxLines = 0) }
+        assertFailsWith<HexoNotationException> { stringEncoded.decode(maxLabelBytes = 0) }
     }
 
     @Test
     fun invalidBase64IsRejectedAsNotationError() {
         for (encoded in listOf("A", "%%%", "AQ===", "AQ=A")) {
-            val error = assertFailsWith<HexoNotationException> { BoardBinary.decodeFromString(encoded) }
+            val error = assertFailsWith<HexoNotationException> { EncodedBoard.fromString(encoded).decode() }
             val cause = assertIs<IllegalArgumentException>(error.cause)
             assertEquals(cause.message, error.message)
         }
@@ -187,7 +194,7 @@ class BoardBinaryTest {
 
     @Test
     fun decodingErrorsAreThrownDirectly() {
-        val error = assertFailsWith<HexoNotationException> { BoardBinary.decode(byteArrayOf(0)) }
+        val error = assertFailsWith<HexoNotationException> { EncodedBoard(byteArrayOf(0)).decode() }
         assertEquals("Unsupported BoardBinary version", error.message)
         assertNull(error.cause)
     }
@@ -233,8 +240,8 @@ class BoardBinaryTest {
 
     private fun assertRoundTrip(board: Board) {
         val before = board.copy()
-        val encoded = BoardBinary.encode(board)
-        val decoded = BoardBinary.decode(encoded)
+        val encoded = board.encodeBinary()
+        val decoded = encoded.decode()
 
         val expectedCells = board.cells
             .filterValues { !it.isEmpty(includeHighlights = true) }
@@ -243,7 +250,7 @@ class BoardBinaryTest {
         assertEquals(board.lineHighlights, decoded.lineHighlights)
         assertEquals(board.attributes.values.filterValues { it != null }, decoded.attributes.values)
         assertEquals(before, board)
-        assertEquals(decoded, BoardBinary.decodeFromString(BoardBinary.encodeToString(board)))
-        assertContentEquals(encoded, BoardBinary.encode(decoded))
+        assertEquals(decoded, EncodedBoard.fromString(board.encodeBinary().toString()).decode())
+        assertContentEquals(encoded.bytes, decoded.encodeBinary().bytes)
     }
 }

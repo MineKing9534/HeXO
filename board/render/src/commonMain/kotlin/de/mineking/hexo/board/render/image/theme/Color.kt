@@ -75,7 +75,7 @@ value class Color private constructor(val rgba: Int) {
         }
     }
 
-    override fun toString() = "#${(rgba and 0xffffff).toHexString(format(6))}${alpha.toHexString(format(2))}"
+    override fun toString() = "#${(rgba and 0xffffff).toHexString(format(6))}${alpha.takeIf { it != 255 }?.toHexString(format(2)).orEmpty()}"
 }
 
 fun Color.isTransparent() = alpha == 0

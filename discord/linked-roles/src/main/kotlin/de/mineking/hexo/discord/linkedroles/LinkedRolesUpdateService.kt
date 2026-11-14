@@ -17,6 +17,8 @@ import de.mineking.hexo.utils.types.flatMap
 import de.mineking.hexo.utils.types.orElse
 import de.mineking.hexo.utils.types.successIfNotNull
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 
 private val logger = KotlinLogging.logger {}
 
@@ -78,6 +80,7 @@ class LinkedRolesUpdateService(
                 ),
             )
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             logger.error(e) { "Exception while updating linked role data update" }
         }
     }

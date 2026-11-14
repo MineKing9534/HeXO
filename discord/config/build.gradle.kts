@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     implementation(projects.discord.core)
+    implementation(projects.discord.database)
 
     implementation(projects.board)
     implementation(projects.board.render)
@@ -17,7 +18,6 @@ dependencies {
     implementation(projects.utils.types)
 
     implementation(libs.jda)
-    implementation(libs.dtk)
 
     implementation(libs.bundles.exposed)
 }

@@ -1,8 +1,5 @@
 pluginManagement {
-    repositories {
-        gradlePluginPortal()
-        maven("https://maven.mineking.dev/snapshots")
-    }
+    apply(from = "gradle/repositories.settings.gradle.kts")
 }
 
 plugins {
@@ -37,6 +34,7 @@ include(":database:processor")
 
 include(":discord:bot")
 include(":discord:core")
+include(":discord:database")
 include(":discord:link")
 include(":discord:linked-roles")
 include(":discord:oauth2:service")

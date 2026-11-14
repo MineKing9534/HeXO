@@ -1,5 +1,6 @@
 package de.mineking.hexo.game.model.profile
 
+import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.game.model.game.FinishedGame
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.FinishedGameSelector
@@ -32,6 +33,7 @@ class ProfileReference(
 interface Profile : Entity<ProfileId> {
     override val id: ProfileId
     override val url: String
+    val discordId: DiscordUserId?
     val displayName: String
     val image: String?
     val registeredAt: Instant
@@ -58,7 +60,7 @@ interface ProfileGameStatistics {
     val total: Int
     val won: Int
 
-    val winRate get() = won.toDouble() / total
+    val winRate get() = if (total != 0) won.toDouble() / total else 0.0
 }
 
 interface ProfileGameStatisticsWithStreak : ProfileGameStatistics {

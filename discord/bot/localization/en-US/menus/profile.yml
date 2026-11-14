@@ -1,0 +1,27 @@
+memberSinceLabel: Member Since
+
+eloLabel: ELO
+eloValue: >-
+  {showHighest, select,
+    true {{current} (Highest {highest})}
+    other {{current}}
+  }
+
+overallGames: Overall Games
+rankedGames: Ranked Games
+
+gamesPlayedLabel: Games Played
+gamesWonLabel: Games Won
+gamesWonValue: >-
+  {total, select,
+    0 {{won}}
+    other {{won} ({winRate}%)}
+  }
+
+streakLabel: Streak
+streakValue: "{current} (Longest: {longest})"
+
+profileNotFound:
+  title: Profile Not Found
+  description: The queried profile with ID **${parameter}** was not found!
+

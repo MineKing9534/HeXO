@@ -22,11 +22,12 @@ dependencies {
     implementation(projects.discord.linkedRoles)
     implementation(projects.discord.oauth2.service)
 
-    implementation(libs.dtk)
-
+    implementation(libs.jda)
+    implementation(libs.dtk.localization)
     implementation(libs.kotlin.coroutines.core)
     implementation(libs.kotlin.serialization.core)
 
+    implementation(libs.logging)
     runtimeOnly(libs.logback)
     runtimeOnly(libs.r2dbc.pool)
 }

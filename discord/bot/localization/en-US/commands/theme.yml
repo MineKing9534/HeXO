@@ -1,0 +1,44 @@
+commandDescription: Configure your custom theme
+
+title: Theme Configuration
+
+selectLabel: Use as default
+selectError:
+  title: Failed to select Theme
+  description: Something went wrong while changing your selected theme. Try again and contact the developer if the issue persists!
+
+deleteLabel: Delete
+deleteConfirmTitle: Confirm Theme Deletion
+deleteConfirmLabel:
+  label: Confirm
+  description: The custom theme will be permanently deleted
+  checkboxLabel: I want to delete my theme {parameter}
+deleteError:
+  title: Failed to delete Theme
+  description: Something went wrong while deleting the selected theme. Try again ang contact the developer if the issue persists!
+
+createLabel: Create
+createTitle: Create Custom Theme
+createNameLabel:
+  label: Name
+  description: The name of the theme
+  placeholder: My Theme
+createBaseLabel:
+  label: Base Theme
+  description: The theme to use as base
+createError:
+  title: Failed to create Theme
+  description: You already have a custom theme with name **{parameter}**!
+
+editLabel: Edit
+editTitle: Theme Editor
+editModalTitle: Customize {property}
+editModalDoubleLabel:
+  label: Value
+  description: The value to use
+editModalColorLabel:
+  label: Color
+  description: The HEXO code of the color to use
+editErrorInvalidValue:
+  title: Invalid Value
+  description: "Invalid value for property **{parameter.property}**: {parameter.message, select, null {Unknown error} other {{parameter.property}}}"

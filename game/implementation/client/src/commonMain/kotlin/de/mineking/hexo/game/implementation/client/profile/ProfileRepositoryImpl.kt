@@ -4,12 +4,14 @@ import de.mineking.hexo.game.implementation.client.HmdApiClient
 import de.mineking.hexo.game.implementation.client.isAuthenticationError
 import de.mineking.hexo.game.implementation.protocol.ProfileDto
 import de.mineking.hexo.game.implementation.protocol.ProfileStatisticsDto
+import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileId
 import de.mineking.hexo.game.model.profile.ProfileIdentifier
 import de.mineking.hexo.game.model.profile.ProfileNotFoundError
 import de.mineking.hexo.game.model.profile.ProfileQueryError
 import de.mineking.hexo.game.model.profile.ProfileRepository
 import de.mineking.hexo.game.model.profile.ProfileStatistics
+import de.mineking.hexo.game.model.profile.ProfileWithStatistics
 import de.mineking.hexo.utils.types.EntityState
 import de.mineking.hexo.utils.types.Result
 import de.mineking.hexo.utils.types.map
@@ -27,10 +29,10 @@ import kotlinx.coroutines.sync.withLock
 private val logger = KotlinLogging.logger {}
 
 interface HmdProfileRepository : ProfileRepository {
-    val currentProfile: StateFlow<EntityState<HmdProfile>>
+    val currentProfile: StateFlow<EntityState<Profile>>
 
-    override suspend fun getProfile(id: ProfileIdentifier): Result<HmdProfileWithStatistics, ProfileQueryError>
-    override suspend fun getProfilesByName(name: String): List<HmdProfile>
+    override suspend fun getProfile(id: ProfileIdentifier): Result<ProfileWithStatistics, ProfileQueryError>
+    override suspend fun getProfilesByName(name: String): List<Profile>
 }
 
 suspend fun HmdProfileRepository.getProfileByName(name: String) = getProfile(ProfileIdentifier.Name(name))
@@ -42,8 +44,8 @@ internal class ProfileRepositoryImpl(
 
     override val url = "${client.publicUrl}/profiles"
 
-    override val currentProfile: StateFlow<EntityState<HmdProfile>>
-        field = MutableStateFlow<EntityState<HmdProfile>>(EntityState.Loading)
+    override val currentProfile: StateFlow<EntityState<Profile>>
+        field = MutableStateFlow<EntityState<Profile>>(EntityState.Loading)
 
     init {
         client.client.httpClient.launch {
@@ -52,7 +54,7 @@ internal class ProfileRepositoryImpl(
     }
 
     private val requester = client.entityRequesterFactory
-        .createEntityRequester<ProfileIdentifier, Result<HmdProfileWithStatistics, ProfileQueryError>>(client.coroutineScope) { id ->
+        .createEntityRequester<ProfileIdentifier, Result<ProfileWithStatistics, ProfileQueryError>>(client.coroutineScope) { id ->
             client.request("/profiles") {
                 url {
                     when (id) {
@@ -78,7 +80,7 @@ internal class ProfileRepositoryImpl(
             }.body<Result<ProfileStatisticsDto, ProfileQueryError>>()
         }
 
-    private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<HmdProfile>>(client.coroutineScope) { name ->
+    private val searchRequester = client.entityRequesterFactory.createEntityRequester<String, List<Profile>>(client.coroutineScope) { name ->
         if (name.isBlank()) return@createEntityRequester emptyList()
 
         client.request("/profiles") { parameter("name", name) }
@@ -86,7 +88,7 @@ internal class ProfileRepositoryImpl(
             .map { ProfileImpl(client, it) }
     }
 
-    private suspend fun fetchCurrentProfile(): EntityState<HmdProfile> {
+    private suspend fun fetchCurrentProfile(): EntityState<Profile> {
         val response = client.request("/profiles/@me")
         if (response.status.isAuthenticationError()) return EntityState.NotFound
 

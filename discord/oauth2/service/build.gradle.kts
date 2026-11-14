@@ -7,6 +7,7 @@ plugins {
 
 dependencies {
     api(projects.discord.oauth2.model)
+    implementation(projects.discord.database)
 
     implementation(projects.server.api)
 
@@ -25,7 +26,6 @@ dependencies {
     runtimeOnly(libs.ktor.client.cio)
 
     implementation(libs.jda)
-    implementation(libs.dtk)
 
     testImplementation(libs.kotlin.coroutines.test)
 }

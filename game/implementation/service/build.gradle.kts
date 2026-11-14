@@ -6,6 +6,7 @@ plugins {
 dependencies {
     implementation(projects.game.implementation.protocol)
 
+    implementation(projects.discord.database)
     implementation(projects.database)
     ksp(projects.database.processor)
 

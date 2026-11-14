@@ -1,0 +1,13 @@
+showNotation: Export
+showTurnNumbers: Show Turn Numbers
+
+moveSelectTitle: Enter the Move to Inspect
+moveSelectLabel:
+  label: Move number
+  description: The move to inspect [1-{parameter}]
+
+moveInvalid:
+  title: Invalid Move
+  description: The entered value isn't a valid move!
+
+exploreLabel: Explore in sandbox

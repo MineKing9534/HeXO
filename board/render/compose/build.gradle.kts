@@ -7,10 +7,6 @@ plugins {
     id("publish")
 }
 
-repositories {
-    google()
-}
-
 kotlin {
     js { browser() }
 

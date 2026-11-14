@@ -1,0 +1,20 @@
+title: Game Review
+tournament: Tournament
+
+timeControl:
+  unlimited: Unlimited
+  match: Match {main} +{increment}
+  turn: Turn {time}
+
+finishReason:
+  regular: "{length, select, 6 {Six in a row} other {{length} in a row}}"
+  timeout: Timeout
+  surrender: Surrender
+  disconnect: Disconnect
+  drawAgreement: Draw
+  terminated: Terminated
+  aborted: Aborted by {abortingPlayerName}
+
+gameNotFound:
+  title: Game Not Found
+  description: The queried game with ID **{parameter}** was not found!

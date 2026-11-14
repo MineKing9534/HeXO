@@ -53,7 +53,7 @@ class ProfileService(private val database: DatabaseManager) {
 
     private fun ResultRow.mapToProfile() = ProfileDto(
         id = this[ProfileTable.id].value,
-        discord = this[PrincipalTable.discordId],
+        discordId = this[PrincipalTable.discordId],
         displayName = this[ProfileTable.displayName],
         image = this[ProfileTable.image],
         registeredAt = this[ProfileTable.registeredAt],

@@ -1,12 +1,12 @@
 package de.mineking.hexo.launcher.discord
 
-import de.mineking.discord.localization.read
 import de.mineking.hexo.board.render.image.ErrorMessage
-import de.mineking.hexo.bot.DiscordLocalization
-import de.mineking.hexo.bot.HeXODiscordBot
-import de.mineking.hexo.bot.outputBoardAttachment
-import de.mineking.hexo.bot.utils.RenderLocalization
+import de.mineking.hexo.discord.bot.DiscordLocalization
+import de.mineking.hexo.discord.bot.HeXODiscordBot
 import de.mineking.hexo.discord.bot.config.UserThemeRepositoryImpl
+import de.mineking.hexo.discord.bot.outputBoardAttachment
+import de.mineking.hexo.discord.bot.utils.ImageSizeLimits
+import de.mineking.hexo.discord.bot.utils.RenderLocalization
 import de.mineking.hexo.discord.linkedroles.LinkedRolesUpdateService
 import de.mineking.hexo.discord.linkedroles.installLinkedRoleMetadata
 import de.mineking.hexo.discord.linkedroles.syncLinkedRolesData
@@ -21,10 +21,17 @@ import de.mineking.hexo.launcher.formatBytes
 import de.mineking.hexo.launcher.loadConfig
 import de.mineking.hexo.launcher.shutdownHook
 import de.mineking.hexo.link.AccountLinkRepositoryImpl
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CoroutineExceptionHandler
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancelAndJoin
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.launch
+
+private val logger = KotlinLogging.logger {}
 
 suspend fun main() = coroutineScope {
     val config = loadConfig<BotApplicationConfig>()
@@ -54,6 +61,9 @@ suspend fun main() = coroutineScope {
     val renderer = createBoardRenderer()
 
     val bot = HeXODiscordBot(
+        coroutineScope = CoroutineScope(Dispatchers.Default + SupervisorJob() + CoroutineExceptionHandler { _, throwable ->
+            logger.error(throwable) { "Unexpected error" }
+        }),
         repositories = hds,
         accountLinkRepository = accountLinks,
         discordUserAuthenticationRepository = oauth2?.tokenRepository,
@@ -64,7 +74,7 @@ suspend fun main() = coroutineScope {
         token = config.bot.token,
     )
 
-    if (linkedRoles != null) bot.dtk.installLinkedRoleMetadata()
+    if (linkedRoles != null) bot.jda.installLinkedRoleMetadata(bot.translationManager)
 
     val linkedRolesSynchronization = if (linkedRoles != null && oauth2 != null && database != null) {
         launch {
@@ -91,14 +101,15 @@ suspend fun main() = coroutineScope {
 
 private fun createBoardRenderer() = createBoardRenderer { error ->
     val context = currentCoroutineContext()[DiscordLocalization] ?: throw error
-    val localization = context.localizationManager.read<RenderLocalization>()
+    val localization = context.translationManager.bind<RenderLocalization>(context.locale).imageTooLarge()
 
     ErrorMessage(
-        title = localization.responseErrorImageTooLargeTitle(context.locale),
-        details = localization.responseErrorImageTooLargeDetails(
-            locale = context.locale,
-            required = error.requiredBytes.formatBytes(),
-            limit = error.limitBytes.formatBytes(),
+        title = localization.title(),
+        details = localization.description(
+            ImageSizeLimits(
+                required = error.requiredBytes.formatBytes(),
+                limit = error.limitBytes.formatBytes(),
+            ),
         ),
     )
 }

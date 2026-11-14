@@ -1,5 +1,6 @@
 package de.mineking.hexo.hds.implementation.profile
 
+import de.mineking.hexo.discord.core.DiscordUserId
 import de.mineking.hexo.game.model.game.FinishedGameSelector
 import de.mineking.hexo.game.model.profile.Profile
 import de.mineking.hexo.game.model.profile.ProfileStatistics
@@ -13,8 +14,15 @@ internal class ProfileImpl(
     private val client: HdsApiClient,
     private val dto: ProfileDto,
 ) : Profile {
+    companion object {
+        private val DISCORD_AVATAR_PATTERN = """https://cdn\.discordapp\.com/avatars/(\d+)/.*\.(?:png|jpg|webp|gif)(?:\?size=\d+)?""".toRegex()
+    }
+
     override val id = dto.id
     override val url = client.profileRepository.urlOf(id)
+    override val discordId = dto.image
+        ?.let { DISCORD_AVATAR_PATTERN.matchEntire(it) }
+        ?.let { DiscordUserId(it.groupValues[1].toLong()) }
     override val displayName = dto.username
     override val image = dto.image
     override val registeredAt = dto.registeredAt

@@ -1,6 +1,6 @@
 package de.mineking.hexo.discord.oauth2.database
 
-import de.mineking.hexo.discord.core.DiscordUserIdTable
+import de.mineking.hexo.discord.database.DiscordUserIdTable
 import org.jetbrains.exposed.v1.core.TextColumnType
 import org.jetbrains.exposed.v1.datetime.timestamp
 

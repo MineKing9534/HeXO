@@ -1,0 +1,65 @@
+title: HeXO Connection Status
+
+link: Link Profile
+linkTitle: Link your HeXO Profile
+linkExplanation: >-
+  Connect your **[HeXO](https://hexo.did.science)** profile so the bot can use your rating and rank for Discord linked roles.
+  Enter your profile **ID** or **URL** below. The bot will verify that the profile belongs to your Discord account.
+  You can disconnect it at any time.
+linkProfileIdLabel:
+  label: Profile URL
+  description: Your hexo.did.science profile ID or URL
+
+linkStatus: >-
+  **HeXO profile:** {profileUrl, select,
+    null {*Not connected*}
+    other {{profileUrl}}
+  }
+
+unlink: Unlink Profile
+unlinkConfirmTitle: Unlink your HeXO Profile
+unlinkConfirmLabel:
+  label: Confirm Unlink
+  description: You can reconnect this profile later.
+  checkboxLabel: Disconnect my HeXO profile
+
+authorize: Authorize
+authorizationTitle: Authorize Discord linked roles
+authorizationExplanation: |-
+  Authorize HeXO to publish your rating and rank as Discord linked-role data. Discord will show the permission being requested before you approve it.
+
+  **{url}**
+
+  You can revoke this access at any time from the `/link` menu.
+  
+  -# Note: Submit this modal after you finished the authorization to automatically refresh the link menu. You can also open a new link menu at any time to see the updated state.
+
+authorizationStatus: >-
+  **Discord access:** {status, select,
+    true {Authorized}
+    other {*Not authorized*}
+  }
+
+revoke: Revoke
+revokeConfirmTitle: Revoke Discord Authorization
+revokeConfirmNote: |-
+  **Note:** Revoking authorization also removes HeXO from your user-installed Discord apps. If you use HeXO in servers where the bot is not installed, you will need to authorize the user app again.
+revokeConfirmLabel:
+  label: Confirm Revoke
+  description: Stored Discord credentials will be deleted. You can authorize again later.
+  checkboxLabel: Revoke Discord authorization
+
+profileNotFound:
+  title: Profile Not Found
+  description: Profile with ID **{parameter}** not found.
+
+profileVerificationFailed:
+  title: Verification Failed
+  description: We couldn't verify that this HeXO profile belongs to you. Make sure the profile uses your Discord avatar, then try again. If it still fails, contact the developer to get your profile linked manually.
+
+profileLinkFailed:
+  title: Profile Link Failed
+  description: We couldn't link this profile. Your Discord account or the HeXO profile may already be linked elsewhere.
+
+linkAuthInfo: >-  
+  :warning: Your HeXO profile is connected, but Discord access is not authorized. Authorize access so the bot can keep your linked-role rating and rank up to date.

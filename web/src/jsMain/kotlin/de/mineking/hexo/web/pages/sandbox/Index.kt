@@ -18,7 +18,8 @@ import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOverride
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.binary.BoardBinary
+import de.mineking.hexo.board.binary.EncodedBoard
+import de.mineking.hexo.board.binary.decode
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.isEmpty
@@ -68,7 +69,7 @@ fun SandboxPage() {
         val encodedPosition = positionParameter ?: return@LaunchedEffect
 
         try {
-            initialBoard = BoardBinary.decodeFromString(encodedPosition)
+            initialBoard = EncodedBoard.fromString(encodedPosition).decode()
         } catch (e: HexoNotationException) {
             error = e.message.takeIf { it.isNotBlank() } ?: "The position data could not be decoded."
         } finally {

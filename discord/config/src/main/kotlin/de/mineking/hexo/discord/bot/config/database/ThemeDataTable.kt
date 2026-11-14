@@ -5,7 +5,7 @@ import de.mineking.hexo.database.NanoId
 import de.mineking.hexo.database.NanoIdTable
 import de.mineking.hexo.discord.bot.config.CustomThemeId
 import de.mineking.hexo.discord.bot.config.ThemeOverrideValue
-import de.mineking.hexo.discord.core.discordUserIdColumn
+import de.mineking.hexo.discord.database.discordUserIdColumn
 import kotlinx.serialization.json.Json
 import org.jetbrains.exposed.v1.json.json
 
