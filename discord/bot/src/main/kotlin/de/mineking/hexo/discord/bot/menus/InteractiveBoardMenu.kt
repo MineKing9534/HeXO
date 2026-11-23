@@ -11,6 +11,7 @@ import de.mineking.discord.menu.Defer
 import de.mineking.discord.menu.action
 import de.mineking.discord.menu.components.ComponentScope
 import de.mineking.discord.menu.components.onlyIf
+import de.mineking.discord.menu.components.text
 import de.mineking.discord.menu.message.MessageMenu
 import de.mineking.discord.menu.message.components.MessageComponentScope
 import de.mineking.discord.menu.message.components.actionRow
@@ -35,6 +36,7 @@ import de.mineking.hexo.board.InternalBoardApi
 import de.mineking.hexo.board.binary.decode
 import de.mineking.hexo.board.binary.encodeBinary
 import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.mutable
 import de.mineking.hexo.board.toGamePosition
 import de.mineking.hexo.discord.bot.ErrorResponseMessage
@@ -90,7 +92,7 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
     val moveCount = history?.numberOfStates ?: Int.MAX_VALUE
 
     val visibleBoard = history?.let {
-        move = move.coerceIn(1, moveCount)
+        move = move.coerceIn(1, moveCount.coerceAtLeast(1))
         it.getState(move - 1).mutable().apply {
             focusWinningRows()
             if (showTurnNumbersState != null) {
@@ -100,9 +102,16 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
     }
 
     if (visibleBoard != null) {
-        val theme = context.main.getUserTheme(requireInteraction().user.userId)
-        mediaGallery(boardImage(visibleBoard, theme))
-        separator(Separator.Spacing.LARGE)
+        if (visibleBoard.isEmpty(includeHighlights = true)) {
+            text {
+                text(":warning: ")
+                italic(localization.empty())
+            }
+        } else {
+            val theme = context.main.getUserTheme(requireInteraction().user.userId)
+            mediaGallery(boardImage(visibleBoard, theme))
+            separator(Separator.Spacing.LARGE)
+        }
     }
 
     fun ComponentScope<Button>.sandboxButton() {
@@ -188,6 +197,7 @@ internal fun Board.sandboxUrl(baseUrl: String?): String? {
 
 @LocalizationBundle("board")
 internal interface InteractiveBoardMenuLocalization {
+    fun empty(): String
     fun showNotation(): String
     fun showTurnNumbers(): String
 

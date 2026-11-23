@@ -12,6 +12,8 @@ warning: >-
     other {*Unknown*}
   }
 
+selectTitle: Select Image to Analyze
+selectDescription: The message contains multiple images. Select which one you want to analyze.
 imageLabel: Image {position}
 scanLabel: Recognize Board
 

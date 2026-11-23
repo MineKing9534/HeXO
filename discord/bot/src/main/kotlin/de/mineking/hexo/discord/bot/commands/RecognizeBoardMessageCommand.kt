@@ -39,6 +39,8 @@ import de.mineking.hexo.discord.bot.utils.recognitionImages
 import de.mineking.hexo.discord.bot.utils.recognizeImage
 import de.mineking.hexo.utils.types.orElse
 import kotlinx.coroutines.TimeoutCancellationException
+import net.dv8tion.jda.api.components.buttons.ButtonStyle
+import net.dv8tion.jda.api.components.mediagallery.MediaGalleryItem
 import net.dv8tion.jda.api.components.selections.SelectOption
 import net.dv8tion.jda.api.components.separator.Separator
 import net.dv8tion.jda.api.utils.FileProxy
@@ -105,7 +107,13 @@ private fun MenuRuntime.imageSelectMenu(
     val images = message.recognitionImages()
 
     container {
-        mediaGallery()
+        text {
+            h1(":mag: ${localization.selectTitle()}")
+            text(localization.selectDescription())
+        }
+        separator(Separator.Spacing.LARGE)
+
+        mediaGallery(MediaGalleryItem.fromUrl(images[selected].url))
 
         separator(Separator.Spacing.LARGE)
         actionRow {
@@ -117,6 +125,7 @@ private fun MenuRuntime.imageSelectMenu(
                         value = index,
                         label = localization.imageLabel(index + 1),
                         description = proxy.url.ellipsize(SelectOption.DESCRIPTION_MAX_LENGTH),
+                        default = index == selected,
                     )
                 }
             }
@@ -126,7 +135,7 @@ private fun MenuRuntime.imageSelectMenu(
             button(action("recognize") {
                 val result = recognize(localization, images[selected])
                 replaceMenu(recognitionMenu, result)
-            }, emoji = context.emojis[IconEmojis.Scan], label = localization.scanLabel())
+            }, style = ButtonStyle.PRIMARY, emoji = context.emojis[IconEmojis.Scan], label = localization.scanLabel())
         }
     }
 }
@@ -191,6 +200,8 @@ interface RecognizeBoardCommandLocalization {
     fun warnings(): String
     fun warning(warning: RecognitionWarning): String
 
+    fun selectTitle(): String
+    fun selectDescription(): String
     fun imageLabel(position: Int): String
     fun scanLabel(): String
 
