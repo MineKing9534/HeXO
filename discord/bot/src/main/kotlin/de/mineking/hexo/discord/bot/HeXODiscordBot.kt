@@ -87,12 +87,10 @@ class HeXODiscordBot(
         })
         .build()
 
-    val translationManager = TranslationManager(DiscordLocale.ENGLISH_US, YamlCatalogLoader.resources())
-
     init {
         coroutineScope.launch {
             installDiscordToolKit(jda, this@HeXODiscordBot, coroutineScope) {
-                translation(translationManager)
+                translation(TranslationManager(DiscordLocale.ENGLISH_US, YamlCatalogLoader.resources()))
 
                 emojis {
                     register(SwitchEmojis)

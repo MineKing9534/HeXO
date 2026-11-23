@@ -74,7 +74,7 @@ suspend fun main() = coroutineScope {
         token = config.bot.token,
     )
 
-    if (linkedRoles != null) bot.jda.installLinkedRoleMetadata(bot.translationManager)
+    if (linkedRoles != null) bot.jda.installLinkedRoleMetadata()
 
     val linkedRolesSynchronization = if (linkedRoles != null && oauth2 != null && database != null) {
         launch {

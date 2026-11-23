@@ -38,7 +38,9 @@ application {
 
 tasks.shadowJar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    filesMatching("localization/catalog.index") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     filesMatching("META-INF/*.kotlin_module") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     mergeServiceFiles()
+    append("localization/catalog.index")
 }

@@ -6,10 +6,12 @@ import de.mineking.discord.await
 import de.mineking.discord.localization.LocalizationBundle
 import de.mineking.discord.localization.LocalizationMessageGroup
 import de.mineking.discord.localization.runtime.TranslationManager
+import de.mineking.discord.localization.source.yaml.YamlCatalogLoader
 import de.mineking.hexo.discord.oauth2.LinkedRoleMetadataKey
 import de.mineking.hexo.discord.oauth2.LinkedRoleMetadataType
 import net.dv8tion.jda.api.JDA
 import net.dv8tion.jda.api.entities.RoleConnectionMetadata
+import net.dv8tion.jda.api.interactions.DiscordLocale
 
 internal abstract class LocalizedLinkRoleMetadataKey<T : Any>(name: String, type: LinkedRoleMetadataType<T>) : LinkedRoleMetadataKey<T>(name, type) {
     abstract fun LinkedRolesMetadataLocalization.localize(): LinkedRoleMetadataLocalization
@@ -38,7 +40,8 @@ internal interface LinkedRoleMetadataLocalization {
     fun description(): String
 }
 
-suspend fun JDA.installLinkedRoleMetadata(translationManager: TranslationManager) {
+suspend fun JDA.installLinkedRoleMetadata() {
+    val translationManager = TranslationManager(DiscordLocale.ENGLISH_US, YamlCatalogLoader.resources())
     updateLinkedRoleMetadata(translationManager, listOf(RankKey, EloKey, OverallGamesKey))
 }
 
