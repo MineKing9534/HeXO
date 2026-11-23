@@ -62,7 +62,7 @@ fun MenuRuntime.gameMenu(notationMenu: MessageMenu<NotationMenuParameter>) = reg
 
         interactiveBoard(
             notationMenu = notationMenu,
-            reference = BoardReference.Game(id),
+            reference = BoardReference.Game(id, move),
             history = game?.position,
             moveState = move.ref,
             showTurnNumbersState = showTurnNumbers.ref,

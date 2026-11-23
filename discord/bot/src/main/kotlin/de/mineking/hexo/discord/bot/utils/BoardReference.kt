@@ -2,6 +2,7 @@ package de.mineking.hexo.discord.bot.utils
 
 import de.mineking.hexo.board.binary.EncodedBoard
 import de.mineking.hexo.board.binary.decode
+import de.mineking.hexo.board.take
 import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.GameId
@@ -13,7 +14,7 @@ import kotlinx.serialization.Serializable
 sealed interface BoardReference {
     @Serializable
     @SerialName("game")
-    data class Game(val gameId: GameId) : BoardReference
+    data class Game(val gameId: GameId, val move: Int) : BoardReference
 
     @Serializable
     @SerialName("binary")
@@ -26,6 +27,8 @@ suspend inline fun BoardReference.decode(
 ) = when (this) {
     is BoardReference.Game -> gameRepository.getGame(gameId)
         .orElse(notFound)
-        .position.toBoard()
+        .position
+        .take(move)
+        .toBoard()
     is BoardReference.Binary -> data.decode()
 }
