@@ -1,6 +1,5 @@
 package de.mineking.hexo.discord.bot.utils
 
-import de.mineking.hexo.board.recognition.BoardRecognitionResult
 import de.mineking.hexo.board.recognition.BoardRecognizer
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.future.await
@@ -73,7 +72,7 @@ private class RecognitionImageCollector {
 }
 
 // Bound the whole pipeline, including decoded images waiting for CPU processing.
-internal suspend fun BoardRecognizer.recognizeImage(proxy: FileProxy): BoardRecognitionResult = recognitionPermit.withPermit {
+internal suspend fun BoardRecognizer.recognizeImage(proxy: FileProxy) = recognitionPermit.withPermit {
     withTimeout(IMAGE_DOWNLOAD_TIMEOUT) {
         withContext(Dispatchers.IO) {
             // Discord's image proxy defaults to WebP, which the bundled ImageIO readers cannot decode.

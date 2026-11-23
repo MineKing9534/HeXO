@@ -4,7 +4,6 @@ import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.Cell
 import de.mineking.hexo.board.CellCoordinate
 import de.mineking.hexo.board.CellOwner
-import de.mineking.hexo.board.recognition.BoardRecognitionException
 import de.mineking.hexo.board.recognition.RecognitionWarning
 import kotlin.math.abs
 
@@ -13,7 +12,6 @@ private const val MINIMUM_STONE_COLOR_COVERAGE = 0.16
 private const val SIMILAR_LIGHTNESS_THRESHOLD = 2.0
 private const val SINGLE_COLOR_CONFIDENCE_FACTOR = 0.75
 private const val PLAYER_COLOR_COUNT = 2
-
 internal data class Stone(val coordinate: CellCoordinate, val color: LabColor)
 internal data class StoneClassification(val board: Board, val confidence: Double, val warnings: Set<RecognitionWarning>)
 
@@ -22,9 +20,12 @@ private class StoneGroup(val stones: List<Stone>) {
     val brightness = stones.sumOf { it.color.lightness } / size
 }
 
-internal fun identifyStones(samples: List<CellSample>, palette: Palette, colorTolerance: Double): List<Stone> {
-    if (samples.isEmpty()) throw BoardRecognitionException("No complete cells are visible")
-    val emptyCellColor = inferEmptyCellColor(samples, palette)
+internal fun identifyStones(
+    samples: List<CellSample>,
+    palette: Palette,
+    colorTolerance: Double,
+    emptyCellColor: LabColor,
+): List<Stone> {
     val stoneColorIndices = palette.colors.indices.filter { index ->
         palette.colors[index].distanceTo(emptyCellColor) > colorTolerance
     }
@@ -42,17 +43,9 @@ internal fun identifyStones(samples: List<CellSample>, palette: Palette, colorTo
     return stones
 }
 
-private fun inferEmptyCellColor(samples: List<CellSample>, palette: Palette): LabColor {
-    // Empty cells are assumed to have the most common dominant color. Lowest palette index wins a tie.
-    val cellCounts = IntArray(palette.colors.size)
-    for (sample in samples) cellCounts[sample.dominantColorIndex]++
-    val backgroundIndex = cellCounts.indices.maxBy { cellCounts[it] }
-    return palette.colors[backgroundIndex]
-}
-
 /** Keep the two most common appearances and assign owners in descending lightness order. */
 internal fun classifyStones(stones: List<Stone>, colorTolerance: Double): StoneClassification {
-    if (stones.isEmpty()) return StoneClassification(Board(), 1.0, emptySet())
+    require(stones.isNotEmpty()) { "Cannot classify an empty position" }
     val groups = groupStonesByColor(stones, colorTolerance)
     val largestGroups = groups.sortedByDescending { it.size }.take(PLAYER_COLOR_COUNT)
     val ownerGroups = largestGroups.sortedByDescending { it.brightness }

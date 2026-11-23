@@ -9,16 +9,19 @@ import de.mineking.hexo.board.render.image.theme.BaseTheme
 import de.mineking.hexo.board.render.image.theme.Color
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
 import de.mineking.hexo.board.render.image.theme.HDSTheme
+import de.mineking.hexo.utils.types.Result
 import kotlinx.coroutines.test.runTest
 import kotlinx.io.Buffer
 import kotlinx.io.asOutputStream
 import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.EnumSource
+import java.awt.image.BufferedImage
 import java.io.IOException
 import javax.imageio.ImageIO
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
+import kotlin.test.assertIs
 import kotlin.test.assertTrue
 
 class RenderedBoardRecognitionTest {
@@ -63,14 +66,51 @@ class RenderedBoardRecognitionTest {
     }
 
     @Test
+    fun `round trip with only partial empty cells and a majority player color`() {
+        val board = MutableBoard().apply {
+            this[0, 0].owner = CellOwner.X
+            this[1, 0].apply {
+                owner = CellOwner.O
+                focused = true
+            }
+            this[2, 0].apply {
+                owner = CellOwner.O
+                focused = true
+            }
+        }
+        // Only the three occupied cells fit completely; neighboring empty cells are clipped.
+        val image = board.renderToImage(64.0, padding = 32, visibleRadius = 2, theme = HDSTheme.Default)
+        val result = assertIs<Result.Success<BoardRecognitionResult>>(image.recognizeBoard()).value
+
+        assertEquals(board.normalizedOwners(), result.board.normalizedOwners())
+        assertTrue(RecognitionWarning.SingleStoneColor !in result.warnings)
+    }
+
+    @Test
+    fun `image without a hex grid returns a grid error`() {
+        val image = BufferedImage(64, 64, BufferedImage.TYPE_INT_RGB)
+        val result = image.recognizeBoard()
+        assertEquals(Result.Error(GridNotFoundError), result)
+    }
+
+    @Test
+    fun `rendered board without stones returns a detection error`() {
+        // A label anchors the render bounds without placing a stone.
+        val board = MutableBoard().apply { this[0, 0].label = "." }
+        val image = board.renderToImage(36.0, padding = 45, visibleRadius = 2, theme = HDSTheme.Default)
+        assertIs<Result.Error<BoardRecognitionError>>(image.recognizeBoard())
+    }
+
+    @Test
     fun `encoded image source is recognized at the byte limit`() = runTest {
         val image = sampleBoard().renderToImage(36.0, padding = 45, visibleRadius = 2, theme = HDSTheme.Default)
         val source = Buffer()
         ImageIO.write(image, "png", source.asOutputStream())
         val recognizer = LocalBoardRecognizer(maxImageBytes = source.size, maxImagePixels = 16_000_000L)
 
-        val actual = recognizer.recognizeBoard(source)
-        assertEquals(image.recognizeBoard().board, actual.board)
+        val actual = assertIs<Result.Success<BoardRecognitionResult>>(recognizer.recognizeBoard(source)).value
+        val expected = assertIs<Result.Success<BoardRecognitionResult>>(image.recognizeBoard()).value
+        assertEquals(expected.board, actual.board)
     }
 
     @Test
@@ -95,7 +135,7 @@ class RenderedBoardRecognitionTest {
         options: BoardRecognitionOptions = BoardRecognitionOptions(),
     ) {
         val image = board.renderToImage(layoutRadius, padding = 45, visibleRadius = 2, theme = theme)
-        val recognized = image.recognizeBoard(options).board
+        val recognized = assertIs<Result.Success<BoardRecognitionResult>>(image.recognizeBoard(options)).value.board
         val expected = board.normalizedOwners()
         val actual = recognized.normalizedOwners()
 

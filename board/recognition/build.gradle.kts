@@ -9,6 +9,7 @@ kotlin {
     sourceSets.commonMain {
         dependencies {
             api(projects.board)
+            api(projects.utils.types)
             implementation(projects.board.binary)
 
             api(libs.kotlin.io)

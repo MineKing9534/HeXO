@@ -1,10 +1,12 @@
 package de.mineking.board.recognizer.client
 
+import de.mineking.hexo.board.recognition.BoardRecognitionError
 import de.mineking.hexo.board.recognition.BoardRecognitionException
 import de.mineking.hexo.board.recognition.BoardRecognitionImageTooLargeException
 import de.mineking.hexo.board.recognition.BoardRecognitionOptions
 import de.mineking.hexo.board.recognition.BoardRecognitionResult
 import de.mineking.hexo.board.recognition.BoardRecognizer
+import de.mineking.hexo.utils.types.Result
 import io.ktor.client.HttpClient
 import io.ktor.client.call.body
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -33,7 +35,7 @@ class RemoteBoardRecognizer(
     override suspend fun recognizeBoard(
         image: Source,
         options: BoardRecognitionOptions,
-    ): BoardRecognitionResult {
+    ): Result<BoardRecognitionResult, BoardRecognitionError> {
         val response = client.post("${apiUrl.trimEnd('/')}/recognize") {
             expectSuccess = false
             parameter("options", Json.encodeToString(options))

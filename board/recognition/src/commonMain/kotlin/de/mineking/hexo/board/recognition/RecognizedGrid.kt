@@ -36,8 +36,8 @@ data class RecognizedGrid(val originX: Double, val originY: Double, val spacing:
         return CellCoordinate(roundedQ, roundedR)
     }
 
-    /** Enumerate only centers whose entire sampling square fits inside the image. */
-    internal fun completeCellCoordinates(width: Int, height: Int, margin: Int): Sequence<CellCoordinate> = sequence {
+    /** Enumerate centers within inset image bounds; a negative margin includes clipped cells. */
+    internal fun cellCoordinatesWithinMargin(width: Int, height: Int, margin: Int): Sequence<CellCoordinate> = sequence {
         val minimumRow = ceil((margin - originY) / (spacing * HEX_ROW_HEIGHT_RATIO)).toInt()
         val maximumRow = floor((height - 1 - margin - originY) / (spacing * HEX_ROW_HEIGHT_RATIO)).toInt()
         for (r in minimumRow..maximumRow) {

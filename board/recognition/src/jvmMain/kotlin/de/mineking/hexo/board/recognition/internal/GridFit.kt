@@ -1,6 +1,5 @@
 package de.mineking.hexo.board.recognition.internal
 
-import de.mineking.hexo.board.recognition.BoardRecognitionException
 import de.mineking.hexo.board.recognition.HEX_ROW_HEIGHT_RATIO
 import de.mineking.hexo.board.recognition.RecognizedGrid
 import kotlin.math.abs
@@ -29,11 +28,9 @@ private data class GridHypothesis(
     }
 }
 
-/** Vote for likely spacings, compare possible origins, then refine the best-supported grid. */
-internal fun fitGrid(centers: List<CellCandidate>, tolerance: Double): GridFit {
-    if (centers.size < MINIMUM_GRID_CENTERS) {
-        throw BoardRecognitionException("Not enough cell interiors or stones to detect a hex grid")
-    }
+/** Refine the best-supported grid, or return null when the centers provide insufficient evidence. */
+internal fun fitGrid(centers: List<CellCandidate>, tolerance: Double): GridFit? {
+    if (centers.size < MINIMUM_GRID_CENTERS) return null
 
     val spacings = proposeSpacings(centers, tolerance)
     val originCount = minOf(centers.size, MAXIMUM_ORIGIN_PROPOSALS)
@@ -49,11 +46,11 @@ internal fun fitGrid(centers: List<CellCandidate>, tolerance: Double): GridFit {
         }
     }
 
-    val winner = best ?: throw BoardRecognitionException("Could not find repeated hex-grid spacing")
+    val winner = best ?: return null
 
     val matchCount = winner.matchedCenters.size
     if (matchCount < MINIMUM_GRID_CENTERS || matchCount < centers.size * MINIMUM_MATCHED_FRACTION) {
-        throw BoardRecognitionException("Cell centers do not agree on a hex grid")
+        return null
     }
 
     return GridFit(refineGrid(winner), matchCount.toDouble() / centers.size)

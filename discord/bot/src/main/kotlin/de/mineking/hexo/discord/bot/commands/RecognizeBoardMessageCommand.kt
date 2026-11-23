@@ -37,6 +37,7 @@ import de.mineking.hexo.discord.bot.throwValidationError
 import de.mineking.hexo.discord.bot.utils.BoardReference
 import de.mineking.hexo.discord.bot.utils.recognitionImages
 import de.mineking.hexo.discord.bot.utils.recognizeImage
+import de.mineking.hexo.utils.types.orElse
 import kotlinx.coroutines.TimeoutCancellationException
 import net.dv8tion.jda.api.components.selections.SelectOption
 import net.dv8tion.jda.api.components.separator.Separator
@@ -74,7 +75,9 @@ private suspend fun recognize(
     proxy: FileProxy,
 ): BoardRecognitionResult {
     return try {
-        context.main.boardRecognizer.recognizeImage(proxy)
+        context.main.boardRecognizer.recognizeImage(proxy).orElse {
+            localization.recognitionFailed().throwValidationError()
+        }
     } catch (_: BoardRecognitionImageTooLargeException) {
         localization.imageTooLarge().throwValidationError()
     } catch (_: IOException) {

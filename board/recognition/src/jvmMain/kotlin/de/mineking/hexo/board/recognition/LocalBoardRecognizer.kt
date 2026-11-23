@@ -1,5 +1,6 @@
 package de.mineking.hexo.board.recognition
 
+import de.mineking.hexo.utils.types.Result
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.io.Buffer
@@ -24,7 +25,7 @@ class LocalBoardRecognizer(
     override suspend fun recognizeBoard(
         image: Source,
         options: BoardRecognitionOptions,
-    ): BoardRecognitionResult {
+    ): Result<BoardRecognitionResult, BoardRecognitionError> {
         val image = withContext(Dispatchers.IO) { readImage(image) }
         return image.recognizeBoard(options)
     }
