@@ -22,11 +22,12 @@ dependencies {
     implementation(projects.discord.linkedRoles)
     implementation(projects.discord.oauth2.service)
 
-    implementation(libs.dtk)
-
+    implementation(libs.jda)
+    implementation(libs.dtk.localization)
     implementation(libs.kotlin.coroutines.core)
     implementation(libs.kotlin.serialization.core)
 
+    implementation(libs.logging)
     runtimeOnly(libs.logback)
     runtimeOnly(libs.r2dbc.pool)
 }
@@ -37,7 +38,9 @@ application {
 
 tasks.shadowJar {
     duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+    filesMatching("localization/catalog.index") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     filesMatching("META-INF/services/**") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     filesMatching("META-INF/*.kotlin_module") { duplicatesStrategy = DuplicatesStrategy.INCLUDE }
     mergeServiceFiles()
+    append("localization/catalog.index")
 }

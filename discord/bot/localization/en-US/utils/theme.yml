@@ -1,0 +1,16 @@
+defaultLabel: >-
+  {type, select,
+    HDS {hexo.did.science}
+    Cix {playsix.cixmango.workers.dev}
+    HTTTX {explore.htttx.io}
+    Tyto {hexo.tyto.cc}
+    Omok {Omok}
+    other {UNKNOWN}
+  }
+
+defaultDescription: Default Theme
+customDescription: "Custom Theme: {id}"
+
+themeNotFound:
+  title: Theme Not Found
+  description: The queried theme with ID **{parameter}** not found!

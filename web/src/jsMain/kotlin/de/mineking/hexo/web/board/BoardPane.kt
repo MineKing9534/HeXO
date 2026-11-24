@@ -9,7 +9,7 @@ import com.varabyte.kobweb.core.isExporting
 import com.varabyte.kobweb.navigation.BasePath
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.GamePosition
-import de.mineking.hexo.board.binary.BoardBinary
+import de.mineking.hexo.board.binary.encodeBinary
 import de.mineking.hexo.board.render.compose.BoardContentBuilder
 import de.mineking.hexo.board.render.compose.BoardEditor
 import de.mineking.hexo.board.render.compose.BoardInteraction
@@ -209,7 +209,7 @@ private fun OpenInSandboxButton(board: Board) {
         tooltip = "Open this position in the sandbox",
         onClick = {
             val url = URL("${window.location.origin}${BasePath.prependTo(AppRoute.Sandbox.href)}")
-            url.searchParams.set("position", BoardBinary.encodeToString(board))
+            url.searchParams.set("position", board.encodeBinary().toString())
             window.open(url.toString(), if (watchPartyController.hostWatchParty == null) "_blank" else "_self")
         },
     ) {

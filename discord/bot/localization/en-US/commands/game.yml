@@ -1,0 +1,3 @@
+command:
+  description: Renders a finished game from hexo.did.science
+  optionDescription: The game ID or URL to view

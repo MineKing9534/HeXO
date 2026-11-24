@@ -1,0 +1,8 @@
+missingImage: |-
+  :warning:  No valid HeXO notations found in target message!
+  
+  **NOTE:** Put HeXO notation parts of your message in code blocks!
+
+imageTooLarge:
+  title: Image Too Large
+  description: The requested image requires ${parameter.required} of memory to render, but the limit is ${parameter.limit}!

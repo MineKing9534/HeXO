@@ -12,7 +12,7 @@ import com.varabyte.kobweb.compose.css.borderColor
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellOwner
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.binary.BoardBinary
+import de.mineking.hexo.board.binary.encodeBinary
 import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.findNextTurn
 import de.mineking.hexo.board.isEmpty
@@ -405,7 +405,7 @@ private fun NotationActions(
             },
             onClick = {
                 val url = URL(window.location.href)
-                url.searchParams.set("position", BoardBinary.encodeToString(board))
+                url.searchParams.set("position", board.encodeBinary().toString())
                 link = url.toString()
             },
         ) {

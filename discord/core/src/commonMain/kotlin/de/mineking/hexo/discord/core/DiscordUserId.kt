@@ -1,6 +1,8 @@
 package de.mineking.hexo.discord.core
 
 import kotlinx.serialization.Serializable
+import kotlin.jvm.JvmInline
 
+@JvmInline
 @Serializable
-expect value class DiscordUserId(val value: Long)
+value class DiscordUserId(val value: Long)

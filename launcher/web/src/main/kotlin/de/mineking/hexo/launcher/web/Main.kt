@@ -1,7 +1,9 @@
 package de.mineking.hexo.launcher.web
 
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.binary.BoardBinary
+import de.mineking.hexo.board.binary.EncodedBoard
+import de.mineking.hexo.board.binary.decode
+import de.mineking.hexo.board.binary.encodeBinary
 import de.mineking.hexo.game.model.TimeControl
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.game.model.session.SessionId
@@ -68,7 +70,7 @@ private fun Route.sandboxRoute() {
         val meta = call.queryParameters["position"].let { parameter ->
             try {
                 val encoded = parameter
-                    ?.let { BoardBinary.encodeToString(BoardBinary.decodeFromString(it)) }
+                    ?.let { EncodedBoard.fromString(it).decode().encodeBinary().toString() }
                     ?: return@let OpenGraphMetadata(
                         title = "Sandbox Mode",
                         description = "Explore HeXO locally with the ability to freely interact with the board",

@@ -11,7 +11,7 @@ import de.mineking.hexo.board.copy
 import de.mineking.hexo.board.parse.notation.CombinedNotationParser
 import de.mineking.hexo.board.parse.notation.parseBKENotation
 import de.mineking.hexo.board.parse.notation.parseRectilinearNotation
-import de.mineking.hexo.board.render.notation.NotationType
+import de.mineking.hexo.board.render.notation.CombinedNotationBoardRenderer
 import de.mineking.hexo.board.render.notation.RectilinearNotationType
 import de.mineking.hexo.board.render.notation.renderCombinedNotation
 import de.mineking.hexo.board.render.notation.renderRectilinearNotation
@@ -29,7 +29,7 @@ class CombinedNotationRenderTest {
             CellCoordinate(1, 0) to Cell(CellOwner.O, turn = 1),
             CellCoordinate(0, 1) to Cell(CellOwner.O, turn = 1),
         ))
-        val notation = NotationType.Combined.renderer.render(board, Unit)
+        val notation = CombinedNotationBoardRenderer.render(board, Unit)
 
         assertEquals("x[*] || > CW o A0 A1", notation)
         assertEquals(board.cells, CombinedNotationParser.Default.parse(notation).cells)

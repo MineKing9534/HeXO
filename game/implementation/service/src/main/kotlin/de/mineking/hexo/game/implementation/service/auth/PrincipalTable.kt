@@ -2,7 +2,7 @@ package de.mineking.hexo.game.implementation.service.auth
 
 import de.mineking.hexo.database.NanoId
 import de.mineking.hexo.database.NanoIdTable
-import de.mineking.hexo.discord.core.discordUserIdColumn
+import de.mineking.hexo.discord.database.discordUserIdColumn
 import de.mineking.hexo.game.implementation.service.profile.ProfileTable
 import kotlinx.serialization.Serializable
 import org.jetbrains.exposed.v1.datetime.CurrentTimestamp

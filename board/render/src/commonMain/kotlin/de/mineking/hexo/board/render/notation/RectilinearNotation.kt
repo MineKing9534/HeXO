@@ -100,6 +100,11 @@ private fun LineHighlight.render(): String {
 }
 
 private fun StringBuilder.appendCell(cell: Cell?) {
+    if (cell?.owner == null && cell?.highlight != null && cell.highlight?.color == null) {
+        append("!")
+        return
+    }
+
     append(cell?.owner?.symbol ?: ".")
 
     if (!cell?.label.isNullOrBlank()) {

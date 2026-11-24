@@ -2,7 +2,8 @@ package de.mineking.hexo.launcher.api.modules
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
-import de.mineking.hexo.board.binary.BoardBinary
+import de.mineking.hexo.board.binary.EncodedBoard
+import de.mineking.hexo.board.binary.decode
 import de.mineking.hexo.board.parse.NotationParser
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
@@ -43,8 +44,8 @@ class RenderApiModule(
         val encoded = queryParameters["encoded"]
 
         if (notation == null) {
-            val encoded = encoded ?: throw MissingRequestParameterException("encoded")
-            return BoardBinary.decodeFromString(encoded)
+            if (encoded == null) throw MissingRequestParameterException("encoded")
+            return EncodedBoard.fromString(encoded).decode()
         } else {
             if (encoded != null) throw BadRequestException("'notation' and 'encoded' are mutually exclusive")
             return parser.parse(notation)

@@ -1,3 +1,7 @@
+pluginManagement {
+    apply(from = "../gradle/repositories.settings.gradle.kts")
+}
+
 rootProject.name = "buildSrc"
 
 dependencyResolutionManagement {

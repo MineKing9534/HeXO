@@ -1,7 +1,7 @@
 package de.mineking.hexo.discord.bot.config.database
 
 import de.mineking.hexo.board.render.image.theme.DefaultTheme
-import de.mineking.hexo.discord.core.DiscordUserIdTable
+import de.mineking.hexo.discord.database.DiscordUserIdTable
 import org.jetbrains.exposed.v1.core.ReferenceOption
 import org.jetbrains.exposed.v1.core.isNull
 import org.jetbrains.exposed.v1.core.neq

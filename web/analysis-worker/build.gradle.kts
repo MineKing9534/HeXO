@@ -11,11 +11,6 @@ plugins {
     alias(libs.plugins.kobweb.worker)
 }
 
-repositories {
-    google()
-    mavenCentral()
-}
-
 kotlin {
     configAsKobwebWorker("analysis-worker")
 

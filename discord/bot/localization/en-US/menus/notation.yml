@@ -1,0 +1,28 @@
+title: Notation Output
+
+gameNotFound: The requested game was not found
+notationTooLong: "The generated notation was too long to send in a Discord message. It was uploaded as a file instead:"
+notationError: ":warning:  This boar cannot be exported as the target notation: `{message}`"
+
+notationSelectLabel: Select the output notation
+notationTypeLabel:
+  label: >-
+    {parameter,select,
+      CompactRectilinear {CRN}
+      MultilineRectilinear {MRN}
+      Combined {Combined}
+      HTTTX {HTTTX}
+      Tyto {Tyto}
+      other {UNKNOWN}
+    }
+  description: >-
+    {parameter,select,
+      CompactRectilinear {Compact Rectilinear Notation}
+      MultilineRectilinear {Multiline Rectilinear Notation (human readable)}
+      Combined {Rectilinear state with BKE turns}
+      HTTTX {Bracketed coordinate notation for explore.htttx.io}
+      Tyto {Base64-encoded notation for hexo.tyto.cc}
+      other {unknown}
+    }
+
+styledLabel: Colored

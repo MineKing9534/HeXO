@@ -1,6 +1,6 @@
 package de.mineking.hexo.link.database
 
-import de.mineking.hexo.discord.core.DiscordUserIdTable
+import de.mineking.hexo.discord.database.DiscordUserIdTable
 import de.mineking.hexo.game.model.profile.ProfileId
 
 internal object AccountLinkTable : DiscordUserIdTable("linked_accounts", "discord_id") {

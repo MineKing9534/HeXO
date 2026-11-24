@@ -15,8 +15,8 @@ import de.mineking.hexo.board.parse.notation.TytoLinkParser
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.intrinsics.startCoroutineUninterceptedOrReturn
+import kotlin.coroutines.intrinsics.suspendCoroutineUninterceptedOrReturn
 
 interface NotationParser {
     suspend fun parse(notation: String): Board
@@ -85,8 +85,8 @@ private object MergeContext : CoroutineContext.Element, CoroutineContext.Key<Mer
 internal suspend fun isInMergeContext() = coroutineContext[MergeContext] != null
 internal suspend fun <T> inMergeContext(
     block: suspend () -> T,
-): T = suspendCoroutine { continuation ->
-    block.startCoroutine(object : Continuation<T> {
+): T = suspendCoroutineUninterceptedOrReturn { continuation ->
+    block.startCoroutineUninterceptedOrReturn(object : Continuation<T> {
         override val context: CoroutineContext = continuation.context + MergeContext
         override fun resumeWith(result: Result<T>) = continuation.resumeWith(result)
     })

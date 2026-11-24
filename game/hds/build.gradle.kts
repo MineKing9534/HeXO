@@ -19,6 +19,7 @@ kotlin {
             api(projects.game.model)
             implementation(projects.board)
 
+            implementation(projects.discord.core)
             implementation(projects.utils.coroutines)
             implementation(projects.utils.socketio.client)
 

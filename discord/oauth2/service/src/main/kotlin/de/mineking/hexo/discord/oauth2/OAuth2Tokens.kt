@@ -1,6 +1,7 @@
 package de.mineking.hexo.discord.oauth2
 
 import de.mineking.hexo.discord.core.DiscordUserId
+import de.mineking.hexo.discord.core.jda
 import kotlinx.serialization.KSerializer
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -33,8 +34,8 @@ data class UserDetails(
     val username: String,
 ) {
     val avatarUrl get() = when (avatar) {
-        null -> id.defaultAvatarUrl
-        else -> DiscordAssets.userAvatar(ImageFormat.PNG, id.id, avatar).url
+        null -> id.jda.defaultAvatarUrl
+        else -> DiscordAssets.userAvatar(ImageFormat.PNG, "${id.value}", avatar).url
     }
 }
 

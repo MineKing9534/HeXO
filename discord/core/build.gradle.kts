@@ -15,8 +15,7 @@ kotlin {
 
     sourceSets.jvmMain {
         dependencies {
-            api(libs.jda)
-            implementation(libs.exposed.core)
+            compileOnly(libs.jda)
         }
     }
 }

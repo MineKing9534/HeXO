@@ -2,10 +2,6 @@ plugins {
     id("dev.detekt")
 }
 
-repositories {
-    mavenCentral()
-}
-
 dependencies {
     detektPlugins("dev.detekt:detekt-rules-ktlint-wrapper:${detekt.toolVersion.get()}")
 }

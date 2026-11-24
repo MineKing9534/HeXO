@@ -1,0 +1,13 @@
+slash:
+  description: Displays information about a HeXO profile
+  optionDescription: The profile name, ID, or URL to view
+
+  profileNotLinked:
+    title: Profile Not Linked
+    description: Link your HeXO account to view your profile, or specify the profile to view explicitly
+
+context:
+  name: View HeXO profile
+  profileNotLinked:
+    title: Profile Not Found
+    description: No profile linked for user {parameter.asMention}. Use `/profile` to manually select a HeXO profile to view.

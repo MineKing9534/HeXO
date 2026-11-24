@@ -1,7 +1,8 @@
+import net.dv8tion.jda.api.interactions.DiscordLocale
+
 plugins {
     id("kotlin-jvm")
-
-    alias(libs.plugins.dtk.localization)
+    alias(libs.plugins.dtk)
 }
 
 dependencies {
@@ -13,19 +14,16 @@ dependencies {
     implementation(projects.utils.coroutines)
     implementation(projects.utils.types)
 
+    implementation(libs.jda)
     implementation(libs.kotlin.coroutines.core)
-    implementation(libs.dtk)
 
     implementation(libs.logging)
 }
 
-discordLocalization {
-    locales = listOf("en-US")
-    defaultLocale = "en-US"
-
-    localizationDirectory = "$projectDir/localization"
-    locationFormat = "%locale%/%name%.yaml"
-
-    botPackage = "de.mineking.hexo.discord.linkedroles"
-    managerName = "$botPackage.localization.LinkedRolesLocalizationManager"
+discordToolKit {
+    core {}
+    localization {
+        locales.addAll(DiscordLocale.ENGLISH_US)
+        basePackage = "de.mineking.hexo.discord.linkedroles"
+    }
 }

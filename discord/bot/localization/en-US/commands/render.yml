@@ -1,0 +1,24 @@
+modal:
+  description: Opens a dialog to render notation and normal text in a single message
+  modalTitle: Render HeXO Notation
+
+  notationLabel:
+    label: Message
+    description: The message to render. Use code blocks to indicate HeXO notation.
+
+  selectThemeLabel: Select Theme
+  send: Send
+  edit: Edit
+
+slash:
+  description: Renders the given HeXO notation
+  inputDescription: The HeXO notation to render
+  themeDescription: The theme to use for rendering
+  interactiveDescription: Whether to respond with an interactive menu
+
+  notationError:
+    title: Invalid Notation
+    description: Failed to parse the given HeXO notation
+
+context:
+  name: Render HeXO notation in message

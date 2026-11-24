@@ -17,6 +17,7 @@ import kotlinx.coroutines.awaitCancellation
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.takeWhile
 import kotlinx.coroutines.flow.toList
@@ -111,6 +112,7 @@ suspend fun LinkedRolesUpdateService.syncLinkedRolesDataFromGames(finishedGameRe
                 lastSeenGame = finishedGames.first().id
             }
         } catch (e: Exception) {
+            currentCoroutineContext().ensureActive()
             logger.error(e) { "Exception during profile polling" }
         }
 
