@@ -144,7 +144,7 @@ class HTTTXNotationRenderTest {
             }
             val notation = board.renderHTTTXNotation()
 
-            assertEquals("version[2];\nx : o <1,1:#${color?.symbol ?: ""}>;\n", notation)
+            assertEquals("version[2];\nx : o <1,1:#${color?.symbol.orEmpty()}>;\n", notation)
             assertRoundTrip(board, notation)
         }
     }

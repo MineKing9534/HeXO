@@ -6,6 +6,7 @@ fun RepositoryHandler.configureRepositories() {
     gradlePluginPortal()
     google()
 
+    maven("https://central.sonatype.com/repository/maven-snapshots")
     maven("https://maven.mineking.dev/snapshots")
 }
 

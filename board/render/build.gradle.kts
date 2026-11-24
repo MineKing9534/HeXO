@@ -9,13 +9,13 @@ plugins {
 kotlin {
     sourceSets.commonMain {
         dependencies {
-            implementation(projects.board)
+            api(projects.board)
             implementation(projects.utils.cache)
 
             implementation(libs.kotlin.coroutines.core)
             implementation(libs.kotlin.serialization.core)
 
-            implementation(libs.okio)
+            implementation(libs.kotlin.io)
             implementation(libs.svg)
         }
     }

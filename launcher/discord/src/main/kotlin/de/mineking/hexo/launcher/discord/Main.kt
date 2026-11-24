@@ -1,5 +1,6 @@
 package de.mineking.hexo.launcher.discord
 
+import de.mineking.hexo.board.recognition.LocalBoardRecognizer
 import de.mineking.hexo.board.render.image.ErrorMessage
 import de.mineking.hexo.discord.bot.DiscordLocalization
 import de.mineking.hexo.discord.bot.HeXODiscordBot
@@ -70,6 +71,7 @@ suspend fun main() = coroutineScope {
         userThemeRepository = userThemes,
         notationParser = parser,
         boardRenderer = renderer.outputBoardAttachment("png"),
+        boardRecognizer = LocalBoardRecognizer.Default,
         publicUrl = config.server?.webUrl,
         token = config.bot.token,
     )

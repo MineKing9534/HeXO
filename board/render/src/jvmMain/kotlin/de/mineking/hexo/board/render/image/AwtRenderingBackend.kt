@@ -30,7 +30,7 @@ fun Board.renderToImage(
     validate: ((BoardRenderLayout, Int, Int) -> Unit)? = null,
     renderingHook: BoardRenderingHook? = null,
 ): BufferedImage {
-    require(!isEmpty(includeHighlights = true))
+    require(!isEmpty(includeHighlights = true)) { "Cannot render an empty board" }
 
     val layout = createRenderLayout(layoutRadius, BoardRenderBounds.Compact, visibleRadius)
     val width = layout.boundingBox.width + 2 * padding

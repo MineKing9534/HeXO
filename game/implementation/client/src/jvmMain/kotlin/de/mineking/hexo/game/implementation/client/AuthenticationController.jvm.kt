@@ -5,7 +5,7 @@ import io.ktor.client.plugins.pluginOrNull
 import io.ktor.client.request.HttpRequestBuilder
 
 internal actual fun HmdApiClient.validateCookieRequestClient() {
-    require(client.httpClient.pluginOrNull(HttpCookies) != null) {
+    requireNotNull(client.httpClient.pluginOrNull(HttpCookies)) {
         "The 'HttpCookies' plugin is required for CookieAuthenticationController when using CIO"
     }
 }

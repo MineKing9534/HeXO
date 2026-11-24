@@ -40,9 +40,9 @@ fun MenuRuntime.notationMenu() = registerMessageMenu<NotationMenuParameter>("not
     localizeForUser()
     val localization = translation<NotationMenuLocalization>()
 
-    var reference by state<BoardReference>(fromInput { input.reference })
-    var notationType by state<NotationType>(fromInput { input.notationType })
-    var styled by state<Boolean>(true)
+    val reference by state<BoardReference>(fromInput { input.reference })
+    val notationType by state<NotationType>(fromInput { input.notationType })
+    val styled by state<Boolean>(true)
 
     container {
         section(accessory = {

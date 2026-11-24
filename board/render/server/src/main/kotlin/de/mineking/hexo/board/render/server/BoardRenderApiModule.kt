@@ -1,4 +1,4 @@
-package de.mineking.hexo.launcher.api.modules
+package de.mineking.hexo.board.render.server
 
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.HexoNotationException
@@ -20,14 +20,14 @@ import io.ktor.server.util.getOrFail
 
 data class RenderType(val renderer: BoardRenderer<Theme, ByteArray>, val type: ContentType)
 
-class RenderApiModule(
+class BoardRenderApiModule(
     private val parser: NotationParser,
     private val renderers: Map<String, RenderType>,
 ) : ApiModule() {
     override fun Route.registerRoutes() {
         get("/render") {
             val type = call.queryParameters.getOrFail("type")
-            val theme = call.queryParameters["theme"]?.let { DefaultTheme.valueOf(it) } ?: DefaultTheme.HDS
+            val theme = parseRenderTheme(call.queryParameters["theme"])
             val renderer = renderers[type] ?: throw BadRequestException("Unsupported render type")
 
             try {
@@ -51,4 +51,10 @@ class RenderApiModule(
             return parser.parse(notation)
         }
     }
+}
+
+internal fun parseRenderTheme(value: String?): DefaultTheme {
+    if (value == null) return DefaultTheme.HDS
+    return DefaultTheme.entries.firstOrNull { it.name == value }
+        ?: throw BadRequestException("Unsupported render theme")
 }

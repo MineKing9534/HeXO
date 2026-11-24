@@ -16,7 +16,12 @@ dependencies {
     implementation(projects.board)
     implementation(projects.board.binary)
     implementation(projects.board.parse)
+
     implementation(projects.board.render)
+    implementation(projects.board.render.server)
+
+    implementation(projects.board.recognition)
+    implementation(projects.board.recognition.server)
 
     implementation(projects.discord.linkedRoles)
     implementation(projects.discord.oauth2.service)

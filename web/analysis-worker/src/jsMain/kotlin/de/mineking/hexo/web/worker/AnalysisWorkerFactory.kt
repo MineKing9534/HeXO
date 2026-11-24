@@ -4,8 +4,8 @@ import com.varabyte.kobweb.serialization.createIOSerializer
 import com.varabyte.kobweb.worker.OutputDispatcher
 import com.varabyte.kobweb.worker.WorkerFactory
 import com.varabyte.kobweb.worker.WorkerStrategy
-import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.CellOwner
+import de.mineking.hexo.board.binary.SerializableBoard
 import de.mineking.hexo.solver.FindDefenseResult
 import de.mineking.hexo.solver.FindWinResult
 import de.mineking.hexo.solver.strix.StrixHexoSolver
@@ -18,7 +18,7 @@ import kotlinx.serialization.json.Json
 @Serializable
 data class AnalysisInput(
     val requestId: Int,
-    val board: Board,
+    val board: SerializableBoard,
     val player: CellOwner,
     val remaining: Int,
 )

@@ -2,8 +2,6 @@ package de.mineking.hexo.discord.bot.utils
 
 import de.mineking.hexo.board.binary.EncodedBoard
 import de.mineking.hexo.board.binary.decode
-import de.mineking.hexo.board.take
-import de.mineking.hexo.board.toBoard
 import de.mineking.hexo.game.model.game.FinishedGameRepository
 import de.mineking.hexo.game.model.game.GameId
 import de.mineking.hexo.utils.types.orElse
@@ -28,7 +26,6 @@ suspend inline fun BoardReference.decode(
     is BoardReference.Game -> gameRepository.getGame(gameId)
         .orElse(notFound)
         .position
-        .take(move)
-        .toBoard()
+        .getState(move - 1)
     is BoardReference.Binary -> data.decode()
 }

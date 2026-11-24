@@ -292,7 +292,7 @@ private fun MessageComponentScope<*>.themeParameterModal(
                 it.bind().map { value ->
                     parse(value.orEmpty().ifBlank { default })
                 },
-                value = selected.overrides[property]?.value?.toString() ?: "",
+                value = selected.overrides[property]?.value?.toString().orEmpty(),
                 placeholder = default,
             )
         }

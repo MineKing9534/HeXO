@@ -56,6 +56,7 @@ enum class IconEmojis : EmojiProvider, EmojiKey {
     Reload,
     Back,
     View,
+    Scan,
     Lock,
     Unlock,
     First,

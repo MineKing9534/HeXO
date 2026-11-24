@@ -103,7 +103,7 @@ private suspend fun ComponentScope<Section>.leaderboardEntries(leaderboard: Lead
 
     val discordProfiles = context.main.accountLinkRepository
         ?.getDiscordProfiles(leaderboard.players.map { it.profileId })
-        ?: emptyMap()
+        .orEmpty()
 
     val localization = translation<LeaderboardMenuLocalization>()
     leaderboard.players.forEachIndexed { index, entry ->

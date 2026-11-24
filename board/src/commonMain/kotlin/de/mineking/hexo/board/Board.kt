@@ -1,11 +1,8 @@
 package de.mineking.hexo.board
 
-import kotlinx.serialization.Serializable
-
 @RequiresOptIn
 annotation class InternalBoardApi
 
-@Serializable(with = BoardSerializer::class)
 interface Board : GameStateHistory {
     companion object {
         const val WIN_MIN_LENGTH = 6

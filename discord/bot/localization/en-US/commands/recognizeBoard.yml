@@ -1,0 +1,38 @@
+name: Recognize Board
+
+title: Recognition Result
+confidence: Confidence
+cells: Recognized Cells
+warnings: Warnings
+warning: >-
+  {warning, select,
+    SingleStoneColor {Only one stone color was found; it was assigned to X.}
+    SimilarBrightness {The stone colors have similar brightness; the X/O assignment may be ambiguous.}
+    UnclassifiedCells {Additional color groups were omitted; review the recognized position.}
+    other {*Unknown*}
+  }
+
+selectTitle: Select Image to Analyze
+selectDescription: The message contains multiple images. Select which one you want to analyze.
+imageLabel: Image {position}
+scanLabel: Recognize Board
+
+noImage:
+  title: No Image
+  description: The selected message doesn't contain any images!
+
+imageTooLarge:
+  title: Image Too Large
+  description: The selected image is too large!
+
+invalidImage:
+  title: Invalid Image
+  description: The image could not be downloaded or read. Try uploading a PNG or JPEG screenshot directly.
+
+downloadTimeout:
+  title: Timeout
+  description: Timeout while downloading the image. Please try again!
+
+recognitionFailed:
+  title: No Board Recognized
+  description: No HeXO board could be detected. Try a clear, upright screenshot cropped to the board.

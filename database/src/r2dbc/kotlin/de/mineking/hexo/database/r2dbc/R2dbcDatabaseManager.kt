@@ -13,7 +13,7 @@ import org.jetbrains.exposed.v1.r2dbc.transactions.suspendTransaction
 internal val logger = KotlinLogging.logger {}
 
 abstract class R2dbcDatabaseManager protected constructor(
-    protected val database: R2dbcDatabase
+    protected val database: R2dbcDatabase,
 ) : DatabaseManager {
     protected abstract fun extractDatabaseError(error: R2dbcException): DatabaseError
 

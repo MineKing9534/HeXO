@@ -8,6 +8,7 @@ import de.mineking.discord.localization.source.yaml.YamlCatalogLoader
 import de.mineking.discord.menu.message.MessageMenu
 import de.mineking.hexo.board.Board
 import de.mineking.hexo.board.parse.NotationParser
+import de.mineking.hexo.board.recognition.BoardRecognizer
 import de.mineking.hexo.board.render.BoardRenderer
 import de.mineking.hexo.board.render.image.theme.Theme
 import de.mineking.hexo.discord.bot.commands.accountLinkCommand
@@ -15,6 +16,7 @@ import de.mineking.hexo.discord.bot.commands.gameCommand
 import de.mineking.hexo.discord.bot.commands.leaderboardCommand
 import de.mineking.hexo.discord.bot.commands.profileCommand
 import de.mineking.hexo.discord.bot.commands.profileUserCommand
+import de.mineking.hexo.discord.bot.commands.recognizeBoardMessageCommand
 import de.mineking.hexo.discord.bot.commands.renderHexoMessageCommand
 import de.mineking.hexo.discord.bot.commands.renderHexoModalCommand
 import de.mineking.hexo.discord.bot.commands.renderHexoSlashCommand
@@ -62,6 +64,7 @@ class HeXODiscordBot(
     val userThemeRepository: UserThemeRepository?,
     val notationParser: NotationParser,
     val boardRenderer: BoardRenderer<Theme, BoardAttachment>,
+    val boardRecognizer: BoardRecognizer,
     val publicUrl: String?,
     token: String,
 ) {
@@ -135,6 +138,7 @@ class HeXODiscordBot(
                         renderHexoMessageCommand()
                         renderHexoModalCommand()
                         renderHexoSlashCommand(menus.boardMenu)
+                        recognizeBoardMessageCommand(menus.notationMenu)
 
                         themeCommand()
                     }

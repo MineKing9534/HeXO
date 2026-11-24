@@ -2,7 +2,8 @@ package de.mineking.hexo.board.binary.internal
 
 import de.mineking.hexo.board.HexoNotationException
 import de.mineking.hexo.board.requireHexo
-import okio.Buffer
+import kotlinx.io.Buffer
+import kotlinx.io.readByteArray
 import kotlin.enums.enumEntries
 
 internal const val MAX_UNSIGNED = 0x1ffffffffL
@@ -30,7 +31,7 @@ internal class BitWriter {
             bitSize += chunk
             shift += chunk
             if (pendingBits == Byte.SIZE_BITS) {
-                buffer.writeByte(pendingByte)
+                buffer.writeByte(pendingByte.toByte())
                 pendingByte = 0
                 pendingBits = 0
             }
@@ -79,7 +80,7 @@ internal class BitWriter {
     }
 
     fun toByteArray(): ByteArray = buffer.copy().apply {
-        if (pendingBits != 0) writeByte(pendingByte)
+        if (pendingBits != 0) writeByte(pendingByte.toByte())
     }.readByteArray()
 
     private fun requireCapacity(additionalBits: Long) {

@@ -2,7 +2,7 @@
 HeXO Renderer is a Kotlin project for rendering <a href="https://hexo.did.science">HeXO</a> notation, with a Discord bot, web sandbox, and HTTP API.
 
 ## Invite
-Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https://discord.com/oauth2/authorize?client_id=1496214901713014894).
+Add the HeXO Discord bot to your server or user account: [Invite HeXO Renderer](https://discord.com/oauth2/authorize?client_id=1496214901713014894).
 
 ## Table of Contents
 <!-- TOC -->
@@ -20,8 +20,10 @@ Add HeXO Renderer to your server or user account: [Invite HeXO Renderer](https:/
     * [Other](#other)
   * [Features](#features)
     * [Command `hexo`](#command-hexo)
-    * [Command `render`](#command-render)
-    * [Message command](#message-command)
+    * [Command `message`](#command-message)
+    * [Message command `Render HeXO notation in message`](#message-command-render-hexo-notation-in-message)
+    * [Message command `Recognize Board`](#message-command-recognize-board)
+    * [Notation menu](#notation-menu)
     * [Command `game`](#command-game)
     * [Other commands](#other-commands)
   * [Contributing](#contributing)
@@ -53,7 +55,7 @@ Prefix the notation with `c` to write columns instead of rows. In column notatio
 
 The following image is produced by the notation `x-x/o.o//x`:
 
-![example 1](assets/example_1.png)
+![example 1](assets/notation/example_1.png)
 
 Or for a more complex example:
 ```
@@ -62,7 +64,7 @@ Or for a more complex example:
   . x x x o
    x x . o .
 ```
-![example 2](assets/example_2.png)
+![example 2](assets/notation/example_2.png)
 
 #### Highlighting
 Cells can also be highlighted. To do so, you can put the color (player symbol, or `!` for a neutral highlight) of the highlight in parentheses after the cell to highlight.
@@ -76,7 +78,7 @@ Additionally, winning rows (6 or more in a row) are highlighted automatically in
 
 `....(!)/...x/oxxxxxx/.oox/ooox/.o.o`
 
-![example highlight](assets/example_highlight.png)
+![example highlight](assets/notation/example_highlight.png)
 
 You can also highlight lines. To do so, you have to prefix a direction and length of the line before the color in the parentheses.
 
@@ -85,7 +87,7 @@ The length can be specified directly after. If no length is specified, it will d
 
 `.(>4)xx/.o(q3o)/(>4o)oo`
 
-![example highlight line](assets/example_highlight_line.png)
+![example highlight line](assets/notation/example_highlight_line.png)
 
 #### Custom Labels
 Cells can also be labeled. The label will be rendered as text inside the labeled cell.
@@ -94,7 +96,7 @@ Labels are defined for the previous cell in square brackets.
 
 `.o.[a].[b].[c].[d]/oxxxx.[e]/.[f].[g].[h]x.[i]/...[j].[k]`
 
-![example label](assets/example_label.png)
+![example label](assets/notation/example_label.png)
 
 ### BKE Notation
 The bot can also render a variation of BKE notation. This is especially useful if you want turn numbers to be displayed on the rendered tiles.
@@ -112,7 +114,7 @@ In [combined notation](#combined) or a TCHN [`merge`](#transformation-and-compos
 
 For example, `o A3 A2 x A1 B3` renders as follows:
 
-![example bke](assets/example_bke.png)
+![example bke](assets/notation/example_bke.png)
 
 To avoid long offset values, you can optionally use sector addressing.
 For this, the board is split into 6 sectors numbered `0` through `5`. Using `sector.offset` you can specify a sector-relative offset, which must be smaller than the ring number (`0` for ring `A`, `0` or `1` for ring `B`, etc.).
@@ -129,7 +131,7 @@ The following describe the same position using different origins, zero offset li
 - `.x[*]/xx || b CW o A0 A1 x B7 B8`
 - `.x/x[*]x || d CCW o B1 B0 x A4 A3`
 
-![example combined](assets/example_combined.png)
+![example combined](assets/notation/example_combined.png)
 
 ### Transformation and Composition Notation (TCHN)
 TCHN lets you rotate, mirror, and merge boards in Discord, the web sandbox, and the rendering API. Start an expression with `$` and wrap embedded notation in `{...}`. For example, `$rotate(1, {x.o/.x})` rotates a rectilinear board by one 60-degree sector.
@@ -166,33 +168,51 @@ You can prefix HTTTX notation or a Tyto analysis link with `#` to display turn n
 
 ## Features
 ### Command `hexo`
-Accepts HeXO notation as parameter and renders it as image.
-Example usage:
+Use `/hexo input:<notation>` to render HeXO notation as an image. The optional `theme` parameter selects a rendering theme; otherwise, your current theme is used.
+Set `interactive:true` to open a menu that lets you cycle between individual moves instead of a static image.
 
-![example slash command](assets/example_slash_command.png)
+Example: `/hexo input:x-x/o.o//x interactive:true`
 
-### Command `render`
-Opens a modal that allows you to specify more complex HeXO notation. It allows you to mix both notation and normal text to create a composite message.
-Using the modal to send a complex message is equivalent to sending a message with the notation yourself and then using the `Render HeXO notation in message` context command.
-See [Message command](#message-command) for more details.
+For a static image, omit `interactive`:
 
-### Message command
+![example slash command](assets/discord/render_slash_command.png)
+
+### Command `message`
+Use `/message` to open a dialog for mixing HeXO notation and normal text in a single message. After submitting, a private preview lets you select a theme, edit the message, or send it publicly.
+Notation is rendered using the same rules as the `Render HeXO notation in message` context command.
+See [Message command `Render HeXO notation in message`](#message-command-render-hexo-notation-in-message) for more details.
+
+### Message command `Render HeXO notation in message`
 It is also possible to render notation in existing messages. To do so, right-click the message and select `Apps > HeXO Renderer > Render HeXO notation in message`:
-Any valid HeXO notation inside code blocks (triple backticks: `` ``` ``) will be rendered as image that will be put in the resulting message instead of the code block.
-You can also use inline code segments (single backticks: `` ` ``) with HeXO notation in parts of your message. These segments will not be removed and the rendered image is put after the current paragraph.
+Valid HeXO notation inside code blocks (triple backticks: `` ``` ``) is replaced with an image. Use an untagged code block or the `hexo` language tag; blocks tagged with other languages are left unchanged.
+You can also use inline code segments (single backticks: `` ` ``) or supported position links. These remain in the text, with rendered images added after the current paragraph. Spoiler-wrapped notation produces spoiler images.
 
-![example message command](assets/example_message_command.png)
+![example message command](assets/discord/render_context_command.png)
+
+### Message command `Recognize Board`
+Right-click a message containing an image and select `Apps > HeXO Renderer > Recognize Board`.
+If the message contains multiple images, select one in the image picker and press `Recognize Board`.
+For best results, use a clear, upright screenshot cropped to the board.
+
+![example board recognition](assets/discord/recognize.png)
+
+### Notation menu
+Use `Export` on an interactive board, game review, or recognition result to open a private notation menu.
+Select the output format from the dropdown: compact or multiline rectilinear notation, combined notation, HTTTX, or a Tyto link. Toggle `Colored` to switch notation formatting. Not all positions can be exported in every format.
+
+![example notation menu](assets/discord/notation.png)
 
 ### Command `game`
-Another feature is reviewing games from https://hexo.did.science in Discord. Simply use the `game` slash command and provide a game ID (or link) to the game you want to review:
+Use `/game id:<game ID or link>` to review a finished game from https://hexo.did.science. The result shows the players, ratings, time control, and outcome alongside an interactive board. Step through moves using the navigation buttons, click the move counter to jump to a move, or toggle `Show Turn Numbers` to display move labels. Use `Export` to open the [notation menu](#notation-menu).
 
-![example review](assets/example_review.png)
+![example review](assets/discord/review.png)
 
 ### Other commands
-- `profile` looks up a HeXO profile. With a linked account, omit the name to view your own profile.
-- `leaderboard` displays the HeXO leaderboard.
-- `link` manages the link between your Discord and HeXO accounts. It requires database and OAuth2 configuration.
-- `theme` selects or customizes your rendering theme. It requires database configuration.
+- `/profile name:<name or profile ID>` looks up a HeXO profile. With a linked account, omit `name` to view your own profile. The user context command `View HeXO profile` looks up a Discord user's linked profile.
+- `/leaderboard` displays the HeXO leaderboard, with reload and profile selection controls.
+- `/link` privately manages the link between your Discord and HeXO accounts. It requires database and OAuth2 configuration.
+- `/theme` opens a private theme preview and customization menu. Saving themes and your theme preference requires database configuration.
+
 
 ## Contributing
 Contributions are very welcome.

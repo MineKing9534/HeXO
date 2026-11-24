@@ -9,7 +9,9 @@ import de.mineking.discord.extensions.localization.translation
 import de.mineking.discord.localization.LocalizationBundle
 import de.mineking.discord.menu.Defer
 import de.mineking.discord.menu.action
+import de.mineking.discord.menu.components.ComponentScope
 import de.mineking.discord.menu.components.onlyIf
+import de.mineking.discord.menu.components.text
 import de.mineking.discord.menu.message.MessageMenu
 import de.mineking.discord.menu.message.components.MessageComponentScope
 import de.mineking.discord.menu.message.components.actionRow
@@ -34,6 +36,7 @@ import de.mineking.hexo.board.InternalBoardApi
 import de.mineking.hexo.board.binary.decode
 import de.mineking.hexo.board.binary.encodeBinary
 import de.mineking.hexo.board.focusWinningRows
+import de.mineking.hexo.board.isEmpty
 import de.mineking.hexo.board.mutable
 import de.mineking.hexo.board.toGamePosition
 import de.mineking.hexo.discord.bot.ErrorResponseMessage
@@ -54,7 +57,7 @@ context(_: DiscordToolKitContext<HeXODiscordBot>)
 fun MenuRuntime.boardMenu(notationMenu: MessageMenu<NotationMenuParameter>) = registerMessageMenu<Board>("board") {
     localizeForUser()
 
-    var reference by state(fromInput { BoardReference.Binary(input.encodeBinary()) })
+    val reference by state(fromInput { BoardReference.Binary(input.encodeBinary()) })
     val move by state(fromInput { input.toGamePosition().numberOfStates })
     val showTurnNumbers by state(fromInput { input.attributes[BoardAttribute.ShowTurnNumbers] ?: false })
 
@@ -81,7 +84,7 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
     reference: BoardReference,
     history: GameStateHistory?,
     moveState: MutableState<Int>,
-    showTurnNumbersState: MutableState<Boolean>,
+    showTurnNumbersState: MutableState<Boolean>?,
 ) {
     val localization = translation<InteractiveBoardMenuLocalization>()
 
@@ -89,17 +92,36 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
     val moveCount = history?.numberOfStates ?: Int.MAX_VALUE
 
     val visibleBoard = history?.let {
-        move = move.coerceIn(1, moveCount)
+        move = move.coerceIn(1, moveCount.coerceAtLeast(1))
         it.getState(move - 1).mutable().apply {
             focusWinningRows()
-            attributes[BoardAttribute.ShowTurnNumbers] = showTurnNumbersState.value
+            if (showTurnNumbersState != null) {
+                attributes[BoardAttribute.ShowTurnNumbers] = showTurnNumbersState.value
+            }
         }
     }
 
     if (visibleBoard != null) {
-        val theme = context.main.getUserTheme(requireInteraction().user.userId)
-        mediaGallery(boardImage(visibleBoard, theme))
-        separator(Separator.Spacing.LARGE)
+        if (visibleBoard.isEmpty(includeHighlights = true)) {
+            text {
+                text(":warning: ")
+                italic(localization.empty())
+            }
+        } else {
+            val theme = context.main.getUserTheme(requireInteraction().user.userId)
+            mediaGallery(boardImage(visibleBoard, theme))
+            separator(Separator.Spacing.LARGE)
+        }
+    }
+
+    fun ComponentScope<Button>.sandboxButton() {
+        visibleBoard?.sandboxUrl(context.main.publicUrl)?.let { url ->
+            linkButton(
+                url = url,
+                label = localization.exploreLabel(),
+                emoji = Emojis.TEST_TUBE,
+            )
+        }
     }
 
     moveSelector(moveState, max = moveCount)
@@ -113,16 +135,16 @@ suspend fun MessageComponentScope<ContainerChildComponent>.interactiveBoard(
             NotationMenuParameter(reference, NotationType.CompactRectilinear)
         }
 
-        neutralSwitch(showTurnNumbersState, label = localization.showTurnNumbers())
+        if (showTurnNumbersState != null) {
+            neutralSwitch(showTurnNumbersState, label = localization.showTurnNumbers())
+        } else {
+            sandboxButton()
+        }
     }
 
-    actionRow {
-        visibleBoard?.sandboxUrl(context.main.publicUrl)?.let { url ->
-            linkButton(
-                url = url,
-                label = localization.exploreLabel(),
-                emoji = Emojis.TEST_TUBE,
-            )
+    if (showTurnNumbersState != null) {
+        actionRow {
+            sandboxButton()
         }
     }
 }
@@ -175,6 +197,7 @@ internal fun Board.sandboxUrl(baseUrl: String?): String? {
 
 @LocalizationBundle("board")
 internal interface InteractiveBoardMenuLocalization {
+    fun empty(): String
     fun showNotation(): String
     fun showTurnNumbers(): String
 

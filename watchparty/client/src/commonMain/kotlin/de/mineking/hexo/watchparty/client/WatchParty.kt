@@ -65,7 +65,7 @@ class WatchParty internal constructor(
 
         @Suppress("TooGenericExceptionCaught")
         try {
-            val ack = socket.requestAwait<WatchPartyAcknowledgement>(action, generation?.toString() ?: "")
+            val ack = socket.requestAwait<WatchPartyAcknowledgement>(action, generation?.toString().orEmpty())
             onData(ack.state)
 
             ack.error?.let { throw WatchPartyRequestException(it) }
