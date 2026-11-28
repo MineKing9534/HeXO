@@ -47,7 +47,7 @@ private fun <T> SlashCommandBuilder.profileIdOption(
     autocomplete {
         val search = context.main.repositories.profileRepository.getProfilesByName(focusedText)
         search.map {
-            CommandChoice(it.displayName, it.id.value)
+            CommandChoice(value = it.id.value, label = it.displayName)
         }
     }
 }
